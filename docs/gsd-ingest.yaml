@@ -1,0 +1,12 @@
+# Manifest for: /gsd-ingest-docs --manifest docs/gsd-ingest.yaml
+# Lower precedence number wins a conflict. Decisions are locked (ADR).
+docs:
+  - path: docs/DECISIONS.md
+    type: ADR
+    precedence: 0
+  - path: docs/SPEC.md
+    type: SPEC
+    precedence: 1
+  - path: docs/sprints/sprint-0.md
+    type: SPEC
+    precedence: 2
