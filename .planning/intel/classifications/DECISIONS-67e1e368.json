@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/iantitus/Projects/ops-platform/docs/DECISIONS.md",
+  "type": "ADR",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Decisions",
+  "summary": "Dated log of project decisions, newest first, each with its reason. Covers GSD setup, PHP tooling, stack choices, ICM foundation and data flow.",
+  "scope": ["GSD Core", "PHP / php.new / Herd Lite", "Records files", "Scaffold (Laravel 13, Filament 5, laravel/ai, Pest, Boost)", "Dev and CI database (SQLite, Postgres)", "Fake text channel / A2P", "One instance per client", "ICM configuration", "pgvector retrieval", "Legacy port", "Filament / Livewire UI"],
+  "cross_refs": ["docs/gsd-ingest.yaml", ".planning/PROJECT.md"],
+  "locked": true,
+  "precedence": 0,
+  "notes": "Type and precedence set by MANIFEST_TYPE=ADR and MANIFEST_PRECEDENCE=0. Multi-decision log with no Status field. locked set to true by the orchestrator: the document states it is ingested via docs/gsd-ingest.yaml with 'decisions as locked', and the manifest header says 'Decisions are locked (ADR)'. Treat each dated entry as a locked decision."
+}

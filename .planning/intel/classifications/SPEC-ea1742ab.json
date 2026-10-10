@@ -1,0 +1,27 @@
+{
+  "source_path": "/Users/iantitus/Projects/ops-platform/docs/SPEC.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Ops Platform: Spec",
+  "summary": "Client-owned operating system for service businesses: leads, AI front desk, job flow to payment, and folder-based business config.",
+  "scope": [
+    "Ops Platform",
+    "lead intake",
+    "AI front desk",
+    "booking",
+    "quote",
+    "invoice",
+    "payment",
+    "follow-up",
+    "connectors",
+    "business folder (ICM files)",
+    "sending authority",
+    "validation and walk-testing",
+    "integer cents money model"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": 1,
+  "notes": "Type and precedence set by MANIFEST_TYPE=SPEC and MANIFEST_PRECEDENCE=1. Classifier read only the first 50 lines; synthesizer should read the full source. Content leans PRD-like (product overview, principles, target market) but the manifest type is authoritative."
+}
