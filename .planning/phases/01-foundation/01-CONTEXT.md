@@ -50,12 +50,21 @@ Not in this phase: AI replies, Twilio (beyond a stub), booking, money, voice, au
 - **D-22:** `open-leads.md` lists contacts with `status=lead` **and** an open conversation, newest activity first, showing name, source, waiting since and a last-message preview.
 - **D-23:** In `examples/example-hvac/records/`, only `README.md` and `CLAUDE.md` are tracked in git, and everything else generated (`customers/`, `INDEX.md`, `open-leads.md`) is ignored. **Ignore rules must be scoped to `examples/*/records/`** so they cannot match `app/Records/` on a case-insensitive macOS filesystem.
 
+### Settled at plan time (2026-10-10, answers to RESEARCH.md Open Questions)
+- **D-24:** `User` implements `Filament\Models\Contracts\FilamentUser`; `canAccessPanel()` returns `true` for any authenticated user (single-owner app). Without it `/admin` returns 403 outside `local`.
+- **D-25:** `examples/*/changelog.md` is gitignored (scoped to `examples/*/`, same care as D-23). The sync creates `changelog.md` with a short header when it is missing, then appends entries per D-08/D-09. The example folder does not exist yet, so `changelog.md` is simply never committed.
+- **D-26:** Two Boost project rules are recorded in `.ai/rules` (via the Boost `record-rule` tool or `Laravel\Boost\Rules\RuleRepository`, never hand-written): (1) "Money is integer cents" — all money values are stored and passed as integer cents (`*_cents` integer columns, integer casts), never floats; convert for display only — on globs `app/**`, `database/migrations/**`, `database/factories/**` and `tests/**`. (2) "Business configuration is read only through ActiveConfig" — application code reads business configuration only through `App\Icm\ActiveConfig`, never from the ICM folder; only `App\Icm\Loader` (run by the sync) reads the folder — on glob `app/**`.
+- **D-27:** The conversation view has Close and Reopen header actions. Close sets the conversation `closed`. Reopen is only available (and only succeeds) when the contact has no other `open` conversation, preserving D-16's one-open-conversation rule.
+
 ### Claude's Discretion
 - If the very first sync fails with `profile.md` broken and there is no active version, changelog times fall back to the app timezone (UTC), and the entry says so.
 - Tests point `ICM_PATH` at a temporary copy of the example folder, so a test run never writes cards or changelog lines into the repo.
 - Dashboard layout details (Filament table columns beyond those in sprint-0.md, timeline presentation on the contact view), `/dev/chat` refresh mechanism (Livewire polling is fine), and the seeder's fictional data follow `docs/sprints/sprint-0.md` Step 3.
 - Exact `ActiveConfig` method names, the compiled JSON shape, and the fingerprint algorithm (content hash plus git sha when the folder is a repo).
 - How "superseded" versions are kept (all rows retained is fine).
+- Last sync result for a no-op (RESEARCH Open Question 1): default is `last_checked_at` + `last_result` on the active `icm_versions` row, updated on a no-op; the Business Folder page shows the newest of the latest rejected row and the active row's last check.
+- Router files (`CLAUDE.md`, `CONTEXT.md`, `START-HERE.md`) feed the fingerprint, so editing one mints a new version (Open Question 2).
+- `/dev/chat` "posts to the fake webhook" by calling the same parse + `RecordInbound` path in-process, not by an HTTP self-call (Open Question 4).
 
 </decisions>
 
