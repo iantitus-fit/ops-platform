@@ -1,0 +1,10 @@
+{
+  "workflow": {
+    "use_worktrees": false,
+    "tdd_mode": true,
+    "test_command": "php artisan test"
+  },
+  "git": {
+    "branching_strategy": "phase"
+  }
+}
