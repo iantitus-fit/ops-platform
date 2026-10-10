@@ -38,20 +38,31 @@ created: "2026-10-10"
 
 ## Per-Task Verification Map
 
-Filled in from the PLAN.md files once the planner assigns task IDs. Requirement → test file mapping from RESEARCH.md:
+Filled in from the PLAN.md files (seven plans, one per wave; waves are serial because every plan appends to the docs/sprints/sprint-0.md Walk-through log and execution is sequential with no worktrees). Requirement → test file mapping from RESEARCH.md:
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | 01 | 1 | ICM-01 | — | N/A | feature | `php artisan test --compact tests/Feature/Icm/SyncTest.php tests/Feature/Icm/ActiveConfigTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 01 | 1 | ICM-02 | — | Sync never reads `records/` | feature | `php artisan test --compact tests/Feature/Icm/ValidatorTest.php tests/Feature/Icm/SyncIgnoresRecordsTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 02 | 2 | LEAD-01 | fake webhook gated to `fake` driver | 404 unless text driver is `fake`; CSRF exempt | feature | `php artisan test --compact tests/Feature/Inbound/FakeTextWebhookTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 02 | 2 | LEAD-02 | `/leads` abuse | throttled; 422 without phone/email | feature | `php artisan test --compact tests/Feature/Inbound/LeadFormTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 02 | 2 | LEAD-03 | — | N/A | feature | `php artisan test --compact tests/Feature/Inbound/ContactMatchingTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 03 | 3 | LEAD-04 | — | N/A | feature (Livewire) | `php artisan test --compact tests/Feature/Inbound/OwnerReplyTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 03 | 3 | RECS-01 | card prompt injection | customer text blockquoted; table cells escaped | feature | `php artisan test --compact tests/Feature/Records` | ❌ W0 | ⬜ pending |
-| TBD | 03 | 3 | DASH-01 | admin access | only `FilamentUser` users reach `/admin` | feature (Livewire + HTTP) | `php artisan test --compact tests/Feature/Filament` | ❌ W0 | ⬜ pending |
-| TBD | 03 | 3 | DASH-02 | dev page exposure | `/dev/chat` 404 outside `local` | feature | `php artisan test --compact tests/Feature/DevChatTest.php` | ❌ W0 | ⬜ pending |
-| TBD | 03 | 3 | QUAL-01 | — | N/A | feature + arch | `php artisan test --compact tests/Feature/Quality tests/Unit/ArchitectureTest.php` | ❌ W0 | ⬜ pending |
+| 01-01-T1 | 01 | 1 | ICM-01 | T-01-05 | generated records/changelog ignored by git | feature (tracer) | `php artisan test --compact tests/Feature/Icm/SyncTest.php` | ❌ W0 | ⬜ pending |
+| 01-01-T2 | 01 | 1 | ICM-01 | T-01-01, T-01-04 | Sync never reads `records/`; lock blocks concurrent syncs | feature | `php artisan test --compact tests/Feature/Icm/SyncTest.php tests/Feature/Icm/SyncIgnoresRecordsTest.php` | ❌ W0 | ⬜ pending |
+| 01-01-T3 | 01 | 1 | ICM-01, QUAL-01 | T-01-02, T-01-03 | Yaml/Finder only in Loader; rules recorded | feature + arch | `php artisan test --compact tests/Feature/Icm/ActiveConfigTest.php tests/Feature/Quality/ProjectRulesTest.php tests/Unit/ArchitectureTest.php` | ❌ W0 | ⬜ pending |
+| 01-02-T1 | 02 | 2 | ICM-02 | T-01-06 | rejected candidate never activates | feature (tracer) | `php artisan test --compact tests/Feature/Icm/SyncTest.php` | ❌ W0 | ⬜ pending |
+| 01-02-T2 | 02 | 2 | ICM-02 | — | N/A | feature | `php artisan test --compact tests/Feature/Icm/ValidatorTest.php` | ❌ W0 | ⬜ pending |
+| 01-02-T3 | 02 | 2 | ICM-02 | T-01-07, T-01-09 | echoed values truncated; every attempt recorded | feature | `php artisan test --compact tests/Feature/Icm/ChangelogTest.php` | ❌ W0 | ⬜ pending |
+| 01-03-T1 | 03 | 3 | LEAD-01, LEAD-03 | T-01-13, T-01-SC | explicit DTO fields; approved package only | feature (tracer) | `php artisan test --compact tests/Feature/Inbound/FakeTextWebhookTest.php` | ❌ W0 | ⬜ pending |
+| 01-03-T2 | 03 | 3 | LEAD-01 | T-01-12 | duplicate MessageSid recorded once | feature | `php artisan test --compact tests/Feature/Inbound/FakeTextWebhookTest.php` | ❌ W0 | ⬜ pending |
+| 01-03-T3 | 03 | 3 | LEAD-01 | T-01-10, T-01-11, T-01-14 | 404 unless text driver is `fake`; CSRF exempt `webhooks/*`; no bodies in logs outside local | feature | `php artisan test --compact tests/Feature/Inbound` | ❌ W0 | ⬜ pending |
+| 01-04-T1 | 04 | 4 | LEAD-02, LEAD-03 | — | N/A | feature (tracer) | `php artisan test --compact tests/Feature/Inbound/LeadFormTest.php` | ❌ W0 | ⬜ pending |
+| 01-04-T2 | 04 | 4 | LEAD-03 | T-01-17 | a form never overwrites a stored phone/email | feature | `php artisan test --compact tests/Feature/Inbound/ContactMatchingTest.php tests/Feature/Inbound/LeadFormTest.php` | ❌ W0 | ⬜ pending |
+| 01-04-T3 | 04 | 4 | LEAD-02 | T-01-16, T-01-19 | throttled; 422 without phone/email; CSRF exempt `leads` | feature | `php artisan test --compact tests/Feature/Inbound` | ❌ W0 | ⬜ pending |
+| 01-05-T1 | 05 | 5 | RECS-01 | T-01-24 | atomic writes | feature (tracer) | `php artisan test --compact tests/Feature/Records/CustomerCardTest.php` | ❌ W0 | ⬜ pending |
+| 01-05-T2 | 05 | 5 | RECS-01 | T-01-21, T-01-22 | customer text blockquoted; slug+id filenames | feature | `php artisan test --compact tests/Feature/Records` | ❌ W0 | ⬜ pending |
+| 01-05-T3 | 05 | 5 | RECS-01 | T-01-23, T-01-25 | table cells escaped; summaries under lock; cards gitignored | feature | `php artisan test --compact tests/Feature/Records` | ❌ W0 | ⬜ pending |
+| 01-06-T1 | 06 | 6 | LEAD-04, DASH-01 | T-01-26 | `FilamentUser` users reach `/admin` | feature (tracer, Livewire + HTTP) | `php artisan test --compact tests/Feature/Inbound/OwnerReplyTest.php` | ❌ W0 | ⬜ pending |
+| 01-06-T2 | 06 | 6 | LEAD-04, DASH-01 | T-01-27, T-01-28, T-01-30 | escaped thread; failed sends never stored as sent | feature (Livewire) | `php artisan test --compact tests/Feature/Inbound/OwnerReplyTest.php tests/Feature/Filament/ConversationResourceTest.php` | ❌ W0 | ⬜ pending |
+| 01-06-T3 | 06 | 6 | DASH-01 | T-01-26 | guest redirected; owner gets 200 outside local | feature (Livewire + HTTP) | `php artisan test --compact tests/Feature/Filament tests/Feature/Inbound/OwnerReplyTest.php` | ❌ W0 | ⬜ pending |
+| 01-07-T1 | 07 | 7 | DASH-02 | T-01-31 | `/dev/chat` 404 outside `local` (route and component) | feature (tracer) | `php artisan test --compact tests/Feature/DevChatTest.php` | ❌ W0 | ⬜ pending |
+| 01-07-T2 | 07 | 7 | DASH-01 | T-01-33, T-01-34 | escaped errors; lock-aware Sync Now | feature (Livewire + HTTP) | `php artisan test --compact tests/Feature/Filament/BusinessFolderPageTest.php` | ❌ W0 | ⬜ pending |
+| 01-07-T3 | 07 | 7 | QUAL-01 | T-01-03 | integer cents; no config read from disk outside the sync | feature + arch | `php artisan test --compact tests/Feature/Quality tests/Unit/ArchitectureTest.php` then `php artisan test --compact` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

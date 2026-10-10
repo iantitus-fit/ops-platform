@@ -30,12 +30,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The owner can open the Filament dashboard, see Contacts (list plus a timeline view) and Conversations (a thread with a reply box), type a reply that goes out through the fake channel and is stored as sent, and see the active version, files, last sync result, errors and a Sync Now button on the Business Folder page.
   5. Every inbound text or form re-renders that customer's card in `records/customers/` and updates `INDEX.md` and `open-leads.md`; two events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; and the sync never reads `records/`.
 **Phase gate** (QUAL-01): every Pest test passes, money fields are integer cents, nothing reads configuration from disk except the sync, and the two project rules (integer cents; config only through `App\Icm\ActiveConfig`) are recorded with Boost in `.ai/rules`.
-**Plans**: 3 plans (sprint-0.md's three steps; plan-phase may refine)
+**Plans**: 7 plans (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
 
 Plans:
-- [ ] 01-01: Business folder and sync: `examples/example-hvac`, `Loader`, `Validator`, `icm_versions`, `ActiveConfig`, `icm:sync`, `icm:status`, changelog writes, plus the two Boost project rules
-- [ ] 01-02: Records and the ways in: contacts, conversations, messages, activities, `TextChannel` with `FakeTextChannel` and a `TwilioTextChannel` stub, `POST /webhooks/text/fake`, `POST /leads`, `RecordInbound`, empty `ProcessInbound`, E.164 matching
-- [ ] 01-03: Screens and snapshots: Filament Contacts and Conversations resources, Business Folder page, `/dev/chat`, `CustomerCard`, queued `RenderCustomerCard`, `INDEX.md`, `open-leads.md`, `records/CLAUDE.md`, `records:rebuild`, seeder
+- [ ] 01-01-PLAN.md — Folder sync goes live: `examples/example-hvac`, `Loader`, `icm_versions`, `FolderSync`, `ActiveConfig`, `icm:sync`, `icm:status`, no-op and lock, the two Boost project rules and arch guard (ICM-01, QUAL-01)
+- [ ] 01-02-PLAN.md — Broken folder never goes live: `Validator` rule sets for all Sprint 0 types, plain-words errors, rejected versions, `changelog.md` for every attempt (ICM-02)
+- [ ] 01-03-PLAN.md — A text lands on the timeline: contacts, conversations, messages, activities, `TextChannel` with `FakeTextChannel` and `TwilioTextChannel`, `POST /webhooks/text/fake`, `RecordInbound`, `ProcessInbound`, E.164 (LEAD-01, LEAD-03)
+- [ ] 01-04-PLAN.md — Web form leads land on the same contact: `POST /leads`, matching by phone then email, first-touch attribution and cost per lead (LEAD-02, LEAD-03)
+- [ ] 01-05-PLAN.md — Customer cards in records/: `CustomerCard`, unique `RenderCustomerCard`, `INDEX.md`, `open-leads.md`, `records/CLAUDE.md`, `records:rebuild` (RECS-01)
+- [ ] 01-06-PLAN.md — Owner works from the dashboard: Conversations (thread, reply through `TextChannel`, Close/Reopen) and Contacts (list plus timeline), `FilamentUser` (LEAD-04, DASH-01)
+- [ ] 01-07-PLAN.md — `/dev/chat`, Business Folder page with Sync Now, seeder, QUAL-01 gate with the full suite green (DASH-02, DASH-01, QUAL-01)
 **UI hint**: yes
 
 **Planning notes** (from the ingest conflict report and the SPEC; settle these in discuss-phase):
@@ -93,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 0/7 | Not started | - |
 | 2. Text Front Desk | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
