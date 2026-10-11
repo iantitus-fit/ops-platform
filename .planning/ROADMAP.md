@@ -79,7 +79,60 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: TBD
+**Plans**: 17 plans (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files)
+
+Plans:
+**Wave 1**
+- [ ] 02-01-PLAN.md — Wave 0: the suite passes on Postgres and SQLite, CI runs both, stray network calls fail every test, `docs/sprints/sprint-1.md` opened (INFRA-01)
+
+**Wave 2**
+- [ ] 02-02-PLAN.md — Agent files validated and compiled by channel, provider chain, Business Folder shows the front desk (AGNT-01, AGNT-04)
+
+**Wave 3**
+- [ ] 02-03-PLAN.md — Code checks, `rules/replies.md`, fixed send vocabulary, structured `owner_alert`, business clock and `{next_open}` (GATE-01, GATE-02)
+
+**Wave 4**
+- [ ] 02-04-PLAN.md — `rules/triage.md`, fail-closed Jev driver behind `Classifier`, thresholds D-45 to D-47 (GATE-01)
+
+**Wave 5**
+- [ ] 02-05-PLAN.md — `dispatched_at` claim, debounced `ProcessInbound`, burst claim, sweep on the scheduler, form leads never reach the front desk (AGNT-02)
+
+**Wave 6**
+- [ ] 02-06-PLAN.md — Owner alerts by text: profile phone, code-built alert, after-hours timing, remembered login, warnings (GATE-01)
+
+**Wave 7**
+- [ ] 02-07-PLAN.md — The front-desk agent: whole routed files plus the fresh card, structured reply, provider fallback (AGNT-02, AGNT-04)
+
+**Wave 8**
+- [ ] 02-08-PLAN.md — Text in, reply out or draft: the three-check send rule, disclosure and sign-off, one outbound chokepoint (AGNT-02, GATE-01, GATE-02)
+
+**Wave 9**
+- [ ] 02-09-PLAN.md — Held drafts alert the owner, one live draft, the holding reply, the GATE-01 table (GATE-01, GATE-04)
+
+**Wave 10**
+- [ ] 02-10-PLAN.md — Intake answers stored and shown on the card; safe name filling (AGNT-03)
+
+**Wave 11**
+- [ ] 02-11-PLAN.md — Take over and hand back, owner reply pauses, request for a person, reply cap (GATE-03, GATE-02)
+
+**Wave 12**
+- [ ] 02-12-PLAN.md — Life-safety line: immediate, code-fixed, through a pause, then the owner (GATE-02, GATE-01)
+
+**Wave 13**
+- [ ] 02-13-PLAN.md — Approve, edit or discard a draft; phone-friendly conversation view; home screen widgets (GATE-04)
+
+**Wave 14**
+- [ ] 02-14-PLAN.md — STOP and opt-out recorded and enforced on every outbound path (TXT-01)
+
+**Wave 15**
+- [ ] 02-15-PLAN.md — Twilio driver: signed webhooks, sends, status callbacks, 21610 (TXT-01)
+
+**Wave 16**
+- [ ] 02-16-PLAN.md — Labeled data export (`gate:export`) and the phase gate on both databases (GATE-01, INFRA-01)
+
+**Wave 17** *(has a decision checkpoint)*
+- [ ] 02-17-PLAN.md — Cartographer map: inventory, Ian's ruling, catalog and cards (AGNT-02, GATE-01)
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
@@ -145,7 +198,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 0/TBD | Not started | - |
+| 2. Text Front Desk | 0/17 | Planned | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog

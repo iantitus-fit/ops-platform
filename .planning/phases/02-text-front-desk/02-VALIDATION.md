@@ -45,35 +45,37 @@ Requirement-level map from research. The planner assigns task IDs; execution fil
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | AGNT-01, D-35 | — | Broken agent file rejected in plain words; one agent per channel | feature | `php artisan test --compact --filter=AgentFile` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-08, D-09 | — | price/promise/discount/complaint can never be in `send_on_own`; unknown key rejected | feature | `php artisan test --compact --filter=SendingRulesValidation` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-10..D-12 | — | Fixed replies with dollar/discount/promise/`never_say` text rejected at sync | feature | `php artisan test --compact --filter=RepliesValidation` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | AGNT-02, D-36, D-41 | — | Agent never texts a number that has not texted in that conversation | feature | `php artisan test --compact --filter=ProcessInbound` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | AGNT-03, D-33, D-34 | — | N/A | feature | `php artisan test --compact --filter=IntakeAnswers` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | AGNT-04 | — | Provider failure falls through; all fail → owner alerted, nothing sent | feature | `php artisan test --compact --filter=AgentFallback` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | GATE-01, D-01..D-04, D-07 | — | Scripted model labelling a price reply sendable still drafts; Jev failure holds | feature + unit | `php artisan test --compact --filter=Gate` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-02 | — | Code checks are a hard veto | unit | `php artisan test --compact --filter=CodeChecks` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-03, D-05, D-06 (Jev driver) | — | Fail closed on any error/missing answer; no name or phone sent to Jev | feature | `php artisan test --compact --filter=JevClassifier` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | GATE-02 | — | Disclosure + sign-off; never a `never_say` phrase; ask for person → handoff + pause | feature | `php artisan test --compact --filter=Disclosure` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-12..D-14 | — | Holding-reply time is always true (computed from hours) | feature + unit | `php artisan test --compact --filter=FixedReplies` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-15..D-17 | — | Life-safety line sends first, even when paused; never gives repair steps | feature | `php artisan test --compact --filter=LifeSafety` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | GATE-03, D-23..D-26 | — | Paused conversation: agent sends nothing; every customer text alerts | feature | `php artisan test --compact --filter=TakeOver` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | GATE-04, D-27, D-28 | — | Replaced draft cannot be sent | feature | `php artisan test --compact --filter=DraftReview` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-18..D-22 | — | Only tappable link in an alert is ours; alert never fails silently | feature | `php artisan test --compact --filter=OwnerAlert` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-39, D-40 | — | Opt-out blocks every outbound path | feature | `php artisan test --compact --filter=OptOut` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | TXT-01 | — | Bad/missing Twilio signature → 403 | feature | `php artisan test --compact --filter=Twilio` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-42 | — | A message is never processed twice | feature | `php artisan test --compact --filter=Dispatch` | ✅ (changes) | ⬜ pending |
-| TBD | TBD | TBD | D-43 | — | A stored name is never overwritten | feature | `php artisan test --compact --filter=ContactName` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-18, D-31 | — | N/A | feature | `php artisan test --compact --filter=Profile` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-29, D-32 | — | N/A | feature + manual | `php artisan test --compact --filter=ConversationView` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-07 | — | N/A | feature | `php artisan test --compact --filter=GateExport` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | INFRA-01 | — | N/A | CI + local docker | full suite commands above | ❌ W0 | ⬜ pending |
+| 02-02-T1, 02-02-T2 | 02-02 | 2 | AGNT-01, D-35 | T-02-04, T-02-05, T-02-06 | Broken agent file rejected in plain words; one agent per channel | feature | `php artisan test --compact tests/Feature/Icm/AgentFileTest.php` | ❌ created in 02-02 | ⬜ pending |
+| 02-03-T2 | 02-03 | 3 | D-08, D-09 | T-02-07 | price/promise/discount/complaint can never be in `send_on_own`; unknown key rejected | feature | `php artisan test --compact tests/Feature/Icm/SendingRulesValidationTest.php` | ❌ created in 02-03 | ⬜ pending |
+| 02-03-T1 | 02-03 | 3 | D-10..D-12 | T-02-08 | Fixed replies with dollar/discount/promise/`never_say` text rejected at sync | feature + unit | `php artisan test --compact tests/Feature/Icm/RepliesValidationTest.php tests/Unit/SendRule/CodeChecksTest.php` | ❌ created in 02-03 | ⬜ pending |
+| 02-05-T2, 02-07-T2, 02-08-T1 | 02-05, 02-07, 02-08 | 5, 7, 8 | AGNT-02, D-36, D-41 | T-02-16, T-02-22 | Agent never texts a number that has not texted in that conversation | feature | `php artisan test --compact tests/Feature/FrontDesk/ProcessInboundTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | ❌ created in 02-07 / 02-08 | ⬜ pending |
+| 02-10-T1, 02-10-T2 | 02-10 | 10 | AGNT-03, D-33, D-34 | T-02-34, T-02-36 | N/A | feature | `php artisan test --compact tests/Feature/FrontDesk/IntakeAnswersTest.php` | ❌ created in 02-10 | ⬜ pending |
+| 02-07-T3, 02-08-T3 | 02-07, 02-08 | 7, 8 | AGNT-04 | T-02-23, T-02-29 | Provider failure falls through; all fail → owner alerted, nothing sent | feature | `php artisan test --compact tests/Feature/FrontDesk/AgentFallbackTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php` | ❌ created in 02-07 / 02-08 | ⬜ pending |
+| 02-08-T1, 02-08-T2, 02-09-T2 | 02-08, 02-09 | 8, 9 | GATE-01, D-01..D-04, D-07 | T-02-26, T-02-27, T-02-28 | Scripted model labelling a price reply sendable still drafts; Jev failure holds | feature | `php artisan test --compact tests/Feature/FrontDesk/GateTest.php tests/Feature/FrontDesk/GateVerdictTest.php tests/Feature/FrontDesk/ProcessInboundTest.php` | ❌ created in 02-08 / 02-09 | ⬜ pending |
+| 02-03-T1 | 02-03 | 3 | D-02 | T-02-08 | Code checks are a hard veto | unit | `php artisan test --compact tests/Unit/SendRule/CodeChecksTest.php` | ❌ created in 02-03 | ⬜ pending |
+| 02-04-T1, 02-04-T2, 02-04-T3 | 02-04 | 4 | D-03, D-05, D-06, D-45..D-47 (Jev driver) | T-02-10, T-02-11, T-02-12, T-02-13 | Fail closed on any error/missing answer; no name or phone sent to Jev | feature + unit | `php artisan test --compact tests/Feature/SendRule/JevClassifierTest.php tests/Unit/SendRule/TriageReadingTest.php` | ❌ created in 02-04 | ⬜ pending |
+| 02-08-T2, 02-11-T3 | 02-08, 02-11 | 8, 11 | GATE-02 | T-02-26 | Disclosure + sign-off; never a `never_say` phrase; ask for person → handoff + pause | feature | `php artisan test --compact tests/Feature/FrontDesk/DisclosureTest.php tests/Feature/FrontDesk/HandoffTest.php` | ❌ created in 02-08 / 02-11 | ⬜ pending |
+| 02-03-T3, 02-09-T3 | 02-03, 02-09 | 3, 9 | D-12..D-14 | T-02-09, T-02-32 | Holding-reply time is always true (computed from hours) | feature | `php artisan test --compact tests/Feature/Icm/BusinessClockTest.php tests/Feature/SendRule/FixedRepliesTest.php tests/Feature/FrontDesk/HoldingReplyTest.php` | ❌ created in 02-03 / 02-09 | ⬜ pending |
+| 02-12-T1, 02-12-T2 | 02-12 | 12 | D-15..D-17, D-46, D-49 | T-02-41, T-02-42, T-02-43 | Life-safety line sends first, even when paused; never gives repair steps | feature + unit | `php artisan test --compact tests/Feature/FrontDesk/LifeSafetyTest.php tests/Unit/SendRule/LifeSafetyTest.php` | ❌ created in 02-12 | ⬜ pending |
+| 02-11-T1, 02-11-T2, 02-11-T3 | 02-11 | 11 | GATE-03, D-23..D-26, D-52 | T-02-37, T-02-38 | Paused conversation: agent sends nothing; every customer text alerts | feature | `php artisan test --compact tests/Feature/FrontDesk/TakeOverTest.php tests/Feature/FrontDesk/ReplyCapTest.php` | ❌ created in 02-11 | ⬜ pending |
+| 02-09-T2, 02-13-T1 | 02-09, 02-13 | 9, 13 | GATE-04, D-27, D-28, D-54 | T-02-31, T-02-44, T-02-46 | Replaced draft cannot be sent | feature | `php artisan test --compact tests/Feature/Filament/DraftReviewTest.php tests/Feature/FrontDesk/DraftReplacementTest.php` | ❌ created in 02-09 / 02-13 | ⬜ pending |
+| 02-06-T1, 02-06-T2 | 02-06 | 6 | D-18..D-22 | T-02-17, T-02-18 | Only tappable link in an alert is ours; alert never fails silently | feature | `php artisan test --compact tests/Feature/Alerts/OwnerAlertTest.php tests/Feature/Alerts/OwnerAlertTimingTest.php` | ❌ created in 02-06 | ⬜ pending |
+| 02-14-T1, 02-14-T2, 02-14-T3 | 02-14 | 14 | D-39, D-40 | T-02-47, T-02-48, T-02-49 | Opt-out blocks every outbound path | feature + unit | `php artisan test --compact tests/Feature/Inbound/OptOutTest.php tests/Unit/Channels/TextKeywordsTest.php` | ❌ created in 02-14 | ⬜ pending |
+| 02-15-T1, 02-15-T2, 02-15-T3 | 02-15 | 15 | TXT-01 | T-02-50, T-02-51, T-02-52, T-02-53 | Bad/missing Twilio signature → 403 | feature | `php artisan test --compact tests/Feature/Channels` | ❌ created in 02-15 | ⬜ pending |
+| 02-05-T1, 02-05-T2 | 02-05 | 5 | D-42 | T-02-14, T-02-15 | A message is never processed twice | feature | `php artisan test --compact tests/Feature/Inbound/DispatchInboundTest.php tests/Feature/Inbound/SweepUndispatchedTest.php` | ✅ (FakeTextWebhookTest changes) + ❌ created in 02-05 | ⬜ pending |
+| 02-10-T2 | 02-10 | 10 | D-43 | T-02-35 | A stored name is never overwritten | feature | `php artisan test --compact tests/Feature/Inbound/ContactNameTest.php` | ❌ created in 02-10 | ⬜ pending |
+| 02-06-T3 | 02-06 | 6 | D-18, D-19, D-31 | T-02-19, T-02-21 | N/A | feature | `php artisan test --compact tests/Feature/Alerts/ProfileTest.php tests/Feature/Filament/BusinessFolderPageTest.php` | ❌ created in 02-06 | ⬜ pending |
+| 02-13-T2, 02-13-T3 | 02-13 | 13 | D-19, D-29, D-32 | T-02-45 | N/A | feature + manual | `php artisan test --compact tests/Feature/Filament/ConversationViewTest.php tests/Feature/Filament/DashboardWidgetsTest.php` | ❌ created in 02-13 | ⬜ pending |
+| 02-16-T1 | 02-16 | 16 | D-07 | T-02-54 | N/A | feature | `php artisan test --compact tests/Feature/FrontDesk/GateExportTest.php` | ❌ created in 02-16 | ⬜ pending |
+| 02-01-T1, 02-01-T2, 02-16-T2 | 02-01, 02-16 | 1, 16 | INFRA-01 | T-02-01, T-02-02, T-02-03, T-02-55 | N/A | CI + local docker | full suite commands above (SQLite and the Postgres recipe) | ❌ created in 02-01 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
 ---
 
 ## Wave 0 Requirements
+
+Plan 02-01 covers the first two items and the CI workflow; the fakes arrive with the code they stand in for (FakeClassifier in 02-04, FrontDeskAgent fakes in 02-07, the ProcessInbound queue fake in 02-08, the fake channel opt-out simulation in 02-14, Twilio payload fixtures in 02-15), and each plan creates its own test files and factories.
 
 - [ ] Fix the 17 failing tests and 1 error on Postgres (hard-coded version labels; 360-character name in a `varchar(255)`), and convert the three `type: agent` "later sprint" fixtures
 - [ ] `tests/Pest.php` safety net: `Http::preventStrayRequests()`, agent fakes that prevent stray prompts, `Classifier` bound to a fake
