@@ -55,10 +55,11 @@ class RecordInbound
 
     private function record(InboundData $data): Message
     {
+        $occurredAt = now();
         $leadSource = $this->leadSourceFor($data->source);
         $costCents = $leadSource['cost_cents_per_lead'] ?? null;
 
-        $contact = $this->findOrCreateContact($data, $costCents);
+        [$contact, $notes] = $this->matchOrCreateContact($data, $costCents);
         $conversation = $this->openConversationFor($contact);
 
         $message = $conversation->messages()->create([
@@ -80,11 +81,21 @@ class RecordInbound
             'subject_id' => $message->id,
             'lead_source_key' => $data->source,
             'cost_cents' => $costCents,
-            'occurred_at' => now(),
+            'occurred_at' => $occurredAt,
         ]);
 
-        $contact->update(['last_activity_at' => now()]);
-        $conversation->update(['last_message_at' => now()]);
+        foreach ($notes as $note) {
+            $contact->activities()->create([
+                'type' => ActivityType::Note,
+                'summary' => $note,
+                'subject_type' => $message->getMorphClass(),
+                'subject_id' => $message->id,
+                'occurred_at' => $occurredAt,
+            ]);
+        }
+
+        $contact->update(['last_activity_at' => $occurredAt]);
+        $conversation->update(['last_message_at' => $occurredAt]);
 
         return $message;
     }
@@ -101,25 +112,79 @@ class RecordInbound
             ->first();
     }
 
-    private function findOrCreateContact(InboundData $data, ?int $costCents): Contact
+    /**
+     * Find the contact this inbound belongs to, or create one.
+     *
+     * The phone is tried first, then the email. This is written out by hand rather than with
+     * Eloquent's update-or-create helper, which cannot express "phone, then email, and only
+     * fill what is empty". A stored phone or email is never overwritten: a different one the
+     * form gave becomes a note on the timeline instead. The first-touch source and cost are
+     * set only when the contact is created.
+     *
+     * @return array{Contact, list<string>} the contact and the note summaries to put on the timeline
+     */
+    private function matchOrCreateContact(InboundData $data, ?int $costCents): array
     {
-        $phone = PhoneNumber::toE164($data->phone);
+        $rawPhone = trim((string) $data->phone);
+        $phone = PhoneNumber::toE164($rawPhone);
+        $email = $this->normalizeEmail($data->email);
 
-        if ($phone !== null) {
-            $existing = Contact::query()->where('phone_e164', $phone)->first();
+        $notes = [];
 
-            if ($existing !== null) {
-                return $existing;
+        if ($rawPhone !== '' && $phone === null) {
+            $notes[] = "form gave a phone we could not read: {$rawPhone}";
+        }
+
+        $contact = $phone === null ? null : Contact::query()->where('phone_e164', $phone)->first();
+        $matchedByEmail = false;
+
+        if ($contact === null && $email !== null) {
+            $contact = Contact::query()->where('email', $email)->first();
+            $matchedByEmail = $contact !== null;
+        }
+
+        if ($contact === null) {
+            $contact = Contact::create([
+                'name' => $data->name,
+                'phone_e164' => $phone,
+                'email' => $email,
+                'status' => ContactStatus::Lead,
+                'lead_source_key' => $data->source,
+                'acquisition_cost_cents' => $costCents,
+            ]);
+
+            return [$contact, $notes];
+        }
+
+        if ($matchedByEmail && $phone !== null) {
+            if ($contact->phone_e164 === null) {
+                $contact->phone_e164 = $phone;
+            } elseif ($contact->phone_e164 !== $phone) {
+                $notes[] = "form gave a different phone: {$phone}";
             }
         }
 
-        return Contact::create([
-            'name' => $data->name,
-            'phone_e164' => $phone,
-            'status' => ContactStatus::Lead,
-            'lead_source_key' => $data->source,
-            'acquisition_cost_cents' => $costCents,
-        ]);
+        if ($email !== null) {
+            if ($contact->email === null) {
+                $contact->email = $email;
+            } elseif ($contact->email !== $email) {
+                $notes[] = "form gave a different email: {$email}";
+            }
+        }
+
+        $contact->save();
+
+        return [$contact, $notes];
+    }
+
+    /**
+     * An email as it is stored and compared: trimmed and lowercased, or null when empty.
+     */
+    private function normalizeEmail(?string $email): ?string
+    {
+        $normalized = mb_strtolower(trim((string) $email));
+
+        return $normalized === '' ? null : $normalized;
     }
 
     /**
