@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(fn () => activateExampleFolder());
@@ -211,4 +212,32 @@ it('keeps the country code of an international number written with a plus', func
     postLead($this, ['phone' => '+44 20 7946 0958', 'email' => 'uk@example.com'])->assertOk();
 
     expect(Contact::sole()->phone_e164)->toBeString()->toBe('+442079460958');
+});
+
+it('retries once when another request creates the same contact first', function () {
+    $raced = false;
+
+    // Stand in for a concurrent request: just before the first contact insert, a row with
+    // the same phone appears, so the insert hits the unique phone index. The failed
+    // transaction rolls the stand-in back, which is what the retry then recovers from.
+    Contact::creating(function (Contact $contact) use (&$raced): void {
+        if ($raced) {
+            return;
+        }
+
+        $raced = true;
+
+        DB::table('contacts')->insert([
+            'phone_e164' => $contact->phone_e164,
+            'status' => 'lead',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    });
+
+    postLead($this, ['phone' => '(202) 555-0123'])->assertOk();
+
+    expect(Contact::sole()->phone_e164)->toBe('+12025550123')
+        ->and(Message::count())->toBe(1)
+        ->and(Conversation::count())->toBe(1);
 });

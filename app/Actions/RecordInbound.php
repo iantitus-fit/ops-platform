@@ -47,9 +47,17 @@ class RecordInbound
 
         try {
             $message = DB::transaction(fn (): Message => $this->record($data));
-        } catch (UniqueConstraintViolationException $exception) {
-            // A concurrent retry won the race; its transaction recorded the message.
-            return $this->alreadyRecorded($data) ?? throw $exception;
+        } catch (UniqueConstraintViolationException) {
+            $existing = $this->alreadyRecorded($data);
+
+            if ($existing !== null) {
+                // A concurrent retry won the race; its transaction recorded the message.
+                return $existing;
+            }
+
+            // Not a duplicate message: another request created the same contact first. Its
+            // contact is committed now, so one more attempt matches it instead of creating.
+            $message = DB::transaction(fn (): Message => $this->record($data));
         }
 
         ProcessInbound::dispatch($message->id)->afterCommit();
