@@ -6,6 +6,7 @@ use App\Enums\ContactStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Icm\ActiveConfig;
+use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Models\Message;
 use Illuminate\Support\Carbon;
@@ -43,9 +44,13 @@ class RecordsWriter
      * under a different filename, such as the one from before a rename.
      *
      * @return string the path written
+     *
+     * @throws IcmFolderMissing
      */
     public function writeCard(Contact $contact): string
     {
+        $this->ensureBusinessFolderExists();
+
         $directory = $this->customersDirectory();
         $filename = $this->customerCard->filename($contact);
 
@@ -71,9 +76,13 @@ class RecordsWriter
      * Several renders run at once, each for a different customer, and both files cover everyone.
      * The database is therefore read inside the lock, never before it: whoever writes last then
      * wrote what the database held when it got the lock, and no earlier read overwrites a newer one.
+     *
+     * @throws IcmFolderMissing
      */
     public function writeSummaries(): void
     {
+        $this->ensureBusinessFolderExists();
+
         Cache::lock('records:summaries', 30)->block(10, function (): void {
             File::ensureDirectoryExists($this->customersDirectory());
 
@@ -84,9 +93,13 @@ class RecordsWriter
 
     /**
      * Write records/CLAUDE.md, the router the owner's AI reads first.
+     *
+     * @throws IcmFolderMissing
      */
     public function writeRouter(): void
     {
+        $this->ensureBusinessFolderExists();
+
         File::ensureDirectoryExists($this->root());
         File::replace($this->root().'/CLAUDE.md', $this->routerMarkdown());
     }
@@ -115,9 +128,13 @@ class RecordsWriter
      * file that belongs to no contact is removed.
      *
      * @return int how many cards were written
+     *
+     * @throws IcmFolderMissing
      */
     public function rebuild(): int
     {
+        $this->ensureBusinessFolderExists();
+
         $this->writeRouter();
         File::ensureDirectoryExists($this->customersDirectory());
 
@@ -138,6 +155,23 @@ class RecordsWriter
         $this->writeSummaries();
 
         return count($expected);
+    }
+
+    /**
+     * The records folder is created inside the business folder, never the business folder
+     * itself. Creating it would hide a wrong or unmounted ICM_PATH: the folder would then
+     * exist, holding only records/, and the sync would complain about missing files instead
+     * of the missing folder.
+     *
+     * @throws IcmFolderMissing
+     */
+    private function ensureBusinessFolderExists(): void
+    {
+        $root = (string) config('icm.path');
+
+        if (! File::isDirectory($root)) {
+            throw new IcmFolderMissing($root);
+        }
     }
 
     private function customersDirectory(): string

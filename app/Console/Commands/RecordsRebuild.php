@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Icm\Exceptions\IcmFolderMissing;
 use App\Records\RecordsWriter;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -17,7 +18,14 @@ class RecordsRebuild extends Command
      */
     public function handle(RecordsWriter $recordsWriter): int
     {
-        $count = $recordsWriter->rebuild();
+        try {
+            $count = $recordsWriter->rebuild();
+        } catch (IcmFolderMissing $exception) {
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
         $cards = Str::plural('customer card', $count);
 
         $this->info("Rebuilt {$count} {$cards}, customers/INDEX.md, open-leads.md and CLAUDE.md");

@@ -1,5 +1,6 @@
 <?php
 
+use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Records\CustomerCard;
 use App\Records\RecordsWriter;
@@ -61,4 +62,32 @@ it('leaves the sync unchanged however many records files exist', function () {
     $this->artisan('icm:sync')
         ->expectsOutputToContain('Already active: v1, no changes')
         ->assertExitCode(0);
+});
+
+it('refuses to write records when the business folder does not exist', function () {
+    $missing = icmPath();
+    File::deleteDirectory($missing);
+
+    $writer = app(RecordsWriter::class);
+    $contact = Contact::factory()->create();
+
+    foreach ([
+        fn () => $writer->writeCard($contact),
+        fn () => $writer->writeSummaries(),
+        fn () => $writer->writeRouter(),
+        fn () => $writer->rebuild(),
+    ] as $write) {
+        expect($write)->toThrow(IcmFolderMissing::class);
+    }
+
+    expect(File::exists($missing))->toBeFalse();
+});
+
+it('reports a missing business folder from records:rebuild instead of creating it', function () {
+    $missing = icmPath();
+    File::deleteDirectory($missing);
+
+    $this->artisan('records:rebuild')->assertExitCode(1);
+
+    expect(File::exists($missing))->toBeFalse();
 });
