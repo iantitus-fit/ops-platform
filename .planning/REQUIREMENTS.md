@@ -19,7 +19,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 - [x] **LEAD-01**: A text from a new number through the fake channel (`POST /webhooks/text/fake`) creates a contact, a conversation, a message and a timeline entry; a second text from the same number lands in the same conversation. (intel: REQ-inbound-text-fake)
 - [x] **LEAD-02**: A web form lead (`POST /leads`) with `source=angi` creates or matches a contact, records the source and the cost per lead from `business/lead-sources.md`, and lands on the same timeline. (intel: REQ-inbound-web-lead)
 - [x] **LEAD-03**: A text and a form from the same phone number end up on one contact. Phone numbers are stored in E.164 using giggsey/libphonenumber-for-php-lite. (intel: REQ-contact-match-by-phone)
-- [ ] **LEAD-04**: A reply the owner types in the dashboard goes out through the fake text channel and is stored as sent. (intel: REQ-owner-reply-fake-channel)
+- [x] **LEAD-04**: A reply the owner types in the dashboard goes out through the fake text channel and is stored as sent. (intel: REQ-owner-reply-fake-channel)
 
 ### Records Snapshots (Phases 1 and 3)
 
@@ -143,7 +143,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | LEAD-01 | Phase 1 | Complete |
 | LEAD-02 | Phase 1 | Complete |
 | LEAD-03 | Phase 1 | Complete |
-| LEAD-04 | Phase 1 | Pending |
+| LEAD-04 | Phase 1 | Complete |
 | RECS-01 | Phase 1 | Complete |
 | DASH-01 | Phase 1 | Pending |
 | DASH-02 | Phase 1 | Pending |

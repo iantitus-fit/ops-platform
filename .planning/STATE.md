@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Foundation
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-10-11T13:47:22.125Z"
+stopped_at: Completed 01-06-PLAN.md
+last_updated: "2026-10-11T13:58:29.669Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 01 execution started
-state_head: 0dee8ae8de23aeecdc91e966a294eb101733f097
+state_head: 512e8c10b8227617d27b66f7ace78e44ac675eba
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 01 (Foundation) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 01 execution started
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P03 | 10 min | 3 tasks | 41 files |
 | Phase 01 P04 | 5 min | 3 tasks | 10 files |
 | Phase 01 P05 | 12 min | 3 tasks | 15 files |
+| Phase 01 P06 | 8 min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 01]: [01-05] The summaries (INDEX.md, open-leads.md) are rewritten after every card render, including a deleted contact's, inside Cache::lock('records:summaries') with the database read inside the lock
 - [Phase 01]: [01-05] open-leads.md shows the phone in the Name column for a lead with no name and the raw source key in the Source column; INDEX.md shows (no name) because it has a Phone column
 - [Phase 01]: [01-05] Task 2 tests were characterization tests (Task 1 GREEN already covered the behavior); mutation checks stand in for RED. Reply labeling on the card relies on a ReplySent activity whose subject is the message, which plan 01-06 must write
+- [Phase 01]: [01-06] SendOwnerReply refuses on conversation state first (closed, then no phone) and on the body second (empty, then over 1,600 characters); a failed send keeps the message as failed with the error in meta, adds a Reply not sent note, and leaves the owner's text in the box
+- [Phase 01]: [01-06] Owner replies are stored queued and set sent only after TextChannel::send returns an id; plan 01-07 and Phase 2 takeover should call SendOwnerReply rather than write outbound messages themselves
+- [Phase 01]: [01-06] Pest test helpers are global functions across the whole suite: a name reused in two test files aborts the full run (caught by timelineEntry); give each helper a file-specific name
+- [Phase 01]: [01-06] Task 3 human-check (browser walk of /admin: contacts, timeline, reply, close and reopen) not run by the executor; recorded in .planning/WINDOWS.md for phase UAT. Thread and reply box styling is inline and Filament components only
 
 ### Pending Todos
 
@@ -114,6 +119,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-11T13:47:22.106Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-10-11T13:58:29.647Z
+Stopped at: Completed 01-06-PLAN.md
 Resume file: None
