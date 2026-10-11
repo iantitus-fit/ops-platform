@@ -1,6 +1,11 @@
 <?php
 
+use App\Enums\SyncOutcome;
+use App\Icm\FolderSync;
+use App\Models\IcmVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -16,6 +21,15 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
+
+        File::copyDirectory(base_path('examples/example-hvac'), $folder);
+        config(['icm.path' => $folder]);
+    })
+    ->afterEach(function () {
+        File::deleteDirectory(config('icm.path'));
+    })
     ->in('Feature');
 
 /*
@@ -47,4 +61,43 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Absolute path inside this test's temporary copy of the example business folder.
+ */
+function icmPath(string $relative = ''): string
+{
+    return rtrim(config('icm.path').'/'.ltrim($relative, '/'), '/');
+}
+
+/**
+ * Run the real sync against the temporary folder and return the version it made live.
+ */
+function activateExampleFolder(): IcmVersion
+{
+    $result = app(FolderSync::class)->run();
+
+    expect($result->outcome)->toBe(SyncOutcome::Activated);
+
+    return $result->version;
+}
+
+/**
+ * Rewrite one file of the temporary folder by passing its contents through $mutate.
+ *
+ * @param  callable(string): string  $mutate
+ */
+function breakFile(string $relative, callable $mutate): void
+{
+    File::put(icmPath($relative), $mutate(File::get(icmPath($relative))));
+}
+
+/**
+ * Write a file into the temporary folder, creating any missing directories.
+ */
+function writeIcmFile(string $relative, string $contents): void
+{
+    File::ensureDirectoryExists(dirname(icmPath($relative)));
+    File::put(icmPath($relative), $contents);
 }
