@@ -76,9 +76,11 @@ class Loader
         try {
             $frontMatter = Yaml::parse($yaml, Yaml::PARSE_DATETIME);
         } catch (ParseException $exception) {
-            $line = $exception->getParsedLine() >= 0 ? ' (line '.($exception->getParsedLine() + 1).')' : '';
+            if ($exception->getParsedLine() >= 0) {
+                $exception->setParsedLine($exception->getParsedLine() + 1);
+            }
 
-            return $this->unrecognized($path, $raw, 'unreadable:'.$exception->getRawMessage().$line, $body);
+            return $this->unrecognized($path, $raw, 'unreadable:'.$exception->getMessage(), $body);
         }
 
         if ($frontMatter === null) {
