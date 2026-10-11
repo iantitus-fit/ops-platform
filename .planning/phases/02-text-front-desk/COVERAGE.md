@@ -1,6 +1,6 @@
 # API Coverage — Phase 2 Text Front Desk
 
-> Full coverage by default. Opt-outs are explicit, reasoned decisions. Three external surfaces: Twilio Programmable Messaging (plans 02-14, 02-15), Jev through TypeSafe's System One API on OpenRouter (plan 02-04), and the reply models through laravel/ai (plans 02-07, 02-08).
+> Full coverage by default. Opt-outs are explicit, reasoned decisions. Three external surfaces: Twilio Programmable Messaging (plans 02-24 to 02-27), Jev through TypeSafe's System One API on OpenRouter (plans 02-06, 02-07), and the reply models through laravel/ai (plans 02-13 to 02-15).
 
 ## Twilio Programmable Messaging
 
@@ -17,7 +17,7 @@
 | twilio: fetch or list messages | OPT-OUT | not needed yet: status callbacks keep delivery state; no reconciliation job in Phase 2 |
 | twilio: delete or redact messages | OPT-OUT | not needed yet: no retention policy has been decided |
 | twilio: scheduled messages (SendAt) | OPT-OUT | explicitly out of scope: reminders are Phase 3 and use the app's scheduler |
-| twilio: Messaging Service management API | OPT-OUT | not needed: one-time console setup by Ian (plan 02-15 user_setup) |
+| twilio: Messaging Service management API | OPT-OUT | not needed: one-time console setup by Ian (plan 02-26 user_setup) |
 | twilio: phone number provisioning API | OPT-OUT | not needed: Ian's test number is registered by hand |
 | twilio: A2P 10DLC registration API | OPT-OUT | explicitly out of scope: done in the console; it gates going live, not the build (DEC-05) |
 | twilio: Lookup API | OPT-OUT | not needed: libphonenumber already normalises to E.164 |
