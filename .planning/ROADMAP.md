@@ -13,13 +13,14 @@ Ops Platform is a client-owned operating system where the business runs from a f
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0)
+- [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [ ] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1)
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
 ## Phase Details
 
 ### Phase 1: Foundation
+
 **Goal**: The folder drives the app, and every way a lead can arrive lands on one timeline that the owner can work from and the owner's own AI can read. No AI replies and no real texting yet.
 **Depends on**: Nothing (first phase)
 **Requirements**: ICM-01, ICM-02, LEAD-01, LEAD-02, LEAD-03, LEAD-04, RECS-01, DASH-01, DASH-02, QUAL-01
@@ -29,13 +30,32 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A text from a new number through the fake channel (including from the local-only `/dev/chat` page, which returns 404 elsewhere) creates a contact, conversation, message and timeline entry; a second text joins the same conversation; and a web form lead with `source=angi` from the same phone number lands on the same contact with the source and cost per lead from `business/lead-sources.md`.
   4. The owner can open the Filament dashboard, see Contacts (list plus a timeline view) and Conversations (a thread with a reply box), type a reply that goes out through the fake channel and is stored as sent, and see the active version, files, last sync result, errors and a Sync Now button on the Business Folder page.
   5. Every inbound text or form re-renders that customer's card in `records/customers/` and updates `INDEX.md` and `open-leads.md`; two events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; and the sync never reads `records/`.
+
 **Phase gate** (QUAL-01): every Pest test passes, money fields are integer cents, nothing reads configuration from disk except the sync, and the two project rules (integer cents; config only through `App\Icm\ActiveConfig`) are recorded with Boost in `.ai/rules`.
-**Plans**: 3 plans (sprint-0.md's three steps; plan-phase may refine)
+**Plans**: 7/7 plans complete (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
 
 Plans:
-- [ ] 01-01: Business folder and sync: `examples/example-hvac`, `Loader`, `Validator`, `icm_versions`, `ActiveConfig`, `icm:sync`, `icm:status`, changelog writes, plus the two Boost project rules
-- [ ] 01-02: Records and the ways in: contacts, conversations, messages, activities, `TextChannel` with `FakeTextChannel` and a `TwilioTextChannel` stub, `POST /webhooks/text/fake`, `POST /leads`, `RecordInbound`, empty `ProcessInbound`, E.164 matching
-- [ ] 01-03: Screens and snapshots: Filament Contacts and Conversations resources, Business Folder page, `/dev/chat`, `CustomerCard`, queued `RenderCustomerCard`, `INDEX.md`, `open-leads.md`, `records/CLAUDE.md`, `records:rebuild`, seeder
+**Wave 1**
+- [x] 01-01-PLAN.md — Folder sync goes live: `examples/example-hvac`, `Loader`, `icm_versions`, `FolderSync`, `ActiveConfig`, `icm:sync`, `icm:status`, no-op and lock, the two Boost project rules and arch guard (ICM-01, QUAL-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01-02-PLAN.md — Broken folder never goes live: `Validator` rule sets for all Sprint 0 types, plain-words errors, rejected versions, `changelog.md` for every attempt (ICM-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01-03-PLAN.md — A text lands on the timeline: contacts, conversations, messages, activities, `TextChannel` with `FakeTextChannel` and `TwilioTextChannel`, `POST /webhooks/text/fake`, `RecordInbound`, `ProcessInbound`, E.164 (LEAD-01, LEAD-03)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 01-04-PLAN.md — Web form leads land on the same contact: `POST /leads`, matching by phone then email, first-touch attribution and cost per lead (LEAD-02, LEAD-03)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 01-05-PLAN.md — Customer cards in records/: `CustomerCard`, unique `RenderCustomerCard`, `INDEX.md`, `open-leads.md`, `records/CLAUDE.md`, `records:rebuild` (RECS-01)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 01-06-PLAN.md — Owner works from the dashboard: Conversations (thread, reply through `TextChannel`, Close/Reopen) and Contacts (list plus timeline), `FilamentUser` (LEAD-04, DASH-01)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 01-07-PLAN.md — `/dev/chat`, Business Folder page with Sync Now, seeder, QUAL-01 gate with the full suite green (DASH-02, DASH-01, QUAL-01)
+
 **UI hint**: yes
 
 **Planning notes** (from the ingest conflict report and the SPEC; settle these in discuss-phase):
@@ -47,6 +67,7 @@ Plans:
 - Each new Laravel concept gets a short walk-through the first time it appears, logged in docs/sprints/sprint-0.md under "Walk-through log".
 
 ### Phase 2: Text Front Desk
+
 **Goal**: A customer who texts gets a reply that moves the conversation forward without the owner, from an agent defined in a file, and nothing risky is ever sent without the owner.
 **Depends on**: Phase 1
 **Requirements**: AGNT-01, AGNT-02, AGNT-03, AGNT-04, GATE-01, GATE-02, GATE-03, GATE-04, TXT-01, INFRA-01
@@ -56,6 +77,7 @@ Plans:
   3. The owner can take over a conversation so the agent stops replying until it is handed back, and can approve, edit and send, or discard a draft from the dashboard; a customer who asks for a person is handed to the `escalate_to` contact.
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -68,6 +90,7 @@ Plans:
 - Per the SPEC, a cartographer map starts in this sprint.
 
 ### Phase 3: Booking and the Gate
+
 **Goal**: A customer can finish the conversation by booking a time, the owner sees and is told about it, and no folder change goes live until scripted customers have walked through it.
 **Depends on**: Phase 2
 **Requirements**: BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05, BOOK-06, RECS-02, WALK-01, WALK-02, WALK-03
@@ -77,6 +100,7 @@ Plans:
   3. The minutes from a contact's first message to their booked appointment are shown on the contact and in a dashboard summary.
   4. Every sync runs each scripted customer in `tests/*.md` against the candidate version; after a change that breaks one (for example the agent would now quote a price, or the expected time is no longer offered) the sync fails, names the test and the check that failed in plain words, keeps the previous version live, writes the attempt to `changelog.md` and shows it on the Business Folder page.
   5. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted and the card and records updated.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -93,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 

@@ -1,6 +1,11 @@
 <?php
 
+use App\Enums\SyncOutcome;
+use App\Icm\FolderSync;
+use App\Models\IcmVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -16,6 +21,17 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
+
+        File::copyDirectory(base_path('examples/example-hvac'), $folder);
+        File::delete($folder.'/changelog.md');
+        resetRecordsToTrackedFiles($folder.'/records');
+        config(['icm.path' => $folder]);
+    })
+    ->afterEach(function () {
+        File::deleteDirectory(config('icm.path'));
+    })
     ->in('Feature');
 
 /*
@@ -47,4 +63,79 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Strip a copied records/ folder back to the two files git tracks there. Cards and summaries
+ * that a local run wrote into examples/example-hvac/records/ would otherwise leak into tests.
+ */
+function resetRecordsToTrackedFiles(string $records): void
+{
+    $trackedFiles = ['CLAUDE.md', 'README.md'];
+
+    foreach (File::directories($records) as $directory) {
+        File::deleteDirectory($directory);
+    }
+
+    foreach (File::files($records, true) as $file) {
+        if (! in_array($file->getFilename(), $trackedFiles, true)) {
+            File::delete($file->getPathname());
+        }
+    }
+}
+
+/**
+ * Absolute path inside this test's temporary copy of the example business folder.
+ */
+function icmPath(string $relative = ''): string
+{
+    return rtrim(config('icm.path').'/'.ltrim($relative, '/'), '/');
+}
+
+/**
+ * Run the real sync against the temporary folder and return the version it made live.
+ */
+function activateExampleFolder(): IcmVersion
+{
+    $result = app(FolderSync::class)->run();
+
+    expect($result->outcome)->toBe(SyncOutcome::Activated);
+
+    return $result->version;
+}
+
+/**
+ * Rewrite one file of the temporary folder by passing its contents through $mutate.
+ *
+ * @param  callable(string): string  $mutate
+ */
+function breakFile(string $relative, callable $mutate): void
+{
+    File::put(icmPath($relative), $mutate(File::get(icmPath($relative))));
+}
+
+/**
+ * Write a file into the temporary folder, creating any missing directories.
+ */
+function writeIcmFile(string $relative, string $contents): void
+{
+    File::ensureDirectoryExists(dirname(icmPath($relative)));
+    File::put(icmPath($relative), $contents);
+}
+
+/**
+ * A Twilio-shaped form body for the fake text webhook. Give each text its own MessageSid.
+ *
+ * @param  array<string, string>  $overrides
+ * @return array<string, string>
+ */
+function fakeTextPayload(array $overrides = []): array
+{
+    return array_merge([
+        'MessageSid' => 'SM'.str_repeat('c', 32),
+        'From' => '+12025550123',
+        'To' => '+13125550147',
+        'Body' => 'My AC is blowing warm air',
+        'NumMedia' => '0',
+    ], $overrides);
 }

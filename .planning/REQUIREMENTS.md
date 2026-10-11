@@ -11,29 +11,29 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 ### Business Folder and Sync (Phase 1)
 
-- [ ] **ICM-01**: `php artisan icm:sync` reads `examples/example-hvac`, compiles a version and makes it active; `php artisan icm:status` shows the active version, its file count and when it went live. (intel: REQ-icm-sync-activate)
-- [ ] **ICM-02**: A broken folder change never goes live. Deleting a required field or setting `price_policy: maybe` makes the sync fail with a message that names the file and the field in plain words, the previous version stays active, and the failure is appended to the folder's `changelog.md`. (intel: REQ-icm-sync-reject-broken)
+- [x] **ICM-01**: `php artisan icm:sync` reads `examples/example-hvac`, compiles a version and makes it active; `php artisan icm:status` shows the active version, its file count and when it went live. (intel: REQ-icm-sync-activate)
+- [x] **ICM-02**: A broken folder change never goes live. Deleting a required field or setting `price_policy: maybe` makes the sync fail with a message that names the file and the field in plain words, the previous version stays active, and the failure is appended to the folder's `changelog.md`. (intel: REQ-icm-sync-reject-broken)
 
 ### Inbound and Timeline (Phase 1)
 
-- [ ] **LEAD-01**: A text from a new number through the fake channel (`POST /webhooks/text/fake`) creates a contact, a conversation, a message and a timeline entry; a second text from the same number lands in the same conversation. (intel: REQ-inbound-text-fake)
-- [ ] **LEAD-02**: A web form lead (`POST /leads`) with `source=angi` creates or matches a contact, records the source and the cost per lead from `business/lead-sources.md`, and lands on the same timeline. (intel: REQ-inbound-web-lead)
-- [ ] **LEAD-03**: A text and a form from the same phone number end up on one contact. Phone numbers are stored in E.164 using giggsey/libphonenumber-for-php-lite. (intel: REQ-contact-match-by-phone)
-- [ ] **LEAD-04**: A reply the owner types in the dashboard goes out through the fake text channel and is stored as sent. (intel: REQ-owner-reply-fake-channel)
+- [x] **LEAD-01**: A text from a new number through the fake channel (`POST /webhooks/text/fake`) creates a contact, a conversation, a message and a timeline entry; a second text from the same number lands in the same conversation. (intel: REQ-inbound-text-fake)
+- [x] **LEAD-02**: A web form lead (`POST /leads`) with `source=angi` creates or matches a contact, records the source and the cost per lead from `business/lead-sources.md`, and lands on the same timeline. (intel: REQ-inbound-web-lead)
+- [x] **LEAD-03**: A text and a form from the same phone number end up on one contact. Phone numbers are stored in E.164 using giggsey/libphonenumber-for-php-lite. (intel: REQ-contact-match-by-phone)
+- [x] **LEAD-04**: A reply the owner types in the dashboard goes out through the fake text channel and is stored as sent. (intel: REQ-owner-reply-fake-channel)
 
 ### Records Snapshots (Phases 1 and 3)
 
-- [ ] **RECS-01**: Every inbound text or form re-renders that customer's card in `records/customers/` from the database and updates `INDEX.md` and `open-leads.md`; two inbound events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; the sync ignores `records/`. (intel: REQ-records-render-customer-card) Phase 1
+- [x] **RECS-01**: Every inbound text or form re-renders that customer's card in `records/customers/` from the database and updates `INDEX.md` and `open-leads.md`; two inbound events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; the sync ignores `records/`. (intel: REQ-records-render-customer-card) Phase 1
 - [ ] **RECS-02**: `records/today.md` (the schedule) is rendered from appointments on every booking change, and a nightly full rebuild of `records/` is scheduled to catch anything missed. *(derived: SPEC "The bridge" lists today.md and the nightly rebuild; Sprint 0 builds neither, and Sprint 2 introduces the scheduler)* Phase 3
 
 ### Dashboard (Phase 1)
 
-- [ ] **DASH-01**: Filament dashboard screens: Contacts (list plus a timeline view), Conversations (thread with a reply box), and a Business Folder page (active version, files, last sync result, errors, a Sync Now button). (intel: REQ-dashboard-screens)
-- [ ] **DASH-02**: A local-only test chat page at `/dev/chat` lets Ian text "as a customer" through the fake webhook and watch the thread update; it returns 404 outside the local environment. (intel: REQ-dev-chat-page)
+- [x] **DASH-01**: Filament dashboard screens: Contacts (list plus a timeline view), Conversations (thread with a reply box), and a Business Folder page (active version, files, last sync result, errors, a Sync Now button). (intel: REQ-dashboard-screens)
+- [x] **DASH-02**: A local-only test chat page at `/dev/chat` lets Ian text "as a customer" through the fake webhook and watch the thread update; it returns 404 outside the local environment. (intel: REQ-dev-chat-page)
 
 ### Quality Bar (Phase 1)
 
-- [ ] **QUAL-01**: Every Pest test passes. Money fields are integer cents. Nothing reads configuration from disk except the sync. Two project rules are recorded with Boost in `.ai/rules`: all money values are integer cents, never floats; application code reads business configuration only through `App\Icm\ActiveConfig`. (intel: REQ-suite-green-money-config-rules)
+- [x] **QUAL-01**: Every Pest test passes. Money fields are integer cents. Nothing reads configuration from disk except the sync. Two project rules are recorded with Boost in `.ai/rules`: all money values are integer cents, never floats; application code reads business configuration only through `App\Icm\ActiveConfig`. (intel: REQ-suite-green-money-config-rules)
 
 ### Text Front Desk (Phase 2)
 
@@ -138,16 +138,16 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ICM-01 | Phase 1 | Pending |
-| ICM-02 | Phase 1 | Pending |
-| LEAD-01 | Phase 1 | Pending |
-| LEAD-02 | Phase 1 | Pending |
-| LEAD-03 | Phase 1 | Pending |
-| LEAD-04 | Phase 1 | Pending |
-| RECS-01 | Phase 1 | Pending |
-| DASH-01 | Phase 1 | Pending |
-| DASH-02 | Phase 1 | Pending |
-| QUAL-01 | Phase 1 | Pending |
+| ICM-01 | Phase 1 | Complete |
+| ICM-02 | Phase 1 | Complete |
+| LEAD-01 | Phase 1 | Complete |
+| LEAD-02 | Phase 1 | Complete |
+| LEAD-03 | Phase 1 | Complete |
+| LEAD-04 | Phase 1 | Complete |
+| RECS-01 | Phase 1 | Complete |
+| DASH-01 | Phase 1 | Complete |
+| DASH-02 | Phase 1 | Complete |
+| QUAL-01 | Phase 1 | Complete |
 | AGNT-01 | Phase 2 | Pending |
 | AGNT-02 | Phase 2 | Pending |
 | AGNT-03 | Phase 2 | Pending |

@@ -46,8 +46,9 @@ Space toggles an item, Enter confirms. The answers for this project:
 - Agents: Claude Code and Codex (Codex reads AGENTS.md, which points it at
   CLAUDE.md's project rules).
 
-Boost rewrites only the block between the `<laravel-boost-guidelines>` tags in
-CLAUDE.md and AGENTS.md; the project sections above the tags stay. It saves
+Boost rewrites only its own block in CLAUDE.md and AGENTS.md, starting from the
+first place its tag name appears. Keep that tag name out of the project sections
+above the block, or Boost overwrites them too (it did once). It saves
 these answers in `boost.json` (committed), so rerunning `boost:install` later
 starts from them.
 

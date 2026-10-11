@@ -1,36 +1,43 @@
 ---
-gsd_state_version: '1.0'
+gsd_state_version: "1.0"
+current_phase: 2
+current_phase_name: Text Front Desk
 status: planning
+stopped_at: Phase 01 complete, ready to plan Phase 2
+last_updated: "2026-10-11T18:27:36.198Z"
+last_activity: 2026-10-11
+last_activity_desc: Phase 01 complete, transitioned to Phase 2
+state_head: d79bd625107ba5bfef0628dca4b5d29ec9d73e67
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 7
+  completed_plans: 7
+  percent: 33
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10)
+See: .planning/PROJECT.md (updated 2026-10-11)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 1: Foundation (SPEC Sprint 0)
+**Current focus:** Phase 2 — Text Front Desk
 
 ## Current Position
 
-Phase: 1 of 3 (Foundation)
-Plan: 0 of 3 in current phase (plans sketched in ROADMAP.md, not yet created)
+Phase: 2 — Text Front Desk
+Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-10 — Roadmap, requirements and state created from ingested docs (3 phases, 30 v1 requirements, 4 backlog phases)
+Last activity: 2026-10-11 — Phase 01 complete, transitioned to Phase 2
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 7
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -38,13 +45,24 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 7 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
 - Trend: -
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 8 min | 3 tasks | 52 files |
+| Phase 01 P02 | 8 min | 3 tasks | 11 files |
+| Phase 01 P03 | 10 min | 3 tasks | 41 files |
+| Phase 01 P04 | 5 min | 3 tasks | 10 files |
+| Phase 01 P05 | 12 min | 3 tasks | 15 files |
+| Phase 01 P06 | 8 min | 3 tasks | 22 files |
+| Phase 01 P07 | 10 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -57,6 +75,28 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [DEC-03]: Records are written to the database first; `records/` cards are rendered from the database and are read-only
 - [DEC-06]: SQLite in Sprint 0; Postgres in CI from Sprint 1 (Phase 2)
 - [DEC-05]: Fake text channel; the build does not wait on A2P
+- [Phase 01]: [01-01] vN version label is the icm_versions row id; router files (CLAUDE.md, CONTEXT.md, START-HERE.md) are fingerprinted so editing one mints a version
+- [Phase 01]: [01-01] ActiveConfig singleton accessors assume business, hours, lead_sources, voice and sending_rules each exist once; plan 01-02 validator must enforce it
+- [Phase 01]: [01-02] A single-instance type (business, hours, lead sources, voice, sending rules) is owned by the file at its usual path; any other file with that type gets the already-used-by error
+- [Phase 01]: [01-02] Echoed owner values are cut to 80 characters total with line breaks collapsed (PlainWords::oneLine), so changelog.md stays one bullet per error
+- [Phase 01]: [01-02] Each rejected sync attempt stores its own rejected icm_versions row; the Business Folder page (01-07) should show only the newest
+- [Phase 01]: [01-03] A rejected fake-webhook post (missing or unreadable From) answers a JSON 422 via FormRequest failedValidation(); the default for a caller that does not ask for JSON is a 302 redirect
+- [Phase 01]: [01-03] TextChannel is bound with bind() so each resolution reads channels.text.driver; FakeTextChannel stays a singleton so sent() persists; plan 01-04 must add leads to the forgery exemption in bootstrap/app.php
+- [Phase 01]: [01-03] Contact creation is not wrapped in a savepoint (only the open conversation is); two concurrent first texts from one new number give the second a 500 and the provider retry succeeds; revisit when Twilio goes live in Phase 2
+- [Phase 01]: [01-04] A rejected lead answers a JSON 422 for any caller via failedValidation() in StoreLeadRequest; the default for a plain form post is a 302 redirect
+- [Phase 01]: [01-04] Note activities are written after the message so each carries the message as subject and the touch's occurred_at; a known cost of 0 (referral) is stored as 0 and null means unknown
+- [Phase 01]: [01-04] Filling an empty email does not check whether another contact already owns it (accepted in the plan's flagged assumptions); FA-1 form field names still to confirm with Ian
+- [Phase 01]: [01-05] The summaries (INDEX.md, open-leads.md) are rewritten after every card render, including a deleted contact's, inside Cache::lock('records:summaries') with the database read inside the lock
+- [Phase 01]: [01-05] open-leads.md shows the phone in the Name column for a lead with no name and the raw source key in the Source column; INDEX.md shows (no name) because it has a Phone column
+- [Phase 01]: [01-05] Task 2 tests were characterization tests (Task 1 GREEN already covered the behavior); mutation checks stand in for RED. Reply labeling on the card relies on a ReplySent activity whose subject is the message, which plan 01-06 must write
+- [Phase 01]: [01-06] SendOwnerReply refuses on conversation state first (closed, then no phone) and on the body second (empty, then over 1,600 characters); a failed send keeps the message as failed with the error in meta, adds a Reply not sent note, and leaves the owner's text in the box
+- [Phase 01]: [01-06] Owner replies are stored queued and set sent only after TextChannel::send returns an id; plan 01-07 and Phase 2 takeover should call SendOwnerReply rather than write outbound messages themselves
+- [Phase 01]: [01-06] Pest test helpers are global functions across the whole suite: a name reused in two test files aborts the full run (caught by timelineEntry); give each helper a file-specific name
+- [Phase 01]: [01-06] Task 3 human-check (browser walk of /admin: contacts, timeline, reply, close and reopen) not run by the executor; recorded in .planning/WINDOWS.md for phase UAT. Thread and reply box styling is inline and Filament components only
+- [Phase 01]: [01-07] Sync Now escapes each rejected error line with e() before it goes in the Filament notification body, because Filament sanitizes the body but still allows a safe subset of HTML
+- [Phase 01]: [01-07] The money guard skips only Laravel's job_batches table (total_jobs is a job count); every other table and column is checked
+- [Phase 01]: [01-07] phpunit.xml sets memory_limit 512M because the suite outgrew PHP's 128M CLI default at about 260 tests
+- [Phase 01]: [01-07] Seeded Dana Whitfield shares +12025550123 with the /dev/chat default From, so a dev-chat text joins her thread; Pest arch rules over a list of function names check nothing, use one arch() per function
 
 ### Pending Todos
 
@@ -64,9 +104,9 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1]: `boost.json`, `.mcp.json` and `AGENTS.md` exist, so `boost:install` looks done, but `.ai/rules` does not exist. The two project rules (integer cents; config only through `ActiveConfig`) still need recording. Confirm with Ian.
-- [Phase 1]: `.planning/config.json` does not exist yet. docs/SETUP.md step 9 sets `workflow.use_worktrees false`, `git.branching_strategy phase`, `workflow.tdd_mode true` and `workflow.test_command "php artisan test"`; apply before executing.
-- [Phase 1]: Validator behavior for `README.md`, untyped orientation files and later-sprint file types needs a decision (ROADMAP.md Phase 1 planning notes; suggested default: ignore or skip them).
+- [Phase 1, carried]: Open review items WR-02, WR-11 and WR-13 are deferred with reasons in 01-REVIEW-DISPOSITION.md; threats T-01-36 and T-01-37 stay open until first deploy (01-SECURITY.md).
+- [Phase 1, carried]: UAT notes (01-UAT.md), not issues: owner and customer messages look alike; reply box has no inner padding; a stale Reopen disappears with no message; Business Folder's "8 files" leaves out the 5 router files; the card labels the "closed by owner" note as customer-supplied; the web form quote keeps a name's HTML raw; a read-only folder shows PHP's raw tempnam() message.
+- [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
@@ -84,6 +124,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10
-Stopped at: Roadmap created from ingest; awaiting orchestrator review and commit
+Last session: 2026-10-11T18:30:00Z
+Stopped at: Phase 01 complete, ready to plan Phase 2
 Resume file: None
