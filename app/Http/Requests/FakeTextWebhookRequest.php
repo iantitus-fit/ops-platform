@@ -4,7 +4,9 @@ namespace App\Http\Requests;
 
 use App\Support\PhoneNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Validator;
 
 class FakeTextWebhookRequest extends FormRequest
@@ -51,5 +53,17 @@ class FakeTextWebhookRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    /**
+     * Answer a rejected text with a 422 and the errors as JSON. Twilio does not ask for
+     * JSON, and the default would redirect it to a page that does not exist.
+     */
+    protected function failedValidation(ValidatorContract $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => $validator->errors()->first(),
+            'errors' => $validator->errors(),
+        ], 422));
     }
 }
