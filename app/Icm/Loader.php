@@ -52,6 +52,7 @@ class Loader
 
         $finder = (new Finder)->files()->in($root)->name('*.md')
             ->notPath('#^records(/|$)#')
+            ->filter(fn (SplFileInfo $file) => ! $file->isLink())
             ->filter(fn (SplFileInfo $file) => $this->relativePath($file) !== 'changelog.md')
             ->sortByName();
 
