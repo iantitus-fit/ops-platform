@@ -10,7 +10,6 @@ use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Message;
 use Livewire\Livewire;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 it('returns 404 for the dev chat page outside the local environment', function () {
     $this->get('/dev/chat')->assertNotFound();
@@ -47,7 +46,7 @@ it('records a text from the dev chat as a customer text on the timeline', functi
 });
 
 it('refuses to mount the dev chat component outside the local environment', function () {
-    expect(fn () => Livewire::test(DevChat::class))->toThrow(HttpException::class);
+    Livewire::test(DevChat::class)->assertStatus(404);
 });
 
 it('refuses to send from the dev chat component outside the local environment', function () {
@@ -56,7 +55,8 @@ it('refuses to send from the dev chat component outside the local environment', 
 
     $this->app['env'] = 'production';
 
-    expect(fn () => $component->call('send'))->toThrow(HttpException::class);
+    $component->call('send')->assertStatus(404);
+
     expect(Message::query()->count())->toBe(0);
 });
 
