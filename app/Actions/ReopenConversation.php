@@ -25,12 +25,19 @@ class ReopenConversation
     /**
      * Reopen a closed conversation, unless its customer already has an open one: a customer
      * never has two open conversations. The database's partial unique index backs this check
-     * up if another conversation opens at the same moment.
+     * up if another conversation opens at the same moment. A conversation that is already open
+     * is left alone, so a second tab cannot add a duplicate "reopened" note.
      *
      * @throws DomainException when the customer already has an open conversation
      */
     public function handle(Conversation $conversation): void
     {
+        $conversation->refresh();
+
+        if ($conversation->status === ConversationStatus::Open) {
+            return;
+        }
+
         $contact = $conversation->contact;
 
         $refusal = ($contact->name ?: $contact->phone_e164 ?: $contact->email ?: 'This customer')

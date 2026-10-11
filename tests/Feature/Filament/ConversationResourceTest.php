@@ -92,3 +92,38 @@ it('announces that the customer record changed when a conversation is closed or 
 
     Event::assertDispatchedTimes(CustomerRecordChanged::class, 2);
 });
+
+it('does nothing when a conversation that is already closed is closed again', function () {
+    $conversation = Conversation::factory()->create();
+    $stale = Conversation::query()->findOrFail($conversation->id);
+
+    app(CloseConversation::class)->handle($conversation);
+    $closedAt = $conversation->fresh()->closed_at;
+
+    Event::fake([CustomerRecordChanged::class]);
+    $this->travel(5)->minutes();
+
+    // The second tab still holds the record as it was when it was open.
+    app(CloseConversation::class)->handle($stale);
+
+    expect($conversation->fresh()->closed_at->equalTo($closedAt))->toBeTrue()
+        ->and($conversation->contact->activities()->where('type', ActivityType::Note)->count())->toBe(1);
+
+    Event::assertNotDispatched(CustomerRecordChanged::class);
+});
+
+it('does nothing when a conversation that is already open is reopened again', function () {
+    $conversation = Conversation::factory()->closed()->create();
+    $stale = Conversation::query()->findOrFail($conversation->id);
+
+    app(ReopenConversation::class)->handle($conversation);
+
+    Event::fake([CustomerRecordChanged::class]);
+
+    app(ReopenConversation::class)->handle($stale);
+
+    expect($conversation->fresh()->status)->toBe(ConversationStatus::Open)
+        ->and($conversation->contact->activities()->where('type', ActivityType::Note)->count())->toBe(1);
+
+    Event::assertNotDispatched(CustomerRecordChanged::class);
+});
