@@ -2,6 +2,7 @@
 
 use App\Actions\SendOwnerReply;
 use App\Channels\FakeTextChannel;
+use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
@@ -14,6 +15,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
@@ -188,24 +190,29 @@ it('refuses a reply when the conversation was closed after the page loaded', fun
 
 it('stores a reply the text channel could not send as failed and never as sent', function () {
     $conversation = openConversationWithQuestion();
-    config(['channels.text.driver' => 'twilio']);
+    $this->app->bind(TextChannel::class, fn () => new class extends FakeTextChannel
+    {
+        public function send(string $toE164, string $body): string
+        {
+            throw new RuntimeException('Carrier rejected the number');
+        }
+    });
     Event::fake([CustomerRecordChanged::class]);
 
     Livewire::test(ConversationThread::class, ['conversation' => $conversation])
         ->set('body', 'Tuesday at 9 works')
-        ->call('sendReply');
+        ->call('sendReply')
+        ->assertNotified(Notification::make()->title('The reply was not sent: Carrier rejected the number')->danger())
+        ->assertSet('body', 'Tuesday at 9 works');
 
     $reply = Message::query()->where('direction', MessageDirection::Out)->sole();
-    $notification = collect(session('filament.notifications'))->first();
 
     expect($reply->status)->toBe(MessageStatus::Failed)
-        ->and($reply->meta['error'])->toContain('Twilio')
+        ->and($reply->meta['error'])->toBe('Carrier rejected the number')
         ->and($reply->provider_message_id)->toBeNull()
         ->and(Message::query()->where('status', MessageStatus::Sent)->exists())->toBeFalse()
-        ->and($notification['status'])->toBe('danger')
-        ->and($notification['title'])->toStartWith('The reply was not sent:')
         ->and($conversation->contact->activities()->where('type', ActivityType::Note)->sole()->summary)
-        ->toStartWith('Reply not sent:')
+        ->toBe('Reply not sent: Carrier rejected the number')
         ->and($conversation->contact->activities()->where('type', ActivityType::ReplySent)->exists())->toBeFalse();
 
     Event::assertDispatched(CustomerRecordChanged::class);

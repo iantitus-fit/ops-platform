@@ -20,15 +20,27 @@
         @endforelse
     </div>
 
-    <form wire:submit="sendReply" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-        <x-filament::input.wrapper>
-            <textarea wire:model="body" rows="3" placeholder="Type a reply" class="fi-input" style="width: 100%;"></textarea>
-        </x-filament::input.wrapper>
-        @error('body')
-            <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
-        @enderror
-        <div>
-            <x-filament::button type="submit">Send</x-filament::button>
+    @if ($this->replyBlockedReason !== null)
+        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <p>{{ $this->replyBlockedReason }}</p>
+            <x-filament::input.wrapper disabled>
+                <textarea rows="3" disabled class="fi-input" style="width: 100%;"></textarea>
+            </x-filament::input.wrapper>
+            <div>
+                <x-filament::button type="button" disabled>Send</x-filament::button>
+            </div>
         </div>
-    </form>
+    @else
+        <form wire:submit="sendReply" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <x-filament::input.wrapper>
+                <textarea wire:model="body" rows="3" placeholder="Type a reply" class="fi-input" style="width: 100%;"></textarea>
+            </x-filament::input.wrapper>
+            @error('body')
+                <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
+            @enderror
+            <div>
+                <x-filament::button type="submit">Send</x-filament::button>
+            </div>
+        </form>
+    @endif
 </div>

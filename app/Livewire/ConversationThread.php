@@ -6,6 +6,7 @@ use App\Actions\SendOwnerReply;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
 use App\Models\Message;
+use DomainException;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,10 +21,19 @@ class ConversationThread extends Component
 
     /**
      * Send what the owner typed as a text and clear the box.
+     *
+     * A refusal comes back as an error under the box. A failed send is kept in the thread as
+     * failed, tells the owner why, and leaves their words in the box for another try.
      */
     public function sendReply(SendOwnerReply $sendOwnerReply): void
     {
-        $sendOwnerReply->handle($this->conversation, $this->body);
+        try {
+            $sendOwnerReply->handle($this->conversation, $this->body);
+        } catch (DomainException $exception) {
+            Notification::make()->title($exception->getMessage())->danger()->send();
+
+            return;
+        }
 
         $this->reset('body');
 
@@ -39,6 +49,15 @@ class ConversationThread extends Component
     public function messages(): Collection
     {
         return $this->conversation->messages()->get();
+    }
+
+    /**
+     * The sentence that replaces the reply box when the owner cannot reply, or null.
+     */
+    #[Computed]
+    public function replyBlockedReason(): ?string
+    {
+        return app(SendOwnerReply::class)->whyCannotReply($this->conversation);
     }
 
     public function render(ActiveConfig $activeConfig): View
