@@ -10,6 +10,8 @@ use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Events\CustomerRecordChanged;
+use App\Icm\ActiveConfig;
+use App\Icm\Exceptions\NoActiveVersion;
 use App\Jobs\ProcessInbound;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -20,6 +22,8 @@ use Illuminate\Support\Facades\DB;
 
 class RecordInbound
 {
+    public function __construct(private readonly ActiveConfig $activeConfig) {}
+
     /**
      * Record one inbound text or form: find or create the contact, put the message in the
      * contact's open conversation, and write the timeline entry, all or nothing.
@@ -51,7 +55,10 @@ class RecordInbound
 
     private function record(InboundData $data): Message
     {
-        $contact = $this->findOrCreateContact($data);
+        $leadSource = $this->leadSourceFor($data->source);
+        $costCents = $leadSource['cost_cents_per_lead'] ?? null;
+
+        $contact = $this->findOrCreateContact($data, $costCents);
         $conversation = $this->openConversationFor($contact);
 
         $message = $conversation->messages()->create([
@@ -68,9 +75,11 @@ class RecordInbound
 
         $contact->activities()->create([
             'type' => $this->activityTypeFor($data->channel),
-            'summary' => 'Text received',
+            'summary' => $this->summaryFor($data, $leadSource['name'] ?? $data->source),
             'subject_type' => $message->getMorphClass(),
             'subject_id' => $message->id,
+            'lead_source_key' => $data->source,
+            'cost_cents' => $costCents,
             'occurred_at' => now(),
         ]);
 
@@ -92,7 +101,7 @@ class RecordInbound
             ->first();
     }
 
-    private function findOrCreateContact(InboundData $data): Contact
+    private function findOrCreateContact(InboundData $data, ?int $costCents): Contact
     {
         $phone = PhoneNumber::toE164($data->phone);
 
@@ -109,7 +118,28 @@ class RecordInbound
             'phone_e164' => $phone,
             'status' => ContactStatus::Lead,
             'lead_source_key' => $data->source,
+            'acquisition_cost_cents' => $costCents,
         ]);
+    }
+
+    /**
+     * The source's entry in lead-sources.md, or null when the key is not listed or no
+     * business folder version is live yet. A missing version must never lose a lead.
+     *
+     * @return array{key: string, name: string, cost_cents_per_lead: int}|null
+     */
+    private function leadSourceFor(string $key): ?array
+    {
+        try {
+            return $this->activeConfig->leadSource($key);
+        } catch (NoActiveVersion) {
+            return null;
+        }
+    }
+
+    private function summaryFor(InboundData $data, string $sourceName): string
+    {
+        return $data->channel === MessageChannel::Sms ? 'Text received' : "Form received from {$sourceName}";
     }
 
     /**

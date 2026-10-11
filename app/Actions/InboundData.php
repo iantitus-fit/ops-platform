@@ -39,4 +39,34 @@ readonly class InboundData
             meta: ['to' => $text->to, 'num_media' => $text->numMedia],
         );
     }
+
+    /**
+     * A web form lead. The source is the lowercased, trimmed key the form named, or "direct"
+     * when it named none. The form's own fields are kept under meta.form for the customer card.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public static function fromLeadForm(array $validated): self
+    {
+        $rawSource = $validated['source'] ?? null;
+        $source = mb_strtolower(trim((string) $rawSource));
+
+        return new self(
+            channel: MessageChannel::Web,
+            source: $source === '' ? 'direct' : $source,
+            body: (string) ($validated['message'] ?? ''),
+            phone: $validated['phone'] ?? null,
+            email: $validated['email'] ?? null,
+            name: $validated['name'] ?? null,
+            provider: null,
+            providerMessageId: null,
+            meta: ['form' => [
+                'name' => $validated['name'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'source' => $rawSource,
+                'message' => $validated['message'] ?? null,
+            ]],
+        );
+    }
 }

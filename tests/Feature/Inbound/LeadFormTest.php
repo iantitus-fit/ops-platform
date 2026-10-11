@@ -46,7 +46,7 @@ it('lands an Angi form from someone who already texted on the same contact with 
     expect($conversation->contact_id)->toBe($contact->id)
         ->and($conversation->messages)->toHaveCount(2);
 
-    $message = $conversation->messages()->orderByDesc('id')->first();
+    $message = $conversation->messages->last();
     expect($message->channel)->toBe(MessageChannel::Web)
         ->and($message->direction)->toBe(MessageDirection::In)
         ->and($message->author)->toBe(MessageAuthor::Customer)

@@ -10,8 +10,11 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 
@@ -50,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
      *
      * The morph map stores short names such as "message" in activities.subject_type instead
      * of class names, and refuses any model that is not listed.
+     *
+     * The "leads" rate limiter allows each IP address 10 lead form posts a minute.
      */
     public function boot(): void
     {
@@ -59,5 +64,7 @@ class AppServiceProvider extends ServiceProvider
             'message' => Message::class,
             'user' => User::class,
         ]);
+
+        RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
     }
 }
