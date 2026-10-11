@@ -189,6 +189,7 @@ Each RED run was classified with `gsd_run check tdd-red-evidence` from the uncha
 - `app/Icm/Loader.php` - `TYPED` constant made public so the validator can list the seven types
 - `app/Console/Commands/IcmSync.php` - prints the rejection message and each error, exits 1
 - `tests/Feature/Icm/ValidatorTest.php`, `ChangelogTest.php`, `SyncTest.php` - rejection, rule-set and changelog tests
+- `tests/Pest.php` - temp copy no longer carries over a real changelog.md
 - `docs/sprints/sprint-0.md` - four new walk-through log lines
 
 ## Decisions Made
@@ -231,10 +232,18 @@ See `key-decisions` above. All stay inside the plan's discretion; none reopens a
 - **Verification:** "keeps one bullet per error by cutting long values and collapsing line breaks" asserts 80
 - **Committed in:** `78ffba4`
 
+**5. [Rule 1 - Bug] Test harness copied a developer's real changelog.md into every temp folder**
+- **Found during:** final full-suite run, after the real-folder sanity check created `examples/example-hvac/changelog.md` (gitignored)
+- **Issue:** `tests/Pest.php` copies the whole example folder, so the real changelog entries leaked into the temp copy and `ChangelogTest` saw extra headings. This is the manual-run dirtying risk noted in RESEARCH Pitfall 5; it only shows once a developer runs `icm:sync` on the real folder.
+- **Fix:** The harness deletes `changelog.md` from the temp copy after copying.
+- **Files modified:** `tests/Pest.php`
+- **Verification:** full suite passes (85 tests) with the real changelog.md present
+- **Committed in:** `706da5a`
+
 ---
 
-**Total deviations:** 4 auto-fixed (2 Rule 1, 1 Rule 2, 1 Rule 3)
-**Impact on plan:** All were needed for correct, non-misleading owner messages. No scope creep; two extra tests (owner text kept above entries, echoed value cut) cover plan truths that had no named test.
+**Total deviations:** 5 auto-fixed (3 Rule 1, 1 Rule 2, 1 Rule 3)
+**Impact on plan:** All were needed for correct, non-misleading owner messages and stable tests. No scope creep; two extra tests (owner text kept above entries, echoed value cut) cover plan truths that had no named test.
 
 ## Issues Encountered
 
