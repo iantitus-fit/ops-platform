@@ -3,7 +3,6 @@
 namespace App\Records;
 
 use App\Enums\ActivityType;
-use App\Enums\MessageAuthor;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Activity;
@@ -219,13 +218,11 @@ class CustomerCard
      */
     private function replyParts(Activity $activity, ?Message $message): array
     {
-        $fromAgent = $message?->author === MessageAuthor::Agent;
-        $who = $fromAgent ? 'front desk' : 'owner';
         $details = $message === null ? '' : " ({$message->channel->value}, {$message->status->value})";
 
         return [
-            "Reply from {$who}{$details}",
-            $fromAgent ? 'Front desk reply:' : 'Owner reply:',
+            "Reply from owner{$details}",
+            'Owner reply:',
             $message?->body ?? $activity->summary,
         ];
     }
