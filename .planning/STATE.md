@@ -4,16 +4,16 @@ current_phase: 2
 current_phase_name: Text Front Desk
 status: planning
 stopped_at: Phase 2 context gathered
-last_updated: "2026-10-11T20:04:40.975Z"
+last_updated: "2026-10-11T20:31:04.252Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: e91466b16e9d3b1b2652060744747ed3c1895515
+state_head: c1a0b4e65f8f57cd4af4707696c05020638d5721
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 1
   total_plans: 7
   completed_plans: 7
-  percent: 33
+  percent: 25
 ---
 
 # Project State
@@ -32,7 +32,7 @@ Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-11 — Phase 01 complete, transitioned to Phase 2
 
-Progress: [███░░░░░░░] 33%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -110,6 +110,10 @@ None yet.
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
+
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: Owner Loop: owner-input additions split out of Phase 2 during discuss (02-CONTEXT.md)
 
 ## Deferred Items
 

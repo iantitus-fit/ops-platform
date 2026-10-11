@@ -15,6 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [ ] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1)
+- [ ] **Phase 02.1: Owner Loop** (INSERTED) - Staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
 ## Phase Details
@@ -88,6 +89,31 @@ Plans:
 - The agent reads the customer's card rendered fresh from the database (DEC-03), not the file on disk.
 - Production deploy is not in this phase; DEPL-01 stays in v2. CI on Postgres is.
 - Per the SPEC, a cartographer map starts in this sprint.
+
+### Phase 02.1: Owner Loop (INSERTED)
+
+**Goal:** The owner and the people they trust can act on the front desk from wherever they are: more than one person can approve drafts, a draft can be approved by replying to the alert text, the office hears by email, nothing waits unseen, and the agent steps back without going silent when a person joins the conversation.
+**Depends on:** Phase 2
+**Requirements**: TBD (define new IDs in REQUIREMENTS.md during `/gsd-discuss-phase 02.1`)
+**Scope** (split out of Phase 2 on 2026-10-11; see `.planning/phases/02-text-front-desk/02-CONTEXT.md` § Deferred Ideas and `docs/phase-2-owner-input.md`):
+- Staff users invited by the owner, each with a phone, an email, alert choices and a "can approve drafts" switch; user management and Sync Now stay owner-only (the first role split); sign out everywhere and remove a user.
+- Approve by replying to the alert with a short code (K7 sends the draft as written, K7 plus words sends those words); only a registered phone can approve; a code for a replaced draft is refused with "The customer wrote again".
+- Email alerts; the "handled" follow-up on the other channel names who acted and how.
+- A draft nobody acts on: re-alert after a set time, a backup recipient, and an update to the customer if the wait runs past the holding reply's promise.
+- Assist mode: an owner reply stops the agent sending on its own but it keeps drafting suggestions; it returns after a per-business quiet period (replaces Phase 2's owner-reply takeover).
+- The after-hours on-call switch per business (urgent service requests such as plain flooding).
+- `escalate_to` may name a staff user.
+- The LLM fallback classifier driver on a ZDR route.
+**Success Criteria** (what must be TRUE):
+  1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
+  2. Replying to an alert text with its code sends the draft (or the replacement words) through the same path as a dashboard approval, recorded on the timeline; a reply with no valid code, or from an unregistered phone, sends nothing and gets a short help text.
+  3. When a draft is handled on one channel, the other channel gets a follow-up naming who handled it and how; a draft left untouched past the set time re-alerts and reaches the backup recipient.
+  4. After a person replies in a conversation the agent only drafts there until the quiet period passes, then resumes on its own; Take over still stops it fully until handed back.
+  5. With the on-call switch on, an after-hours urgent request alerts the on-call person right away; with it off, it waits for opening time.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
 
 ### Phase 3: Booking and the Gate
 
