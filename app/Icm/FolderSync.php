@@ -7,6 +7,7 @@ use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\IcmVersion;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
@@ -131,12 +132,26 @@ class FolderSync
 
     /**
      * Add the run to changelog.md in the right time zone, then hand the result back.
+     *
+     * The version is already live (or the rejection already stored) by now, so a changelog that
+     * cannot be written is reported as a notice on the result and never fails the sync.
      */
     private function recorded(SyncResult $result, LoadedFolder $folder, ValidationReport $report): SyncResult
     {
         [$timezone, $note] = $this->changelogClock($folder, $report);
 
-        $this->changelog->record($result, $timezone, $note);
+        try {
+            $this->changelog->record($result, $timezone, $note);
+        } catch (Exception $exception) {
+            return new SyncResult(
+                $result->outcome,
+                $result->version,
+                $result->errors,
+                [...$result->notices, "changelog.md could not be updated: {$exception->getMessage()}"],
+                $result->fileCount,
+                $result->message,
+            );
+        }
 
         return $result;
     }

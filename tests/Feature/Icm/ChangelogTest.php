@@ -155,3 +155,19 @@ it('leaves the live version untouched and never lets a rejected candidate be rea
     expect(IcmVersion::where('status', VersionStatus::Active->value)->sole()->id)->toBe($live->id)
         ->and(IcmVersion::where('status', VersionStatus::Rejected->value)->sole()->compiled)->toBeNull();
 });
+
+it('still reports the sync, with a notice, when changelog.md cannot be written', function () {
+    // A directory where the file belongs makes both the read and the write fail.
+    File::makeDirectory(icmPath('changelog.md'));
+
+    $this->artisan('icm:sync')
+        ->expectsOutputToContain('changelog.md could not be updated')
+        ->assertExitCode(0);
+
+    $version = IcmVersion::sole();
+
+    expect($version->status)->toBe(VersionStatus::Active);
+
+    // The live version stays live, and a second run reports it plainly rather than failing.
+    $this->artisan('icm:sync')->expectsOutputToContain('Already active')->assertExitCode(0);
+});
