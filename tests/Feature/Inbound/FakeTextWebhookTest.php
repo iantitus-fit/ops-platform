@@ -13,7 +13,9 @@ use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -201,4 +203,20 @@ it('keeps arrival order for texts recorded in the same second', function () {
         ->and($conversation->messages->pluck('id')->all())->toBe(Message::orderBy('id')->pluck('id')->all());
 
     Carbon::setTestNow();
+});
+
+it('answers 404 and records nothing when the text driver is not fake', function () {
+    config(['channels.text.driver' => 'twilio']);
+
+    $this->post(route('webhooks.text.fake'), twilioText())->assertNotFound();
+    $this->post(route('webhooks.text.fake'), [])->assertNotFound();
+
+    expect(Contact::count())->toBe(0)
+        ->and(Message::count())->toBe(0);
+});
+
+it('exempts webhooks from the request forgery check so a real post is not rejected with 419', function () {
+    app(Kernel::class);
+
+    expect(app(PreventRequestForgery::class)->getExcludedPaths())->toContain('webhooks/*');
 });
