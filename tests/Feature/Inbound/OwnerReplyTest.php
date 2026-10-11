@@ -17,6 +17,7 @@ use App\Models\Message;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -245,4 +246,43 @@ it('escapes provider text before it reaches the owner notification title', funct
         ->assertNotified(Notification::make()
             ->title('The reply was not sent: &lt;a href=&quot;https://evil.example&quot;&gt;Fix it&lt;/a&gt;')
             ->danger());
+});
+
+it('refuses a second reply to the same conversation while one is being sent', function () {
+    $conversation = openConversationWithQuestion();
+    $lock = Cache::lock("reply:{$conversation->id}", 30);
+    $lock->get();
+
+    expect(fn () => app(SendOwnerReply::class)->handle($conversation, 'Tuesday at 9 works'))
+        ->toThrow(DomainException::class, 'Another reply to this customer is being sent');
+
+    expect(app(FakeTextChannel::class)->sent())->toBeEmpty()
+        ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0);
+
+    $lock->release();
+
+    app(SendOwnerReply::class)->handle($conversation, 'Tuesday at 9 works');
+
+    expect(Message::query()->where('direction', MessageDirection::Out)->sole()->status)->toBe(MessageStatus::Sent);
+});
+
+it('keeps a text the customer received marked as sent when recording it fails afterwards', function () {
+    $conversation = openConversationWithQuestion();
+    $failed = false;
+
+    // Stand in for a database error between the carrier accepting the text and the record of it.
+    Message::updating(function () use (&$failed): void {
+        if (! $failed) {
+            $failed = true;
+
+            throw new RuntimeException('database went away');
+        }
+    });
+
+    $message = app(SendOwnerReply::class)->handle($conversation, 'Tuesday at 9 works');
+
+    expect($message->status)->toBe(MessageStatus::Sent)
+        ->and(Message::query()->where('direction', MessageDirection::Out)->sole()->status)->toBe(MessageStatus::Sent)
+        ->and(Message::query()->where('direction', MessageDirection::Out)->sole()->provider_message_id)->not->toBeNull()
+        ->and(app(FakeTextChannel::class)->sent())->toHaveCount(1);
 });

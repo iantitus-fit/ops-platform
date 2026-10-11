@@ -14,6 +14,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use DomainException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -35,10 +36,29 @@ class SendOwnerReply
      * so a reply is never recorded as sent unless the channel accepted it. A channel failure
      * leaves the message stored as failed and is raised as a DomainException for the owner.
      *
+     * Only one reply per conversation is sent at a time, so two tabs cannot both send. Once the
+     * channel has accepted the text, a failure while recording it is reported to the log and
+     * never raised: the customer has the text, and an error would invite the owner to send it again.
+     *
      * @throws ValidationException when the reply cannot or should not go out
-     * @throws DomainException when the text channel failed to send
+     * @throws DomainException when the text channel failed to send, or another reply is being sent
      */
     public function handle(Conversation $conversation, string $body): Message
+    {
+        $lock = Cache::lock("reply:{$conversation->id}", 30);
+
+        if (! $lock->get()) {
+            throw new DomainException('Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.');
+        }
+
+        try {
+            return $this->send($conversation, $body);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function send(Conversation $conversation, string $body): Message
     {
         $conversation->refresh();
         $body = trim($body);
@@ -68,29 +88,51 @@ class SendOwnerReply
             throw new DomainException("The reply was not sent: {$exception->getMessage()}", previous: $exception);
         }
 
-        DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId): void {
-            $sentAt = now();
+        try {
+            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId): void {
+                $sentAt = now();
 
-            $message->update([
-                'status' => MessageStatus::Sent,
-                'provider_message_id' => $providerMessageId,
-            ]);
+                $message->update([
+                    'status' => MessageStatus::Sent,
+                    'provider_message_id' => $providerMessageId,
+                ]);
 
-            $contact->activities()->create([
-                'type' => ActivityType::ReplySent,
-                'summary' => 'Reply sent by owner',
-                'subject_type' => $message->getMorphClass(),
-                'subject_id' => $message->id,
-                'occurred_at' => $sentAt,
-            ]);
+                $contact->activities()->create([
+                    'type' => ActivityType::ReplySent,
+                    'summary' => 'Reply sent by owner',
+                    'subject_type' => $message->getMorphClass(),
+                    'subject_id' => $message->id,
+                    'occurred_at' => $sentAt,
+                ]);
 
-            $conversation->update(['last_message_at' => $sentAt]);
-            $contact->update(['last_activity_at' => $sentAt]);
-        });
+                $conversation->update(['last_message_at' => $sentAt]);
+                $contact->update(['last_activity_at' => $sentAt]);
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $this->markSentAfterRecordingFailed($message, $providerMessageId);
+        }
 
         CustomerRecordChanged::dispatch($contact->id);
 
         return $message;
+    }
+
+    /**
+     * The text has gone out but its record failed. Save the least that keeps the thread honest:
+     * the message as sent with the provider's id. If even that fails, the failure is logged.
+     */
+    private function markSentAfterRecordingFailed(Message $message, string $providerMessageId): void
+    {
+        try {
+            $message->refresh()->update([
+                'status' => MessageStatus::Sent,
+                'provider_message_id' => $providerMessageId,
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**
