@@ -25,6 +25,7 @@ pest()->extend(TestCase::class)
         $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
 
         File::copyDirectory(base_path('examples/example-hvac'), $folder);
+        File::delete($folder.'/changelog.md');
         config(['icm.path' => $folder]);
     })
     ->afterEach(function () {
