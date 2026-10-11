@@ -26,6 +26,7 @@ pest()->extend(TestCase::class)
 
         File::copyDirectory(base_path('examples/example-hvac'), $folder);
         File::delete($folder.'/changelog.md');
+        resetRecordsToTrackedFiles($folder.'/records');
         config(['icm.path' => $folder]);
     })
     ->afterEach(function () {
@@ -62,6 +63,25 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Strip a copied records/ folder back to the two files git tracks there. Cards and summaries
+ * that a local run wrote into examples/example-hvac/records/ would otherwise leak into tests.
+ */
+function resetRecordsToTrackedFiles(string $records): void
+{
+    $trackedFiles = ['CLAUDE.md', 'README.md'];
+
+    foreach (File::directories($records) as $directory) {
+        File::deleteDirectory($directory);
+    }
+
+    foreach (File::files($records, true) as $file) {
+        if (! in_array($file->getFilename(), $trackedFiles, true)) {
+            File::delete($file->getPathname());
+        }
+    }
 }
 
 /**
