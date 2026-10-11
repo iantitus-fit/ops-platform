@@ -3,18 +3,54 @@
 namespace App\Channels;
 
 use Illuminate\Http\Request;
-use LogicException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class FakeTextChannel implements TextChannel
 {
+    /**
+     * Every text sent through this instance, oldest first.
+     *
+     * @var list<array{to: string, body: string, provider_message_id: string}>
+     */
+    private array $sent = [];
+
     public function name(): string
     {
         return 'fake';
     }
 
+    /**
+     * Pretend to send a text: remember it and log it.
+     *
+     * The body is customer data, so it is logged only in the local environment. Anywhere
+     * else the log carries the number, the id and the length.
+     */
     public function send(string $toE164, string $body): string
     {
-        throw new LogicException('The fake text channel cannot send yet.');
+        $id = 'fake-'.Str::uuid();
+
+        $this->sent[] = ['to' => $toE164, 'body' => $body, 'provider_message_id' => $id];
+
+        $context = ['to' => $toE164, 'provider_message_id' => $id, 'length' => mb_strlen($body)];
+
+        if (app()->environment('local')) {
+            $context['body'] = $body;
+        }
+
+        Log::info('Fake text sent', $context);
+
+        return $id;
+    }
+
+    /**
+     * The texts sent through this instance, for tests and the dev chat page.
+     *
+     * @return list<array{to: string, body: string, provider_message_id: string}>
+     */
+    public function sent(): array
+    {
+        return $this->sent;
     }
 
     /**
