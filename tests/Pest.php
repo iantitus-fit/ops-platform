@@ -102,3 +102,20 @@ function writeIcmFile(string $relative, string $contents): void
     File::ensureDirectoryExists(dirname(icmPath($relative)));
     File::put(icmPath($relative), $contents);
 }
+
+/**
+ * A Twilio-shaped form body for the fake text webhook. Give each text its own MessageSid.
+ *
+ * @param  array<string, string>  $overrides
+ * @return array<string, string>
+ */
+function fakeTextPayload(array $overrides = []): array
+{
+    return array_merge([
+        'MessageSid' => 'SM'.str_repeat('c', 32),
+        'From' => '+12025550123',
+        'To' => '+13125550147',
+        'Body' => 'My AC is blowing warm air',
+        'NumMedia' => '0',
+    ], $overrides);
+}
