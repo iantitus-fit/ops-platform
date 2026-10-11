@@ -20,7 +20,7 @@ class Loader
      *
      * @var list<string>
      */
-    private const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules'];
+    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules'];
 
     /**
      * Front matter types that arrive in a later sprint. They are skipped with a notice.

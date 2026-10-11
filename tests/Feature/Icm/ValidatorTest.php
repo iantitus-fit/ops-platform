@@ -19,18 +19,10 @@ function rejectedErrors(): array
     return $rejected->errors;
 }
 
-it('rejects a broken field with a sentence that names the file, the field and what was written', function (string $file, string $search, string $replace, string $line) {
-    expect(File::get(icmPath($file)))->toContain($search);
-
-    breakFile($file, fn (string $text) => str_replace($search, $replace, $text));
-
-    $this->artisan('icm:sync')
-        ->expectsOutputToContain($line)
-        ->assertExitCode(1);
-
-    expect(rejectedErrors())->toContain($line)
-        ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(0);
-})->with([
+/*
+| Each row: file to change, text to find, text to put in its place, and the exact line the owner must see.
+*/
+dataset('broken fields', [
     'business: timezone deleted' => ['business/profile.md', "timezone: America/Chicago\n", '', 'business/profile.md: timezone is missing, and it is required'],
     'business: phone without quotes' => ['business/profile.md', 'phone: "+13125550147"', 'phone: +13125550147', 'business/profile.md: phone must be text; wrap it in quotes (you wrote 13125550147)'],
     'business: timezone that is not a zone' => ['business/profile.md', 'timezone: America/Chicago', 'timezone: Chicago', 'business/profile.md: timezone must be a time zone such as America/Chicago (you wrote Chicago)'],
@@ -49,6 +41,19 @@ it('rejects a broken field with a sentence that names the file, the field and wh
     'voice: never_say deleted' => ['voice/how-we-talk.md', "never_say: [guaranteed, cheapest, no problem]\n", '', 'voice/how-we-talk.md: never_say is missing, and it is required'],
     'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert: Text the owner when a draft is waiting or a customer asks for a person\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
 ]);
+
+it('rejects a broken field with a sentence that names the file, the field and what was written', function (string $file, string $search, string $replace, string $line) {
+    expect(File::get(icmPath($file)))->toContain($search);
+
+    breakFile($file, fn (string $text) => str_replace($search, $replace, $text));
+
+    $this->artisan('icm:sync')
+        ->expectsOutputToContain($line)
+        ->assertExitCode(1);
+
+    expect(rejectedErrors())->toContain($line)
+        ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(0);
+})->with('broken fields');
 
 it('rejects a second service file that uses the same slug and names the file that has it first', function () {
     writeIcmFile('business/services/zz-copy.md', File::get(icmPath('business/services/ac-repair.md')));
