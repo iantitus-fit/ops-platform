@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Foundation
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-10-11T13:24:55.806Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-10-11T13:32:36.709Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 01 execution started
-state_head: 90c9bb361585337417dc2ead9951fc36582b5e8c
+state_head: 2d85c912189c96c86f383221c7d61cb69bf3528c
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 01 (Foundation) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 01 execution started
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01 | 8 min | 3 tasks | 52 files |
 | Phase 01 P02 | 8 min | 3 tasks | 11 files |
 | Phase 01 P03 | 10 min | 3 tasks | 41 files |
+| Phase 01 P04 | 5 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 01]: [01-03] A rejected fake-webhook post (missing or unreadable From) answers a JSON 422 via FormRequest failedValidation(); the default for a caller that does not ask for JSON is a 302 redirect
 - [Phase 01]: [01-03] TextChannel is bound with bind() so each resolution reads channels.text.driver; FakeTextChannel stays a singleton so sent() persists; plan 01-04 must add leads to the forgery exemption in bootstrap/app.php
 - [Phase 01]: [01-03] Contact creation is not wrapped in a savepoint (only the open conversation is); two concurrent first texts from one new number give the second a 500 and the provider retry succeeds; revisit when Twilio goes live in Phase 2
+- [Phase 01]: [01-04] A rejected lead answers a JSON 422 for any caller via failedValidation() in StoreLeadRequest; the default for a plain form post is a 302 redirect
+- [Phase 01]: [01-04] Note activities are written after the message so each carries the message as subject and the touch's occurred_at; a known cost of 0 (referral) is stored as 0 and null means unknown
+- [Phase 01]: [01-04] Filling an empty email does not check whether another contact already owns it (accepted in the plan's flagged assumptions); FA-1 form field names still to confirm with Ian
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-11T13:24:55.786Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-10-11T13:32:36.690Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None

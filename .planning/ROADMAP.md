@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Every inbound text or form re-renders that customer's card in `records/customers/` and updates `INDEX.md` and `open-leads.md`; two events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; and the sync never reads `records/`.
 
 **Phase gate** (QUAL-01): every Pest test passes, money fields are integer cents, nothing reads configuration from disk except the sync, and the two project rules (integer cents; config only through `App\Icm\ActiveConfig`) are recorded with Boost in `.ai/rules`.
-**Plans**: 3/7 plans executed (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
+**Plans**: 4/7 plans executed (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
 
 Plans:
 **Wave 1**
@@ -45,7 +45,7 @@ Plans:
 - [x] 01-03-PLAN.md — A text lands on the timeline: contacts, conversations, messages, activities, `TextChannel` with `FakeTextChannel` and `TwilioTextChannel`, `POST /webhooks/text/fake`, `RecordInbound`, `ProcessInbound`, E.164 (LEAD-01, LEAD-03)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 01-04-PLAN.md — Web form leads land on the same contact: `POST /leads`, matching by phone then email, first-touch attribution and cost per lead (LEAD-02, LEAD-03)
+- [x] 01-04-PLAN.md — Web form leads land on the same contact: `POST /leads`, matching by phone then email, first-touch attribution and cost per lead (LEAD-02, LEAD-03)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 01-05-PLAN.md — Customer cards in records/: `CustomerCard`, unique `RenderCustomerCard`, `INDEX.md`, `open-leads.md`, `records/CLAUDE.md`, `records:rebuild` (RECS-01)
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 3/7 | In Progress | - |
+| 1. Foundation | 4/7 | In Progress | - |
 | 2. Text Front Desk | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
