@@ -64,14 +64,14 @@ class FolderSync
         if ($active?->fingerprint === $fingerprint) {
             $active->update(['last_checked_at' => now(), 'last_result' => SyncOutcome::Unchanged]);
 
-            return new SyncResult(
+            return $this->recorded(new SyncResult(
                 SyncOutcome::Unchanged,
                 $active,
                 [],
                 $folder->notices,
                 $active->file_count,
                 "Already active: {$active->label()}, no changes",
-            );
+            ), $folder, $report);
         }
 
         $version = DB::transaction(function () use ($compiledFiles, $fileCount, $fingerprint, $folder, $root) {
@@ -94,14 +94,14 @@ class FolderSync
 
         app()->forgetInstance(ActiveConfig::class);
 
-        return new SyncResult(
+        return $this->recorded(new SyncResult(
             SyncOutcome::Activated,
             $version,
             [],
             $folder->notices,
             $fileCount,
             "Live as {$version->label()} ({$fileCount} files)",
-        );
+        ), $folder, $report);
     }
 
     /**
@@ -126,31 +126,46 @@ class FolderSync
         $message = $active === null ? 'Rejected. Nothing is live yet.' : "Rejected. {$active->label()} stays live.";
         $result = new SyncResult(SyncOutcome::Rejected, $rejected, $lines, $folder->notices, $fileCount, $message);
 
-        $this->changelog->record($result, $this->changelogTimezone($folder, $report));
+        return $this->recorded($result, $folder, $report);
+    }
+
+    /**
+     * Add the run to changelog.md in the right time zone, then hand the result back.
+     */
+    private function recorded(SyncResult $result, LoadedFolder $folder, ValidationReport $report): SyncResult
+    {
+        [$timezone, $note] = $this->changelogClock($folder, $report);
+
+        $this->changelog->record($result, $timezone, $note);
 
         return $result;
     }
 
     /**
-     * The time zone for a changelog entry: the candidate's own when its profile is sound,
-     * otherwise the one that is live now.
+     * The time zone for a changelog entry, and the note that explains it when it is only a fallback.
+     * The candidate's own zone is used when its profile is sound, otherwise the live version's, and
+     * with nothing live the app's own zone.
+     *
+     * @return array{0: string, 1: ?string}
      */
-    private function changelogTimezone(LoadedFolder $folder, ValidationReport $report): string
+    private function changelogClock(LoadedFolder $folder, ValidationReport $report): array
     {
         $profile = collect($folder->files)->first(fn (IcmFile $file) => $file->kind === IcmFileKind::Typed && $file->type === 'business');
         $candidate = $profile?->frontMatter['timezone'] ?? null;
 
         if ($profile !== null && ! $report->hasErrorsFor($profile->path) && is_string($candidate) && in_array($candidate, timezone_identifiers_list(), true)) {
-            return $candidate;
+            return [$candidate, null];
         }
 
         try {
             $config = app(ActiveConfig::class);
             $config->refresh();
 
-            return $config->timezone();
+            return [$config->timezone(), null];
         } catch (NoActiveVersion) {
-            return config('app.timezone');
+            $fallback = config('app.timezone');
+
+            return [$fallback, "Times are in {$fallback} because business/profile.md could not be read and no version is live yet"];
         }
     }
 

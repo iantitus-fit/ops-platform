@@ -6,6 +6,7 @@ use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Models\IcmVersion;
 use Illuminate\Support\Facades\File;
+use LogicException;
 
 /**
  * Writes the sync's changelog.md in the business folder, newest entry first.
@@ -25,21 +26,43 @@ class Changelog
         $path = rtrim(config('icm.path'), '/').'/changelog.md';
         $existing = File::exists($path) ? File::get($path) : self::HEADER;
 
-        File::replace($path, $this->withEntry($existing, $this->entry($result, $timezone)));
+        File::replace($path, $this->withEntry($existing, $this->entry($result, $timezone, $timezoneNote)));
     }
 
     /**
      * The heading and bullets for one sync run.
      */
-    private function entry(SyncResult $result, string $timezone): string
+    private function entry(SyncResult $result, string $timezone, ?string $timezoneNote): string
     {
         $time = now($timezone)->format('Y-m-d H:i');
 
         [$title, $bullets] = match ($result->outcome) {
             SyncOutcome::Rejected => ['Rejected', [...$result->errors, $this->liveBullet()]],
+            SyncOutcome::Activated => [
+                "Live as {$result->version->label()} ({$result->fileCount} files)",
+                array_map($this->noticeBullet(...), $result->notices),
+            ],
+            SyncOutcome::Unchanged => ['No changes', ["Already active: {$result->version->label()}"]],
+            SyncOutcome::Busy => throw new LogicException('A sync that did not run is never recorded.'),
         };
 
+        if ($timezoneNote !== null) {
+            $bullets[] = $timezoneNote;
+        }
+
         return "## {$time} · {$title}\n".implode('', array_map(fn (string $bullet) => "- {$bullet}\n", $bullets));
+    }
+
+    /**
+     * A skipped later-sprint file, worded for the changelog.
+     */
+    private function noticeBullet(string $notice): string
+    {
+        if (preg_match('/^(.+): type (\S+) is not supported yet/', $notice, $matches) === 1) {
+            return "Not supported yet: {$matches[1]} (type {$matches[2]})";
+        }
+
+        return $notice;
     }
 
     /**

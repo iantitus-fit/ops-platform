@@ -2,8 +2,6 @@
 
 namespace App\Icm;
 
-use Illuminate\Support\Str;
-
 /**
  * Turns a failed validation rule into a sentence an owner can act on.
  */
@@ -63,7 +61,9 @@ class PlainWords
      */
     public static function oneLine(string $text): string
     {
-        return Str::limit(trim((string) preg_replace('/\s+/u', ' ', $text)), 80, '...', preserveWords: false);
+        $line = trim((string) preg_replace('/\s+/u', ' ', $text));
+
+        return mb_strlen($line) > 80 ? mb_substr($line, 0, 77).'...' : $line;
     }
 
     /**
