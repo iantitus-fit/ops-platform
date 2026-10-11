@@ -20,7 +20,7 @@ beforeEach(function () {
  *
  * @param  array<string, mixed>  $attributes
  */
-function timelineEntry(Contact $contact, string $body, array $attributes = []): Activity
+function contactTimelineEntry(Contact $contact, string $body, array $attributes = []): Activity
 {
     $conversation = $contact->openConversation()->first() ?? $contact->conversations()->create();
     $message = Message::factory()->for($conversation)->create(['body' => $body]);
@@ -74,11 +74,11 @@ it('shows a contact with the first-touch source and a timeline newest first', fu
         'email' => 'dana@example.com',
         'status' => ContactStatus::Lead,
     ]);
-    timelineEntry($contact, 'Older text body', [
+    contactTimelineEntry($contact, 'Older text body', [
         'type' => ActivityType::TextReceived,
         'occurred_at' => '2026-10-10 09:00:00',
     ]);
-    timelineEntry($contact, 'Newer form body', [
+    contactTimelineEntry($contact, 'Newer form body', [
         'type' => ActivityType::FormReceived,
         'lead_source_key' => 'thumbtack',
         'cost_cents' => 2500,
@@ -107,7 +107,7 @@ it('returns the timeline ordered by when it happened, then by id, both newest fi
 
 it('shows customer-written text as plain text, never as HTML', function () {
     $contact = Contact::factory()->create();
-    timelineEntry($contact, '<b>bold</b><script>alert(1)</script>', ['type' => ActivityType::TextReceived]);
+    contactTimelineEntry($contact, '<b>bold</b><script>alert(1)</script>', ['type' => ActivityType::TextReceived]);
 
     Livewire::test(ViewContact::class, ['record' => $contact->id])
         ->assertDontSeeHtml('<b>bold</b>')
