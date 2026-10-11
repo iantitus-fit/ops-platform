@@ -6,6 +6,7 @@ use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
 use App\Models\IcmVersion;
 use App\Models\User;
+use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -76,7 +77,9 @@ it('escapes what the owner wrote in the notification and on the page', function 
 
     $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
 
-    $body = collect(session('filament.notifications'))->pluck('body')->implode(' ');
+    $notifications = new Notifications;
+    $notifications->mount();
+    $body = $notifications->notifications->map(fn (Notification $notification) => $notification->getBody())->implode(' ');
 
     expect($body)->toContain('&lt;i&gt;sneaky&lt;/i&gt;')
         ->not->toContain('<i>sneaky</i>');
