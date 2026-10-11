@@ -132,3 +132,29 @@ it('refuses to run while another sync holds the lock and changes nothing', funct
 
     $lock->release();
 });
+
+it('rejects a broken service file, keeps the old version live and records why in changelog.md', function () {
+    $first = activateExampleFolder();
+    $line = 'business/services/ac-repair.md: price_policy must be one of none, starting_at, fixed (you wrote maybe)';
+
+    breakFile('business/services/ac-repair.md', fn (string $text) => str_replace('price_policy: starting_at', 'price_policy: maybe', $text));
+
+    $this->artisan('icm:sync')
+        ->expectsOutputToContain('Rejected. v1 stays live.')
+        ->expectsOutputToContain($line)
+        ->assertExitCode(1);
+
+    expect(IcmVersion::where('status', VersionStatus::Active->value)->pluck('id')->all())->toBe([$first->id]);
+
+    $rejected = IcmVersion::where('status', VersionStatus::Rejected->value)->sole();
+
+    expect($rejected->compiled)->toBeNull()
+        ->and($rejected->errors)->toContain($line);
+
+    $changelog = file(icmPath('changelog.md'), FILE_IGNORE_NEW_LINES);
+    $headingIndex = collect($changelog)->search(fn (string $text) => str_starts_with($text, '## '));
+
+    expect($changelog[0])->toBe('# Changelog')
+        ->and($changelog[$headingIndex])->toMatch('/^## \d{4}-\d{2}-\d{2} \d{2}:\d{2} · Rejected$/')
+        ->and($changelog[$headingIndex + 1])->toBe("- {$line}");
+});
