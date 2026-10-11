@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Every inbound text or form re-renders that customer's card in `records/customers/` and updates `INDEX.md` and `open-leads.md`; two events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; and the sync never reads `records/`.
 
 **Phase gate** (QUAL-01): every Pest test passes, money fields are integer cents, nothing reads configuration from disk except the sync, and the two project rules (integer cents; config only through `App\Icm\ActiveConfig`) are recorded with Boost in `.ai/rules`.
-**Plans**: 6/7 plans executed (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
+**Plans**: 7/7 plans executed (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
 
 Plans:
 **Wave 1**
@@ -54,7 +54,7 @@ Plans:
 - [x] 01-06-PLAN.md — Owner works from the dashboard: Conversations (thread, reply through `TextChannel`, Close/Reopen) and Contacts (list plus timeline), `FilamentUser` (LEAD-04, DASH-01)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 01-07-PLAN.md — `/dev/chat`, Business Folder page with Sync Now, seeder, QUAL-01 gate with the full suite green (DASH-02, DASH-01, QUAL-01)
+- [x] 01-07-PLAN.md — `/dev/chat`, Business Folder page with Sync Now, seeder, QUAL-01 gate with the full suite green (DASH-02, DASH-01, QUAL-01)
 
 **UI hint**: yes
 
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 6/7 | In Progress | - |
+| 1. Foundation | 7/7 | In Progress | - |
 | 2. Text Front Desk | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 

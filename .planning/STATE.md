@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Foundation
-status: executing
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-10-11T13:58:29.669Z"
+status: verifying
+stopped_at: Completed 01-07-PLAN.md
+last_updated: "2026-10-11T15:08:33.809Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 01 execution started
-state_head: 512e8c10b8227617d27b66f7ace78e44ac675eba
+state_head: a2c7a63e75b8d26de9b547124e1405a08b37bd06
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 
 Phase: 01 (Foundation) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-11 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P04 | 5 min | 3 tasks | 10 files |
 | Phase 01 P05 | 12 min | 3 tasks | 15 files |
 | Phase 01 P06 | 8 min | 3 tasks | 22 files |
+| Phase 01 P07 | 10 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 01]: [01-06] Owner replies are stored queued and set sent only after TextChannel::send returns an id; plan 01-07 and Phase 2 takeover should call SendOwnerReply rather than write outbound messages themselves
 - [Phase 01]: [01-06] Pest test helpers are global functions across the whole suite: a name reused in two test files aborts the full run (caught by timelineEntry); give each helper a file-specific name
 - [Phase 01]: [01-06] Task 3 human-check (browser walk of /admin: contacts, timeline, reply, close and reopen) not run by the executor; recorded in .planning/WINDOWS.md for phase UAT. Thread and reply box styling is inline and Filament components only
+- [Phase 01]: [01-07] Sync Now escapes each rejected error line with e() before it goes in the Filament notification body, because Filament sanitizes the body but still allows a safe subset of HTML
+- [Phase 01]: [01-07] The money guard skips only Laravel's job_batches table (total_jobs is a job count); every other table and column is checked
+- [Phase 01]: [01-07] phpunit.xml sets memory_limit 512M because the suite outgrew PHP's 128M CLI default at about 260 tests
+- [Phase 01]: [01-07] Seeded Dana Whitfield shares +12025550123 with the /dev/chat default From, so a dev-chat text joins her thread; Pest arch rules over a list of function names check nothing, use one arch() per function
 
 ### Pending Todos
 
@@ -119,6 +124,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-11T13:58:29.647Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-10-11T15:08:33.786Z
+Stopped at: Completed 01-07-PLAN.md
 Resume file: None

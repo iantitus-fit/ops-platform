@@ -28,12 +28,12 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 ### Dashboard (Phase 1)
 
-- [ ] **DASH-01**: Filament dashboard screens: Contacts (list plus a timeline view), Conversations (thread with a reply box), and a Business Folder page (active version, files, last sync result, errors, a Sync Now button). (intel: REQ-dashboard-screens)
-- [ ] **DASH-02**: A local-only test chat page at `/dev/chat` lets Ian text "as a customer" through the fake webhook and watch the thread update; it returns 404 outside the local environment. (intel: REQ-dev-chat-page)
+- [x] **DASH-01**: Filament dashboard screens: Contacts (list plus a timeline view), Conversations (thread with a reply box), and a Business Folder page (active version, files, last sync result, errors, a Sync Now button). (intel: REQ-dashboard-screens)
+- [x] **DASH-02**: A local-only test chat page at `/dev/chat` lets Ian text "as a customer" through the fake webhook and watch the thread update; it returns 404 outside the local environment. (intel: REQ-dev-chat-page)
 
 ### Quality Bar (Phase 1)
 
-- [ ] **QUAL-01**: Every Pest test passes. Money fields are integer cents. Nothing reads configuration from disk except the sync. Two project rules are recorded with Boost in `.ai/rules`: all money values are integer cents, never floats; application code reads business configuration only through `App\Icm\ActiveConfig`. (intel: REQ-suite-green-money-config-rules)
+- [x] **QUAL-01**: Every Pest test passes. Money fields are integer cents. Nothing reads configuration from disk except the sync. Two project rules are recorded with Boost in `.ai/rules`: all money values are integer cents, never floats; application code reads business configuration only through `App\Icm\ActiveConfig`. (intel: REQ-suite-green-money-config-rules)
 
 ### Text Front Desk (Phase 2)
 
@@ -145,9 +145,9 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | LEAD-03 | Phase 1 | Complete |
 | LEAD-04 | Phase 1 | Complete |
 | RECS-01 | Phase 1 | Complete |
-| DASH-01 | Phase 1 | Pending |
-| DASH-02 | Phase 1 | Pending |
-| QUAL-01 | Phase 1 | Pending |
+| DASH-01 | Phase 1 | Complete |
+| DASH-02 | Phase 1 | Complete |
+| QUAL-01 | Phase 1 | Complete |
 | AGNT-01 | Phase 2 | Pending |
 | AGNT-02 | Phase 2 | Pending |
 | AGNT-03 | Phase 2 | Pending |
