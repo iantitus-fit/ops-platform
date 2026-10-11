@@ -63,6 +63,13 @@ it('keeps retrying for ten minutes because every release uses an attempt', funct
     expect((new RenderCustomerCard(17))->retryUntil()->getTimestamp() - now()->getTimestamp())->toBe(600);
 });
 
+it('gives up after three real failures and waits longer between retries', function () {
+    $job = new RenderCustomerCard(17);
+
+    expect($job->maxExceptions)->toBe(3)
+        ->and($job->backoff())->toBe([5, 30, 120]);
+});
+
 it('removes the card files of a contact that no longer exists', function () {
     $writer = app(RecordsWriter::class);
     $gone = Contact::factory()->create(['name' => 'Dana Whitfield']);

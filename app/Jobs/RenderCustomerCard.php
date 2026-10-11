@@ -23,6 +23,12 @@ class RenderCustomerCard implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
 
+    /**
+     * Real failures (a full disk, a lock that timed out) stop after three exceptions. Releases
+     * by the overlap middleware are not exceptions, so they do not count toward this.
+     */
+    public int $maxExceptions = 3;
+
     public function __construct(public int $contactId) {}
 
     public function uniqueId(): string
@@ -45,6 +51,17 @@ class RenderCustomerCard implements ShouldBeUniqueUntilProcessing, ShouldQueue
     public function retryUntil(): DateTimeInterface
     {
         return now()->addMinutes(10);
+    }
+
+    /**
+     * Seconds to wait before each retry after a real failure, so a failing job does not
+     * retry in a tight loop for the whole ten minutes.
+     *
+     * @return list<int>
+     */
+    public function backoff(): array
+    {
+        return [5, 30, 120];
     }
 
     /**
