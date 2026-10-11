@@ -30,7 +30,8 @@ class ConversationThread extends Component
         try {
             $sendOwnerReply->handle($this->conversation, $this->body);
         } catch (DomainException $exception) {
-            Notification::make()->title($exception->getMessage())->danger()->send();
+            // The message can carry provider text, and Filament renders a title as HTML.
+            Notification::make()->title(e($exception->getMessage()))->danger()->send();
 
             return;
         }

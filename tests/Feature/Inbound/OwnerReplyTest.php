@@ -228,3 +228,21 @@ it('lists the thread in creation order, with same-second messages in arrival ord
         ->call('sendReply')
         ->assertSeeInOrder(['Is Tuesday OK?', 'Second question from Dana', 'Our answer']);
 });
+
+it('escapes provider text before it reaches the owner notification title', function () {
+    $conversation = openConversationWithQuestion();
+    $this->app->bind(TextChannel::class, fn () => new class extends FakeTextChannel
+    {
+        public function send(string $toE164, string $body): string
+        {
+            throw new RuntimeException('<a href="https://evil.example">Fix it</a>');
+        }
+    });
+
+    Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->set('body', 'Tuesday at 9 works')
+        ->call('sendReply')
+        ->assertNotified(Notification::make()
+            ->title('The reply was not sent: &lt;a href=&quot;https://evil.example&quot;&gt;Fix it&lt;/a&gt;')
+            ->danger());
+});

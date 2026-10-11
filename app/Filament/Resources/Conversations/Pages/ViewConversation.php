@@ -35,7 +35,8 @@ class ViewConversation extends ViewRecord
                     try {
                         $reopenConversation->handle($this->getRecord());
                     } catch (DomainException $exception) {
-                        Notification::make()->title($exception->getMessage())->danger()->send();
+                        // The refusal names the customer, and Filament renders a title as HTML.
+                        Notification::make()->title(e($exception->getMessage()))->danger()->send();
 
                         return;
                     }
