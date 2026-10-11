@@ -2,7 +2,8 @@
   "workflow": {
     "use_worktrees": false,
     "tdd_mode": true,
-    "test_command": "php artisan test"
+    "test_command": "php artisan test",
+    "_auto_chain_active": false
   },
   "git": {
     "branching_strategy": "phase"
