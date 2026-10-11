@@ -12,7 +12,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 ### Business Folder and Sync (Phase 1)
 
 - [x] **ICM-01**: `php artisan icm:sync` reads `examples/example-hvac`, compiles a version and makes it active; `php artisan icm:status` shows the active version, its file count and when it went live. (intel: REQ-icm-sync-activate)
-- [ ] **ICM-02**: A broken folder change never goes live. Deleting a required field or setting `price_policy: maybe` makes the sync fail with a message that names the file and the field in plain words, the previous version stays active, and the failure is appended to the folder's `changelog.md`. (intel: REQ-icm-sync-reject-broken)
+- [x] **ICM-02**: A broken folder change never goes live. Deleting a required field or setting `price_policy: maybe` makes the sync fail with a message that names the file and the field in plain words, the previous version stays active, and the failure is appended to the folder's `changelog.md`. (intel: REQ-icm-sync-reject-broken)
 
 ### Inbound and Timeline (Phase 1)
 
@@ -139,7 +139,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ICM-01 | Phase 1 | Complete |
-| ICM-02 | Phase 1 | Pending |
+| ICM-02 | Phase 1 | Complete |
 | LEAD-01 | Phase 1 | Pending |
 | LEAD-02 | Phase 1 | Pending |
 | LEAD-03 | Phase 1 | Pending |

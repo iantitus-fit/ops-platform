@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Foundation
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-10-11T12:59:53.040Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-10-11T13:11:40.350Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 01 execution started
-state_head: b332b8fd957da52aae7fefc9843a908b2eaf4705
+state_head: 055e8ef5a8671754af4acb8749a621a6f9d6b6c6
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 01 (Foundation) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 01 execution started
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 8 min | 3 tasks | 52 files |
+| Phase 01 P02 | 8 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [DEC-05]: Fake text channel; the build does not wait on A2P
 - [Phase 01]: [01-01] vN version label is the icm_versions row id; router files (CLAUDE.md, CONTEXT.md, START-HERE.md) are fingerprinted so editing one mints a version
 - [Phase 01]: [01-01] ActiveConfig singleton accessors assume business, hours, lead_sources, voice and sending_rules each exist once; plan 01-02 validator must enforce it
+- [Phase 01]: [01-02] A single-instance type (business, hours, lead sources, voice, sending rules) is owned by the file at its usual path; any other file with that type gets the already-used-by error
+- [Phase 01]: [01-02] Echoed owner values are cut to 80 characters total with line breaks collapsed (PlainWords::oneLine), so changelog.md stays one bullet per error
+- [Phase 01]: [01-02] Each rejected sync attempt stores its own rejected icm_versions row; the Business Folder page (01-07) should show only the newest
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-11T12:59:53.022Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-10-11T13:11:40.329Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

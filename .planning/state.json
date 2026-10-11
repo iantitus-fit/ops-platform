@@ -6,7 +6,7 @@
     {
       "number": "1",
       "name": "Foundation",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "2",
@@ -24,5 +24,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 01 of 3 · 0% · executing"
   },
-  "updated_at": "2026-10-11T12:59:52.285Z"
+  "updated_at": "2026-10-11T13:11:32.504Z"
 }
