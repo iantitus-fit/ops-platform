@@ -68,4 +68,15 @@ class Contact extends Model
     {
         return $this->hasMany(Activity::class);
     }
+
+    /**
+     * The timeline entries, newest first. Timestamps have one-second resolution, so the id
+     * breaks ties between entries from the same second.
+     *
+     * @return HasMany<Activity, $this>
+     */
+    public function timeline(): HasMany
+    {
+        return $this->hasMany(Activity::class)->orderByDesc('occurred_at')->orderByDesc('id');
+    }
 }
