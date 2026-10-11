@@ -20,21 +20,23 @@ arch('IcmVersion rows are used only by the sync, its commands, pages and data se
         'Tests',
     ]);
 
-arch('nothing outside the sync reads files straight from disk')
-    ->expect(['file_get_contents', 'file_put_contents', 'fopen', 'file', 'glob', 'scandir', 'parse_ini_file'])
-    ->not->toBeUsedIn([
-        'App\Http',
-        'App\Actions',
-        'App\Livewire',
-        'App\Filament',
-        'App\Channels',
-        'App\Jobs',
-        'App\Models',
-        'App\Records',
-        'App\Listeners',
-        'App\Events',
-        'App\Support',
-    ]);
+foreach (['file_get_contents', 'file_put_contents', 'fopen', 'file', 'glob', 'scandir', 'parse_ini_file'] as $diskFunction) {
+    arch("nothing outside the sync calls {$diskFunction}()")
+        ->expect($diskFunction)
+        ->not->toBeUsedIn([
+            'App\Http',
+            'App\Actions',
+            'App\Livewire',
+            'App\Filament',
+            'App\Channels',
+            'App\Jobs',
+            'App\Models',
+            'App\Records',
+            'App\Listeners',
+            'App\Events',
+            'App\Support',
+        ]);
+}
 
 arch('only the loader, the changelog and the records writer use the File facade')
     ->expect('Illuminate\Support\Facades\File')
