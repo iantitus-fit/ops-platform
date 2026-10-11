@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 4
+open_count: 2
 waived_count: 0
-fixed_count: 0
+fixed_count: 2
 total_count: 4
-last_updated: 2026-10-11T15:08:41.510Z
+last_updated: 2026-10-11T18:27:32.267Z
 ---
 
 # Broken Windows Ledger
@@ -17,8 +17,8 @@ last_updated: 2026-10-11T15:08:41.510Z
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 01 | stub | app/Jobs/ProcessInbound.php | 25 | ProcessInbound::handle() is empty by design in Phase 1; Sprint 1 front-desk agent runs here (AGNT-02) | open |  | 2026-10-11T13:23:26.587Z |  |
 | 2 | 01 | stub | app/Channels/TwilioTextChannel.php |  | TwilioTextChannel::send() and parseInbound() throw by design until Phase 2 (TXT-01) | open |  | 2026-10-11T13:23:26.689Z |  |
-| 3 | 01 | unrun-verify | tests/Feature/Filament/ContactResourceTest.php |  | Plan 01-06 Task 3 human-check (sign in, browse contacts, reply, close and reopen in a browser) not run; left for end-of-phase UAT | open |  | 2026-10-11T13:57:20.122Z |  |
-| 4 | 01 | unrun-verify | tests/Feature/Quality/SeederTest.php |  | Plan 01-07 Task 3 human-check (browser walk of /dev/chat, Business Folder Sync Now, cards) not run by the executor; left for end-of-phase UAT. Dana shares the /dev/chat default number, so step 4 shows four contacts, not five | open |  | 2026-10-11T15:08:41.510Z |  |
+| 3 | 01 | unrun-verify | tests/Feature/Filament/ContactResourceTest.php |  | Plan 01-06 Task 3 human-check (sign in, browse contacts, reply, close and reopen in a browser) not run; left for end-of-phase UAT | fixed |  | 2026-10-11T13:57:20.122Z | 2026-10-11T18:27:32.167Z |
+| 4 | 01 | unrun-verify | tests/Feature/Quality/SeederTest.php |  | Plan 01-07 Task 3 human-check (browser walk of /dev/chat, Business Folder Sync Now, cards) not run by the executor; left for end-of-phase UAT. Dana shares the /dev/chat default number, so step 4 shows four contacts, not five | fixed |  | 2026-10-11T15:08:41.510Z | 2026-10-11T18:27:32.267Z |
 
 ````json
 [
@@ -55,10 +55,10 @@ last_updated: 2026-10-11T15:08:41.510Z
     "file": "tests/Feature/Filament/ContactResourceTest.php",
     "line": null,
     "description": "Plan 01-06 Task 3 human-check (sign in, browse contacts, reply, close and reopen in a browser) not run; left for end-of-phase UAT",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-11T13:57:20.122Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-11T18:27:32.167Z",
     "milestone": null
   },
   {
@@ -68,10 +68,10 @@ last_updated: 2026-10-11T15:08:41.510Z
     "file": "tests/Feature/Quality/SeederTest.php",
     "line": null,
     "description": "Plan 01-07 Task 3 human-check (browser walk of /dev/chat, Business Folder Sync Now, cards) not run by the executor; left for end-of-phase UAT. Dana shares the /dev/chat default number, so step 4 shows four contacts, not five",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-11T15:08:41.510Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-11T18:27:32.267Z",
     "milestone": null
   }
 ]

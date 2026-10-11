@@ -13,7 +13,7 @@ Ops Platform is a client-owned operating system where the business runs from a f
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0)
+- [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [ ] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1)
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Every inbound text or form re-renders that customer's card in `records/customers/` and updates `INDEX.md` and `open-leads.md`; two events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; and the sync never reads `records/`.
 
 **Phase gate** (QUAL-01): every Pest test passes, money fields are integer cents, nothing reads configuration from disk except the sync, and the two project rules (integer cents; config only through `App\Icm\ActiveConfig`) are recorded with Boost in `.ai/rules`.
-**Plans**: 7/7 plans executed (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
+**Plans**: 7/7 plans complete (sprint-0.md's three steps refined into seven; one plan per wave, run in order)
 
 Plans:
 **Wave 1**
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 7/7 | In Progress | - |
+| 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 

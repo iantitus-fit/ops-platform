@@ -6,7 +6,7 @@
     {
       "number": "1",
       "name": "Foundation",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "2",
@@ -21,8 +21,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 01 of 3 · 0% · ready to verify"
+    "label": "Advance to the next step (plan phase 2)",
+    "reason": "Phase 2 of 3 — needs a plan"
   },
-  "updated_at": "2026-10-11T15:08:32.640Z"
+  "updated_at": "2026-10-11T18:27:36.215Z"
 }

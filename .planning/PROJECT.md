@@ -23,16 +23,15 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 
 ### Validated
 
-(None yet. Ship to validate.)
+- ✓ The folder drives the app: sync validates, versions and activates; a broken change never goes live and the previous version stays active — Phase 1
+- ✓ Every way a lead can arrive (fake text channel, web form, dev chat) lands on one contact and one timeline, with source and cost per lead from the folder — Phase 1
+- ✓ The owner works from a Filament dashboard: contacts, conversations with a reply box, and a Business Folder page — Phase 1
+- ✓ Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying — Phase 1
 
 ### Active
 
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
-- [ ] The folder drives the app: sync validates, versions and activates; a broken change never goes live and the previous version stays active (Phase 1)
-- [ ] Every way a lead can arrive (fake text channel, web form, dev chat) lands on one contact and one timeline, with source and cost per lead from the folder (Phase 1)
-- [ ] The owner works from a Filament dashboard: contacts, conversations with a reply box, and a Business Folder page (Phase 1)
-- [ ] Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying (Phase 1)
 - [ ] A text front desk built from `agents/*.md` replies, asks intake questions, discloses it is an AI, and obeys a send-or-draft gate enforced in code (Phase 2)
 - [ ] Owner takeover and draft review from the dashboard; Twilio driver behind the same channel interface; suite green on Postgres in CI (Phase 2)
 - [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (Phase 3)
@@ -128,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-10 after ingest and roadmap creation*
+*Last updated: 2026-10-11 after Phase 1*
