@@ -23,7 +23,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 ### Records Snapshots (Phases 1 and 3)
 
-- [ ] **RECS-01**: Every inbound text or form re-renders that customer's card in `records/customers/` from the database and updates `INDEX.md` and `open-leads.md`; two inbound events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; the sync ignores `records/`. (intel: REQ-records-render-customer-card) Phase 1
+- [x] **RECS-01**: Every inbound text or form re-renders that customer's card in `records/customers/` from the database and updates `INDEX.md` and `open-leads.md`; two inbound events for one customer in the same second produce one card showing both; `php artisan records:rebuild` regenerates everything; the sync ignores `records/`. (intel: REQ-records-render-customer-card) Phase 1
 - [ ] **RECS-02**: `records/today.md` (the schedule) is rendered from appointments on every booking change, and a nightly full rebuild of `records/` is scheduled to catch anything missed. *(derived: SPEC "The bridge" lists today.md and the nightly rebuild; Sprint 0 builds neither, and Sprint 2 introduces the scheduler)* Phase 3
 
 ### Dashboard (Phase 1)
@@ -144,7 +144,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | LEAD-02 | Phase 1 | Complete |
 | LEAD-03 | Phase 1 | Complete |
 | LEAD-04 | Phase 1 | Pending |
-| RECS-01 | Phase 1 | Pending |
+| RECS-01 | Phase 1 | Complete |
 | DASH-01 | Phase 1 | Pending |
 | DASH-02 | Phase 1 | Pending |
 | QUAL-01 | Phase 1 | Pending |
