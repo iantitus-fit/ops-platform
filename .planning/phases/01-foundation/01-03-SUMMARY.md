@@ -283,7 +283,7 @@ None - no external service configuration required. `TEXT_CHANNEL` and `PHONE_REG
 
 ## Verification
 
-- `php artisan test --compact tests/Feature/Inbound`: 23 passed (13 in FakeTextWebhookTest, 8 in TextChannelTest... plus the shared harness), 88 assertions.
+- `php artisan test --compact tests/Feature/Inbound`: 23 passed (15 in FakeTextWebhookTest, 8 in TextChannelTest), 88 assertions.
 - `php artisan test --compact tests/Feature/Icm tests/Feature/Quality tests/Unit/ArchitectureTest.php`: 83 passed, no regression in earlier plans.
 - `php artisan test --compact` (whole suite): 108 passed, 396 assertions.
 - `vendor/bin/pint --dirty --format agent`: passed.
@@ -300,4 +300,9 @@ None - no external service configuration required. `TEXT_CHANNEL` and `PHONE_REG
 *Phase: 01-foundation*
 *Completed: 2026-10-11*
 
-## Self-Check: PENDING
+## Self-Check: PASSED
+
+- All 34 created files exist on disk; the 7 modified files exist.
+- Commits found on the branch: `7580a49`, `55de073`, `a3eaa7b`, `16f7c7b`, `48a3c79`, `8edd6b4`, `90c9bb3`.
+- Measured commit count for the plan: 6 code commits (`b16a60a..8edd6b4`), plus the summary commit.
+- Evaluation scope for plan 01-03 resolved from the plan's own commits.
