@@ -14,8 +14,9 @@ class ContactFactory extends Factory
     /**
      * Define the model's default state.
      *
-     * The phone is a reserved fictional 555-01XX line in a real area code, which
-     * libphonenumber accepts as valid. Never use 555 as the area code.
+     * The phone is a fictional 555-02XX line in a real area code, which libphonenumber
+     * accepts as valid. Never use 555 as the area code. The 555-01XX block is left free for
+     * the numbers tests write by hand, so a generated phone can never collide with one.
      *
      * @return array<string, mixed>
      */
@@ -25,7 +26,7 @@ class ContactFactory extends Factory
 
         return [
             'name' => fake()->name(),
-            'phone_e164' => fake()->unique()->numerify('+1'.$areaCode.'55501##'),
+            'phone_e164' => fake()->unique()->numerify('+1'.$areaCode.'55502##'),
             'email' => strtolower(fake()->unique()->safeEmail()),
             'status' => ContactStatus::Lead,
             'lead_source_key' => 'text',
