@@ -131,3 +131,14 @@ AI replies, Twilio, booking, money, voice, automations.
 ## Walk-through log
 
 One line per concept, added the first time it shows up in this sprint.
+
+- Artisan commands (plan 01-01): `app/Console/Commands/IcmSync.php` is a command you run as `php artisan icm:sync`. The `#[Signature('icm:sync')]` attribute above the class is its name, `#[Description(...)]` is the help text, and `handle()` is what runs and returns 0 for success or 1 for failure.
+- Config files and `.env` (plan 01-01): `config/icm.php` holds the business folder path, and its value comes from `ICM_PATH` in `.env`, falling back to `examples/example-hvac`. Code asks for it with `config('icm.path')` and never reads `.env` directly, so it keeps working when Laravel caches configuration.
+- Migrations (plan 01-01): `database/migrations/*_create_icm_versions_table.php` describes the `icm_versions` table in PHP. `php artisan migrate` builds it, and the `down()` method undoes it, so the database shape is recorded in git alongside the code.
+- Eloquent model with JSON and enum casts (plan 01-01): `app/Models/IcmVersion.php` is one row of `icm_versions`. Its `casts()` method turns the JSON columns into PHP arrays and the `status` text into the `VersionStatus` enum, so code compares `VersionStatus::Active` instead of the string `'active'`.
+- Factories (plan 01-01): `database/factories/IcmVersionFactory.php` builds fake `icm_versions` rows for tests, with named states `active()`, `rejected()` and `superseded()` for the three situations a version can be in.
+- The service container and scoped bindings (plan 01-01): Laravel builds objects for you and hands them to anything that asks by type. `AppServiceProvider` binds `ActiveConfig` as "scoped", meaning one copy per web request or queued job, so a long-running queue worker picks up a new version after a sync instead of holding the old one forever.
+- Cache locks (plan 01-01): `Cache::lock('icm:sync', 120)` in `FolderSync` is a "one at a time" token. If a sync already holds it, a second `icm:sync` gets `Busy` and changes nothing, so two syncs cannot activate two versions at once.
+- Database transactions (plan 01-01): `DB::transaction(...)` in `FolderSync` makes "retire the old version" and "create the new one" succeed or fail together, so there is never a moment with zero or two live versions.
+- Pest feature tests with a temp-folder harness (plan 01-01): `tests/Pest.php` copies `examples/example-hvac` into a fresh temp folder before every Feature test and points `icm.path` at it, so tests can break and rewrite files freely without touching the repo.
+- Boost project rules (plan 01-01): the files in `.ai/rules` are rules Claude must follow when editing matching paths, such as "money is integer cents". They are written through Boost's `RuleRepository` rather than by hand, and `tests/Feature/Quality/ProjectRulesTest.php` fails if they disappear.

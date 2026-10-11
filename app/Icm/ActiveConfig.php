@@ -10,6 +10,7 @@ use App\Models\IcmVersion;
  * The only way application code reads business configuration.
  *
  * It answers from the compiled copy stored with the live version, never from the folder on disk.
+ * Every accessor throws NoActiveVersion when nothing is live yet.
  */
 class ActiveConfig
 {
@@ -33,9 +34,120 @@ class ActiveConfig
      */
     public function timezone(): string
     {
-        $compiled = $this->version()->compiled;
+        return $this->business()['timezone'];
+    }
 
-        return $compiled['files'][$compiled['index']['business']]['front_matter']['timezone'];
+    /**
+     * The business profile: its front matter plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function business(): array
+    {
+        return $this->singleton('business');
+    }
+
+    /**
+     * Weekly hours, closures and booking notice, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function hours(): array
+    {
+        return $this->singleton('hours');
+    }
+
+    /**
+     * Tone and disclosure rules, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function voice(): array
+    {
+        return $this->singleton('voice');
+    }
+
+    /**
+     * What may be sent on its own and what waits for the owner, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function sendingRules(): array
+    {
+        return $this->singleton('sending_rules');
+    }
+
+    /**
+     * Every lead source with the cost of one lead in integer cents.
+     *
+     * @return list<array{key: string, name: string, cost_cents_per_lead: int}>
+     */
+    public function leadSources(): array
+    {
+        $sources = $this->singleton('lead_sources')['sources'] ?? [];
+
+        return array_values(array_map(fn (array $source) => [
+            'key' => $source['key'],
+            'name' => $source['name'],
+            'cost_cents_per_lead' => $source['cost_cents_per_lead'],
+        ], $sources));
+    }
+
+    /**
+     * One lead source by its key, or null when the key is not in lead-sources.md.
+     *
+     * @return array{key: string, name: string, cost_cents_per_lead: int}|null
+     */
+    public function leadSource(string $key): ?array
+    {
+        foreach ($this->leadSources() as $source) {
+            if ($source['key'] === $key) {
+                return $source;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Every service: its front matter plus the markdown body under "body".
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function services(): array
+    {
+        return array_values(array_map(
+            fn (string $path) => $this->typedFile($path),
+            $this->version()->compiled['index']['service'] ?? [],
+        ));
+    }
+
+    /**
+     * One service by its slug, or null when there is no such service.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function service(string $slug): ?array
+    {
+        $path = $this->version()->compiled['index']['service'][$slug] ?? null;
+
+        return $path === null ? null : $this->typedFile($path);
+    }
+
+    /**
+     * Every compiled file in the live version. Router files have no type.
+     *
+     * @return list<array{path: string, type: ?string}>
+     */
+    public function files(): array
+    {
+        $files = [];
+
+        foreach ($this->version()->compiled['files'] as $path => $file) {
+            $files[] = ['path' => $path, 'type' => $file['type']];
+        }
+
+        return $files;
     }
 
     /**
@@ -64,5 +176,23 @@ class ActiveConfig
     public function refresh(): void
     {
         $this->version = null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function singleton(string $type): array
+    {
+        return $this->typedFile($this->version()->compiled['index'][$type]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function typedFile(string $path): array
+    {
+        $file = $this->version()->compiled['files'][$path];
+
+        return [...$file['front_matter'], 'body' => $file['body']];
     }
 }
