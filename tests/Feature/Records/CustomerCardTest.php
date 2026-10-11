@@ -51,7 +51,9 @@ it('shows two texts from the same second in one card, the later one first', func
     $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('1', 32), 'Body' => 'first text']))->assertOk();
     $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('2', 32), 'Body' => 'second text']))->assertOk();
 
-    $cards = File::files(icmPath('records/customers'));
+    $cards = collect(File::files(icmPath('records/customers')))
+        ->reject(fn (SplFileInfo $file) => $file->getFilename() === 'INDEX.md')
+        ->values();
 
     expect($cards)->toHaveCount(1);
 

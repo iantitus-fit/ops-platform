@@ -49,7 +49,8 @@ class RenderCustomerCard implements ShouldBeUniqueUntilProcessing, ShouldQueue
 
     /**
      * The contact is loaded fresh, so the card shows the database as it is now rather than as
-     * it was when the event fired.
+     * it was when the event fired. The summaries are rewritten after the card either way,
+     * since a new, renamed or deleted customer changes both.
      */
     public function handle(RecordsWriter $recordsWriter): void
     {
@@ -57,10 +58,10 @@ class RenderCustomerCard implements ShouldBeUniqueUntilProcessing, ShouldQueue
 
         if ($contact === null) {
             $recordsWriter->removeCard($this->contactId);
-
-            return;
+        } else {
+            $recordsWriter->writeCard($contact);
         }
 
-        $recordsWriter->writeCard($contact);
+        $recordsWriter->writeSummaries();
     }
 }
