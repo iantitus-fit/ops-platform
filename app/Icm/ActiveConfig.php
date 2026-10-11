@@ -38,6 +38,19 @@ class ActiveConfig
     }
 
     /**
+     * The time zone to show times in: the business's, or the app's own when no version is live.
+     * Unlike timezone(), this never throws, so a customer card can render before the first sync.
+     */
+    public function displayTimezone(): string
+    {
+        try {
+            return $this->timezone();
+        } catch (NoActiveVersion) {
+            return config('app.timezone');
+        }
+    }
+
+    /**
      * The business profile: its front matter plus the markdown body under "body".
      *
      * @return array<string, mixed>
