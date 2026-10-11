@@ -132,7 +132,8 @@ class RecordInbound
      * The phone is tried first, then the email. This is written out by hand rather than with
      * Eloquent's update-or-create helper, which cannot express "phone, then email, and only
      * fill what is empty". A stored phone or email is never overwritten: a different one the
-     * form gave becomes a note on the timeline instead. The first-touch source and cost are
+     * form gave becomes a note on the timeline instead, and so does an email another contact
+     * already owns, so two contacts never share one. The first-touch source and cost are
      * set only when the contact is created.
      *
      * @return array{Contact, list<string>} the contact and the note summaries to put on the timeline
@@ -153,7 +154,7 @@ class RecordInbound
         $matchedByEmail = false;
 
         if ($contact === null && $email !== null) {
-            $contact = Contact::query()->where('email', $email)->first();
+            $contact = Contact::query()->where('email', $email)->orderBy('id')->first();
             $matchedByEmail = $contact !== null;
         }
 
@@ -180,7 +181,11 @@ class RecordInbound
 
         if ($email !== null) {
             if ($contact->email === null) {
-                $contact->email = $email;
+                if (Contact::query()->where('email', $email)->whereKeyNot($contact->id)->exists()) {
+                    $notes[] = "form gave an email another customer already has: {$email}";
+                } else {
+                    $contact->email = $email;
+                }
             } elseif ($contact->email !== $email) {
                 $notes[] = "form gave a different email: {$email}";
             }

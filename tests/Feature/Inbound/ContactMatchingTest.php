@@ -241,3 +241,24 @@ it('retries once when another request creates the same contact first', function 
         ->and(Message::count())->toBe(1)
         ->and(Conversation::count())->toBe(1);
 });
+
+it('does not copy an email onto a contact when another contact already owns it', function () {
+    $byPhone = Contact::factory()->create(['phone_e164' => '+12025550123', 'email' => null]);
+    $owner = Contact::factory()->create(['phone_e164' => '+13125550162', 'email' => 'sam@example.com']);
+
+    postLead($this, ['phone' => '(202) 555-0123', 'email' => 'sam@example.com'])->assertOk();
+
+    expect($byPhone->fresh()->email)->toBeNull()
+        ->and($owner->fresh()->email)->toBe('sam@example.com')
+        ->and(Conversation::sole()->contact_id)->toBe($byPhone->id)
+        ->and(noteSummaries())->toBe(['form gave an email another customer already has: sam@example.com']);
+});
+
+it('matches an email shared by two contacts to the one created first', function () {
+    $first = Contact::factory()->create(['email' => 'shared@example.com']);
+    Contact::factory()->create(['email' => 'shared@example.com']);
+
+    postLead($this, ['email' => 'shared@example.com'])->assertOk();
+
+    expect(Conversation::sole()->contact_id)->toBe($first->id);
+});
