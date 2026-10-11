@@ -66,7 +66,7 @@ it('skips later-sprint file types with a notice and still activates', function (
 });
 
 it('treats a second sync with no changes as a no-op', function () {
-    $this->freezeTime();
+    $this->freezeSecond();
     $this->artisan('icm:sync')->assertExitCode(0);
 
     $this->travel(5)->minutes();

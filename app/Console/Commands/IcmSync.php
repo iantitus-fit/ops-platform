@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\SyncOutcome;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Icm\FolderSync;
 use Illuminate\Console\Attributes\Description;
@@ -21,6 +22,16 @@ class IcmSync extends Command
             $result = $folderSync->run();
         } catch (IcmFolderMissing $exception) {
             $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
+        foreach ($result->notices as $notice) {
+            $this->warn($notice);
+        }
+
+        if ($result->outcome === SyncOutcome::Busy) {
+            $this->error($result->message);
 
             return self::FAILURE;
         }

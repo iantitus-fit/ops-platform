@@ -23,6 +23,13 @@ class Loader
     private const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules'];
 
     /**
+     * Front matter types that arrive in a later sprint. They are skipped with a notice.
+     *
+     * @var list<string>
+     */
+    private const LATER_SPRINT = ['agent', 'automation', 'connector', 'walk_test'];
+
+    /**
      * Files that only point at other files. They are kept as raw text and never validated.
      *
      * @var list<string>
@@ -41,20 +48,28 @@ class Loader
         }
 
         $files = [];
+        $notices = [];
 
-        $finder = (new Finder)->files()->in($root)->name('*.md')->sortByName();
+        $finder = (new Finder)->files()->in($root)->name('*.md')
+            ->notPath('#^records(/|$)#')
+            ->filter(fn (SplFileInfo $file) => $this->relativePath($file) !== 'changelog.md')
+            ->sortByName();
 
         foreach ($finder as $file) {
-            $path = str_replace('\\', '/', $file->getRelativePathname());
-
             if ($file->getFilename() === 'README.md') {
                 continue;
             }
 
-            $files[] = $this->read($path, $file);
+            $icmFile = $this->read($this->relativePath($file), $file);
+
+            if ($icmFile->kind === IcmFileKind::LaterSprint) {
+                $notices[] = "{$icmFile->path}: type {$icmFile->type} is not supported yet, so this file was skipped";
+            }
+
+            $files[] = $icmFile;
         }
 
-        return new LoadedFolder($files);
+        return new LoadedFolder($files, $notices);
     }
 
     private function read(string $path, SplFileInfo $file): IcmFile
@@ -98,10 +113,22 @@ class Loader
             return $this->unrecognized($path, $raw, 'missing_type', $body, $frontMatter);
         }
 
-        $kind = in_array($type, self::TYPED, true) ? IcmFileKind::Typed : IcmFileKind::Unrecognized;
+        $kind = match (true) {
+            in_array($type, self::TYPED, true) => IcmFileKind::Typed,
+            in_array($type, self::LATER_SPRINT, true) => IcmFileKind::LaterSprint,
+            default => IcmFileKind::Unrecognized,
+        };
         $problem = $kind === IcmFileKind::Unrecognized ? 'unknown_type:'.$type : null;
 
         return new IcmFile($path, $kind, $type, $frontMatter, $body, $raw, $problem);
+    }
+
+    /**
+     * The file's path inside the folder, always with forward slashes.
+     */
+    private function relativePath(SplFileInfo $file): string
+    {
+        return str_replace('\\', '/', $file->getRelativePathname());
     }
 
     /**

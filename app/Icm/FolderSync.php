@@ -6,6 +6,7 @@ use App\Enums\IcmFileKind;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Models\IcmVersion;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 
@@ -17,9 +18,24 @@ class FolderSync
     public function __construct(private Loader $loader) {}
 
     /**
-     * Read the folder, compile it and make it the active version.
+     * Read the folder, compile it and make it the active version, unless another sync is running.
      */
     public function run(): SyncResult
+    {
+        $lock = Cache::lock('icm:sync', 120);
+
+        if (! $lock->get()) {
+            return new SyncResult(SyncOutcome::Busy, null, [], [], 0, 'A sync is already running. Try again in a moment.');
+        }
+
+        try {
+            return $this->sync();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function sync(): SyncResult
     {
         $root = config('icm.path');
         $folder = $this->loader->load($root);
@@ -30,16 +46,33 @@ class FolderSync
             ->values();
 
         $fileCount = $compiledFiles->where('kind', IcmFileKind::Typed)->count();
+        $fingerprint = $this->fingerprint($compiledFiles->all());
 
-        $version = DB::transaction(function () use ($compiledFiles, $fileCount, $root) {
+        $active = IcmVersion::query()->where('status', VersionStatus::Active->value)->latest('id')->first();
+
+        if ($active?->fingerprint === $fingerprint) {
+            $active->update(['last_checked_at' => now(), 'last_result' => SyncOutcome::Unchanged]);
+
+            return new SyncResult(
+                SyncOutcome::Unchanged,
+                $active,
+                [],
+                $folder->notices,
+                $active->file_count,
+                "Already active: {$active->label()}, no changes",
+            );
+        }
+
+        $version = DB::transaction(function () use ($compiledFiles, $fileCount, $fingerprint, $folder, $root) {
             IcmVersion::query()
                 ->where('status', VersionStatus::Active->value)
                 ->update(['status' => VersionStatus::Superseded->value]);
 
             return IcmVersion::create([
-                'fingerprint' => $this->fingerprint($compiledFiles->all()),
+                'fingerprint' => $fingerprint,
                 'git_sha' => $this->gitSha($root),
                 'compiled' => $this->compile($compiledFiles->all()),
+                'notices' => $folder->notices,
                 'file_count' => $fileCount,
                 'status' => VersionStatus::Active,
                 'activated_at' => now(),
@@ -54,7 +87,7 @@ class FolderSync
             SyncOutcome::Activated,
             $version,
             [],
-            [],
+            $folder->notices,
             $fileCount,
             "Live as {$version->label()} ({$fileCount} files)",
         );
