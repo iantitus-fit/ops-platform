@@ -22,6 +22,11 @@ use Illuminate\Support\Facades\DB;
 
 class RecordInbound
 {
+    /**
+     * Source keys that never get an unknown-source note: texts and forms that named no source.
+     */
+    public const array RESERVED_SOURCES = ['text', 'direct'];
+
     public function __construct(private readonly ActiveConfig $activeConfig) {}
 
     /**
@@ -56,10 +61,11 @@ class RecordInbound
     private function record(InboundData $data): Message
     {
         $occurredAt = now();
-        $leadSource = $this->leadSourceFor($data->source);
+        [$leadSource, $sourceNotes] = $this->lookUpLeadSource($data->source);
         $costCents = $leadSource['cost_cents_per_lead'] ?? null;
 
-        [$contact, $notes] = $this->matchOrCreateContact($data, $costCents);
+        [$contact, $contactNotes] = $this->matchOrCreateContact($data, $costCents);
+        $notes = [...$sourceNotes, ...$contactNotes];
         $conversation = $this->openConversationFor($contact);
 
         $message = $conversation->messages()->create([
@@ -188,18 +194,30 @@ class RecordInbound
     }
 
     /**
-     * The source's entry in lead-sources.md, or null when the key is not listed or no
-     * business folder version is live yet. A missing version must never lose a lead.
+     * The source's entry in lead-sources.md, plus the timeline notes the lookup calls for.
      *
-     * @return array{key: string, name: string, cost_cents_per_lead: int}|null
+     * A lead is never dropped for its source. A key that is not listed is kept raw with a null
+     * cost and an "unknown source" note, and so is every key when no business folder version
+     * is live yet, in which case the note says so. The cost is null, never 0, whenever it is
+     * not known. The reserved keys "text" and "direct" are not listed anywhere and get no note.
+     *
+     * @return array{array{key: string, name: string, cost_cents_per_lead: int}|null, list<string>}
      */
-    private function leadSourceFor(string $key): ?array
+    private function lookUpLeadSource(string $key): array
     {
+        $reserved = in_array($key, self::RESERVED_SOURCES, true);
+
         try {
-            return $this->activeConfig->leadSource($key);
+            $source = $this->activeConfig->leadSource($key);
         } catch (NoActiveVersion) {
-            return null;
+            return [null, $reserved ? [] : ["Cost per lead unknown for {$key}: no business folder version is live yet"]];
         }
+
+        if ($source === null && ! $reserved) {
+            return [null, ["unknown source: {$key}"]];
+        }
+
+        return [$source, []];
     }
 
     private function summaryFor(InboundData $data, string $sourceName): string
