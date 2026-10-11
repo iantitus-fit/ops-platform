@@ -104,6 +104,7 @@ Plans:
 - The after-hours on-call switch per business (urgent service requests such as plain flooding).
 - `escalate_to` may name a staff user.
 - The LLM fallback classifier driver on a ZDR route.
+- A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
 **Success Criteria** (what must be TRUE):
   1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
   2. Replying to an alert text with its code sends the draft (or the replacement words) through the same path as a dashboard approval, recorded on the timeline; a reply with no valid code, or from an unregistered phone, sends nothing and gets a short help text.

@@ -31,6 +31,8 @@ Full picture: `docs/SPEC.md`.
 | `app/Icm/` | Folder sync: Loader, Validator, ActiveConfig (Sprint 0) |
 | `app/Channels/` | Text and voice channel drivers |
 | `app/Actions/` | Single-purpose domain actions |
+| `app/Ai/` | laravel/ai agents: the front-desk agent and its structured output (Phase 2) |
+| `app/SendRule/` | The send-or-draft rule: code checks, the Jev classifier, the stored verdict (Phase 2). Not `Gate`: that is Laravel's authorization facade |
 | `app/Filament/` | Back-office screens |
 | `examples/` | Fictional business folders used in development and tests |
 | `docs/` | Spec, decisions, setup, sprint plans, GSD ingest manifest |
