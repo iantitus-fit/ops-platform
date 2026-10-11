@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 1
+current_phase: 01
 current_phase_name: Foundation
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-10-10T23:57:35.403Z"
-last_activity: 2026-10-10
-last_activity_desc: Roadmap, requirements and state created from ingested docs (3 phases, 30 v1 requirements, 4 backlog phases)
-state_head: f6e8403e8c54c77e4998a007eb41a5ed0b795201
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-10-11T12:59:53.040Z"
+last_activity: 2026-10-11
+last_activity_desc: Phase 01 execution started
+state_head: b332b8fd957da52aae7fefc9843a908b2eaf4705
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 7
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-10)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 1: Foundation (SPEC Sprint 0)
+**Current focus:** Phase 01 — Foundation
 
 ## Current Position
 
-Phase: 1 (Foundation) — READY TO EXECUTE
-Plan: 0 of 3 in current phase (plans sketched in ROADMAP.md, not yet created)
+Phase: 01 (Foundation) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-10-10 — Roadmap, requirements and state created from ingested docs (3 phases, 30 v1 requirements, 4 backlog phases)
+Last activity: 2026-10-11 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,11 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 8 min | 3 tasks | 52 files |
 
 ## Accumulated Context
 
@@ -64,6 +69,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [DEC-03]: Records are written to the database first; `records/` cards are rendered from the database and are read-only
 - [DEC-06]: SQLite in Sprint 0; Postgres in CI from Sprint 1 (Phase 2)
 - [DEC-05]: Fake text channel; the build does not wait on A2P
+- [Phase 01]: [01-01] vN version label is the icm_versions row id; router files (CLAUDE.md, CONTEXT.md, START-HERE.md) are fingerprinted so editing one mints a version
+- [Phase 01]: [01-01] ActiveConfig singleton accessors assume business, hours, lead_sources, voice and sending_rules each exist once; plan 01-02 validator must enforce it
 
 ### Pending Todos
 
@@ -91,6 +98,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T22:19:20.791Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-foundation/01-CONTEXT.md
+Last session: 2026-10-11T12:59:53.022Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
