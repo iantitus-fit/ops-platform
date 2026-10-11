@@ -27,6 +27,13 @@ class Validator
     ];
 
     /**
+     * The largest money amount an owner may write, in cents ($1,000,000). The database stores
+     * these values in a 32-bit column on PostgreSQL, so a larger number would pass here and then
+     * fail every inbound from that source or service.
+     */
+    private const int MAX_CENTS = 100_000_000;
+
+    /**
      * @var list<string>
      */
     private const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -109,7 +116,7 @@ class Validator
                 'sources' => 'bail|required|array|min:1',
                 'sources.*.key' => ['bail', 'required', 'string', 'regex:/^[a-z0-9]+([_-][a-z0-9]+)*$/'],
                 'sources.*.name' => 'bail|required|string',
-                'sources.*.cost_cents_per_lead' => 'bail|required|integer:strict|min:0',
+                'sources.*.cost_cents_per_lead' => 'bail|required|integer:strict|min:0|max:'.self::MAX_CENTS,
             ],
             'service' => [
                 'name' => 'bail|required|string',
@@ -117,7 +124,7 @@ class Validator
                 'duration_minutes' => 'bail|required|integer:strict|min:1',
                 'book_online' => 'bail|required|boolean:strict',
                 'price_policy' => ['bail', 'required', Rule::in(['none', 'starting_at', 'fixed'])],
-                'price_cents' => 'bail|required_unless:price_policy,none|integer:strict|min:0',
+                'price_cents' => 'bail|required_unless:price_policy,none|integer:strict|min:0|max:'.self::MAX_CENTS,
                 'intake' => 'bail|required|array|min:1',
                 'intake.*.key' => ['bail', 'required', 'string', 'regex:/^[a-z0-9]+(_[a-z0-9]+)*$/'],
                 'intake.*.ask' => 'bail|required|string',

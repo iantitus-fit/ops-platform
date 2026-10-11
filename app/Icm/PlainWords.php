@@ -29,6 +29,7 @@ class PlainWords
             'Min' => is_array($value)
                 ? "{$name} must have at least {$parameters[0]} item(s)"
                 : "{$name} must be {$parameters[0]} or more {$wrote}",
+            'Max' => "{$name} must be {$parameters[0]} or less {$wrote}",
             'Timezone' => "{$name} must be a time zone such as America/Chicago {$wrote}",
             'DateFormat' => match ($parameters[0] ?? null) {
                 'H:i' => "{$name} must be a 24-hour time such as 08:00 {$wrote}",
