@@ -47,10 +47,27 @@ class LifeSafety
         'smell of propane',
         'gas odor',
         'gas odour',
+        'smelling gas',
+        'smelled gas',
+        'smells gas',
+        'gas hissing',
+        'gas is hissing',
+        'hissing gas',
+        'smelling propane',
+        'smelled propane',
+        'smells propane',
+        'smelling natural gas',
+        'smelled natural gas',
+        'smells natural gas',
+        'smelling sulfur',
+        'smelled sulfur',
+        'smells sulfur',
     ];
 
     /**
-     * Phrases that mean fire, smoke, a carbon monoxide alarm or electrical sparking.
+     * Phrases that mean fire, smoke, a carbon monoxide alarm, electrical sparking or an electric shock. "Burning"
+     * appears only in phrases that put it next to a smell or "something", never on its own, so a "burning question"
+     * is not a fire.
      *
      * @var list<string>
      */
@@ -77,6 +94,19 @@ class LifeSafety
         'house is burning',
         'burnt smell',
         'smells burnt',
+        'something burning',
+        'something is burning',
+        'smells burning',
+        'smelling burning',
+        'smelled burning',
+        'smell of burning',
+        'smells of burning',
+        'electrocuted',
+        'electrocution',
+        'electric shock',
+        'electrical shock',
+        'got shocked',
+        'got a shock',
     ];
 
     /**
