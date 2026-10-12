@@ -3,17 +3,21 @@
 namespace App\Jobs;
 
 use App\Actions\ClaimInboundBurst;
+use App\Actions\RaiseOwnerAlert;
 use App\Actions\ReportFrontDeskFailure;
 use App\Actions\RunFrontDesk;
+use App\Enums\AlertReason;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\LifeSafety;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\DebounceFor;
+use Illuminate\Support\Collection;
 use Throwable;
 
 /**
@@ -65,7 +69,9 @@ class ProcessInbound implements ShouldQueue
      * that finds nothing to claim has nothing to answer and stops. So does a burst with no text
      * from the customer: the agent only answers a number that has texted the business, so web
      * form leads are claimed and then stop here, and reach the owner through the dashboard and
-     * open-leads.md (D-41).
+     * open-leads.md (D-41). A form whose message describes a danger is the one exception to the
+     * quiet stop: the owner is alerted at once before the run ends, and the lead is still sent
+     * no text (WR-07).
      *
      * Until a first business folder is live there is no agent to ask, so the burst is claimed and left quietly
      * (Pitfall 7) instead of failing the job.
@@ -76,13 +82,15 @@ class ProcessInbound implements ShouldQueue
      *
      * @return bool true when the burst holds a text from the customer and went on to the front desk
      */
-    public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk, ReportFrontDeskFailure $reportFrontDeskFailure): bool
+    public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk, ReportFrontDeskFailure $reportFrontDeskFailure, RaiseOwnerAlert $raiseOwnerAlert): bool
     {
         $burst = $claimInboundBurst->handle($this->conversationId);
 
         if ($burst->isEmpty()) {
             return false;
         }
+
+        $this->alertOwnerToDangerousForms($burst, $raiseOwnerAlert);
 
         if (! $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms)) {
             return false;
@@ -99,6 +107,25 @@ class ProcessInbound implements ShouldQueue
         }
 
         return true;
+    }
+
+    /**
+     * Alert the owner to every web form in the burst whose message describes a danger.
+     *
+     * A form is never answered by text (D-41), but a form that says "I smell gas" must reach the owner at once.
+     * RecordInbound's immediate safety line stays for texts only, so this is the one place a form's danger is
+     * noticed. It runs after the burst wait, which for a form is acceptable because nothing is sent to the lead.
+     * The alert is urgent and is raised once per form message.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertOwnerToDangerousForms(Collection $burst, RaiseOwnerAlert $raiseOwnerAlert): void
+    {
+        foreach ($burst as $message) {
+            if ($message->channel === MessageChannel::Web && LifeSafety::hazardIn($message->body) !== null) {
+                $raiseOwnerAlert->handle($message->conversation, AlertReason::LifeSafety, $message, 'Web form describes a danger');
+            }
+        }
     }
 
     /**
