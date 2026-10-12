@@ -5,6 +5,7 @@ use App\Filament\Pages\BusinessFolder;
 use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
 use App\Models\IcmVersion;
+use App\Models\OwnerAlert;
 use App\Models\User;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
@@ -182,4 +183,43 @@ it('escapes a never_say phrase the owner wrote when it is listed as always held'
     expect($page->instance()->alwaysHeld()['Never say'])->toBe(['guaranteed', '<b>loud</b>']);
 
     $page->assertSee('&lt;b&gt;loud&lt;/b&gt;', false)->assertDontSeeHtml('<b>loud</b>');
+});
+
+it('warns when alerts go by text but no one has a phone number on their profile', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Alerts are set to go by text, but no one has a phone number on their profile. Add yours on your profile page so held drafts reach you.');
+});
+
+it('does not warn about alerts once someone has a phone number', function () {
+    activateExampleFolder();
+    User::factory()->withPhone()->create();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertDontSee('no one has a phone number on their profile');
+});
+
+it('shows the last alert that was not sent with its reason', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['failed_at' => now()->subHour(), 'failure' => 'Twilio refused the number']);
+    OwnerAlert::factory()->create(['failed_at' => now(), 'failure' => 'No phone on file']);
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('The last alert was not sent: No phone on file')
+        ->assertDontSee('Twilio refused the number');
+});
+
+it('shows no failed alert line when every alert went out', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['sent_at' => now()]);
+
+    Livewire::test(BusinessFolder::class)->assertDontSee('The last alert was not sent');
+});
+
+it('escapes the reason an alert failed', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['failed_at' => now(), 'failure' => '<b>loud</b>']);
+
+    Livewire::test(BusinessFolder::class)->assertDontSeeHtml('<b>loud</b>');
 });
