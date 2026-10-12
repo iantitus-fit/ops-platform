@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\ClaimInboundBurst;
 use App\Actions\RecordIntakeAnswers;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\ActivityType;
@@ -8,6 +9,7 @@ use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
+use App\Jobs\ProcessInbound;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -103,4 +105,65 @@ it('tells the owner and writes a note when something unexpected breaks the run, 
         ->and($alert->body)->not->toContain('RuntimeException')
         ->and($sent)->toHaveCount(1)
         ->and($sent[0]['to'])->toBe('+12025550199');
+});
+
+/**
+ * A job for Dana's conversation, as the queue would build it after her text.
+ */
+function frontDeskJobForTheOnlyConversation(): ProcessInbound
+{
+    return new ProcessInbound(Message::query()->where('direction', MessageDirection::In)->sole()->id, Conversation::sole()->id);
+}
+
+it('tells the owner when the worker stops the run before it finishes', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    app(ClaimInboundBurst::class)->handle(Conversation::sole()->id);
+
+    frontDeskJobForTheOnlyConversation()->failed(new RuntimeException('timed out: secret-detail-456'));
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: it stopped before finishing')
+        ->and($alert->reason)->toBe(AlertReason::FrontDeskFailed)
+        ->and($alert->body)->toContain('Front desk stopped before answering')
+        ->and($alert->body)->not->toContain('secret-detail-456')
+        ->and(Message::query()->where('direction', MessageDirection::In)->sole()->handled_at)->not->toBeNull()
+        ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0)
+        ->and(textsSentToCustomers())->toHaveCount(1)
+        ->and(textsSentToCustomers()[0]['to'])->toBe('+12025550199');
+});
+
+it('reports a crash once even when failed() runs after the job already reported it', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    $this->mock(RecordIntakeAnswers::class, fn ($mock) => $mock->shouldReceive('handle')->andThrow(new RuntimeException('database went away')));
+
+    runQueuedFrontDeskJobs();
+    frontDeskJobForTheOnlyConversation()->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1)
+        ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->count())->toBe(1)
+        ->and(textsSentToCustomers())->toHaveCount(1);
+});
+
+it('does nothing in failed() for a conversation that no longer exists', function () {
+    User::factory()->withPhone('+12025550199')->create();
+
+    (new ProcessInbound(1, 999999))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->count())->toBe(0)
+        ->and(textsSentToCustomers())->toBe([]);
+});
+
+it('gives the job more time than the slowest front desk run, and the queue more time than the job', function () {
+    $job = new ProcessInbound(1, 1);
+
+    expect($job->tries)->toBe(1)
+        ->and($job->timeout)->toBe(300)
+        ->and($job->failOnTimeout)->toBeTrue()
+        ->and($job->timeout)->toBeGreaterThan(config('gate.agent.chain_budget_seconds') + config('services.jev.timeout') + 120)
+        ->and(config('queue.connections.database.retry_after'))->toBeGreaterThan(300)
+        ->and(config('queue.connections.redis.retry_after'))->toBeGreaterThan(300);
 });

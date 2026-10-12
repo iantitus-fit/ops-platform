@@ -171,3 +171,46 @@ it('prompts no provider when there is nothing to answer', function () {
 
     FrontDeskAgent::assertNeverPrompted();
 });
+
+it('stops trying fallbacks once the next one would not finish inside the time budget', function () {
+    [$agent, $conversation, $burst] = fallbackTestRun();
+
+    config(['gate.agent.chain_budget_seconds' => 60]);
+    fakeFailingPrimary(function () {
+        test()->travel(41)->seconds();
+
+        throw new RuntimeException('slow and then down');
+    });
+
+    try {
+        app(RunFrontDeskAgent::class)->handle($agent, $conversation, $burst);
+        $this->fail('Expected FrontDeskUnavailable.');
+    } catch (FrontDeskUnavailable $unavailable) {
+        expect($unavailable->attempts)->toHaveCount(2)
+            ->and($unavailable->attempts[0]['provider'])->toBe('anthropic')
+            ->and($unavailable->attempts[0]['error'])->toContain('slow and then down')
+            ->and($unavailable->attempts[1]['provider'])->toBe('openai')
+            ->and($unavailable->attempts[1]['error'])->toBe('skipped: not enough time left in this run');
+    }
+
+    FrontDeskAgent::assertPromptedTimes(1);
+});
+
+it('keeps the file order and tries every entry that fits inside the time budget', function () {
+    [$agent, $conversation, $burst] = fallbackTestRun();
+
+    config(['gate.agent.chain_budget_seconds' => 100]);
+    fakeFailingPrimary(function () {
+        test()->travel(41)->seconds();
+
+        throw new RuntimeException('slow and then down');
+    });
+
+    $run = app(RunFrontDeskAgent::class)->handle($agent, $conversation, $burst);
+
+    expect($run->provider)->toBe('openai')
+        ->and($run->failedAttempts)->toHaveCount(1)
+        ->and($run->failedAttempts[0]['provider'])->toBe('anthropic');
+
+    FrontDeskAgent::assertPromptedTimes(2);
+});
