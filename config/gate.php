@@ -10,8 +10,8 @@ return [
     | This file holds the send rule's numbers in code, not in the business
     | folder: the owner changes how the business runs in the folder, but the
     | limits that decide whether a text may go out on its own stay here, where
-    | a sync cannot change them. Later plans add the classifier, alert and cap
-    | numbers next to the one below.
+    | a sync cannot change them. The classifier thresholds sit below; later
+    | plans add the alert and cap numbers next to them.
     |
     */
 
@@ -30,6 +30,40 @@ return [
 
     'next_open' => [
         'today_margin_minutes' => 60,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Classifier Thresholds
+    |--------------------------------------------------------------------------
+    |
+    | How Jev's numbers become send or hold. Every value below is copied onto
+    | each stored verdict, so the approval log shows what a reply was judged by
+    | and these can be loosened later from what the log shows. They are
+    | deliberately strict: a wrong hold costs the owner a tap, a wrong send
+    | costs a customer.
+    |
+    | intent_min_confidence (D-45): the intent counts as sendable only when it
+    | is marked sendable in rules/triage.md and Jev's confidence is at least this.
+    |
+    | gate_check_max_yes (D-45): price, promise, discount and complaint are a
+    | clear "no" only when Jev's chance of "yes" is at or under this. Anything
+    | higher holds. Also the point above which asks_for_person is unsure.
+    |
+    | life_safety_min_yes (D-46): a chance of "yes" above this triggers the
+    | safety line, because when unsure the safe move is to send it.
+    |
+    | asks_for_person_min_yes (D-47): at or above this the customer is handed
+    | to the owner. Between gate_check_max_yes and this the reply holds for the
+    | owner to decide, without pausing the conversation.
+    |
+    */
+
+    'classifier' => [
+        'intent_min_confidence' => 0.85,
+        'gate_check_max_yes' => 0.075,
+        'life_safety_min_yes' => 0.075,
+        'asks_for_person_min_yes' => 0.85,
     ],
 
 ];
