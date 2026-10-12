@@ -22,6 +22,15 @@
             <p>{{ $this->frontDeskLine() }}</p>
         </x-filament::section>
 
+        <x-filament::section heading="Always held for you">
+            <p>A text that uses any of these never goes out without you. You can see them here, but only the Never say list is yours to change.</p>
+            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                @foreach ($this->alwaysHeld() as $label => $phrases)
+                    <p wire:key="held-{{ $label }}"><strong>{{ $label }}:</strong> {{ $phrases === [] ? 'none yet' : implode(', ', $phrases) }}</p>
+                @endforeach
+            </div>
+        </x-filament::section>
+
         <x-filament::section heading="Files">
             <ul style="display: flex; flex-direction: column; gap: 0.25rem;">
                 @foreach ($this->files() as $file)

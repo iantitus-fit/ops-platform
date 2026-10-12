@@ -75,7 +75,7 @@ it('keeps price, promise, discount and complaint off the send-on-its-own list fo
     expect(ReplyLabel::neverOnItsOwn())->toBe([ReplyLabel::Price, ReplyLabel::Promise, ReplyLabel::Discount, ReplyLabel::Complaint])
         ->and(ReplyLabel::sendOnOwnAllowed())->toBe([ReplyLabel::IntakeQuestion, ReplyLabel::Scheduling, ReplyLabel::FaqAnswer])
         ->and(ReplyLabel::values())->toBe(['intake_question', 'scheduling', 'faq_answer', 'price', 'promise', 'discount', 'complaint', 'other'])
-        ->and(array_intersect(ReplyLabel::sendOnOwnAllowed(), ReplyLabel::neverOnItsOwn()))->toBe([]);
+        ->and(array_filter(ReplyLabel::sendOnOwnAllowed(), fn (ReplyLabel $label) => in_array($label, ReplyLabel::neverOnItsOwn(), true)))->toBe([]);
 });
 
 it('names every owner alert event in plain words', function () {

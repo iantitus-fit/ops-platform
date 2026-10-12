@@ -10,6 +10,7 @@ use App\Icm\Exceptions\NoActiveVersion;
 use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
 use App\Models\IcmVersion;
+use App\SendRule\CodeChecks;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Filament\Actions\Action;
@@ -94,6 +95,29 @@ class BusinessFolder extends Page
         ));
 
         return "Front desk: {$frontDesk->name} answers texts with {$chain}.";
+    }
+
+    /**
+     * What always waits for the owner, as labelled lists of words and phrases: the three the code checks on every
+     * message (they live in code, never in the folder) and the live voice file's never_say list, which is empty
+     * when no version is live.
+     *
+     * @return array<string, list<string>>
+     */
+    public function alwaysHeld(): array
+    {
+        try {
+            $neverSay = app(ActiveConfig::class)->voice()['never_say'] ?? [];
+        } catch (NoActiveVersion) {
+            $neverSay = [];
+        }
+
+        return [
+            'Price words' => CodeChecks::PRICE_WORDS,
+            'Discount phrases' => CodeChecks::DISCOUNT_PHRASES,
+            'Promise phrases' => CodeChecks::PROMISE_PHRASES,
+            'Never say' => array_values(array_filter((array) $neverSay, is_string(...))),
+        ];
     }
 
     /**

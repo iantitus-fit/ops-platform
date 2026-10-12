@@ -2,7 +2,9 @@
 
 namespace App\Icm;
 
+use App\Enums\AlertReason;
 use App\Enums\IcmFileKind;
+use App\Enums\ReplyLabel;
 use App\SendRule\CodeChecks;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Arr;
@@ -59,6 +61,18 @@ class Validator
     private const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
     /**
+     * What the owner is told about each label that can never go in send_on_own (D-08), by label.
+     *
+     * @var array<string, string>
+     */
+    private const ALWAYS_WAITS = [
+        'price' => 'anything about a price',
+        'promise' => 'a promise',
+        'discount' => 'a discount',
+        'complaint' => 'a complaint',
+    ];
+
+    /**
      * The providers an agent file may name, worked out once per validation run.
      *
      * @var list<string>|null
@@ -112,6 +126,8 @@ class Validator
             'lead_sources' => $this->repeatedKeyErrors($file, 'sources', 'sources has more than one entry with key'),
             'service' => $this->repeatedKeyErrors($file, 'intake', 'intake has more than one question with key'),
             'agent' => $this->agentErrors($file),
+            'sending_rules' => $this->sendingRulesErrors($file),
+            'voice' => $this->voiceErrors($file),
             default => [],
         });
 
@@ -170,7 +186,7 @@ class Validator
                 'send_on_own' => 'bail|present|array',
                 'send_on_own.*' => 'bail|string',
                 'draft_for_owner' => 'bail|present|array',
-                'draft_for_owner.*' => 'bail|string',
+                'draft_for_owner.*' => ['bail', Rule::in(['price', 'promise', 'discount', 'complaint', 'other'])],
                 'owner_alert' => 'bail|required',
             ],
             'agent' => [
@@ -297,6 +313,147 @@ class Validator
         }
 
         return $errors;
+    }
+
+    /**
+     * What a rule string cannot say about the send rules: a label that can never send on its own, a label the
+     * app does not know, a label in both lists (D-08), and an owner_alert that is not a channels, right_away and
+     * after_hours group that always alerts at once for life safety (D-09).
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function sendingRulesErrors(IcmFile $file): array
+    {
+        $errors = [];
+        $sendOnOwn = $this->textItems($file->frontMatter['send_on_own'] ?? null);
+        $draftForOwner = $this->textItems($file->frontMatter['draft_for_owner'] ?? null);
+        $allowed = array_map(fn (ReplyLabel $label) => $label->value, ReplyLabel::sendOnOwnAllowed());
+        $reported = [];
+
+        foreach ($sendOnOwn as $index => $key) {
+            if (isset(self::ALWAYS_WAITS[$key])) {
+                if (! isset($reported[$key])) {
+                    $reported[$key] = true;
+                    $errors[] = $this->error($file->path, "send_on_own.{$index}", 'send_on_own cannot include '.$key.': '.self::ALWAYS_WAITS[$key].' always waits for you');
+                }
+            } elseif (! in_array($key, $allowed, true)) {
+                $errors[] = $this->error($file->path, "send_on_own.{$index}", PlainWords::render('In', $allowed, "send_on_own.{$index}", $key));
+            }
+        }
+
+        foreach (array_unique(array_intersect($sendOnOwn, $draftForOwner)) as $key) {
+            if (! isset(self::ALWAYS_WAITS[$key])) {
+                $errors[] = $this->error($file->path, 'send_on_own', PlainWords::oneLine($key).' is in both send_on_own and draft_for_owner; put it in one list');
+            }
+        }
+
+        array_push($errors, ...$this->ownerAlertErrors($file));
+
+        return $errors;
+    }
+
+    /**
+     * owner_alert holds what alerts the owner and when, never a phone number (D-09): text as the only channel, the
+     * events that alert right away (always including life_safety), and what happens to the rest after hours.
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function ownerAlertErrors(IcmFile $file): array
+    {
+        $alert = $file->frontMatter['owner_alert'] ?? null;
+
+        if ($alert === null || $alert === '' || $alert === []) {
+            return [];
+        }
+
+        if (! is_array($alert)) {
+            return [$this->error($file->path, 'owner_alert', 'owner_alert must list channels, right_away and after_hours (you wrote '.PlainWords::value($alert).')')];
+        }
+
+        $errors = [];
+        $validator = LaravelValidator::make($alert, [
+            'channels' => 'bail|required|array|min:1',
+            'channels.*' => ['bail', Rule::in(['text'])],
+            'right_away' => 'bail|present|array',
+            'right_away.*' => ['bail', Rule::in(AlertReason::values())],
+            'after_hours' => ['bail', 'required', Rule::in(['next_opening', 'right_away'])],
+        ]);
+
+        if ($validator->fails()) {
+            foreach ($validator->failed() as $field => $failures) {
+                foreach ($failures as $rule => $parameters) {
+                    $errors[] = $this->error($file->path, "owner_alert.{$field}", PlainWords::render($rule, $parameters, "owner_alert.{$field}", Arr::get($alert, $field)));
+                }
+            }
+        }
+
+        $rightAway = $alert['right_away'] ?? null;
+
+        if (is_array($rightAway) && ! in_array(AlertReason::LifeSafety->value, $rightAway, true)) {
+            $errors[] = $this->error($file->path, 'owner_alert.right_away', 'owner_alert right_away must include life_safety: a safety message always reaches you at once');
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The text entries of a list, keeping their positions; anything that is not text is left out because the
+     * rule string already reports it.
+     *
+     * @return array<int, string>
+     */
+    private function textItems(mixed $list): array
+    {
+        if (! is_array($list)) {
+            return [];
+        }
+
+        return array_filter(array_values($list), is_string(...));
+    }
+
+    /**
+     * The disclosure and sign-off go out without the owner, so they are held to the same code checks as the fixed
+     * replies (Pitfall 6), using the never_say list in the same file.
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function voiceErrors(IcmFile $file): array
+    {
+        $neverSay = is_array($file->frontMatter['never_say'] ?? null) ? array_values($file->frontMatter['never_say']) : [];
+        $errors = [];
+
+        foreach (['ai_disclosure', 'sign_off'] as $field) {
+            $text = $file->frontMatter[$field] ?? null;
+            $error = is_string($text) ? $this->fixedTextError($file, $field, $text, $neverSay, 'text') : null;
+
+            if ($error !== null) {
+                $errors[] = $error;
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first code-check finding in a text that goes out without the owner, as a plain sentence, or null
+     * when the text is clean. `$kind` names the text in the sentence: "reply" or "text".
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @return array{file: string, field: ?string, message: string}|null
+     */
+    private function fixedTextError(IcmFile $file, string $field, string $text, array $neverSay, string $kind): ?array
+    {
+        $finding = CodeChecks::findings($text, $neverSay)[0] ?? null;
+
+        if ($finding === null) {
+            return null;
+        }
+
+        $sentence = "{$field} ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+
+        return $this->error($file->path, $field, $finding['rule'] === 'never_say'
+            ? $sentence
+            : "{$sentence}; a fixed {$kind} goes out without you, so it cannot mention a price, offer a discount or make a promise");
     }
 
     /**
@@ -510,17 +667,11 @@ class Validator
                     $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are {owner_name}, {business_name} and {next_open}');
                 }
 
-                $finding = CodeChecks::findings(preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay)[0] ?? null;
+                $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply');
 
-                if ($finding === null) {
-                    continue;
+                if ($error !== null) {
+                    $errors[] = $error;
                 }
-
-                $sentence = "{$field} ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
-
-                $errors[] = $this->error($file->path, $field, $finding['rule'] === 'never_say'
-                    ? $sentence
-                    : "{$sentence}; a fixed reply goes out without you, so it cannot mention a price, offer a discount or make a promise");
             }
 
             $phone = $file->frontMatter['utility_phone'] ?? null;
