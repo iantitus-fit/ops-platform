@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Channels\RecipientOptedOut;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\ConversationStatus;
@@ -36,6 +37,12 @@ class OutboundSender
      * How the sentence begins when the text channel refused a send, so a caller can tell that failure from a refusal.
      */
     public const string NOT_SENT = 'The reply was not sent: ';
+
+    /**
+     * The sentence for a send the carrier refused because the number had opted out, which our own record had not
+     * caught yet (Twilio error 21610).
+     */
+    public const string CARRIER_OPTED_OUT = 'The customer has opted out of texts.';
 
     public function __construct(
         private readonly TextChannel $textChannel,
@@ -239,6 +246,10 @@ class OutboundSender
 
         try {
             $providerMessageId = $this->textChannel->send($contact->phone_e164, $message->body);
+        } catch (RecipientOptedOut $exception) {
+            $this->recordCarrierOptOut($contact, $message);
+
+            throw new DomainException(self::CARRIER_OPTED_OUT, previous: $exception);
         } catch (Throwable $exception) {
             $this->recordFailure($contact, $message, $exception);
 
@@ -323,6 +334,34 @@ class OutboundSender
             $contact->activities()->create([
                 'type' => ActivityType::Note,
                 'summary' => "Reply not sent: {$exception->getMessage()}",
+                'subject_type' => $message->getMorphClass(),
+                'subject_id' => $message->id,
+                'occurred_at' => now(),
+            ]);
+        });
+
+        CustomerRecordChanged::dispatch($contact->id);
+    }
+
+    /**
+     * The carrier's opt-out list was ahead of ours (Twilio error 21610): keep the refused message as failed, mark
+     * the contact opted out so no other path tries again, and leave a note. A date already on the contact is kept.
+     */
+    private function recordCarrierOptOut(Contact $contact, Message $message): void
+    {
+        DB::transaction(function () use ($contact, $message): void {
+            $message->update([
+                'status' => MessageStatus::Failed,
+                'meta' => [...($message->meta ?? []), 'error' => 'Opted out (21610)'],
+            ]);
+
+            if (! $contact->isOptedOut()) {
+                $contact->update(['sms_opted_out_at' => now()]);
+            }
+
+            $contact->activities()->create([
+                'type' => ActivityType::Note,
+                'summary' => 'Not sent: the customer has opted out of texts (the carrier refused it)',
                 'subject_type' => $message->getMorphClass(),
                 'subject_id' => $message->id,
                 'occurred_at' => now(),

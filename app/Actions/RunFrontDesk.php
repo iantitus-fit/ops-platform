@@ -6,6 +6,7 @@ use App\Ai\AgentFile;
 use App\Ai\FrontDeskPrompt;
 use App\Ai\FrontDeskUnavailable;
 use App\Ai\RunFrontDeskAgent;
+use App\Channels\RecipientOptedOut;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\DraftResolution;
@@ -164,6 +165,13 @@ class RunFrontDesk
                     return;
                 }
 
+                if ($exception->getPrevious() instanceof RecipientOptedOut) {
+                    // The carrier knew the customer had opted out before we did; the contact is marked now.
+                    $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The customer opted out of texts, so call them');
+
+                    return;
+                }
+
                 $verdict = $verdict->heldFor('send_refused');
             }
         }
@@ -192,16 +200,13 @@ class RunFrontDesk
     /**
      * Tell the owner a customer who opted out of texts has written again, so they can call (D-40). Nothing is sent
      * and the agent is not asked. A burst whose newest text already alerted the owner, such as a safety message that
-     * could not be sent to a number that opted out, is not alerted twice.
+     * could not be sent to a number that opted out, still gets this alert: it is a different reason, and it is the one
+     * that tells the owner to call. Raising the same reason for the same text again is harmless.
      *
      * @param  Collection<int, Message>  $burst
      */
     private function alertAboutOptedOutBurst(Conversation $conversation, Collection $burst): void
     {
-        if (OwnerAlert::query()->where('message_id', $burst->last()->id)->exists()) {
-            return;
-        }
-
         $this->raiseOwnerAlert->handle($conversation, AlertReason::OptedOutMessage, $burst->last(), 'Opted out of texts, so call them');
     }
 

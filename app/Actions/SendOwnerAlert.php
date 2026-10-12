@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Channels\RecipientOptedOut;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Events\CustomerRecordChanged;
@@ -14,6 +15,11 @@ class SendOwnerAlert
      * The most of an error message kept on an alert.
      */
     public const int FAILURE_LENGTH = 200;
+
+    /**
+     * What the owner reads when their own phone has texted STOP to the business number (Pitfall 17).
+     */
+    public const string OWNER_OPTED_OUT = 'Your phone opted out of texts (STOP). Text START to the business number to get alerts again.';
 
     public function __construct(private readonly TextChannel $textChannel) {}
 
@@ -42,6 +48,10 @@ class SendOwnerAlert
 
         try {
             $providerMessageId = $this->textChannel->send($alert->to_phone, $alert->body);
+        } catch (RecipientOptedOut) {
+            $this->recordFailure($alert, self::OWNER_OPTED_OUT);
+
+            return;
         } catch (Throwable $exception) {
             report($exception);
 
