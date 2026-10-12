@@ -79,7 +79,7 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 7/29 plans executed (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 8/29 plans executed (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
@@ -98,7 +98,7 @@ Plans:
 - [x] 02-05-PLAN.md — Business clock and `{next_open}`: fixed replies promise a true time (GATE-01, GATE-02)
 
 **Wave 6**
-- [ ] 02-06-PLAN.md — `rules/triage.md` and the Jev request behind `Classifier` (GATE-01)
+- [x] 02-06-PLAN.md — `rules/triage.md` and the Jev request behind `Classifier` (GATE-01)
 
 **Wave 7**
 - [ ] 02-07-PLAN.md — Jev fails closed, triage files checked, the fake in every test, thresholds D-45 to D-47 (GATE-01)
@@ -236,7 +236,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 7/29 | In Progress | - |
+| 2. Text Front Desk | 8/29 | In Progress | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog
