@@ -6,35 +6,55 @@ findings:
   - id: CR-01
     severity: critical
     disposition: open
-    title: "A claimed burst is lost, with no owner alert, when the front desk run fails or times out [slice A, was CR-A01]"
+    title: "A retry after the safety line was sent finds it \"already answered\" and skips the pause and the owner alert"
+  - id: WR-01
+    severity: warning
+    disposition: open
+    title: "The keyword net misses common ways of describing the same dangers (verified)"
+  - id: WR-02
+    severity: warning
+    disposition: open
+    title: "A utility phone the sync accepts is silently dropped from the gas sentence (verified)"
+  - id: WR-03
+    severity: warning
+    disposition: open
+    title: "`ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed"
+  - id: WR-04
+    severity: warning
+    disposition: open
+    title: "The claim rollback in `DispatchInbound` does not cover a push deferred by `afterCommit()`"
+  - id: WR-05
+    severity: warning
+    disposition: open
+    title: "Retry and failure semantics of `RespondToLifeSafety` do not match its comments"
+  - id: WR-06
+    severity: warning
+    disposition: open
+    title: "`LifeSafety` fails open when a regex errors (verified)"
+  - id: IN-01
+    severity: info
+    disposition: open
+    title: "Exception classification by message prefix"
+  - id: IN-02
+    severity: info
+    disposition: open
+    title: "Raw provider exception text is persisted on every message verdict"
+  - id: IN-03
+    severity: info
+    disposition: open
+    title: "Owner-alert settings are parsed in two places, and `alertWarning()` has no type guard"
+  - id: IN-04
+    severity: info
+    disposition: open
+    title: "`RaiseOwnerAlert` check-then-insert is not atomic, and a no-recipient alert can be deferred"
+  - id: IN-05
+    severity: info
+    disposition: open
+    title: "Test scaffolding leftovers and a narrow queue guard"
   - id: CR-02
     severity: critical
     disposition: open
     title: "Business Folder page crashes while a Phase 1 version is live [slice B, was CR-B01]"
-  - id: WR-01
-    severity: warning
-    disposition: open
-    title: "A live folder with no SMS agent file drops customer texts silently [slice A, was WR-A01]"
-  - id: WR-02
-    severity: warning
-    disposition: open
-    title: "`DispatchInbound` marks a message dispatched before the job is pushed, so a failed push strands it forever [slice A, was WR-A02]"
-  - id: WR-03
-    severity: warning
-    disposition: deferred
-    title: "Owner alerts can be texted twice (non-atomic send claim) [slice A, was WR-A03]"
-  - id: WR-04
-    severity: warning
-    disposition: deferred
-    title: "`RaiseOwnerAlert` de-duplication is check-then-insert with no unique index [slice A, was WR-A04]"
-  - id: WR-05
-    severity: warning
-    disposition: open
-    title: "Life-safety job failures and lock timeouts end silently, and the customer then gets a \"holding\" text [slice A, was WR-A05]"
-  - id: WR-06
-    severity: warning
-    disposition: open
-    title: "Life-safety keyword lists miss common phrasings (and over-trigger on ordinary repair calls) [slice A, was WR-A06]"
   - id: WR-07
     severity: warning
     disposition: open
@@ -87,26 +107,6 @@ findings:
     severity: warning
     disposition: open
     title: "\"throws NoActiveVersion from every accessor\" omits the accessors this phase added [slice C, was WR-C04]"
-  - id: IN-01
-    severity: info
-    disposition: open
-    title: "`HandBackConversation::handle()` accepts `$by` and never uses it [slice A, was IN-A01]"
-  - id: IN-02
-    severity: info
-    disposition: open
-    title: "Unreachable branch in `RunFrontDesk` [slice A, was IN-A02]"
-  - id: IN-03
-    severity: info
-    disposition: open
-    title: "Test double lives in production code [slice A, was IN-A03]"
-  - id: IN-04
-    severity: info
-    disposition: open
-    title: "A burst with a danger text that is not the newest alerts the owner twice [slice A, was IN-A04]"
-  - id: IN-05
-    severity: info
-    disposition: open
-    title: "`ProcessInbound::$messageId` is never read [slice A, was IN-A05]"
   - id: IN-06
     severity: info
     disposition: open
@@ -155,9 +155,9 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 33
+open: 35
 total: 38
-recorded: 2026-10-12T13:11:24.328236Z
+recorded: 2026-10-12T18:10:46.796Z
 ---
 
 # Phase 02: Code Review Disposition
@@ -165,43 +165,43 @@ recorded: 2026-10-12T13:11:24.328236Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | CR-01 | critical | open | - |
-| CR-02 | critical | open | - |
 | WR-01 | warning | open | - |
 | WR-02 | warning | open | - |
-| WR-03 | warning | deferred | Phase 2.1 (2.1 rebuilds alerts) |
-| WR-04 | warning | deferred | Phase 2.1 (2.1 rebuilds alerts) |
+| WR-03 | warning | open | - |
+| WR-04 | warning | open | - |
 | WR-05 | warning | open | - |
 | WR-06 | warning | open | - |
-| WR-07 | warning | open | - |
-| WR-08 | warning | deferred | before first client |
-| WR-09 | warning | open | - |
-| WR-10 | warning | deferred | before first client |
-| WR-11 | warning | open | - |
-| WR-12 | warning | open | - |
-| WR-13 | warning | open | - |
-| WR-14 | warning | open | - |
-| WR-15 | warning | deferred | before first deploy (same root as T-01-37) |
-| WR-16 | warning | open | - |
-| WR-17 | warning | open | - |
-| WR-18 | warning | open | - |
-| WR-19 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
 | IN-04 | info | open | - |
 | IN-05 | info | open | - |
-| IN-06 | info | open | - |
-| IN-07 | info | open | - |
-| IN-08 | info | open | - |
-| IN-09 | info | open | - |
-| IN-10 | info | open | - |
-| IN-11 | info | open | - |
-| IN-12 | info | open | - |
-| IN-13 | info | open | - |
-| IN-14 | info | open | - |
-| IN-15 | info | open | - |
-| IN-16 | info | open | - |
-| IN-17 | info | open | - |
+| CR-02 | critical | open | - (not in the current review) |
+| WR-07 | warning | open | - (not in the current review) |
+| WR-08 | warning | deferred | before first client (not in the current review) |
+| WR-09 | warning | open | - (not in the current review) |
+| WR-10 | warning | deferred | before first client (not in the current review) |
+| WR-11 | warning | open | - (not in the current review) |
+| WR-12 | warning | open | - (not in the current review) |
+| WR-13 | warning | open | - (not in the current review) |
+| WR-14 | warning | open | - (not in the current review) |
+| WR-15 | warning | deferred | before first deploy (same root as T-01-37) (not in the current review) |
+| WR-16 | warning | open | - (not in the current review) |
+| WR-17 | warning | open | - (not in the current review) |
+| WR-18 | warning | open | - (not in the current review) |
+| WR-19 | warning | open | - (not in the current review) |
+| IN-06 | info | open | - (not in the current review) |
+| IN-07 | info | open | - (not in the current review) |
+| IN-08 | info | open | - (not in the current review) |
+| IN-09 | info | open | - (not in the current review) |
+| IN-10 | info | open | - (not in the current review) |
+| IN-11 | info | open | - (not in the current review) |
+| IN-12 | info | open | - (not in the current review) |
+| IN-13 | info | open | - (not in the current review) |
+| IN-14 | info | open | - (not in the current review) |
+| IN-15 | info | open | - (not in the current review) |
+| IN-16 | info | open | - (not in the current review) |
+| IN-17 | info | open | - (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
