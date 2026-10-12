@@ -163,3 +163,19 @@ through the GitHub CLI (`gh`, already installed via Homebrew; `gh auth status`
 confirms it's logged in). `/gsd-progress` tells you where you are; `/gsd-help`
 lists everything. Skip `/gsd-autonomous` and yolo mode for now: the point of
 this build is that you see each step.
+
+## 11. Texting through Twilio (after A2P)
+
+The app texts through the fake channel until Twilio's A2P registration is
+approved, and nothing in the build waits for it. When it is approved, follow
+"Going live on Twilio" in `docs/sprints/sprint-1.md` (Notes for testing), then
+set these five keys in `.env` and `TEXT_CHANNEL=twilio`:
+
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_MESSAGING_SERVICE_SID`
+- `TWILIO_WEBHOOK_URL` (ends `/webhooks/text/twilio`)
+- `TWILIO_STATUS_CALLBACK_URL` (ends `/webhooks/text/twilio/status`)
+
+The two URLs must match what is typed into the Twilio Console exactly, or every
+webhook is refused. `.env.example` has the same keys with a note.
