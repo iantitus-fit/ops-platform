@@ -65,6 +65,20 @@ it('sends the owner reply through the text channel and stores it as sent', funct
         ]);
 });
 
+it('stores an owner reply with no kind, label or verdict, because the send rule only judges the front desk', function () {
+    $conversation = openConversationWithQuestion();
+
+    app(SendOwnerReply::class)->handle($conversation, 'Tuesday at 9 works');
+
+    $reply = Message::query()->where('direction', MessageDirection::Out)->sole();
+
+    expect($reply->author)->toBe(MessageAuthor::Owner)
+        ->and($reply->kind)->toBeNull()
+        ->and($reply->label)->toBeNull()
+        ->and($reply->gate_outcome)->toBeNull()
+        ->and($reply->gate)->toBeNull();
+});
+
 it('announces that the customer record changed when the owner replies', function () {
     $conversation = openConversationWithQuestion();
     Event::fake([CustomerRecordChanged::class]);

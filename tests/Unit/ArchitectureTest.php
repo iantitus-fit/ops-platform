@@ -53,3 +53,13 @@ arch('application code never calls env() directly')
 arch('the front desk agent is only prompted from App\Ai')
     ->expect('App\Ai\Agents\FrontDeskAgent')
     ->toOnlyBeUsedIn(['App\Ai', 'Tests']);
+
+arch('only the outbound chokepoint and the alert sender send texts')
+    ->expect('App\Channels\TextChannel')
+    ->toOnlyBeUsedIn([
+        'App\Actions\OutboundSender',
+        'App\Actions\SendOwnerAlert',
+        'App\Channels',
+        'App\Providers',
+        'Tests',
+    ]);
