@@ -41,6 +41,12 @@ class LifeSafety
         'propane leak',
         'smells like natural gas',
         'smell natural gas',
+        'gas is leaking',
+        'gas leaking',
+        'smells of gas',
+        'smell of propane',
+        'gas odor',
+        'gas odour',
     ];
 
     /**
@@ -67,6 +73,10 @@ class LifeSafety
         'sparks',
         'sparking',
         'arcing',
+        'electrical fire',
+        'house is burning',
+        'burnt smell',
+        'smells burnt',
     ];
 
     /**
@@ -78,10 +88,22 @@ class LifeSafety
 
     /**
      * Words for something electrical. Together with a water word they mean water may be reaching live power.
+     * Only words that mean live power are listed: a bare "appliance" or "panel" next to a leak is an ordinary
+     * repair call, such as a dishwasher or a water heater cover. A plugged-in appliance still counts through
+     * "plugged in" and "plugged-in".
      *
      * @var list<string>
      */
-    public const ELECTRICAL_WORDS = ['outlet', 'outlets', 'socket', 'electrical panel', 'breaker panel', 'panel', 'plugged in', 'appliance', 'appliances', 'wiring'];
+    public const ELECTRICAL_WORDS = ['outlet', 'outlets', 'socket', 'electrical panel', 'breaker panel', 'plugged in', 'plugged-in', 'wiring'];
+
+    /**
+     * Appliance names that contain a water word but are not water on their own. They are removed from the text before
+     * the water words are checked, so "the wiring on my water heater" is no hazard while "water is pouring onto the
+     * water heater wiring" still is.
+     *
+     * @var list<string>
+     */
+    private const NOT_WATER_PHRASES = ['water heater'];
 
     /**
      * The sentence for a gas smell. Nothing from the folder is added to it except the gas company's number.
@@ -108,7 +130,7 @@ class LifeSafety
             return 'general';
         }
 
-        if (self::containsAny($text, self::WATER_WORDS) && self::containsAny($text, self::ELECTRICAL_WORDS)) {
+        if (self::containsAny(self::withoutApplianceNames($text), self::WATER_WORDS) && self::containsAny($text, self::ELECTRICAL_WORDS)) {
             return 'water';
         }
 
@@ -137,6 +159,18 @@ class LifeSafety
         }
 
         return self::GAS_LINE.' '.self::GAS_COMPANY_LINE.' '.$phone.'.';
+    }
+
+    /**
+     * The text with each appliance name that is not water taken out, matched the way every other phrase is.
+     */
+    private static function withoutApplianceNames(string $text): string
+    {
+        foreach (self::NOT_WATER_PHRASES as $phrase) {
+            $text = (string) preg_replace(CodeChecks::phrasePattern($phrase), ' ', $text);
+        }
+
+        return $text;
     }
 
     /**
