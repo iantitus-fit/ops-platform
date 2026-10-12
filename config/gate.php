@@ -46,22 +46,35 @@ return [
     | intent_min_confidence (D-45): the intent counts as sendable only when it
     | is marked sendable in rules/triage.md and Jev's confidence is at least this.
     |
-    | gate_check_max_yes (D-45): price, promise, discount and complaint are a
-    | clear "no" only when Jev's chance of "yes" is at or under this. Anything
-    | higher holds. Also the point above which asks_for_person is unsure.
+    | gate_check_max_yes (D-45): now only the point above which asks_for_person
+    | counts as unsure. It keeps its old name so verdicts stored before D-56
+    | read the same.
+    |
+    | price_max_yes, promise_max_yes, discount_max_yes, complaint_max_yes
+    | (D-45, D-56): each of price, promise, discount and complaint is a clear
+    | "no" only when Jev's chance of "yes" is at or under its own bar. Anything
+    | higher holds. Price and discount keep D-45's strict 0.075. Promise and
+    | complaint use 0.15, the reading of D-03's 0.85 as P(no) >= 0.85 that
+    | RESEARCH OQ-1 named, because on the live run Jev scored a plain intake
+    | question at promise 0.09.
     |
     | life_safety_min_yes (D-46): a chance of "yes" above this triggers the
     | safety line, because when unsure the safe move is to send it.
     |
     | asks_for_person_min_yes (D-47): at or above this the customer is handed
     | to the owner. Between gate_check_max_yes and this the reply holds for the
-    | owner to decide, without pausing the conversation.
+    | owner to decide, without pausing the conversation. The asks_for_person
+    | band runs from gate_check_max_yes up to this number.
     |
     */
 
     'classifier' => [
         'intent_min_confidence' => 0.85,
         'gate_check_max_yes' => 0.075,
+        'price_max_yes' => 0.075,
+        'promise_max_yes' => 0.15,
+        'discount_max_yes' => 0.075,
+        'complaint_max_yes' => 0.15,
         'life_safety_min_yes' => 0.075,
         'asks_for_person_min_yes' => 0.85,
     ],

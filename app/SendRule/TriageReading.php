@@ -3,7 +3,7 @@
 namespace App\SendRule;
 
 /**
- * Jev's answers for one reply, read against Ian's thresholds (D-45, D-46, D-47).
+ * Jev's answers for one reply, read against Ian's thresholds (D-45, D-46, D-47, D-56: each gate check has its own bar).
  *
  * The reading never sends anything. It only says whether Jev agrees a reply could go, and passes on two signals
  * the front desk acts on: the safety line and the hand-off. Jev can only hold; it can never make a reply send
@@ -38,7 +38,7 @@ readonly class TriageReading
     /**
      * Read the classifier's answers. An answer that is missing counts as a certain yes, so it holds.
      *
-     * @param  array<string, float>  $thresholds  intent_min_confidence, gate_check_max_yes, life_safety_min_yes, asks_for_person_min_yes
+     * @param  array<string, float>  $thresholds  intent_min_confidence, gate_check_max_yes (the asks_for_person unsure floor), price_max_yes, promise_max_yes, discount_max_yes, complaint_max_yes, life_safety_min_yes, asks_for_person_min_yes
      */
     public static function read(ClassifierResult $result, TriageQuestions $questions, array $thresholds): self
     {
@@ -59,7 +59,7 @@ readonly class TriageReading
         }
 
         foreach (self::GATE_CHECKS as $check) {
-            if ($yes($check) > $thresholds['gate_check_max_yes']) {
+            if ($yes($check) > $thresholds["{$check}_max_yes"]) {
                 $reasons[] = "classifier:{$check}";
             }
         }
