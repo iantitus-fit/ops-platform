@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-21-PLAN.md
-last_updated: "2026-10-12T03:25:17.248Z"
+stopped_at: Completed 02-22-PLAN.md
+last_updated: "2026-10-12T03:32:43.688Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 1088581a61aea1d3b0d5fe1737dcae469325ab94
+state_head: 5b3279731ca0163479cd3577a82c848eb1723bc2
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 28
+  completed_plans: 29
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 22 of 29
+Plan: 23 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -84,6 +84,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P19 | 12 min | 1 tasks | 13 files |
 | Phase 02 P20 | 25 min | 2 tasks | 13 files |
 | Phase 02 P21 | 30 min | 2 tasks | 10 files |
+| Phase 02 P22 | 40 min | 1 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-20: CodeChecks::phrasePattern made public so AsksForPerson reuses the veto matching — Avoids a drifting copy of the normalisation and word-boundary rules
 - [Phase 02]: 02-21: A safety line that failed to send does not count as answering the text, so RunFrontDesk's second chance retries it; alerts stay single because RaiseOwnerAlert dedupes by message and reason
 - [Phase 02]: 02-21: With no live business folder the safety line still goes out without disclosure or gas company number; Jev's life_safety reading sends the line instead of the asks_for_person handoff
+- [Phase 02]: 02-22: Approved drafts go out through OutboundSender::sendExisting, not SendOwnerReply::handle, so approving a draft never pauses the assistant (D-25); a taken-over conversation keeps its pause.
+- [Phase 02]: 02-22: The replaced/already-sent race is decided by a status check under lockForUpdate when sendExisting claims the draft row; ConversationThread::draftId is #[Locked] and looked up inside the conversation (T-02-44).
 
 ### Pending Todos
 
@@ -183,6 +186,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:25:17.203Z
-Stopped at: Completed 02-21-PLAN.md
+Last session: 2026-10-12T03:32:43.647Z
+Stopped at: Completed 02-22-PLAN.md
 Resume file: None
