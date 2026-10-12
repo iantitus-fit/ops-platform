@@ -32,6 +32,7 @@ class Validator
         'voice' => 'voice/how-we-talk.md',
         'sending_rules' => 'rules/sending.md',
         'set_replies' => 'rules/replies.md',
+        'triage' => 'rules/triage.md',
     ];
 
     /**
@@ -206,6 +207,20 @@ class Validator
                 'utility_phone' => 'bail|nullable|string',
                 'holding_reply' => 'bail|required|string',
                 'handoff_reply' => 'bail|required|string',
+            ],
+            'triage' => [
+                'intent_question' => 'bail|required|string',
+                'intents' => 'bail|required|array|min:2|max:255',
+                'intents.*.key' => ['bail', 'required', 'string', 'regex:/^[a-z0-9]+(_[a-z0-9]+)*$/'],
+                'intents.*.means' => 'bail|required|string',
+                'intents.*.sendable' => 'bail|required|boolean:strict',
+                'questions' => 'bail|required|array',
+                'questions.price' => 'bail|required|string',
+                'questions.promise' => 'bail|required|string',
+                'questions.discount' => 'bail|required|string',
+                'questions.complaint' => 'bail|required|string',
+                'questions.life_safety' => 'bail|required|string',
+                'questions.asks_for_person' => 'bail|required|string',
             ],
             default => [],
         };

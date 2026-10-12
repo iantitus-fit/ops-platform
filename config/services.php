@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'jev' => [
+        'base_url' => env('JEV_BASE_URL', 'https://openrouter.ai/api/v1'),
+        'key' => env('JEV_API_KEY'),
+        'model' => env('JEV_MODEL', 'typesafe/jev-1.13'),
+        'connect_timeout' => 3,
+        'timeout' => 8,
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

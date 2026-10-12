@@ -101,6 +101,17 @@ class ActiveConfig
     }
 
     /**
+     * The safety check's questions: the intent list, the intent question and the six yes or no
+     * questions, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function triage(): array
+    {
+        return $this->singleton('triage');
+    }
+
+    /**
      * Every lead source with the cost of one lead in integer cents.
      *
      * @return list<array{key: string, name: string, cost_cents_per_lead: int}>

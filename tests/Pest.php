@@ -97,7 +97,7 @@ function resetRecordsToTrackedFiles(string $records): void
  */
 function exampleFolderFileCount(): int
 {
-    return 10;
+    return 11;
 }
 
 /**
