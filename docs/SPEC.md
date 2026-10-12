@@ -201,7 +201,7 @@ One fact, one file. If the hours change, `hours.md` changes and nothing else.
 | knowledge | business/faq.md and others | none beyond type | Body is read by agents as reference |
 | service | business/services/*.md | name, slug, duration_minutes, book_online, price_policy (none, starting_at, fixed), price_cents (unless none), intake (list of key, ask, options) | Intake questions, booking length, what agents may say about price |
 | voice | voice/how-we-talk.md | ai_disclosure, sign_off, never_say (list) | Tone and disclosure for every outbound message |
-| sending_rules | rules/sending.md | send_on_own (list of action keys), draft_for_owner (list), owner_alert | The send-or-draft gate, enforced in code |
+| sending_rules | rules/sending.md | send_on_own (intake_question, scheduling, faq_answer only), draft_for_owner (price, promise, discount, complaint, other), owner_alert (channels, right_away, after_hours) | The send-or-draft gate, enforced in code |
 | set_replies | rules/replies.md | owner_name, utility_phone (optional), holding_reply, handoff_reply | Fixed texts sent without the owner; the sync runs the code checks on them (no price, discount, promise or never_say phrase) |
 | agent | agents/*.md | name, channel, provider, model, fallback (list), loads (list of folder paths), escalate_to | Builds the agent at runtime |
 | automation | automations/*.md | trigger, wait, send, stop_when (list) | Scheduled sequences |
