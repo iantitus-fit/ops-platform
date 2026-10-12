@@ -46,7 +46,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 - [x] **GATE-03**: The owner can take over a conversation from the dashboard; while taken over the agent sends nothing in that conversation, and the owner can hand it back.
 - [x] **GATE-04**: The owner can review a draft in the dashboard and approve, edit and send, or discard it. *(derived: SPEC says price/promise/discount/complaint "goes to the owner as a draft")*
 - [x] **TXT-01**: A `TwilioTextChannel` implements the `TextChannel` interface (outbound send, inbound webhook with signature verification and unique provider message id), selected by config with no other code change. Verified against Twilio-shaped payloads; going live on Ian's registered test number follows A2P approval and does not gate this phase. (DEC-05)
-- [ ] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
+- [x] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
 
 ### Booking and the Gate (Phase 3)
 
@@ -157,7 +157,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | GATE-03 | Phase 2 | Complete |
 | GATE-04 | Phase 2 | Complete |
 | TXT-01 | Phase 2 | Complete |
-| INFRA-01 | Phase 2 | Pending |
+| INFRA-01 | Phase 2 | Complete |
 | BOOK-01 | Phase 3 | Pending |
 | BOOK-02 | Phase 3 | Pending |
 | BOOK-03 | Phase 3 | Pending |
