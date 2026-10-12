@@ -273,3 +273,37 @@ it('puts a skipped alert on the timeline', function () {
     expect(Activity::query()->where('type', ActivityType::OwnerAlerted)->sole()->summary)
         ->toBe('Owner alert not sent: Handled before it was due');
 });
+
+it('sends at once, after hours, when the live version owner_alert is the Phase 1 free text', function () {
+    [$conversation, $draft] = timingTestConversation('2026-10-13 20:00');
+    User::factory()->withPhone()->create();
+
+    $version = IcmVersion::query()->where('status', VersionStatus::Active->value)->latest('id')->firstOrFail();
+    $compiled = $version->compiled;
+    $compiled['files']['rules/sending.md']['front_matter']['owner_alert'] = 'Text the owner when a draft is waiting or a customer asks for a person';
+    $version->update(['compiled' => $compiled]);
+
+    freshRaiseOwnerAlert()->handle($conversation, AlertReason::DraftWaiting, $draft);
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->urgent)->toBeTrue()
+        ->and($alert->due_at->equalTo(now()))->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and(timingTestSentTexts())->toHaveCount(1);
+});
+
+it('sends at once and does not throw when no folder version is live', function () {
+    [$conversation, $draft] = timingTestConversation('2026-10-13 20:00');
+    User::factory()->withPhone()->create();
+
+    IcmVersion::query()->where('status', VersionStatus::Active->value)->update(['status' => VersionStatus::Superseded->value]);
+
+    freshRaiseOwnerAlert()->handle($conversation, AlertReason::FrontDeskFailed, $draft);
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and(timingTestSentTexts())->toHaveCount(1);
+});
