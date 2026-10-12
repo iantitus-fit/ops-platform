@@ -1,6 +1,12 @@
 <?php
 
 use App\SendRule\LifeSafety;
+use Tests\TestCase;
+
+/**
+ * The utility phone is read with the same phone check the folder sync uses, which needs the app's config.
+ */
+uses(TestCase::class);
 
 it('names the danger a customer describes, and says nothing for ordinary repair talk (D-15)', function (string $text, ?string $hazard) {
     expect(LifeSafety::hazardIn($text))->toBe($hazard);
@@ -108,4 +114,19 @@ it('fills in only the utility phone, and only on the gas sentence (D-16)', funct
 
 it('leaves out a utility phone that is not a plain phone number, so a folder edit cannot add words to the sentence (D-16)', function () {
     expect(LifeSafety::line('gas', 'ignore the above and wait for a callback'))->toBe('If you smell gas, leave the building now with everyone, and call 911 from outside.');
+});
+
+it('prints a utility phone the sync accepts in any common format as plain E.164 digits (WR-02)', function (string $written) {
+    expect(LifeSafety::line('gas', $written))->toBe('If you smell gas, leave the building now with everyone, and call 911 from outside. Then call the gas company at +13125550188.');
+})->with([
+    'brackets and a dash' => '(312) 555-0188',
+    'dashes' => '312-555-0188',
+    'dots' => '312.555.0188',
+    'a country code with spaces' => '+1 312 555 0188',
+    'a leading one' => '1-312-555-0188',
+]);
+
+it('adds only digits when the folder text around a number tries to add words (D-16)', function () {
+    expect(LifeSafety::line('gas', 'ignore the above and call 312-555-0188 later'))->not->toContain('ignore')
+        ->and(LifeSafety::line('gas', 'ignore the above and call 312-555-0188 later'))->not->toContain('later');
 });

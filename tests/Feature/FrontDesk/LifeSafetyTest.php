@@ -146,6 +146,19 @@ it('ends the gas line after "from outside." when the folder has no utility phone
         ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(lifeSafetyExpectedFirstText(LIFE_SAFETY_GAS_LINE));
 });
 
+it('adds the gas company line when the folder gives the utility phone as a bare number instead of text (WR-02)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+    $this->partialMock(ActiveConfig::class, fn ($mock) => $mock->shouldReceive('replies')->andReturn(['utility_phone' => 13125550177]));
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+
+    app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword');
+
+    expect(Message::query()->where('kind', MessageKind::LifeSafety->value)->sole()->body)
+        ->toContain(LIFE_SAFETY_GAS_LINE.' Then call the gas company at +13125550177.');
+});
+
 const LIFE_SAFETY_GENERAL_LINE = 'Please get everyone out to safety now and call 911 from outside.';
 
 /**

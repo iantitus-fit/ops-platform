@@ -152,7 +152,7 @@ class SendLifeSafetyLine
     }
 
     /**
-     * The gas company's number from rules/replies.md, or null when the folder gives none or none is live yet.
+     * The gas company's number from rules/replies.md, or null when the folder gives none or none is live yet. A bare YAML number is read as text.
      */
     private function utilityPhone(): ?string
     {
@@ -162,6 +162,6 @@ class SendLifeSafetyLine
             return null;
         }
 
-        return is_string($phone) ? $phone : null;
+        return is_scalar($phone) ? (string) $phone : null;
     }
 }

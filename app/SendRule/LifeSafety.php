@@ -2,6 +2,8 @@
 
 namespace App\SendRule;
 
+use App\Support\PhoneNumber;
+
 /**
  * Spots a customer describing a dangerous situation and holds the words sent back (D-15, D-16).
  *
@@ -169,7 +171,8 @@ class LifeSafety
 
     /**
      * The safety sentence for a hazard. It tells the customer to get to safety and call 911 and never gives a
-     * repair or shut-off step. The utility phone is added to the gas sentence only when it is a plain phone number.
+     * repair or shut-off step. The utility phone is added to the gas sentence only when the sync's own phone check accepts it, and it is
+     * printed as E.164 digits, so no other words from the folder can ride along.
      */
     public static function line(string $hazard, ?string $utilityPhone): string
     {
@@ -182,13 +185,13 @@ class LifeSafety
 
     private static function gasLine(?string $utilityPhone): string
     {
-        $phone = trim((string) $utilityPhone);
+        $e164 = PhoneNumber::toE164($utilityPhone);
 
-        if (preg_match('/^\+?[0-9][0-9 ()\-.]{5,19}$/', $phone) !== 1) {
+        if ($e164 === null) {
             return self::GAS_LINE;
         }
 
-        return self::GAS_LINE.' '.self::GAS_COMPANY_LINE.' '.$phone.'.';
+        return self::GAS_LINE.' '.self::GAS_COMPANY_LINE.' '.$e164.'.';
     }
 
     /**
