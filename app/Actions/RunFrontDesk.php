@@ -313,6 +313,8 @@ class RunFrontDesk
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
      * point at a draft that was rolled away (D-07, D-20). Last, the customer gets one holding reply saying the owner
      * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14).
+     * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
+     * tell someone describing a fire or a gas leak.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -368,7 +370,7 @@ class RunFrontDesk
             $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
         }
 
-        if (! $conversation->refresh()->isPaused()) {
+        if (! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
             $this->sendFixedReply->holding($conversation);
         }
     }

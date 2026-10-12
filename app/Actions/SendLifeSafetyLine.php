@@ -14,9 +14,9 @@ use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\SendRule\LifeSafety;
-use DomainException;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 /**
  * Answers a customer text that describes a danger with the safety line, then hands the conversation to the owner
@@ -24,8 +24,10 @@ use Illuminate\Support\Facades\Cache;
  *
  * The words are fixed in code (LifeSafety). The line goes out through the one outbound path with the life-safety
  * origin, which passes the pause that stops every other automated text, and it is never counted by the reply cap.
- * Afterwards the assistant steps back and the owner is alerted at once. If the line could not be sent, the owner is
- * still alerted, with the reason, because a customer in danger who got no answer is exactly what the owner must know.
+ * Afterwards the assistant steps back and the owner is alerted at once. If the line could not be sent, for any reason
+ * at all, or another run holds the send past the wait, the owner is still alerted, with the reason, because a customer
+ * in danger who got no answer is exactly what the owner must know. The line is sent, or the owner is told; never
+ * neither.
  */
 class SendLifeSafetyLine
 {
@@ -40,22 +42,29 @@ class SendLifeSafetyLine
     /**
      * Send the safety line for one customer text, pause the conversation and alert the owner.
      *
-     * A customer text is answered at most once: when a safety line for it was already sent, or another run is
-     * sending it right now, nothing happens and null is returned. A line that failed to send does not count as
-     * answered, so a later run tries again; the alert is not repeated, because RaiseOwnerAlert skips an alert the
-     * owner already has.
+     * A customer text is answered at most once: when a safety line for it was already sent, nothing happens and null
+     * is returned. When another run is still sending it after gate.life_safety.lock_wait_seconds, this run pauses the
+     * conversation and alerts the owner to check that the line went out, then returns null; if the other run succeeds
+     * its own alert stands, because RaiseOwnerAlert skips an alert the owner already has for that text. A line that
+     * failed to send, with any error, does not count as answered, so a later run tries again, and the owner is told.
      *
      * @param  string  $hazard  gas, general or water
      * @param  string  $trigger  keyword when the words matched in code, classifier when Jev found the danger
-     * @return Message|null the stored safety line, or null when this text was already answered or the send failed
+     * @return Message|null the stored safety line, or null when this text was already answered, the send failed or
+     *                      another run held the lock
      */
     public function handle(Message $inbound, string $hazard, string $trigger): ?Message
     {
         $lock = Cache::lock("life-safety:{$inbound->id}", 30);
 
         try {
-            $lock->block(10);
+            $lock->block((int) config('gate.life_safety.lock_wait_seconds'));
         } catch (LockTimeoutException) {
+            $conversation = $inbound->conversation;
+
+            $this->pauseConversation->handle($conversation, PausedReason::LifeSafety);
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::LifeSafety, $inbound, 'Customer described a danger; check the safety message went out');
+
             return null;
         }
 
@@ -91,7 +100,7 @@ class SendLifeSafetyLine
                 ],
                 'meta' => ['in_reply_to' => [$inbound->id]],
             ]);
-        } catch (DomainException $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             $why = 'Safety message could not be sent';

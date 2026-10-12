@@ -113,4 +113,20 @@ return [
         'per_day' => 20,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Life-Safety Line
+    |--------------------------------------------------------------------------
+    |
+    | lock_wait_seconds: how long a second run waits for the run already
+    | sending the safety line for the same customer text. After that it
+    | pauses the conversation and alerts the owner instead of giving up
+    | quietly, because a danger must never end with nobody told.
+    |
+    */
+
+    'life_safety' => [
+        'lock_wait_seconds' => 10,
+    ],
+
 ];
