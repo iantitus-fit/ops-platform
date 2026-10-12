@@ -2,11 +2,13 @@
 
 use App\Actions\ClaimInboundBurst;
 use App\Actions\RecordIntakeAnswers;
+use App\Actions\ReportFrontDeskFailure;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
+use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Jobs\ProcessInbound;
@@ -148,6 +150,60 @@ it('reports a crash once even when failed() runs after the job already reported 
     expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1)
         ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->count())->toBe(1)
         ->and(textsSentToCustomers())->toHaveCount(1);
+});
+
+it('reports the claimed text, not a newer one that has its own queued job (WR-03)', function () {
+    $this->freezeTime();
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
+    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    $newer = Message::factory()->for($conversation)->create(['handled_at' => null]);
+
+    (new ProcessInbound($claimed->id, $conversation->id))->failed(new RuntimeException('timed out'));
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->message_id)->toBe($claimed->id)
+        ->and($alert->message_id)->not->toBe($newer->id)
+        ->and($alert->message_id)->not->toBe($earlier->id);
+});
+
+it('does not tell the owner twice when the run reported its text and then timed out with a newer text waiting (WR-03)', function () {
+    $this->freezeTime();
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
+    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    Message::factory()->for($conversation)->create(['handled_at' => null]);
+
+    app(ReportFrontDeskFailure::class)->handle($conversation, $claimed, 'it stopped with an error', 'Front desk stopped with an error');
+    (new ProcessInbound($claimed->id, $conversation->id))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1);
+});
+
+it('reports the customer text, not a web form that was claimed with it (WR-03)', function () {
+    $this->freezeTime();
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
+    $text = Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    $form = Message::factory()->for($conversation)->create(['channel' => MessageChannel::Web, 'handled_at' => now()]);
+
+    (new ProcessInbound($form->id, $conversation->id))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->sole()->message_id)->toBe($text->id);
+});
+
+it('reports nothing in failed() when this job claimed no text from the customer (WR-03)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $unclaimed = Message::factory()->for($conversation)->create(['handled_at' => null]);
+
+    (new ProcessInbound($unclaimed->id, $conversation->id))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->count())->toBe(0);
 });
 
 it('does nothing in failed() for a conversation that no longer exists', function () {

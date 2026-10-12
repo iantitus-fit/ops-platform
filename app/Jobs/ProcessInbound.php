@@ -134,6 +134,10 @@ class ProcessInbound implements ShouldQueue
      * Laravel calls this when the job times out or is failed after its worker died. The burst stays claimed, so the
      * customer cannot get two replies, and ReportFrontDeskFailure skips a text it already reported. The exception's
      * words are never copied into the note or the alert.
+     *
+     * The text reported is the newest claimed customer text message at or before the one that queued this job. A newer
+     * text has its own job and has not been claimed, a web form is never answered by text, and an earlier burst's
+     * texts are older than this one's, so none of them are blamed for this run.
      */
     public function failed(?Throwable $exception): void
     {
@@ -143,9 +147,13 @@ class ProcessInbound implements ShouldQueue
             return;
         }
 
-        $text = $conversation->messages()
+        $text = Message::query()
+            ->where('conversation_id', $conversation->id)
             ->where('direction', MessageDirection::In)
             ->where('author', MessageAuthor::Customer)
+            ->where('channel', MessageChannel::Sms)
+            ->whereNotNull('handled_at')
+            ->where('id', '<=', $this->messageId)
             ->latest('id')
             ->first();
 
