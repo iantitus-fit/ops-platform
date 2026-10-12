@@ -19,22 +19,32 @@ driver sits behind the same `TextChannel` interface as the fake one.
    is an AI, uses the voice file's sign-off, and never uses a `never_say` phrase.
    The agent then asks the matching service's intake questions, and the answers
    show on the timeline and the customer card.
+   Delivered by plans 02-13 (the agent), 02-14 (text in, reply out), 02-15 (AI note, sign-off, `never_say` veto) and 02-18 (intake answers on the card).
 2. A message involving a price, a promise, a discount or a complaint is never
    sent: it appears as a draft in the dashboard and the owner is alerted, while
    intake questions, scheduling and FAQ answers send on their own, even when a
    scripted model tries to send the draft.
+   Delivered by plans 02-03 and 02-04 (code checks and the fixed send vocabulary), 02-06 and 02-07 (Jev), 02-14 (the three-check send rule), 02-16 (alert and timeline entry for a held draft) and 02-17 (one live draft and the decision table).
 3. The owner can take over a conversation so the agent stops replying until it
    is handed back, and can approve, edit and send, or discard a draft from the
    dashboard. A customer who asks for a person is handed to the `escalate_to`
    contact.
+   Delivered by plans 02-19 (take over and hand back), 02-20 (the request for a person), 02-22 (approve, edit or discard) and 02-23 (the phone-friendly view and home widgets).
 4. Changing an agent's provider, model or fallback list is an edit to its
    `agents/*.md` file that goes live through the normal sync. A broken agent
    file is rejected with a plain-words message, and when the primary provider
    fails the agent falls through to its fallback.
+   Delivered by plans 02-02 (agent files validated and compiled, provider chain), 02-13 (provider fallback) and 02-15 (a front desk failure reaches the owner).
 5. The Twilio text driver sits behind the same `TextChannel` interface and is
    selected by config alone, verified against Twilio-shaped payloads. Going live
    on Ian's test number follows A2P approval and does not gate this phase. The
    full Pest suite passes on PostgreSQL in CI as well as on SQLite locally.
+   Delivered by plans 02-26 (receiving), 02-27 (sending and status callbacks), 02-01 (the workflow runs both databases) and 02-28 (the whole suite, 931 tests, passed on SQLite and on PostgreSQL 17).
+
+Still open for UAT, because only a person with a phone or a live account can
+check them: a live model reply from `/dev/chat`, the real-phone alert check, the
+first CI run once Ian pushes the branch (there is no git remote here), and live
+Twilio after A2P approval.
 
 ## Notes for testing
 
