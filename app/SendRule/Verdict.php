@@ -86,37 +86,41 @@ readonly class Verdict
     }
 
     /**
-     * A reason code in the words the owner reads on a draft, such as "Held: it mentions a price".
+     * A reason code in the words the owner reads on a draft, such as "Held: asks about price".
+     *
+     * The code says which check held the reply and the detail says why. The owner only needs the why, so
+     * "code:price", "label:price" and "classifier:price" all read the same. A code nobody listed reads as
+     * "needs your judgment", which is true of every held draft.
      */
     public static function plainReasonFor(string $code): string
     {
         [$kind, $detail] = array_pad(explode(':', $code, 2), 2, '');
 
         return match ($kind) {
-            'label' => 'Held: '.match ($detail) {
-                'price' => 'the reply is about a price',
-                'promise' => 'the reply makes a promise',
-                'discount' => 'the reply is about a discount',
-                'complaint' => 'the reply answers a complaint',
-                'other' => 'the reply fits none of the kinds that send on their own',
-                default => 'this kind of reply is not on your list that sends on its own',
+            'label', 'code', 'classifier' => match ($detail) {
+                'price' => 'Held: asks about price',
+                'promise' => 'Held: makes a promise',
+                'discount' => 'Held: mentions a discount',
+                'complaint' => 'Held: complaint',
+                'never_say' => 'Held: uses a phrase you never say',
+                'life_safety' => 'Held: may be urgent',
+                'asks_for_person' => 'Held: may want to talk to a person',
+                default => 'Held: needs your judgment',
             },
-            'too_long' => 'Held: the text is longer than one text message allows (1,600 characters)',
-            'code' => 'Held: the reply '.CodeChecks::describe($detail),
-            'classifier_failed' => 'Held: the safety check could not be reached',
-            'classifier' => 'Held: '.match ($detail) {
-                'life_safety' => 'the customer may be describing a safety problem',
-                'asks_for_person' => 'the customer asks to talk to a person',
-                'complaint' => 'the safety check reads the customer as unhappy',
-                'price' => 'the safety check thinks the reply states a price',
-                'promise' => 'the safety check thinks the reply makes a promise',
-                'discount' => 'the safety check thinks the reply offers a discount',
-                default => 'the safety check flagged the reply',
+            'classifier_intent' => match ($detail) {
+                'price_question' => 'Held: asks about price',
+                'complaint' => 'Held: complaint',
+                'emergency' => 'Held: may be urgent',
+                default => 'Held: needs your judgment',
             },
-            'classifier_intent' => 'Held: the safety check read the customer as asking about '.str_replace('_', ' ', $detail).', which does not send on its own',
-            'classifier_unsure' => 'Held: the safety check was not sure about '.str_replace('_', ' ', $detail),
-            'send_refused' => 'Held: the text could not be sent to this customer',
-            default => "Held: {$code}",
+            'classifier_unsure' => match ($detail) {
+                'asks_for_person' => 'Held: may want to talk to a person',
+                default => 'Held: the safety check was not sure',
+            },
+            'too_long' => 'Held: too long for one text',
+            'classifier_failed' => 'Held: the safety check did not answer',
+            'send_refused' => 'Held: could not send right now',
+            default => 'Held: needs your judgment',
         };
     }
 }

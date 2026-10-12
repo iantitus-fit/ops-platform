@@ -3,6 +3,7 @@
 namespace App\Records;
 
 use App\Enums\ActivityType;
+use App\Enums\MessageAuthor;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Activity;
@@ -215,15 +216,19 @@ class CustomerCard
     }
 
     /**
+     * The words the card puts above a reply depend on who wrote it, because the agent reads this card as its
+     * own history and must not mistake its earlier texts for the owner's, or the owner's for its own (Pitfall 8).
+     *
      * @return array{string, string, string}
      */
     private function replyParts(Activity $activity, ?Message $message): array
     {
         $details = $message === null ? '' : " ({$message->channel->value}, {$message->status->value})";
+        $fromFrontDesk = $message?->author === MessageAuthor::Agent;
 
         return [
-            "Reply from owner{$details}",
-            'Owner reply:',
+            ($fromFrontDesk ? 'Reply from front desk' : 'Reply from owner').$details,
+            $fromFrontDesk ? 'Front desk reply:' : 'Owner reply:',
             $message?->body ?? $activity->summary,
         ];
     }
