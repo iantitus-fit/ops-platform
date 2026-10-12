@@ -1,5 +1,7 @@
 <?php
 
+use App\Ai\AgentFile;
+use App\Ai\FrontDeskPrompt;
 use App\Enums\ActivityType;
 use App\Enums\VersionStatus;
 use App\Icm\ActiveConfig;
@@ -95,4 +97,134 @@ it('records the answers whether the reply is sent or held', function () {
 
     expect(theAgentMessage()->status->value)->toBe('draft')
         ->and(IntakeAnswer::query()->count())->toBe(1);
+});
+
+/**
+ * A second text from Dana, as the fake webhook receives it.
+ */
+function danaTextsAgain(string $body): void
+{
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('d', 32), 'Body' => $body]))->assertOk();
+}
+
+it('keeps the earlier answer and shows the correction as the current one (D-34)', function () {
+    frontDeskCustomerTexts('My AC is old, about 7 years');
+    scriptFrontDeskReplies(
+        ['service_slug' => 'ac-repair', 'intake_answers' => [
+            ['question_key' => 'system_age', 'option' => '5 to 10 years', 'raw_text' => 'about 7 years'],
+        ]],
+        ['service_slug' => 'ac-repair', 'intake_answers' => [
+            ['question_key' => 'system_age', 'option' => 'Over 10 years', 'raw_text' => "actually it's about 12 years old"],
+        ]],
+    );
+    runQueuedFrontDeskJobs();
+
+    danaTextsAgain("actually it's about 12 years old");
+    runQueuedFrontDeskJobs();
+
+    $card = app(CustomerCard::class)->render(Contact::sole());
+    $currentSection = str($card)->after('## Intake answers')->before('## Timeline')->toString();
+
+    expect(IntakeAnswer::query()->orderBy('id')->pluck('option')->all())->toBe(['5 to 10 years', 'Over 10 years'])
+        ->and($currentSection)->toContain('About how old is the system? Over 10 years')
+        ->and($currentSection)->not->toContain('5 to 10 years')
+        ->and($card)->toContain('Intake answer (About how old is the system? 5 to 10 years)');
+});
+
+it('matches an option case-insensitively and keeps the file spelling', function () {
+    danaAnswersIntake('not cooling', [
+        ['question_key' => 'symptom', 'option' => 'not cooling', 'raw_text' => 'not cooling'],
+    ]);
+
+    expect(IntakeAnswer::sole()->option)->toBe('Not cooling');
+});
+
+it('stores an option the question does not list as null and keeps the customer words (T-02-34)', function () {
+    danaAnswersIntake('it is freezing up', [
+        ['question_key' => 'symptom', 'option' => 'Freezing up', 'raw_text' => 'it is freezing up'],
+    ]);
+
+    $answer = IntakeAnswer::sole();
+    $card = app(CustomerCard::class)->render(Contact::sole());
+
+    expect($answer->option)->toBeNull()
+        ->and($answer->raw_text)->toBe('it is freezing up')
+        ->and($card)->toContain('What is the system doing? not matched')
+        ->and(Contact::sole()->activities()->where('type', ActivityType::IntakeAnswered)->sole()->summary)
+        ->toBe('Intake answer: What is the system doing? not matched');
+});
+
+it('stores null for the option of a question that lists no options', function () {
+    writeIcmFile('business/services/duct-cleaning.md', <<<'MD'
+---
+type: service
+name: Duct cleaning
+slug: duct-cleaning
+duration_minutes: 120
+book_online: true
+price_policy: none
+intake:
+  - key: concerns
+    ask: Anything we should know about the ducts?
+---
+We clean ducts.
+MD);
+
+    danaAnswersIntake('there is a smell', [
+        ['question_key' => 'concerns', 'option' => 'A smell', 'raw_text' => 'there is a smell'],
+    ], slug: 'duct-cleaning');
+
+    $answer = IntakeAnswer::sole();
+
+    expect($answer->service_slug)->toBe('duct-cleaning')
+        ->and($answer->option)->toBeNull()
+        ->and($answer->raw_text)->toBe('there is a smell');
+});
+
+it('stores nothing for a question key the service does not ask (T-02-34)', function () {
+    danaAnswersIntake('it is blue', [
+        ['question_key' => 'color', 'option' => 'Blue', 'raw_text' => 'it is blue'],
+    ]);
+
+    expect(IntakeAnswer::query()->count())->toBe(0)
+        ->and(Contact::sole()->activities()->where('type', ActivityType::IntakeAnswered)->count())->toBe(0);
+});
+
+it('stores nothing for a service the folder does not have (T-02-34)', function () {
+    danaAnswersIntake('please clean my pool', [
+        ['question_key' => 'symptom', 'option' => 'Not cooling', 'raw_text' => 'please clean my pool'],
+    ], slug: 'pool-cleaning');
+
+    expect(IntakeAnswer::query()->count())->toBe(0);
+});
+
+it('keeps two answers to one question recorded in the same second, the higher id being current (AGNT-03)', function () {
+    $this->travelTo(now()->startOfSecond());
+
+    danaAnswersIntake('not cooling, no wait, making noise', [
+        ['question_key' => 'symptom', 'option' => 'Not cooling', 'raw_text' => 'not cooling'],
+        ['question_key' => 'symptom', 'option' => 'Making noise', 'raw_text' => 'no wait, making noise'],
+    ]);
+
+    $answers = IntakeAnswer::query()->orderBy('id')->get();
+    $currentSection = str(app(CustomerCard::class)->render(Contact::sole()))->after('## Intake answers')->before('## Timeline')->toString();
+
+    expect($answers)->toHaveCount(2)
+        ->and($answers[0]->created_at->equalTo($answers[1]->created_at))->toBeTrue()
+        ->and($currentSection)->toContain('What is the system doing? Making noise')
+        ->and($currentSection)->not->toContain('What is the system doing? Not cooling');
+});
+
+it('shows the agent what is already answered in its next instructions (AGNT-03)', function () {
+    danaAnswersIntake("It's not cooling", [
+        ['question_key' => 'symptom', 'option' => 'Not cooling', 'raw_text' => "It's not cooling"],
+    ]);
+
+    $instructions = app(FrontDeskPrompt::class)->instructions(
+        AgentFile::forChannel(app(ActiveConfig::class), 'sms'),
+        Contact::sole(),
+    );
+
+    expect($instructions)->toContain('## Intake answers')
+        ->and($instructions)->toContain('What is the system doing? Not cooling');
 });
