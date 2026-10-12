@@ -228,10 +228,11 @@ it('refuses a --since that is not a date', function () {
     gateExportDecisions();
 
     $exitCode = Artisan::call('gate:export', ['--since' => 'last week']);
+    $output = Artisan::output();
 
     expect($exitCode)->toBe(1)
-        ->and(Artisan::output())->toContain('YYYY-MM-DD')
-        ->and(Artisan::output())->not->toContain('message_id');
+        ->and($output)->toContain('YYYY-MM-DD')
+        ->and($output)->not->toContain('message_id');
 });
 
 it('leaves out every customer and reply text with --without-text but keeps the lengths', function () {
@@ -264,24 +265,31 @@ it('carries no customer or reply words anywhere in a --without-text export, even
     Message::factory()->draft()->create(['gate' => $gate, 'body' => 'Sorry about the fence at 12 Elm Street.']);
 
     Artisan::call('gate:export', ['--without-text' => true]);
+    $output = Artisan::output();
 
-    expect(Artisan::output())->not->toContain('Elm Street')
-        ->and(Artisan::output())->not->toContain('fence')
-        ->and(Artisan::output())->toContain('code:never_say');
+    expect($output)->not->toContain('Elm Street')
+        ->and($output)->not->toContain('fence')
+        ->and($output)->toContain('code:never_say');
 });
 
 it('prints nothing and succeeds when there are no decisions', function () {
-    expect(Artisan::call('gate:export'))->toBe(0)
+    $exitCode = Artisan::call('gate:export');
+
+    expect($exitCode)->toBe(0)
         ->and(trim(Artisan::output()))->toBe('');
 });
 
-it('prints unicode and slashes as written, not escaped', function () {
+it('prints unicode, slashes and angle brackets as written, not escaped or read as console formatting', function () {
     Message::factory()->draft()->create([
-        'gate' => gateExportVerdict('Café at 3/4 Elm', 'Sí, 3/4 está bien.', 'code:price', 'price'),
+        'gate' => gateExportVerdict('Café at 3/4 Elm <error>now</error>', 'Sí, 3/4 está bien.', 'code:price', 'price'),
         'body' => 'Sí, 3/4 está bien.',
     ]);
 
     Artisan::call('gate:export');
 
-    expect(Artisan::output())->toContain('Sí, 3/4 está bien.')->not->toContain('í')->not->toContain('3\/4');
+    expect(Artisan::output())
+        ->toContain('Sí, 3/4 está bien.')
+        ->toContain('<error>now</error>')
+        ->not->toContain('\\u00ed')
+        ->not->toContain('3\/4');
 });
