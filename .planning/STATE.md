@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-10-12T01:32:35.782Z"
+stopped_at: Completed 02-08-PLAN.md
+last_updated: "2026-10-12T01:36:10.231Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: ef9ccd252b7d3c536338bf43032fbb48f4239328
+state_head: 045e926c60b707e2cebc43d203e86ffe29f6e45b
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 9
+  completed_plans: 10
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 3 of 29
+Plan: 4 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -65,6 +65,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 01 P07 | 10 min | 3 tasks | 17 files |
 | Phase 02 P01 | 4 min | 2 tasks | 12 files |
 | Phase 02 P02 | 5 min | 2 tasks | 16 files |
+| Phase 02 P08 | 6 min | 1 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-01: CI actions pinned to full commit SHAs (checkout v7.0.1, setup-php 2.40.0); later-sprint fixtures moved to automations/follow-up.md; exampleFolderFileCount() in tests/Pest.php is the one example-folder file count (8)
 - [Phase 02]: Agent provider names must match config/ai.php keys exactly; Ai::textProvider() then decides whether the provider can write text (the SDK accepts any case)
 - [Phase 02]: Agent loads uses present|array|min:1 so an empty list reads 'must have at least 1 item(s)'; unreadable-but-present files count as present for loads
+- [Phase 02]: 02-08: DispatchInbound is the only place ProcessInbound is queued (conditional update on dispatched_at); ProcessInbound is debounced by conversation and claims the burst by handled_at; the debounce is an optimisation, the database claim is the guarantee
 
 ### Pending Todos
 
@@ -134,6 +136,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T01:32:35.748Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-10-12T01:36:10.191Z
+Stopped at: Completed 02-08-PLAN.md
 Resume file: None
