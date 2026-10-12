@@ -39,7 +39,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 - [x] **AGNT-01**: Agent files (`agents/*.md`, type `agent`: name, channel, provider, model, fallback, loads, escalate_to) are validated by the sync with plain-words errors and compiled into the active version; a broken agent file is rejected like any other file.
 - [ ] **AGNT-02**: On an inbound text, the `ProcessInbound` job runs the agent built from the active agent file: it loads the routed files named in `loads` whole (from `ActiveConfig`, never from disk) plus the customer's card rendered fresh from the database, and replies in the same conversation.
-- [ ] **AGNT-03**: The agent asks the intake questions defined in the matching `business/services/*.md` file (using their options) and captures the answers as structured output against the contact or conversation, visible on the timeline and the customer card. *(derived: SPEC says "asks intake questions" and "structured output"; the storage shape is a discuss-phase decision)*
+- [x] **AGNT-03**: The agent asks the intake questions defined in the matching `business/services/*.md` file (using their options) and captures the answers as structured output against the contact or conversation, visible on the timeline and the customer card. *(derived: SPEC says "asks intake questions" and "structured output"; the storage shape is a discuss-phase decision)*
 - [x] **AGNT-04**: Provider and model are set per agent in its file, with a `fallback` list: if the primary provider or model fails, the agent falls through the list; swapping a model is an edit to the agent file, not code. (DEC-07)
 - [ ] **GATE-01**: The send-or-draft gate is enforced in code from `rules/sending.md`: intake questions, scheduling and FAQ answers send on their own; anything with a price, a promise, a discount or a complaint is saved as a draft for the owner and never sent, whatever the model outputs. The owner is alerted as `owner_alert` specifies.
 - [ ] **GATE-02**: The first outbound message to a customer discloses that it is an AI using `ai_disclosure` from `voice/how-we-talk.md`; `never_say` phrases are never sent; `sign_off` is applied; and a customer who asks for a person is handed to `escalate_to` and the owner is alerted. (Principle 5)
@@ -150,7 +150,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | QUAL-01 | Phase 1 | Complete |
 | AGNT-01 | Phase 2 | Complete |
 | AGNT-02 | Phase 2 | Pending |
-| AGNT-03 | Phase 2 | Pending |
+| AGNT-03 | Phase 2 | Complete |
 | AGNT-04 | Phase 2 | Complete |
 | GATE-01 | Phase 2 | Pending |
 | GATE-02 | Phase 2 | Pending |

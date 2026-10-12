@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-16-PLAN.md
-last_updated: "2026-10-12T02:48:12.187Z"
+stopped_at: Completed 02-18-PLAN.md
+last_updated: "2026-10-12T02:55:25.780Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: ec13173f15c4f059b1c40c32bbaa1903da10ed27
+state_head: 497264c58d8f06afae239bca0811a6cf0a1b98ec
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 23
+  completed_plans: 24
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 17 of 29
+Plan: 18 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -79,6 +79,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P14 | 6 min | 1 tasks | 14 files |
 | Phase 02 P15 | 10 min | 2 tasks | 13 files |
 | Phase 02 P16 | 14 min | 1 tasks | 7 files |
+| Phase 02 P18 | 6 min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-15: A channel failure keeps the failed message and alerts the owner (front_desk_failed); only a refusal such as the owner holding the reply lock becomes a send_refused draft
 - [Phase 02]: 02-15: OutboundSender::whyBlocked() words its reasons for whoever is sending; SendOwnerReply::whyCannotReply() delegates to it
 - [Phase 02]: 02-16: a send_refused hold goes through the same storeDraft path, so it also lands on the timeline and alerts the owner as draft_waiting
+- [Phase 02]: 02-18: Intake answers are rows (latest id per conversation, service and question is current); unknown keys dropped, unknown options stored null with raw words
+- [Phase 02]: 02-18: A web form names a contact only when it created it; matched contacts get a 'form gave the name' note. The agent's customer_name fills only an empty name via an atomic conditional update
 
 ### Pending Todos
 
@@ -168,6 +171,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T02:48:12.141Z
-Stopped at: Completed 02-16-PLAN.md
+Last session: 2026-10-12T02:55:25.741Z
+Stopped at: Completed 02-18-PLAN.md
 Resume file: None
