@@ -78,11 +78,16 @@ return [
     | lock_wait_seconds: how long an automated send waits for the owner's own
     | send to the same customer to finish, so the two cannot go out together.
     |
+    | chain_budget_seconds: the longest the whole provider chain may run. A
+    | fallback starts only if the time spent so far plus timeout_seconds fits,
+    | so one run always ends well inside ProcessInbound's 300-second limit.
+    |
     */
 
     'agent' => [
         'timeout_seconds' => 40,
         'lock_wait_seconds' => 5,
+        'chain_budget_seconds' => 150,
     ],
 
     /*

@@ -5,8 +5,11 @@ namespace App\Jobs;
 use App\Actions\ClaimInboundBurst;
 use App\Actions\ReportFrontDeskFailure;
 use App\Actions\RunFrontDesk;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
+use App\Enums\MessageDirection;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,6 +29,21 @@ use Throwable;
 class ProcessInbound implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * One attempt only: a retry would find the burst already claimed and do nothing.
+     */
+    public int $tries = 1;
+
+    /**
+     * Seconds the worker lets one run last. Above the provider chain budget plus Jev plus the sends.
+     */
+    public int $timeout = 300;
+
+    /**
+     * A run that passes its timeout counts as failed, so failed() runs and the owner is told.
+     */
+    public bool $failOnTimeout = true;
 
     /**
      * Create a new job instance.
@@ -81,5 +99,33 @@ class ProcessInbound implements ShouldQueue
         }
 
         return true;
+    }
+
+    /**
+     * Tell the owner a claimed burst was never answered because the run was stopped.
+     *
+     * Laravel calls this when the job times out or is failed after its worker died. The burst stays claimed, so the
+     * customer cannot get two replies, and ReportFrontDeskFailure skips a text it already reported. The exception's
+     * words are never copied into the note or the alert.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        $conversation = Conversation::query()->find($this->conversationId);
+
+        if ($conversation === null) {
+            return;
+        }
+
+        $text = $conversation->messages()
+            ->where('direction', MessageDirection::In)
+            ->where('author', MessageAuthor::Customer)
+            ->latest('id')
+            ->first();
+
+        if ($text === null) {
+            return;
+        }
+
+        app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped before finishing', 'Front desk stopped before answering');
     }
 }
