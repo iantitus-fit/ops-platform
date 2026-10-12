@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-31-PLAN.md
-last_updated: "2026-10-12T17:39:08.105Z"
+stopped_at: Completed 02-32-PLAN.md
+last_updated: "2026-10-12T17:47:07.548Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 02 execution started
-state_head: 4c73f5ccdedb594940f61be479474eeea4bee212
+state_head: d00891768ee991d307867fcd1ec5c86474af7910
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 41
-  completed_plans: 38
+  completed_plans: 39
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 3 of 34
+Plan: 4 of 34
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 02 execution started
 
@@ -94,6 +94,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P29 | 30min | 3 tasks | 11 files |
 | Phase 02 P30 | 20 min | 2 tasks | 4 files |
 | Phase 02 P31 | 20 min | 3 tasks | 7 files |
+| Phase 02 P32 | 6 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: Ian approved the new top-level map/ folder (map-root, 2026-10-12); the cartographer map covers the text front desk, with escalate_to, intake_answers.icm_version_id and intake_answers.message_id parked, and no owner-alert card until Phase 2.1
 - [Phase 02]: 02-30: phpunit.xml pairs forced env lines with server lines because Laravel env() reads $_SERVER before $_ENV and PHPUnit 13 never sets $_SERVER for env
 - [Phase 02]: 02-31: an owner_alert RaiseOwnerAlert cannot read (Phase 1 sentence or no live version) is urgent and due now; the Business Folder page counts a non-array owner_alert as the text channel; a failed ProcessInbound push releases dispatched_at and rethrows
+- [Phase 02]: 02-32: ProcessInbound catches any Throwable after NoActiveVersion, reports through ReportFrontDeskFailure in fixed words, and keeps the burst claimed so a crash can never lead to a second reply
+- [Phase 02]: 02-32: job timeout 300 > chain budget 150 + Jev 8 + 120; queue retry_after 360 above the timeout; first provider always runs, only fallbacks are budgeted
 
 ### Pending Todos
 
@@ -207,6 +210,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T17:39:08.058Z
-Stopped at: Completed 02-31-PLAN.md
+Last session: 2026-10-12T17:47:07.503Z
+Stopped at: Completed 02-32-PLAN.md
 Resume file: None
