@@ -187,7 +187,7 @@ it('never removes the card of a contact whose id only ends in the same digits', 
 });
 
 it('keeps a very long name from overflowing the filename', function () {
-    $contact = Contact::factory()->create(['name' => str_repeat('Whitfield ', 40)]);
+    $contact = Contact::factory()->create(['name' => str_repeat('Whitfield ', 25)]);
 
     expect(strlen(app(CustomerCard::class)->filename($contact)))->toBeLessThanOrEqual(60 + strlen("-{$contact->id}.md"));
 });

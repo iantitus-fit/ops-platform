@@ -21,24 +21,25 @@ it('opens the business folder page for a signed-in owner', function () {
 });
 
 it('says no version is live yet, then goes live from Sync Now', function () {
-    Livewire::test(BusinessFolder::class)
+    $page = Livewire::test(BusinessFolder::class)
         ->assertSee('No version is live yet. Click Sync Now.')
-        ->callAction('syncNow')
-        ->assertNotified('Live as v1 (8 files)')
-        ->assertDontSee('No version is live yet. Click Sync Now.')
-        ->assertSee('v1');
+        ->callAction('syncNow');
 
-    expect(IcmVersion::count())->toBe(1);
+    $label = IcmVersion::sole()->label();
+
+    $page->assertNotified("Live as {$label} (8 files)")
+        ->assertDontSee('No version is live yet. Click Sync Now.')
+        ->assertSee($label);
 });
 
 it('shows the live version, its file count, its Chicago go-live time and its files', function () {
     $this->freezeTime();
-    activateExampleFolder();
+    $version = activateExampleFolder();
 
     $liveSince = now()->setTimezone('America/Chicago')->format('M j, g:i a');
 
     Livewire::test(BusinessFolder::class)
-        ->assertSee('v1')
+        ->assertSee($version->label())
         ->assertSee('8 files')
         ->assertSee("Live since {$liveSince}")
         ->assertSee('business/services/ac-repair.md')
@@ -47,24 +48,24 @@ it('shows the live version, its file count, its Chicago go-live time and its fil
 });
 
 it('reports an unchanged folder as already active and as no changes', function () {
-    activateExampleFolder();
+    $version = activateExampleFolder();
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertNotified('Already active: v1, no changes')
+        ->assertNotified("Already active: {$version->label()}, no changes")
         ->assertSee('No changes');
 
     expect(IcmVersion::count())->toBe(1);
 });
 
 it('rejects a broken file, keeps v1 live and lists the error under the last sync', function () {
-    activateExampleFolder();
+    $version = activateExampleFolder();
     breakFile('business/services/ac-repair.md', fn (string $contents) => str_replace('price_policy: starting_at', 'price_policy: maybe', $contents));
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertNotified('Rejected. v1 stays live.')
-        ->assertSee('v1')
+        ->assertNotified("Rejected. {$version->label()} stays live.")
+        ->assertSee($version->label())
         ->assertSee('Rejected')
         ->assertSee('business/services/ac-repair.md: price_policy must be one of none, starting_at, fixed (you wrote maybe)');
 
