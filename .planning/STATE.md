@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-20-PLAN.md
-last_updated: "2026-10-12T03:16:26.010Z"
+stopped_at: Completed 02-21-PLAN.md
+last_updated: "2026-10-12T03:25:17.248Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 06e0b6ea585b8aa4ac7af687d9284a7542660fbd
+state_head: 1088581a61aea1d3b0d5fe1737dcae469325ab94
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 27
+  completed_plans: 28
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 21 of 29
+Plan: 22 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -83,6 +83,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P17 | 14 min | 2 tasks | 14 files |
 | Phase 02 P19 | 12 min | 1 tasks | 13 files |
 | Phase 02 P20 | 25 min | 2 tasks | 13 files |
+| Phase 02 P21 | 30 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -149,6 +150,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-19: Adding a foreign key column to a SQLite table rebuilds it and turns a partial unique index into a plain one; migrations that add FK columns to conversations or messages must drop and recreate the partial index afterwards
 - [Phase 02]: 02-20: RunFrontDesk order is paused check, reply cap, phrase handoff, agent, wants_person, verdict asksForPerson — Cap and phrase checks cost no model call; handoff alerts, texts, then pauses because OutboundSender refuses automated sends while paused
 - [Phase 02]: 02-20: CodeChecks::phrasePattern made public so AsksForPerson reuses the veto matching — Avoids a drifting copy of the normalisation and word-boundary rules
+- [Phase 02]: 02-21: A safety line that failed to send does not count as answering the text, so RunFrontDesk's second chance retries it; alerts stay single because RaiseOwnerAlert dedupes by message and reason
+- [Phase 02]: 02-21: With no live business folder the safety line still goes out without disclosure or gas company number; Jev's life_safety reading sends the line instead of the asks_for_person handoff
 
 ### Pending Todos
 
@@ -180,6 +183,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:16:25.970Z
-Stopped at: Completed 02-20-PLAN.md
+Last session: 2026-10-12T03:25:17.203Z
+Stopped at: Completed 02-21-PLAN.md
 Resume file: None
