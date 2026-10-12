@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Ai\AgentFile;
 use App\Enums\SyncOutcome;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
@@ -65,6 +66,37 @@ class BusinessFolder extends Page
     }
 
     /**
+     * The live agent that answers texts, or null when no version is live or no agent file serves sms.
+     */
+    public function frontDesk(): ?AgentFile
+    {
+        try {
+            return AgentFile::forChannel(app(ActiveConfig::class), 'sms');
+        } catch (NoActiveVersion) {
+            return null;
+        }
+    }
+
+    /**
+     * The front desk as one sentence for the owner: which model answers texts and what it falls back to.
+     */
+    public function frontDeskLine(): string
+    {
+        $frontDesk = $this->frontDesk();
+
+        if ($frontDesk === null) {
+            return 'Front desk: off. No agent file answers texts, so customer texts wait for you here.';
+        }
+
+        $chain = implode(', then ', array_map(
+            fn (array $entry) => "{$entry['provider']} {$entry['model']}",
+            $frontDesk->providerChain(),
+        ));
+
+        return "Front desk: {$frontDesk->name} answers texts with {$chain}.";
+    }
+
+    /**
      * How the most recent sync went, or null before the first one.
      *
      * @return array{outcome: SyncOutcome, at: CarbonInterface, version: IcmVersion, errors: list<string>, notices: list<string>}|null
@@ -83,7 +115,7 @@ class BusinessFolder extends Page
     }
 
     /**
-     * A skipped later-sprint file as one line for the owner, such as "Not supported yet: agents/front-desk.md".
+     * A skipped later-sprint file as one line for the owner, such as "Not supported yet: automations/follow-up.md".
      */
     public function noticeLine(string $notice): string
     {

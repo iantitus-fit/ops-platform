@@ -7,6 +7,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as LaravelValidator;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
+use Laravel\Ai\Ai;
+use LogicException;
 
 /**
  * Checks every file of a loaded folder and describes each problem in plain words.
@@ -39,12 +42,20 @@ class Validator
     private const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
     /**
+     * The providers an agent file may name, worked out once per validation run.
+     *
+     * @var list<string>|null
+     */
+    private ?array $usableProviders = null;
+
+    /**
      * Every problem in the folder. A folder with no problems may go live.
      */
     public function validate(LoadedFolder $folder): ValidationReport
     {
         $files = collect($folder->files)->sortBy('path', SORT_STRING)->values();
         $errors = [];
+        $this->usableProviders = null;
 
         foreach ($files as $file) {
             if ($file->kind === IcmFileKind::Unrecognized) {
@@ -56,7 +67,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -83,6 +94,7 @@ class Validator
             'hours' => $this->hoursErrors($file),
             'lead_sources' => $this->repeatedKeyErrors($file, 'sources', 'sources has more than one entry with key'),
             'service' => $this->repeatedKeyErrors($file, 'intake', 'intake has more than one question with key'),
+            'agent' => $this->agentErrors($file),
             default => [],
         });
 
@@ -152,7 +164,7 @@ class Validator
                 'fallback' => 'bail|present|array',
                 'fallback.*.provider' => 'bail|required|string',
                 'fallback.*.model' => 'bail|required|string',
-                'loads' => 'bail|required|array|min:1',
+                'loads' => 'bail|present|array|min:1',
                 'loads.*' => 'bail|string',
                 'escalate_to' => ['bail', 'required', Rule::in(['owner'])],
             ],
@@ -259,6 +271,184 @@ class Validator
             }
 
             $seen[$key] = true;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * What is wrong with the models an agent file names: a provider this app cannot use or that cannot
+     * write replies, and a chain entry that repeats an earlier one.
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function agentErrors(IcmFile $file): array
+    {
+        $errors = [];
+        $chain = [['field' => 'provider', 'prefix' => '', 'provider' => $file->frontMatter['provider'] ?? null, 'model' => $file->frontMatter['model'] ?? null]];
+        $fallback = $file->frontMatter['fallback'] ?? null;
+
+        foreach (is_array($fallback) ? array_values($fallback) : [] as $index => $entry) {
+            $number = $index + 1;
+            $chain[] = [
+                'field' => "fallback.{$index}.provider",
+                'prefix' => "fallback item {$number}: ",
+                'provider' => is_array($entry) ? ($entry['provider'] ?? null) : null,
+                'model' => is_array($entry) ? ($entry['model'] ?? null) : null,
+                'number' => $number,
+            ];
+        }
+
+        $seen = [];
+
+        foreach ($chain as $position => $entry) {
+            $provider = $entry['provider'];
+            $model = $entry['model'];
+
+            if (is_string($provider) && $provider !== '') {
+                $problem = $this->providerProblem($provider);
+
+                if ($problem !== null) {
+                    $errors[] = $this->error($file->path, $entry['field'], $entry['prefix'].$problem);
+                }
+            }
+
+            if (! is_string($provider) || $provider === '' || ! is_string($model) || $model === '') {
+                continue;
+            }
+
+            $key = $provider."\0".$model;
+
+            if ($position > 0 && isset($seen[$key])) {
+                $errors[] = $this->error($file->path, "fallback.{$entry['number']}", "fallback item {$entry['number']} repeats ".PlainWords::oneLine($provider).' '.PlainWords::oneLine($model).'; each entry must be different');
+            }
+
+            $seen[$key] ??= true;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Why a provider name cannot answer texts, or null when it can. The name must match a key of
+     * config/ai.php exactly, and Ai::textProvider() builds the provider without calling it, so no key
+     * or network is needed.
+     */
+    private function providerProblem(string $name): ?string
+    {
+        if (! array_key_exists($name, (array) config('ai.providers'))) {
+            return 'provider '.PlainWords::oneLine($name).' is not a provider this app can use; use one of '.implode(', ', $this->usableProviders());
+        }
+
+        try {
+            Ai::textProvider($name);
+        } catch (InvalidArgumentException) {
+            return 'provider '.PlainWords::oneLine($name).' is not a provider this app can use; use one of '.implode(', ', $this->usableProviders());
+        } catch (LogicException) {
+            return 'provider '.PlainWords::oneLine($name).' cannot write replies; use one of '.implode(', ', $this->usableProviders());
+        }
+
+        return null;
+    }
+
+    /**
+     * Every provider in config/ai.php that can write text, sorted.
+     *
+     * @return list<string>
+     */
+    private function usableProviders(): array
+    {
+        if ($this->usableProviders !== null) {
+            return $this->usableProviders;
+        }
+
+        $usable = [];
+
+        foreach (array_keys((array) config('ai.providers')) as $name) {
+            try {
+                Ai::textProvider((string) $name);
+                $usable[] = (string) $name;
+            } catch (InvalidArgumentException|LogicException) {
+                continue;
+            }
+        }
+
+        sort($usable);
+
+        return $this->usableProviders = $usable;
+    }
+
+    /**
+     * Two agent files may not serve the same channel; the file later in path order gets the error.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function agentChannelErrors(Collection $files): array
+    {
+        $owners = [];
+        $errors = [];
+
+        foreach ($files as $file) {
+            $channel = $file->frontMatter['channel'] ?? null;
+
+            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'agent' || ! is_string($channel) || $channel === '') {
+                continue;
+            }
+
+            if (isset($owners[$channel])) {
+                $errors[] = $this->error($file->path, 'channel', 'channel '.PlainWords::oneLine($channel)." already has an agent in {$owners[$channel]}; the folder can have one agent per channel");
+            } else {
+                $owners[$channel] = $file->path;
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Every loads entry must name a file, or a folder ending in / that holds a typed file, in the folder.
+     * A file that cannot be read still counts as present, because its own error is already reported.
+     * records/ is never loaded: the customer card is added by code, not by a path in the file.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function agentLoadsErrors(Collection $files): array
+    {
+        $typedPaths = $files->filter(fn (IcmFile $file) => $file->kind === IcmFileKind::Typed)->map(fn (IcmFile $file) => $file->path)->all();
+        $loadablePaths = $files->filter(fn (IcmFile $file) => $file->kind !== IcmFileKind::LaterSprint)->map(fn (IcmFile $file) => $file->path)->all();
+        $errors = [];
+
+        foreach ($files as $file) {
+            $loads = $file->frontMatter['loads'] ?? null;
+
+            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'agent' || ! is_array($loads)) {
+                continue;
+            }
+
+            foreach (array_values($loads) as $index => $entry) {
+                if (! is_string($entry)) {
+                    continue;
+                }
+
+                $number = $index + 1;
+                $shown = PlainWords::oneLine($entry);
+
+                if (preg_match('#^(\./)?records(/|$)#', $entry) === 1) {
+                    $errors[] = $this->error($file->path, "loads.{$index}", "loads item {$number}: {$shown} is never loaded; the customer card is added on its own");
+
+                    continue;
+                }
+
+                $found = str_ends_with($entry, '/')
+                    ? collect($typedPaths)->contains(fn (string $path) => str_starts_with($path, $entry))
+                    : in_array($entry, $loadablePaths, true);
+
+                if (! $found) {
+                    $errors[] = $this->error($file->path, "loads.{$index}", "loads item {$number}: {$shown} matches no file in the folder");
+                }
+            }
         }
 
         return $errors;

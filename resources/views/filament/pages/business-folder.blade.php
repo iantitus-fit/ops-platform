@@ -18,6 +18,10 @@
     </x-filament::section>
 
     @if ($version !== null)
+        <x-filament::section heading="Front desk">
+            <p>{{ $this->frontDeskLine() }}</p>
+        </x-filament::section>
+
         <x-filament::section heading="Files">
             <ul style="display: flex; flex-direction: column; gap: 0.25rem;">
                 @foreach ($this->files() as $file)

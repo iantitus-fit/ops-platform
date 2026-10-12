@@ -91,6 +91,7 @@ it('requires each of the five single-instance types to exist exactly once', func
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe([
+        'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/profile-old.md: type business is already used by business/profile.md; the folder needs exactly one',
     ]);
@@ -104,6 +105,12 @@ it('names every missing single-instance type when the folder has no typed files'
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe([
+        'agents/front-desk.md: loads item 1: business/profile.md matches no file in the folder',
+        'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
+        'agents/front-desk.md: loads item 3: business/faq.md matches no file in the folder',
+        'agents/front-desk.md: loads item 4: business/services/ matches no file in the folder',
+        'agents/front-desk.md: loads item 5: voice/how-we-talk.md matches no file in the folder',
+        'agents/front-desk.md: loads item 6: rules/sending.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/lead-sources.md: no file has type: lead_sources, and the folder needs exactly one',
         'business/profile.md: no file has type: business, and the folder needs exactly one',

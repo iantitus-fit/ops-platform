@@ -87,7 +87,7 @@ dataset('broken agent files', [
     'loads list left empty' => [AGENT_LOADS_BLOCK, "loads: []\n", 'agents/front-desk.md: loads must have at least 1 item(s)', 'line'],
     'loads entry that matches no file' => ['  - business/faq.md', '  - business/faqs.md', 'agents/front-desk.md: loads item 3: business/faqs.md matches no file in the folder', 'line'],
     'loads entry under records' => ["  - rules/sending.md\n", "  - rules/sending.md\n  - records/\n", 'agents/front-desk.md: loads item 7: records/ is never loaded; the customer card is added on its own', 'line'],
-    'loads folder that holds no typed file' => ['  - business/services/', '  - agents/', 'agents/front-desk.md: loads item 4: agents/ matches no file in the folder', 'line'],
+    'loads folder that holds no typed file' => ['  - business/services/', '  - automations/', 'agents/front-desk.md: loads item 4: automations/ matches no file in the folder', 'line'],
 ]);
 
 it('rejects a broken agent file in plain words and keeps the previous version live', function (string $search, string $replace, string $expected, string $kind) {
