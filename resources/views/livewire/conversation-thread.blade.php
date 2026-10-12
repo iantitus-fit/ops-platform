@@ -8,8 +8,9 @@
                     @if ($message->direction === \App\Enums\MessageDirection::Out)
                         <x-filament::badge size="sm" :color="match ($message->status) {
                             \App\Enums\MessageStatus::Failed => 'danger',
-                            \App\Enums\MessageStatus::Queued => 'warning',
-                            default => 'success',
+                            \App\Enums\MessageStatus::Queued, \App\Enums\MessageStatus::Draft => 'warning',
+                            \App\Enums\MessageStatus::Sent, \App\Enums\MessageStatus::Delivered => 'success',
+                            default => 'gray',
                         }">{{ $message->status->value }}</x-filament::badge>
                     @endif
                 </div>

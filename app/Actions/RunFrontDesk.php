@@ -24,6 +24,7 @@ use App\SendRule\DecideSendOrDraft;
 use App\SendRule\Verdict;
 use DomainException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Answers one claimed burst of customer texts: the agent writes a reply, the send rule decides, and the reply is
@@ -103,21 +104,55 @@ class RunFrontDesk
     }
 
     /**
-     * Keep the agent's words for the owner, with the verdict that held them.
+     * Keep the agent's words for the owner, with the verdict that held them, and tell the owner.
+     *
+     * The draft and its timeline entry are written together, so a held reply never exists without a record of why.
+     * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
+     * point at a draft that was rolled away (D-07, D-20).
      *
      * @param  array<string, mixed>  $attributes
      */
     private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes): void
     {
-        $conversation->messages()->create([
-            ...$attributes,
-            ...$verdict->toAttributes($label),
-            'channel' => MessageChannel::Sms,
-            'direction' => MessageDirection::Out,
-            'author' => MessageAuthor::Agent,
-            'body' => $words,
-            'status' => MessageStatus::Draft,
-        ]);
+        $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
+
+        $draft = DB::transaction(function () use ($conversation, $words, $verdict, $label, $attributes, $plainReason): Message {
+            $draft = $conversation->messages()->create([
+                ...$attributes,
+                ...$verdict->toAttributes($label),
+                'channel' => MessageChannel::Sms,
+                'direction' => MessageDirection::Out,
+                'author' => MessageAuthor::Agent,
+                'body' => $words,
+                'status' => MessageStatus::Draft,
+            ]);
+
+            $conversation->contact->activities()->create([
+                'type' => ActivityType::DraftHeld,
+                'summary' => $plainReason,
+                'subject_type' => $draft->getMorphClass(),
+                'subject_id' => $draft->id,
+                'occurred_at' => now(),
+            ]);
+
+            return $draft;
+        });
+
+        CustomerRecordChanged::dispatch($conversation->contact->id);
+
+        $this->raiseOwnerAlert->handle($conversation, $this->alertReasonFor($verdict), $draft, $plainReason);
+    }
+
+    /**
+     * A held complaint alerts the owner as a complaint, which the folder usually lists under right_away; every other
+     * held reply is simply a draft waiting. A complaint is recognised by the reason code the send rule gave, whether
+     * the label, the classifier or its intent found it.
+     */
+    private function alertReasonFor(Verdict $verdict): AlertReason
+    {
+        $isComplaint = in_array($verdict->reasonCode, ['label:complaint', 'classifier:complaint', 'classifier_intent:complaint'], true);
+
+        return $isComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting;
     }
 
     /**

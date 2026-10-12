@@ -139,6 +139,7 @@ it('keeps the floor in code: a stored rule that lists price as sendable still ho
         $config->shouldReceive('sendingRules')->andReturn([
             'send_on_own' => ['intake_question', 'scheduling', 'faq_answer', 'price', 'promise', 'discount', 'complaint'],
             'draft_for_owner' => ['other'],
+            'owner_alert' => ['channels' => ['text'], 'right_away' => [], 'after_hours' => 'next_opening'],
         ]);
     });
     scriptFrontDeskReplies(['reply' => 'The owner will follow up with you.', 'label' => 'price']);

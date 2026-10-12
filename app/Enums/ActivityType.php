@@ -9,4 +9,5 @@ enum ActivityType: string
     case ReplySent = 'reply_sent';
     case Note = 'note';
     case OwnerAlerted = 'owner_alerted';
+    case DraftHeld = 'draft_held';
 }
