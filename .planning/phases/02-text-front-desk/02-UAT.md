@@ -52,7 +52,7 @@ blocked: 0
     - path: "tests/Feature/Filament/ConversationViewTest.php"
       issue: "lines 80-86 assert the attribute string, not layout or scroll position"
   missing:
-    - "Make the latest message visible on first view at phone width without pushing Send out of view (options: show the customer's last message in the Needs you card, latest-first thread, or size/position the box so its bottom is on screen); layout choice is Ian's (D-29)"
+    - "DECIDED by Ian 2026-10-12: show the customer's last message in the Needs you card (pulls the Phase 02.1 roadmap follow-up from UAT Test 1 into this fix; remove that 02.1 roadmap line when the fix lands). Thread stays oldest-first and still scrolls its box to the bottom; Send stays visible without scrolling"
     - "A test that checks real layout or scroll position at ~390x664 with a short and a long thread (Pest browser test or headless Chrome)"
   debug_session: ".planning/debug/needs-you-thread-opens-oldest.md"
 
@@ -164,8 +164,7 @@ blocked: 0
     - path: "app/Ai/FrontDeskPrompt.php"
       issue: "RULES lines 33-36 don't separate facts (business files) from what the customer said (thread, card), and don't forbid restating a visit or time as booked (Layer 2)"
   missing:
-    - "Confirm with Ian what 'no business file says' meant (service files vs all files)"
-    - "Layer 1 (Ian's call): make the example folder agree with itself: add business/services/furnace-repair.md, or narrow profile.md and faq.md"
+    - "DECIDED by Ian 2026-10-12: add examples/example-hvac/business/services/furnace-repair.md (slug, intake questions, price policy) so the folder agrees with profile.md and faq.md; furnace-repair texts then get an intake question instead of a held other"
     - "Layer 2: RULES sentence(s): the thread and customer card show what the customer said, not what the business has agreed; never state that a visit, time or booking exists, since the owner confirms those; toContain test in FrontDeskPromptTest; same RULES edit as G-02-2.2"
   debug_session: ".planning/debug/draft-unsupported-claim.md"
 
