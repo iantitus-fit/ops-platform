@@ -52,6 +52,7 @@ class RunFrontDesk
         private readonly OutboundSender $outboundSender,
         private readonly RaiseOwnerAlert $raiseOwnerAlert,
         private readonly RecordIntakeAnswers $recordIntakeAnswers,
+        private readonly SendFixedReply $sendFixedReply,
     ) {}
 
     /**
@@ -162,7 +163,8 @@ class RunFrontDesk
      * kept as history in the same transaction that writes the new one, so the owner only ever sees the newest. The
      * draft and its timeline entry are written together, so a held reply never exists without a record of why.
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
-     * point at a draft that was rolled away (D-07, D-20).
+     * point at a draft that was rolled away (D-07, D-20). Last, the customer gets one holding reply saying the owner
+     * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14).
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -217,6 +219,8 @@ class RunFrontDesk
         if ($this->ownerNeedsAlertFor($alertReason, $replacedChain)) {
             $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
         }
+
+        $this->sendFixedReply->holding($conversation);
     }
 
     /**

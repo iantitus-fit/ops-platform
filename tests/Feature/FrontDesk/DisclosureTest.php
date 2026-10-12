@@ -48,7 +48,7 @@ it('still opens the first automated text with the disclosure when the owner text
         ->and(textsSentToCustomers()[0]['body'])->toStartWith(app(ActiveConfig::class)->voice()['ai_disclosure']."\n\n");
 });
 
-it('does not count a held draft as the disclosure having reached the customer', function () {
+it('puts the disclosure on the holding reply when a held draft means that is the first automated text, and not again after', function () {
     frontDeskCustomerTexts('How much is a diagnostic?');
     scriptFrontDeskReplies(['reply' => 'A diagnostic visit is $89.', 'label' => 'faq_answer']);
     runQueuedFrontDeskJobs();
@@ -57,8 +57,12 @@ it('does not count a held draft as the disclosure having reached the customer', 
     scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toHaveCount(1)
-        ->and(textsSentToCustomers()[0]['body'])->toStartWith(app(ActiveConfig::class)->voice()['ai_disclosure']."\n\n");
+    $disclosure = app(ActiveConfig::class)->voice()['ai_disclosure'];
+
+    expect(textsSentToCustomers())->toHaveCount(2)
+        ->and(textsSentToCustomers()[0]['body'])->toStartWith($disclosure."\n\n")
+        ->and(textsSentToCustomers()[0]['body'])->not->toContain('$89')
+        ->and(textsSentToCustomers()[1]['body'])->not->toContain($disclosure);
 });
 
 it('discloses again in the new conversation that starts after the owner closed the old one', function () {
@@ -103,7 +107,7 @@ it('holds a reply that says a never_say phrase and sends nothing (GATE-02)', fun
 
     $draft = theAgentMessage();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and($draft->status)->toBe(MessageStatus::Draft)
         ->and($draft->author)->toBe(MessageAuthor::Agent)
         ->and($draft->gate_outcome)->toBe(GateOutcome::Hold)

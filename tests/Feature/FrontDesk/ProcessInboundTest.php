@@ -107,7 +107,7 @@ it('keeps a price reply as a draft even when the agent labels it a faq answer, a
 
     $draft = theAgentMessage();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and($draft->status)->toBe(MessageStatus::Draft)
         ->and($draft->author)->toBe(MessageAuthor::Agent)
         ->and($draft->kind)->toBe(MessageKind::AgentReply)
@@ -125,7 +125,7 @@ it('never sends a reply the agent labels price, promise, discount or complaint, 
 
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->status)->toBe(MessageStatus::Draft)
         ->and(theAgentMessage()->gate_outcome)->toBe(GateOutcome::Hold)
         ->and(theAgentMessage()->gate_reason)->toBe("label:{$label}")
@@ -146,7 +146,7 @@ it('keeps the floor in code: a stored rule that lists price as sendable still ho
 
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('label:price')
         ->and(fakeClassifier()->calls())->toBe([]);
 });
@@ -157,7 +157,7 @@ it('holds a reply that uses a phrase the voice file says never to use', function
 
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('code:never_say')
         ->and(fakeClassifier()->calls())->toBe([]);
 });
@@ -173,7 +173,7 @@ it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)'
 
     expect(mb_strlen($words))->toBeLessThan(1600)
         ->and(mb_strlen(composedFirstReply($words)))->toBeGreaterThan(1600)
-        ->and(textsSentToCustomers())->toBe([])
+        ->and(textsSentForAgentReplies())->toBe([])
         ->and($draft->status)->toBe(MessageStatus::Draft)
         ->and($draft->body)->toBe($words)
         ->and($draft->gate_reason)->toBe('too_long')
@@ -190,7 +190,7 @@ it('holds the reply when Jev is down', function () {
 
     $draft = theAgentMessage();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and($draft->status)->toBe(MessageStatus::Draft)
         ->and($draft->gate_reason)->toBe('classifier_failed')
         ->and($draft->gate['checks']['classifier']['ran'])->toBeTrue()
@@ -204,7 +204,7 @@ it('holds the reply when Jev reads it as an intent the owner has not made sendab
 
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('classifier_intent:price_question')
         ->and(theAgentMessage()->gate['checks']['classifier']['reading']['sendable'])->toBeFalse();
 });
@@ -216,7 +216,7 @@ it('can only be held by Jev, never rescued: a clear Jev answer does not send a l
 
     runQueuedFrontDeskJobs();
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('label:promise');
 });
 
@@ -270,7 +270,7 @@ it('stores what Jev said about life safety and a request for a person on the ver
 
     $reading = theAgentMessage()->gate['checks']['classifier']['reading'];
 
-    expect(textsSentToCustomers())->toBe([])
+    expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('classifier:life_safety')
         ->and($reading['life_safety'])->toBeTrue()
         ->and($reading['asks_for_person'])->toBeFalse();

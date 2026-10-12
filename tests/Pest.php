@@ -3,6 +3,7 @@
 use App\Ai\Agents\FrontDeskAgent;
 use App\Channels\FakeTextChannel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\ActiveConfig;
@@ -179,11 +180,31 @@ function composedFirstReply(string $words): string
 }
 
 /**
- * The one message the front desk wrote, whether it was sent or kept as a draft.
+ * The texts the fake channel sent that carry the agent's own words, leaving out the holding reply that goes out
+ * beside a held draft (D-12). A test that says "nothing the agent wrote reached the customer" reads this.
+ *
+ * @return list<array{to: string, body: string, provider_message_id: string}>
+ */
+function textsSentForAgentReplies(): array
+{
+    $holdingBodies = Message::query()->where('kind', MessageKind::HoldingReply->value)->pluck('body')->all();
+
+    return array_values(array_filter(
+        textsSentToCustomers(),
+        fn (array $text): bool => ! in_array($text['body'], $holdingBodies, true),
+    ));
+}
+
+/**
+ * The one message the front desk wrote, whether it was sent or kept as a draft. A holding reply sent beside a held
+ * draft is a different message and is left out.
  */
 function theAgentMessage(): Message
 {
-    return Message::query()->where('direction', MessageDirection::Out)->sole();
+    return Message::query()
+        ->where('direction', MessageDirection::Out)
+        ->where(fn ($query) => $query->whereNull('kind')->orWhere('kind', '!=', MessageKind::HoldingReply->value))
+        ->sole();
 }
 
 /**
