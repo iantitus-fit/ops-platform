@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-22-PLAN.md
-last_updated: "2026-10-12T03:32:43.688Z"
+stopped_at: Completed 02-23-PLAN.md
+last_updated: "2026-10-12T03:40:55.700Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 5b3279731ca0163479cd3577a82c848eb1723bc2
+state_head: 12d4e6498ee1a3e9dbd917be0d1803fb594cf0dc
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 29
+  completed_plans: 30
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 23 of 29
+Plan: 24 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -85,6 +85,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P20 | 25 min | 2 tasks | 13 files |
 | Phase 02 P21 | 30 min | 2 tasks | 10 files |
 | Phase 02 P22 | 40 min | 1 tasks | 10 files |
+| Phase 02 P23 | 25 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-21: With no live business folder the safety line still goes out without disclosure or gas company number; Jev's life_safety reading sends the line instead of the asks_for_person handoff
 - [Phase 02]: 02-22: Approved drafts go out through OutboundSender::sendExisting, not SendOwnerReply::handle, so approving a draft never pauses the assistant (D-25); a taken-over conversation keeps its pause.
 - [Phase 02]: 02-22: The replaced/already-sent race is decided by a status check under lockForUpdate when sendExisting claims the draft row; ConversationThread::draftId is #[Locked] and looked up inside the conversation (T-02-44).
+- [Phase 02]: 02-23: the not-alerted rule (alerts exist and every one failed) lives once on Message::alertFailure(), used by the thread flag and the DraftsWaiting row
+- [Phase 02]: 02-23: home screen widgets set $isLazy = false so they render with the page
 
 ### Pending Todos
 
@@ -186,6 +189,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:32:43.647Z
-Stopped at: Completed 02-22-PLAN.md
+Last session: 2026-10-12T03:40:55.656Z
+Stopped at: Completed 02-23-PLAN.md
 Resume file: None

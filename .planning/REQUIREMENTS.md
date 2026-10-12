@@ -44,7 +44,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 - [ ] **GATE-01**: The send-or-draft gate is enforced in code from `rules/sending.md`: intake questions, scheduling and FAQ answers send on their own; anything with a price, a promise, a discount or a complaint is saved as a draft for the owner and never sent, whatever the model outputs. The owner is alerted as `owner_alert` specifies.
 - [x] **GATE-02**: The first outbound message to a customer discloses that it is an AI using `ai_disclosure` from `voice/how-we-talk.md`; `never_say` phrases are never sent; `sign_off` is applied; and a customer who asks for a person is handed to `escalate_to` and the owner is alerted. (Principle 5)
 - [x] **GATE-03**: The owner can take over a conversation from the dashboard; while taken over the agent sends nothing in that conversation, and the owner can hand it back.
-- [ ] **GATE-04**: The owner can review a draft in the dashboard and approve, edit and send, or discard it. *(derived: SPEC says price/promise/discount/complaint "goes to the owner as a draft")*
+- [x] **GATE-04**: The owner can review a draft in the dashboard and approve, edit and send, or discard it. *(derived: SPEC says price/promise/discount/complaint "goes to the owner as a draft")*
 - [ ] **TXT-01**: A `TwilioTextChannel` implements the `TextChannel` interface (outbound send, inbound webhook with signature verification and unique provider message id), selected by config with no other code change. Verified against Twilio-shaped payloads; going live on Ian's registered test number follows A2P approval and does not gate this phase. (DEC-05)
 - [ ] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
 
@@ -155,7 +155,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | GATE-01 | Phase 2 | Pending |
 | GATE-02 | Phase 2 | Complete |
 | GATE-03 | Phase 2 | Complete |
-| GATE-04 | Phase 2 | Pending |
+| GATE-04 | Phase 2 | Complete |
 | TXT-01 | Phase 2 | Pending |
 | INFRA-01 | Phase 2 | Pending |
 | BOOK-01 | Phase 3 | Pending |
