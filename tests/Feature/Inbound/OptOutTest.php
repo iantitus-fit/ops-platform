@@ -4,6 +4,7 @@ use App\Actions\InboundData;
 use App\Actions\OutboundSender;
 use App\Actions\RecordInbound;
 use App\Actions\ResolveDraft;
+use App\Actions\SendFixedReply;
 use App\Actions\SendOwnerReply;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Channels\FakeTextChannel;
@@ -13,6 +14,8 @@ use App\Enums\AlertReason;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
+use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Jobs\ProcessInbound;
 use App\Livewire\ConversationThread;
@@ -22,6 +25,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use App\Records\CustomerCard;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
@@ -384,4 +388,123 @@ it('lets a test opt a number out and back in on the fake channel directly', func
     $channel->send('+12025550123', 'Hi');
 
     expect($channel->sent())->toHaveCount(1);
+});
+
+/**
+ * Tuesday 10:00 in the shop's zone, the owner reachable by text, and Dana's first text waiting to be answered.
+ * Nothing has run yet, so a test decides what happens before the front desk does.
+ */
+function optOutDanaHasTextedAndWaits(string $text): void
+{
+    test()->travelTo(Carbon::parse('2026-10-13 10:00', 'America/Chicago'));
+    test()->actingAs(User::factory()->withPhone('+12025550199')->create());
+
+    Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => OPT_OUT_CUSTOMER_PHONE]);
+
+    frontDeskCustomerTexts($text);
+}
+
+/**
+ * Script one agent reply that is safe to send on its own, and opt Dana out while the agent is still writing it, the
+ * way a STOP can land between the burst being claimed and the reply going out.
+ */
+function optOutDanaStopsWhileTheAgentWrites(): void
+{
+    FrontDeskAgent::fake([function () {
+        Contact::query()->update(['sms_opted_out_at' => now()]);
+
+        return [
+            'reply' => 'A technician can come out.',
+            'label' => 'faq_answer',
+            'wants_person' => false,
+            'service_slug' => null,
+            'intake_answers' => [],
+            'customer_name' => null,
+        ];
+    }])->preventStrayPrompts();
+}
+
+it('sends no agent reply and no holding reply when the opt-out lands while the agent writes (D-40)', function () {
+    optOutDanaHasTextedAndWaits('Is my appointment still on?');
+    optOutDanaStopsWhileTheAgentWrites();
+
+    runQueuedFrontDeskJobs();
+
+    expect(optOutTextsSentToDana())->toBe([])
+        ->and(Message::query()->where('direction', MessageDirection::Out)->where('status', MessageStatus::Sent)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->where('status', MessageStatus::Sent)->count())->toBe(0);
+});
+
+it('sends no holding reply and no handoff reply to an opted-out customer (D-40)', function () {
+    $conversation = optOutDanaIsAnswered();
+    $conversation->contact->update(['sms_opted_out_at' => now()]);
+    $sentBefore = count(textsSentToCustomers());
+
+    expect(app(SendFixedReply::class)->holding($conversation->refresh()))->toBeNull()
+        ->and(app(SendFixedReply::class)->handoff($conversation))->toBeNull()
+        ->and(count(textsSentToCustomers()))->toBe($sentBefore);
+});
+
+it('answers a request for a person from an opted-out customer with an alert to the owner and no text (D-40)', function () {
+    optOutDanaHasTextedAndWaits('Hi');
+    Contact::query()->update(['sms_opted_out_at' => now()]);
+    $sentToDanaBefore = count(optOutTextsSentToDana());
+
+    optOutDanaTexts('Can I talk to a real person?', 'h');
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::OptedOutMessage->value)->sole();
+
+    expect(count(optOutTextsSentToDana()))->toBe($sentToDanaBefore)
+        ->and($alert->body)->toContain('Can I talk to a real person?')
+        ->and(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(0);
+});
+
+it('sends no safety line to an opted-out customer but still alerts the owner and says why (D-40)', function () {
+    optOutDanaHasTextedAndWaits('Hello');
+    Contact::query()->update(['sms_opted_out_at' => now()]);
+
+    optOutDanaTexts('I smell gas in the basement', 'g');
+    runQueuedFrontDeskJobs();
+
+    $safety = OwnerAlert::query()->where('reason', AlertReason::LifeSafety->value)->sole();
+
+    expect(optOutTextsSentToDana())->toBe([])
+        ->and($safety->body)->toContain('Safety message could not be sent')
+        ->and($safety->sent_at)->not->toBeNull()
+        ->and(OwnerAlert::query()->where('reason', AlertReason::OptedOutMessage->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->where('status', MessageStatus::Sent)->count())->toBe(0);
+});
+
+it('corrects a stale local record when the carrier refuses an agent reply because the number opted out (21610)', function () {
+    optOutDanaHasTextedAndWaits('Is my appointment still on?');
+    app(FakeTextChannel::class)->optOut(OPT_OUT_CUSTOMER_PHONE);
+    scriptFrontDeskReplies(['reply' => 'A technician can come out.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    $failed = Message::query()->where('direction', MessageDirection::Out)->sole();
+    $contact = Contact::query()->where('phone_e164', OPT_OUT_CUSTOMER_PHONE)->sole();
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($failed->status)->toBe(MessageStatus::Failed)
+        ->and($failed->meta['error'])->toContain('21610')
+        ->and($contact->isOptedOut())->toBeTrue()
+        ->and($contact->activities()->where('type', ActivityType::Note)->where('summary', 'like', 'Not sent: the customer has opted out of texts%')->count())->toBe(1)
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and(optOutTextsSentToDana())->toBe([])
+        ->and(app(FakeTextChannel::class)->refused())->toHaveCount(1);
+});
+
+it('tells the owner the customer has opted out when the carrier refuses their reply (21610)', function () {
+    $conversation = optOutDanaIsAnswered();
+    app(FakeTextChannel::class)->optOut(OPT_OUT_CUSTOMER_PHONE);
+
+    Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->set('body', 'Can I still help?')
+        ->call('sendReply')
+        ->assertNotified(Notification::make()->title('The customer has opted out of texts.')->danger());
+
+    expect($conversation->contact->refresh()->isOptedOut())->toBeTrue()
+        ->and(Message::query()->where('body', 'Can I still help?')->sole()->status)->toBe(MessageStatus::Failed);
 });

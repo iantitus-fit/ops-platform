@@ -5,6 +5,7 @@ use App\Actions\SendOwnerAlert;
 use App\Channels\FakeTextChannel;
 use App\Enums\AlertReason;
 use App\Enums\MessageStatus;
+use App\Filament\Pages\BusinessFolder;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -276,4 +277,43 @@ it('uses the owner_alert morph name', function () {
     $alert = OwnerAlert::factory()->for($conversation)->create();
 
     expect($alert->getMorphClass())->toBe('owner_alert');
+});
+
+it('stores an alert as failed with how to undo it when the owner phone has opted out (Pitfall 17)', function () {
+    [$conversation, $draft] = ownerAlertTestConversation();
+    User::factory()->withPhone('+12025550199')->create();
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload([
+        'MessageSid' => 'SM'.str_repeat('9', 32),
+        'From' => '+12025550199',
+        'Body' => 'STOP',
+    ]))->assertOk();
+
+    $alert = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft, 'Held: asks about price')->sole()->refresh();
+
+    expect($alert->failed_at)->not->toBeNull()
+        ->and($alert->sent_at)->toBeNull()
+        ->and($alert->failure)->toBe('Your phone opted out of texts (STOP). Text START to the business number to get alerts again.')
+        ->and(ownerAlertTestSentTexts())->toBe([]);
+
+    Livewire\Livewire::test(BusinessFolder::class)
+        ->assertSee('The last alert was not sent: Your phone opted out of texts (STOP). Text START to the business number to get alerts again.');
+});
+
+it('sends alerts to the owner phone again after it texts START (Pitfall 17)', function () {
+    [$conversation, $draft] = ownerAlertTestConversation();
+    User::factory()->withPhone('+12025550199')->create();
+
+    foreach (['STOP' => '8', 'START' => '7'] as $word => $sid) {
+        test()->post(route('webhooks.text.fake'), fakeTextPayload([
+            'MessageSid' => 'SM'.str_repeat($sid, 32),
+            'From' => '+12025550199',
+            'Body' => $word,
+        ]))->assertOk();
+    }
+
+    $alert = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft)->sole()->refresh();
+
+    expect($alert->sent_at)->not->toBeNull()
+        ->and($alert->failed_at)->toBeNull();
 });
