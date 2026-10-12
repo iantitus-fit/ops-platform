@@ -50,4 +50,14 @@ class Conversation extends Model
     {
         return $this->hasMany(Message::class)->orderBy('created_at')->orderBy('id');
     }
+
+    /**
+     * Every intake answer given in this thread, corrections included, oldest first.
+     *
+     * @return HasMany<IntakeAnswer, $this>
+     */
+    public function intakeAnswers(): HasMany
+    {
+        return $this->hasMany(IntakeAnswer::class)->orderBy('id');
+    }
 }

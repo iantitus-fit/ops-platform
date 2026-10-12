@@ -47,6 +47,7 @@ class RunFrontDesk
         private readonly DecideSendOrDraft $decideSendOrDraft,
         private readonly OutboundSender $outboundSender,
         private readonly RaiseOwnerAlert $raiseOwnerAlert,
+        private readonly RecordIntakeAnswers $recordIntakeAnswers,
     ) {}
 
     /**
@@ -68,6 +69,8 @@ class RunFrontDesk
 
             return;
         }
+
+        $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
 
         $words = $run->reply->reply;
         $composed = $this->composeAutomatedText->forReply($conversation, $words);

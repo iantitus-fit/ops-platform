@@ -30,6 +30,16 @@ class ActiveConfig
     }
 
     /**
+     * The id of the live version, for a record that must say which folder version it was made under.
+     *
+     * @throws NoActiveVersion
+     */
+    public function versionId(): int
+    {
+        return $this->version()->id;
+    }
+
+    /**
      * The business's time zone, such as "America/Chicago".
      */
     public function timezone(): string

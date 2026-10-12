@@ -8,6 +8,7 @@ use App\Channels\TwilioTextChannel;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
+use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
@@ -73,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'contact' => Contact::class,
             'conversation' => Conversation::class,
+            'intake_answer' => IntakeAnswer::class,
             'message' => Message::class,
             'owner_alert' => OwnerAlert::class,
             'user' => User::class,
