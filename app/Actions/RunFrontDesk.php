@@ -37,6 +37,9 @@ use Illuminate\Support\Str;
  * A draft holds only the agent's own words. The disclosure and the sign-off are added when a text actually goes
  * out, so they land on whichever automated text reaches the customer first (D-50).
  *
+ * While the assistant is paused in the conversation, the agent is not asked at all: the owner is alerted to the
+ * customer's newest text instead, once per burst (D-24).
+ *
  * This never throws for a front desk that cannot answer or cannot send: the customer's burst is already claimed,
  * so the owner is alerted instead (AGNT-04). A send the channel refused stays on the record as failed. A send
  * that was only refused, such as while the owner is sending to the same customer, becomes a draft.
@@ -60,6 +63,12 @@ class RunFrontDesk
      */
     public function handle(Conversation $conversation, Collection $burst): void
     {
+        if ($conversation->isPaused()) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::PausedMessage, $burst->last(), 'New message while you are handling it');
+
+            return;
+        }
+
         $agent = AgentFile::forChannel($this->activeConfig, 'sms');
 
         if ($agent === null) {

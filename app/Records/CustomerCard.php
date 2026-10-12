@@ -160,6 +160,8 @@ class CustomerCard
             ActivityType::OwnerAlerted => ['Owner alert', 'System note:', $activity->summary],
             ActivityType::DraftHeld => $this->heldDraftParts($activity, $subject),
             ActivityType::IntakeAnswered => $this->intakeAnswerParts($activity),
+            ActivityType::AgentPaused => ['Assistant paused', 'System note:', $activity->summary],
+            ActivityType::AgentResumed => ['Assistant resumed', 'System note:', $activity->summary],
         };
 
         return implode("\n", [

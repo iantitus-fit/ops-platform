@@ -67,7 +67,11 @@ class OutboundSender
     /**
      * Why nothing may be sent to this conversation at all, or null when a send could go out. The owner's reply box
      * shows this sentence in place of the live form, so it is worded for the owner when the owner is the sender.
-     * Later plans add the paused and opted-out checks here.
+     *
+     * While the assistant is paused in the conversation, every automated text is refused; only the owner's own
+     * reply and the life-safety line pass (D-24). deliver() asks again inside the send lock, on a freshly read
+     * conversation, so a Take over that lands while a reply is being composed wins. A later plan adds the opted-out
+     * check here.
      */
     public function whyBlocked(Conversation $conversation, SendOrigin $origin): ?string
     {
@@ -75,6 +79,10 @@ class OutboundSender
 
         if ($conversation->status === ConversationStatus::Closed) {
             return $ownerIsSending ? 'This conversation is closed. Reopen it to reply.' : 'This conversation is closed.';
+        }
+
+        if ($origin === SendOrigin::Automated && $conversation->isPaused()) {
+            return 'The assistant is paused in this conversation.';
         }
 
         $contact = $conversation->contact;

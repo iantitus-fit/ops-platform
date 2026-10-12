@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConversationStatus;
+use App\Enums\PausedReason;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['contact_id', 'status', 'last_message_at', 'closed_at'])]
+#[Fillable(['contact_id', 'status', 'last_message_at', 'closed_at', 'paused_at', 'paused_reason', 'paused_by'])]
 class Conversation extends Model
 {
     /** @use HasFactory<ConversationFactory> */
@@ -27,6 +28,8 @@ class Conversation extends Model
             'status' => ConversationStatus::class,
             'last_message_at' => 'datetime',
             'closed_at' => 'datetime',
+            'paused_at' => 'datetime',
+            'paused_reason' => PausedReason::class,
         ];
     }
 
@@ -38,6 +41,25 @@ class Conversation extends Model
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * The owner who took over or handed back last, when a person did it.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function pausedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paused_by');
+    }
+
+    /**
+     * Whether the assistant has stepped back from this conversation (D-23). The pause belongs to the
+     * conversation, not the customer: a new conversation after a close starts active.
+     */
+    public function isPaused(): bool
+    {
+        return $this->paused_at !== null;
     }
 
     /**
