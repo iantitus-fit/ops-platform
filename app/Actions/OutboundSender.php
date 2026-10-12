@@ -65,6 +65,33 @@ class OutboundSender
     }
 
     /**
+     * Send a held draft: the same row moves from draft to sent with the final text, so one message carries the
+     * agent's draft, the owner's decision and the delivery (D-54).
+     *
+     * It takes the same lock and makes the same checks as send(), then claims the draft by moving it from draft to
+     * queued under a row lock. If a newer draft replaced it or another tab sent it first, the claim fails, nothing
+     * is sent and the sentence says why. The attributes are the columns to record with the claim, such as the
+     * resolution and who resolved it; `activity_summary` is not a column but the words for the timeline entry.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws DomainException when the draft is gone, the text is refused, another reply is being sent, or the channel failed
+     */
+    public function sendExisting(Message $message, string $body, SendOrigin $origin, array $attributes = []): Message
+    {
+        $conversation = $message->conversation;
+        $lock = Cache::lock("reply:{$conversation->id}", 30);
+
+        $this->takeLock($lock, $origin);
+
+        try {
+            return $this->deliverExisting($conversation, $message, trim($body), $origin, $attributes);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
      * Why nothing may be sent to this conversation at all, or null when a send could go out. The owner's reply box
      * shows this sentence in place of the live form, so it is worded for the owner when the owner is the sender.
      *
@@ -133,7 +160,8 @@ class OutboundSender
             throw new DomainException($refusal);
         }
 
-        $contact = $conversation->contact;
+        $summary = $attributes['activity_summary'] ?? null;
+        unset($attributes['activity_summary']);
 
         $message = DB::transaction(fn (): Message => $conversation->messages()->create([
             ...$attributes,
@@ -145,8 +173,61 @@ class OutboundSender
             'provider' => $this->textChannel->name(),
         ]));
 
+        return $this->transmit($conversation, $message, $origin, $summary);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function deliverExisting(Conversation $conversation, Message $message, string $body, SendOrigin $origin, array $attributes): Message
+    {
+        $conversation->refresh();
+
+        $refusal = $this->whyBlocked($conversation, $origin) ?? $this->whyBodyIsRefused($body);
+
+        if ($refusal !== null) {
+            throw new DomainException($refusal);
+        }
+
+        $summary = $attributes['activity_summary'] ?? null;
+        unset($attributes['activity_summary']);
+
+        $claimed = DB::transaction(function () use ($message, $body, $attributes): bool {
+            $draft = Message::query()->lockForUpdate()->find($message->id);
+
+            if ($draft === null || $draft->status !== MessageStatus::Draft) {
+                return false;
+            }
+
+            $draft->update([
+                ...$attributes,
+                'body' => $body,
+                'status' => MessageStatus::Queued,
+                'provider' => $this->textChannel->name(),
+            ]);
+
+            return true;
+        });
+
+        $message->refresh();
+
+        if (! $claimed) {
+            throw new DomainException(ResolveDraft::whyGone($message));
+        }
+
+        return $this->transmit($conversation, $message, $origin, $summary);
+    }
+
+    /**
+     * Hand a queued message to the text channel and record the outcome: sent with the channel's id, or failed with
+     * the error. `$summary` words the timeline entry; null means the usual line for who sent it.
+     */
+    private function transmit(Conversation $conversation, Message $message, SendOrigin $origin, ?string $summary): Message
+    {
+        $contact = $conversation->contact;
+
         try {
-            $providerMessageId = $this->textChannel->send($contact->phone_e164, $body);
+            $providerMessageId = $this->textChannel->send($contact->phone_e164, $message->body);
         } catch (Throwable $exception) {
             $this->recordFailure($contact, $message, $exception);
 
@@ -154,7 +235,7 @@ class OutboundSender
         }
 
         try {
-            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId, $origin): void {
+            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId, $origin, $summary): void {
                 $sentAt = now();
 
                 $message->update([
@@ -164,7 +245,7 @@ class OutboundSender
 
                 $contact->activities()->create([
                     'type' => ActivityType::ReplySent,
-                    'summary' => $origin === SendOrigin::Owner ? 'Reply sent by owner' : 'Reply sent by front desk',
+                    'summary' => $summary ?? ($origin === SendOrigin::Owner ? 'Reply sent by owner' : 'Reply sent by front desk'),
                     'subject_type' => $message->getMorphClass(),
                     'subject_id' => $message->id,
                     'occurred_at' => $sentAt,

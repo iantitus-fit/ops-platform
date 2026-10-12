@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Actions\ResolveDraft;
 use App\Actions\SendOwnerReply;
+use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -10,7 +12,9 @@ use DomainException;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class ConversationThread extends Component
@@ -18,6 +22,18 @@ class ConversationThread extends Component
     public Conversation $conversation;
 
     public string $body = '';
+
+    /**
+     * The held draft the Needs you block is about. Locked, so the browser cannot point it at another message; the
+     * server fills it from the conversation's own live draft.
+     */
+    #[Locked]
+    public ?int $draftId = null;
+
+    /**
+     * The words in the Needs you box: the draft as the agent wrote it, until the owner changes them.
+     */
+    public string $draftBody = '';
 
     /**
      * Send what the owner typed as a text and clear the box.
@@ -42,14 +58,78 @@ class ConversationThread extends Component
     }
 
     /**
-     * The messages in the thread, oldest first.
+     * Send the held draft: as written, or with the owner's edit from the box (D-27).
+     *
+     * A draft that a newer text replaced is refused with the new draft shown and the owner's edit left in the box
+     * (D-28). A refusal about the words comes back as an error under the box. When the draft is gone, or the text
+     * channel failed so the draft row is kept as failed, the owner's words move to the reply box for another try.
+     */
+    public function approveDraft(ResolveDraft $resolveDraft): void
+    {
+        $draft = $this->draftToResolve();
+
+        try {
+            if ($draft === null) {
+                throw new DomainException(ResolveDraft::ALREADY_HANDLED);
+            }
+
+            $resolveDraft->approve($draft, auth()->user(), $this->draftBody);
+        } catch (ValidationException $exception) {
+            $this->addError('draftBody', (string) $exception->validator->errors()->first());
+
+            return;
+        } catch (DomainException $exception) {
+            $this->draftRefused($exception, keepWords: true);
+
+            return;
+        }
+
+        $this->draftResolved('Draft sent');
+    }
+
+    /**
+     * Discard the held draft without sending anything.
+     */
+    public function discardDraft(ResolveDraft $resolveDraft): void
+    {
+        $draft = $this->draftToResolve();
+
+        try {
+            if ($draft === null) {
+                throw new DomainException(ResolveDraft::ALREADY_HANDLED);
+            }
+
+            $resolveDraft->discard($draft, auth()->user());
+        } catch (DomainException $exception) {
+            $this->draftRefused($exception);
+
+            return;
+        }
+
+        $this->draftResolved('Draft discarded');
+    }
+
+    /**
+     * The messages in the thread, oldest first. A draft waiting for the owner is in the Needs you block instead, and a
+     * withdrawn one never reached the customer, so neither is part of the conversation.
      *
      * @return Collection<int, Message>
      */
     #[Computed]
     public function messages(): Collection
     {
-        return $this->conversation->messages()->get();
+        return $this->conversation->messages()
+            ->whereNotIn('status', [MessageStatus::Draft, MessageStatus::Withdrawn])
+            ->get();
+    }
+
+    /**
+     * The reply the front desk wrote and the send rule kept for the owner, or null when nothing is waiting (D-28).
+     */
+    #[Computed]
+    public function liveDraft(): ?Message
+    {
+        return $this->conversation->messages()->where('status', MessageStatus::Draft)->first();
     }
 
     /**
@@ -76,8 +156,73 @@ class ConversationThread extends Component
         return trim($conversation->paused_reason?->bannerLead()." You're handling this. Hand back to the assistant when done.");
     }
 
+    /**
+     * The draft the owner meant, looked up inside this conversation only so a swapped id finds nothing.
+     */
+    private function draftToResolve(): ?Message
+    {
+        return $this->draftId === null ? null : $this->conversation->messages()->find($this->draftId);
+    }
+
+    /**
+     * Tell the owner why the draft was refused. Their words stay where they can try again: in the Needs you box while a
+     * draft is still waiting, otherwise in the reply box.
+     */
+    private function draftRefused(DomainException $exception, bool $keepWords = false): void
+    {
+        // The message can carry provider text, and Filament renders a title as HTML.
+        Notification::make()->title(e($exception->getMessage()))->danger()->send();
+
+        unset($this->liveDraft);
+
+        if ($keepWords && $this->liveDraft === null && trim($this->draftBody) !== '') {
+            $this->body = trim($this->draftBody);
+        }
+    }
+
+    private function draftResolved(string $title): void
+    {
+        unset($this->liveDraft, $this->messages);
+
+        $this->reset('draftId', 'draftBody');
+
+        Notification::make()->title($title)->success()->send();
+    }
+
+    /**
+     * Point the Needs you block at the conversation's live draft.
+     *
+     * A new live draft fills the box with its words, unless the owner has been editing the old one: then their edit
+     * stays, and the new draft is shown beside it so nothing they typed is lost (D-28).
+     */
+    private function syncDraftFields(): void
+    {
+        $live = $this->liveDraft;
+
+        if ($live === null) {
+            $this->reset('draftId', 'draftBody');
+
+            return;
+        }
+
+        if ($live->id === $this->draftId) {
+            return;
+        }
+
+        $previous = $this->draftToResolve();
+        $ownerIsEditing = $previous !== null && trim($this->draftBody) !== trim($previous->body);
+
+        if (! $ownerIsEditing) {
+            $this->draftBody = $live->body;
+        }
+
+        $this->draftId = $live->id;
+    }
+
     public function render(ActiveConfig $activeConfig): View
     {
+        $this->syncDraftFields();
+
         return view('livewire.conversation-thread', [
             'timezone' => $activeConfig->displayTimezone(),
         ]);

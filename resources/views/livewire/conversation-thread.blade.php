@@ -5,6 +5,35 @@
         </x-filament::section>
     @endif
 
+    @if ($this->liveDraft !== null)
+        <x-filament::section compact style="margin-bottom: 1rem;">
+            <x-slot name="heading">Needs you</x-slot>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <p>{{ $this->liveDraft->gate['reason']['plain'] ?? 'Held for your review' }}</p>
+                @if (trim($draftBody) !== trim($this->liveDraft->body))
+                    <p style="font-size: 0.875rem;">
+                        <strong>The assistant wrote:</strong>
+                        <span class="whitespace-pre-line" style="white-space: pre-line;">{{ $this->liveDraft->body }}</span>
+                    </p>
+                @endif
+                <form wire:submit="approveDraft" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <x-filament::input.wrapper>
+                        <textarea wire:model="draftBody" rows="4" class="fi-input" style="width: 100%;"></textarea>
+                    </x-filament::input.wrapper>
+                    @error('draftBody')
+                        <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
+                    @enderror
+                    <p style="font-size: 0.875rem;">The sign-off (and the AI note on a first text) is added when it sends.</p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <x-filament::button type="submit">Send</x-filament::button>
+                        <x-filament::button type="button" color="gray" wire:click="discardDraft">Discard</x-filament::button>
+                    </div>
+                </form>
+            </div>
+        </x-filament::section>
+    @endif
+
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         @forelse ($this->messages as $message)
             <div wire:key="message-{{ $message->id }}">

@@ -10,6 +10,7 @@ enum ActivityType: string
     case Note = 'note';
     case OwnerAlerted = 'owner_alerted';
     case DraftHeld = 'draft_held';
+    case DraftDiscarded = 'draft_discarded';
     case IntakeAnswered = 'intake_answered';
     case AgentPaused = 'agent_paused';
     case AgentResumed = 'agent_resumed';

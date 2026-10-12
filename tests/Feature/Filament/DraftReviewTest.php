@@ -16,7 +16,6 @@ use App\Models\User;
 use App\Records\CustomerCard;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
-use Livewire\Exceptions\CannotUpdateLockedPropertyException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -184,6 +183,17 @@ it('discards the draft, sends nothing, and shows it on the timeline and the card
         ->and(app(CustomerCard::class)->render($contact->fresh()))->toContain('Draft discarded by owner');
 });
 
+it('tells the card the held draft was later sent by the owner, not left unsent', function () {
+    draftReviewPriceQuestionHeld();
+
+    draftReviewThread()->call('approveDraft');
+
+    $card = app(CustomerCard::class)->render(Conversation::query()->sole()->contact->fresh());
+
+    expect($card)->toContain('The owner then sent it to the customer:')
+        ->and($card)->not->toContain('Draft, not sent:');
+});
+
 it('refuses to send a replaced draft, keeps the owner\'s edit, and shows the new draft (D-28)', function () {
     draftReviewPriceQuestionHeld();
     $old = draftReviewTheDraft();
@@ -323,20 +333,23 @@ it('does not let the browser point the component at a different message (T-02-44
     $other = Message::factory()->for(Conversation::factory()->create())->draft()->create();
 
     expect(fn () => $thread->set('draftId', $other->id))
-        ->toThrow(CannotUpdateLockedPropertyException::class);
+        ->toThrow('Cannot update locked property');
 });
 
 it('escapes the draft and the reason in the needs-you block (T-02-45)', function () {
     draftReviewPriceQuestionHeld();
+
+    $thread = draftReviewThread();
 
     draftReviewTheDraft()->update([
         'body' => '<script>alert(1)</script> Mike will call.',
         'gate' => ['version' => 1, 'reason' => ['code' => 'code:price', 'plain' => 'Held: <img src=x onerror=alert(2)>']],
     ]);
 
-    $html = draftReviewThread()->html();
+    $html = $thread->call('$refresh')->html();
 
     expect($html)->not->toContain('<script>alert(1)')
         ->and($html)->not->toContain('<img src=x')
+        ->and($html)->toContain('Held: &lt;img src=x onerror=alert(2)&gt;')
         ->and($html)->toContain('&lt;script&gt;alert(1)&lt;/script&gt; Mike will call.');
 });

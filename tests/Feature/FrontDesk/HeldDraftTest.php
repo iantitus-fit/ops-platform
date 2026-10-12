@@ -103,7 +103,7 @@ it('puts a draft_held entry on the customer timeline and shows it on the card (D
         ->and($card)->toContain('Mike will text you a price for a new unit.');
 });
 
-it('shows a held draft in the conversation as a draft in the warning colour, never as sent', function () {
+it('shows a held draft to the owner in the needs-you block, never in the thread as if it were sent', function () {
     danaAsksAndFrontDeskReplies('How much for a new unit?', [
         'reply' => 'Mike will text you a price for a new unit.',
         'label' => 'price',
@@ -111,9 +111,12 @@ it('shows a held draft in the conversation as a draft in the warning colour, nev
 
     test()->actingAs(User::factory()->create());
 
-    $html = Livewire::test(ConversationThread::class, ['conversation' => Conversation::sole()])->html();
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => Conversation::sole()]);
+    $html = $thread->html();
 
-    expect($html)->toContain('Mike will text you a price for a new unit.')
-        ->and($html)->toMatch('/fi-color-warning[^>]*>\s*(?:<[^>]+>\s*)*draft\s*</')
+    expect($thread->get('draftBody'))->toBe('Mike will text you a price for a new unit.')
+        ->and($html)->toContain('Needs you')
+        ->and($html)->toContain('Held: asks about price')
+        ->and($thread->instance()->messages->pluck('id')->all())->not->toContain(theAgentMessage()->id)
         ->and($html)->not->toMatch('/fi-color-success[^>]*>\s*(?:<[^>]+>\s*)*draft\s*</');
 });
