@@ -49,3 +49,7 @@ arch('only the loader, the changelog and the records writer use the File facade'
 arch('application code never calls env() directly')
     ->expect('env')
     ->not->toBeUsedIn('App');
+
+arch('the front desk agent is only prompted from App\Ai')
+    ->expect('App\Ai\Agents\FrontDeskAgent')
+    ->toOnlyBeUsedIn(['App\Ai', 'Tests']);
