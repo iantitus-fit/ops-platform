@@ -125,14 +125,18 @@ class BusinessFolder extends Page
     /**
      * The warning for the owner when alerts are set to go by text and no one has a phone number on their profile,
      * so every alert would have nowhere to go (D-19). Null when alerts can reach someone, or no version is live.
+     * An owner_alert from a folder older than the front desk is a sentence, not a list of channels; it counts as
+     * text, because every alert goes by text now (D-18).
      */
     public function alertWarning(): ?string
     {
         try {
-            $channels = app(ActiveConfig::class)->sendingRules()['owner_alert']['channels'];
+            $alert = app(ActiveConfig::class)->sendingRules()['owner_alert'] ?? null;
         } catch (NoActiveVersion) {
             return null;
         }
+
+        $channels = is_array($alert) ? ($alert['channels'] ?? []) : ['text'];
 
         if (! in_array('text', $channels, true) || User::query()->whereNotNull('phone')->exists()) {
             return null;
