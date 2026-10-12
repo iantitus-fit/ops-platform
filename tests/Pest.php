@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\FolderSync;
@@ -86,6 +87,26 @@ function something()
 function fakeClassifier(): FakeClassifier
 {
     return app(Classifier::class);
+}
+
+/**
+ * Script what the front desk model answers, one structured reply per prompt in order. Any field left out
+ * gets a harmless default, so a test names only what it cares about. An unscripted prompt still throws.
+ *
+ * @param  array<string, mixed>  ...$replies
+ */
+function scriptFrontDeskReplies(array ...$replies): void
+{
+    $defaults = [
+        'reply' => 'Thanks for texting. What can we help with?',
+        'label' => 'faq_answer',
+        'wants_person' => false,
+        'service_slug' => null,
+        'intake_answers' => [],
+        'customer_name' => null,
+    ];
+
+    FrontDeskAgent::fake(array_map(fn (array $reply) => [...$defaults, ...$reply], $replies))->preventStrayPrompts();
 }
 
 /**
