@@ -85,4 +85,27 @@ return [
         'lock_wait_seconds' => 5,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reply Cap
+    |--------------------------------------------------------------------------
+    |
+    | How many texts the assistant may send in one conversation (D-52,
+    | Pitfall 12). Two auto-responders texting each other, or a customer
+    | stuck in a loop, would otherwise run all night at the model's cost. At
+    | either number the front desk does not run: the conversation pauses and
+    | the owner is alerted. The safety line is never counted and never
+    | blocked. These are starting points; change them after watching real
+    | conversations.
+    |
+    | per_hour: the most automated texts in the last 60 minutes.
+    | per_day: the most automated texts in the last 24 hours.
+    |
+    */
+
+    'reply_cap' => [
+        'per_hour' => 6,
+        'per_day' => 20,
+    ],
+
 ];

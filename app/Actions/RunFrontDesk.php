@@ -15,6 +15,7 @@ use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Enums\PausedReason;
 use App\Enums\ReplyLabel;
 use App\Enums\SendOrigin;
 use App\Events\CustomerRecordChanged;
@@ -23,6 +24,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\Verdict;
 use DomainException;
@@ -40,6 +42,12 @@ use Illuminate\Support\Str;
  * While the assistant is paused in the conversation, the agent is not asked at all: the owner is alerted to the
  * customer's newest text instead, once per burst (D-24).
  *
+ * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
+ * and alerts the owner (D-52), so two auto-responders cannot text each other all night. A customer who asks for a
+ * person in words that cannot mean anything else is handed to the owner (D-23, D-47). The agent's own wants_person
+ * and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words are then
+ * not stored or sent.
+ *
  * This never throws for a front desk that cannot answer or cannot send: the customer's burst is already claimed,
  * so the owner is alerted instead (AGNT-04). A send the channel refused stays on the record as failed. A send
  * that was only refused, such as while the owner is sending to the same customer, becomes a draft.
@@ -56,6 +64,7 @@ class RunFrontDesk
         private readonly RaiseOwnerAlert $raiseOwnerAlert,
         private readonly RecordIntakeAnswers $recordIntakeAnswers,
         private readonly SendFixedReply $sendFixedReply,
+        private readonly PauseConversation $pauseConversation,
     ) {}
 
     /**
@@ -65,6 +74,19 @@ class RunFrontDesk
     {
         if ($conversation->isPaused()) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::PausedMessage, $burst->last(), 'New message while you are handling it');
+
+            return;
+        }
+
+        if ($this->replyCapReached($conversation)) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::ReplyCap, $burst->last(), 'Reply limit reached');
+            $this->pauseConversation->handle($conversation, PausedReason::ReplyCap);
+
+            return;
+        }
+
+        if (AsksForPerson::inText($this->prompt->promptText($burst))) {
+            $this->handOffToOwner($conversation, $burst);
 
             return;
         }
@@ -84,12 +106,24 @@ class RunFrontDesk
             return;
         }
 
+        if ($run->reply->wantsPerson) {
+            $this->handOffToOwner($conversation, $burst);
+
+            return;
+        }
+
         $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
         $this->fillEmptyName($conversation, $run->reply->customerName, $burst->last());
 
         $words = $run->reply->reply;
         $composed = $this->composeAutomatedText->forReply($conversation, $words);
         $verdict = $this->decideSendOrDraft->decide($run, $this->prompt->promptText($burst), $composed);
+
+        if ($verdict->asksForPerson) {
+            $this->handOffToOwner($conversation, $burst);
+
+            return;
+        }
 
         $attributes = [
             'kind' => MessageKind::AgentReply,
@@ -119,6 +153,37 @@ class RunFrontDesk
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes);
+    }
+
+    /**
+     * Whether the assistant has already sent as many texts in this conversation as the reply cap allows, in the last
+     * hour or the last 24 hours (D-52). Only texts that were sent or are on their way count, and the safety line
+     * never does, so the cap can neither be used up by it nor stop it.
+     */
+    private function replyCapReached(Conversation $conversation): bool
+    {
+        $counted = fn () => $conversation->messages()
+            ->where('direction', MessageDirection::Out)
+            ->where('author', MessageAuthor::Agent)
+            ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
+            ->where(fn ($query) => $query->whereNull('kind')->orWhere('kind', '!=', MessageKind::LifeSafety));
+
+        return $counted()->where('created_at', '>=', now()->subHour())->count() >= config('gate.reply_cap.per_hour')
+            || $counted()->where('created_at', '>=', now()->subDay())->count() >= config('gate.reply_cap.per_day');
+    }
+
+    /**
+     * Hand a customer who asked for a person to the owner: the owner is alerted right away, the customer is told the
+     * owner knows and when he will reach out, and the assistant steps back (D-23). The text goes before the pause
+     * because the outbound path refuses automated texts once the conversation is paused.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function handOffToOwner(Conversation $conversation, Collection $burst): void
+    {
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
+        $this->sendFixedReply->handoff($conversation);
+        $this->pauseConversation->handle($conversation, PausedReason::AskedForPerson);
     }
 
     /**

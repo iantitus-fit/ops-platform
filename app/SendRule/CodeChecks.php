@@ -167,8 +167,9 @@ class CodeChecks
     /**
      * A pattern for one phrase: any case, any run of spaces between words, either kind of apostrophe, and
      * a word edge wherever the phrase starts or ends with a letter or digit, so "compromise" is not "promise".
+     * Public so AsksForPerson matches its phrases exactly the way the veto lists do.
      */
-    private static function phrasePattern(string $phrase): string
+    public static function phrasePattern(string $phrase): string
     {
         $words = preg_split('/\s+/u', trim($phrase), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 

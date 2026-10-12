@@ -58,6 +58,30 @@ class SendFixedReply
     }
 
     /**
+     * Tell the customer who asked for a person that the owner knows and when the owner will reach out (D-23). Like
+     * holding(), the words come from rules/replies.md with the time worked out now, and the disclosure and sign-off
+     * go around them (D-50). Unlike holding(), it always sends: a customer who asks again is told again. Returns null
+     * when the text could not go out; the owner's alert already exists by then, so that is reported to the log.
+     */
+    public function handoff(Conversation $conversation): ?Message
+    {
+        $body = $this->composeAutomatedText->forReply($conversation, $this->fixedReplies->handoffReply(now()));
+
+        try {
+            return $this->outboundSender->send($conversation, $body, MessageAuthor::Agent, SendOrigin::Automated, [
+                'kind' => MessageKind::HandoffReply,
+                'gate_outcome' => GateOutcome::Send,
+                'gate_reason' => 'fixed_reply',
+                'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null]],
+            ]);
+        } catch (DomainException $exception) {
+            report($exception);
+
+            return null;
+        }
+    }
+
+    /**
      * Whether the customer has already been told the owner will answer, and nothing has answered since (D-14).
      *
      * A holding reply stays current until a real answer goes out or the owner deals with a draft. A real answer is
