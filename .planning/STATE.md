@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-24-PLAN.md
-last_updated: "2026-10-12T03:45:41.704Z"
+stopped_at: Completed 02-25-PLAN.md
+last_updated: "2026-10-12T03:54:34.308Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 4e7a8e10b35bbee1b3914351c684f132bb43401f
+state_head: 049dba45bfe255cf807895dbe3e653a89917a8d0
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 31
+  completed_plans: 32
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 25 of 29
+Plan: 26 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -87,6 +87,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P22 | 40 min | 1 tasks | 10 files |
 | Phase 02 P23 | 25 min | 2 tasks | 12 files |
 | Phase 02 P24 | 20 min | 1 tasks | 12 files |
+| Phase 02 P25 | 7 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -160,6 +161,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-23: the not-alerted rule (alerts exist and every one failed) lives once on Message::alertFailure(), used by the thread flag and the DraftsWaiting row
 - [Phase 02]: 02-23: home screen widgets set $isLazy = false so they render with the page
 - [Phase 02]: 02-24: STOP is stored already dispatched and handled inside the record transaction; a repeat STOP keeps the first opt-out date
+- [Phase 02]: 02-25: The opted-out alert in RunFrontDesk runs after the life-safety second chance and does not dedupe against the safety alert, so the owner of an opted-out customer who texts about danger gets both the urgent safety alert and the call-them alert; a carrier refusal (21610) is told apart from other send failures by the exception's previous being RecipientOptedOut
 
 ### Pending Todos
 
@@ -191,6 +193,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:45:41.659Z
-Stopped at: Completed 02-24-PLAN.md
+Last session: 2026-10-12T03:54:34.261Z
+Stopped at: Completed 02-25-PLAN.md
 Resume file: None
