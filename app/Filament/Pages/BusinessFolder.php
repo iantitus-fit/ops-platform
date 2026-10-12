@@ -10,6 +10,8 @@ use App\Icm\Exceptions\NoActiveVersion;
 use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
 use App\Models\IcmVersion;
+use App\Models\OwnerAlert;
+use App\Models\User;
 use App\SendRule\CodeChecks;
 use BackedEnum;
 use Carbon\CarbonInterface;
@@ -118,6 +120,33 @@ class BusinessFolder extends Page
             'Promise phrases' => CodeChecks::PROMISE_PHRASES,
             'Never say' => array_values(array_filter((array) $neverSay, is_string(...))),
         ];
+    }
+
+    /**
+     * The warning for the owner when alerts are set to go by text and no one has a phone number on their profile,
+     * so every alert would have nowhere to go (D-19). Null when alerts can reach someone, or no version is live.
+     */
+    public function alertWarning(): ?string
+    {
+        try {
+            $channels = app(ActiveConfig::class)->sendingRules()['owner_alert']['channels'];
+        } catch (NoActiveVersion) {
+            return null;
+        }
+
+        if (! in_array('text', $channels, true) || User::query()->whereNotNull('phone')->exists()) {
+            return null;
+        }
+
+        return 'Alerts are set to go by text, but no one has a phone number on their profile. Add yours on your profile page so held drafts reach you.';
+    }
+
+    /**
+     * The newest owner alert that could not be sent. Its failure holds the reason in plain words.
+     */
+    public function lastFailedAlert(): ?OwnerAlert
+    {
+        return OwnerAlert::query()->whereNotNull('failed_at')->latest('failed_at')->latest('id')->first();
     }
 
     /**
