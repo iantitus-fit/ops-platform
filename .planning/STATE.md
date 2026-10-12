@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-29-PLAN.md
-last_updated: "2026-10-12T14:13:26.470Z"
-last_activity: 2026-10-11
+stopped_at: Completed 02-30-PLAN.md
+last_updated: "2026-10-12T17:33:05.027Z"
+last_activity: 2026-10-12
 last_activity_desc: Phase 02 execution started
-state_head: ada3cfef40d307486ecfeeb0c37392274dad7d6d
+state_head: f2eca7a99d46d9af2f270a9463b259f33f9430b9
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 41
-  completed_plans: 36
+  completed_plans: 37
   percent: 25
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 
 ## Current Position
 
-Phase: 02 (Text Front Desk) — READY TO EXECUTE
-Plan: 29 of 29
+Phase: 02 (Text Front Desk) — EXECUTING
+Plan: 2 of 34
 Status: Ready to execute
-Last activity: 2026-10-11 — Phase 02 execution started
+Last activity: 2026-10-12 — Phase 02 execution started
 
 Progress: [███░░░░░░░] 25%
 
@@ -92,6 +92,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P27 | 13 min | 2 tasks | 8 files |
 | Phase 02 P28 | 10 min | 2 tasks | 4 files |
 | Phase 02 P29 | 30min | 3 tasks | 11 files |
+| Phase 02 P30 | 20 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-27: A 21610 status callback marks the contact opted out even if the message was already failed; callbacks touch only outbound rows in queued/sent/delivered/failed
 - [Phase 02]: 02-28: gate:export decided_at is created_at in UTC; final_text is null when nothing was sent; resolved_by is the user id; --without-text also strips quoted findings and error messages
 - [Phase 02]: Ian approved the new top-level map/ folder (map-root, 2026-10-12); the cartographer map covers the text front desk, with escalate_to, intake_answers.icm_version_id and intake_answers.message_id parked, and no owner-alert card until Phase 2.1
+- [Phase 02]: 02-30: phpunit.xml pairs forced env lines with server lines because Laravel env() reads $_SERVER before $_ENV and PHPUnit 13 never sets $_SERVER for env
 
 ### Pending Todos
 
@@ -203,6 +205,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T12:49:17.788Z
-Stopped at: Completed 02-29-PLAN.md
+Last session: 2026-10-12T17:33:04.981Z
+Stopped at: Completed 02-30-PLAN.md
 Resume file: None
