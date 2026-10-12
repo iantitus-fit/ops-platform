@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'provider',
     'provider_message_id',
     'meta',
+    'dispatched_at',
+    'handled_at',
 ])]
 class Message extends Model
 {
@@ -41,6 +43,8 @@ class Message extends Model
             'author' => MessageAuthor::class,
             'status' => MessageStatus::class,
             'meta' => 'array',
+            'dispatched_at' => 'datetime',
+            'handled_at' => 'datetime',
         ];
     }
 

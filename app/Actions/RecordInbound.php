@@ -12,7 +12,6 @@ use App\Enums\MessageStatus;
 use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
-use App\Jobs\ProcessInbound;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -27,21 +26,28 @@ class RecordInbound
      */
     public const array RESERVED_SOURCES = ['text', 'direct'];
 
-    public function __construct(private readonly ActiveConfig $activeConfig) {}
+    public function __construct(
+        private readonly ActiveConfig $activeConfig,
+        private readonly DispatchInbound $dispatchInbound,
+    ) {}
 
     /**
      * Record one inbound text or form: find or create the contact, put the message in the
      * contact's open conversation, and write the timeline entry, all or nothing.
      *
-     * A message the provider already delivered is returned as it was recorded, and nothing
-     * is dispatched a second time. A new message queues ProcessInbound and announces
-     * CustomerRecordChanged once its transaction has committed.
+     * A message the provider already delivered is returned as it was recorded. DispatchInbound
+     * queues ProcessInbound for a message only once, so a retry of a delivered message queues
+     * nothing, and a retry of one that was recorded but never queued (a crash after commit,
+     * WR-02) queues it then. A new message also announces CustomerRecordChanged once its
+     * transaction has committed.
      */
     public function handle(InboundData $data): Message
     {
         $existing = $this->alreadyRecorded($data);
 
         if ($existing !== null) {
+            $this->dispatchInbound->handle($existing);
+
             return $existing;
         }
 
@@ -52,6 +58,8 @@ class RecordInbound
 
             if ($existing !== null) {
                 // A concurrent retry won the race; its transaction recorded the message.
+                $this->dispatchInbound->handle($existing);
+
                 return $existing;
             }
 
@@ -60,7 +68,7 @@ class RecordInbound
             $message = DB::transaction(fn (): Message => $this->record($data));
         }
 
-        ProcessInbound::dispatch($message->id)->afterCommit();
+        $this->dispatchInbound->handle($message);
         CustomerRecordChanged::dispatch($message->conversation->contact_id);
 
         return $message;
