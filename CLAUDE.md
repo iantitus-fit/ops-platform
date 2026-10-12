@@ -52,7 +52,8 @@ Full picture: `docs/SPEC.md`.
   to the code just written, and add one line to the walk-through log at the end
   of the current sprint file in `docs/sprints/` (GSD plans write there too), so
   every concept lands in one place.
-- Git: under GSD, commits are local, one per task, on the phase branch. Never
+- Git: under GSD, commits are local, one per task, on the phase branch. A
+  tests-first task may commit its failing test first, then the code. Never
   push, never merge into main, never rewrite history. Ian reviews, merges and
   pushes. Outside a GSD run, don't commit unless Ian asks.
 - No secrets in the repo or in ICM folders. Credentials live in `.env` or
