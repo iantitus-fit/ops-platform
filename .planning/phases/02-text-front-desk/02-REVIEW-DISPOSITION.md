@@ -5,31 +5,31 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "A retry after the safety line was sent finds it \"already answered\" and skips the pause and the owner alert"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The keyword net misses common ways of describing the same dangers (verified)"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A utility phone the sync accepts is silently dropped from the gas sentence (verified)"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The claim rollback in `DispatchInbound` does not cover a push deferred by `afterCommit()`"
   - id: WR-05
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Retry and failure semantics of `RespondToLifeSafety` do not match its comments"
   - id: WR-06
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`LifeSafety` fails open when a regex errors (verified)"
   - id: IN-01
     severity: info
@@ -155,22 +155,22 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 35
+open: 28
 total: 38
-recorded: 2026-10-12T18:10:46.796Z
+recorded: 2026-10-12T19:36:03.510Z
 ---
 
 # Phase 02: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
-| WR-05 | warning | open | - |
-| WR-06 | warning | open | - |
+| CR-01 | critical | fixed | 02-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-03 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-04 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-05 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-06 | warning | fixed | 02-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
