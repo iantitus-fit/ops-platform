@@ -37,7 +37,7 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 ### Text Front Desk (Phase 2)
 
-- [ ] **AGNT-01**: Agent files (`agents/*.md`, type `agent`: name, channel, provider, model, fallback, loads, escalate_to) are validated by the sync with plain-words errors and compiled into the active version; a broken agent file is rejected like any other file.
+- [x] **AGNT-01**: Agent files (`agents/*.md`, type `agent`: name, channel, provider, model, fallback, loads, escalate_to) are validated by the sync with plain-words errors and compiled into the active version; a broken agent file is rejected like any other file.
 - [ ] **AGNT-02**: On an inbound text, the `ProcessInbound` job runs the agent built from the active agent file: it loads the routed files named in `loads` whole (from `ActiveConfig`, never from disk) plus the customer's card rendered fresh from the database, and replies in the same conversation.
 - [ ] **AGNT-03**: The agent asks the intake questions defined in the matching `business/services/*.md` file (using their options) and captures the answers as structured output against the contact or conversation, visible on the timeline and the customer card. *(derived: SPEC says "asks intake questions" and "structured output"; the storage shape is a discuss-phase decision)*
 - [ ] **AGNT-04**: Provider and model are set per agent in its file, with a `fallback` list: if the primary provider or model fails, the agent falls through the list; swapping a model is an edit to the agent file, not code. (DEC-07)
@@ -148,7 +148,7 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | DASH-01 | Phase 1 | Complete |
 | DASH-02 | Phase 1 | Complete |
 | QUAL-01 | Phase 1 | Complete |
-| AGNT-01 | Phase 2 | Pending |
+| AGNT-01 | Phase 2 | Complete |
 | AGNT-02 | Phase 2 | Pending |
 | AGNT-03 | Phase 2 | Pending |
 | AGNT-04 | Phase 2 | Pending |

@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-10-12T01:26:12.016Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-10-12T01:32:35.782Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 6ba1a90e28d0aba41f61721e949c5527129c3814
+state_head: ef9ccd252b7d3c536338bf43032fbb48f4239328
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 8
-  percent: 22
+  completed_plans: 9
+  percent: 25
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 2 of 29
+Plan: 3 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
-Progress: [██░░░░░░░░] 22%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01 P06 | 8 min | 3 tasks | 22 files |
 | Phase 01 P07 | 10 min | 3 tasks | 17 files |
 | Phase 02 P01 | 4 min | 2 tasks | 12 files |
+| Phase 02 P02 | 5 min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 01]: [01-07] Seeded Dana Whitfield shares +12025550123 with the /dev/chat default From, so a dev-chat text joins her thread; Pest arch rules over a list of function names check nothing, use one arch() per function
 - [Phase 02]: 02-01: Postgres failures fixed test-side only; version labels read from IcmVersion::label(), long-name fixture 250 characters, no column widened
 - [Phase 02]: 02-01: CI actions pinned to full commit SHAs (checkout v7.0.1, setup-php 2.40.0); later-sprint fixtures moved to automations/follow-up.md; exampleFolderFileCount() in tests/Pest.php is the one example-folder file count (8)
+- [Phase 02]: Agent provider names must match config/ai.php keys exactly; Ai::textProvider() then decides whether the provider can write text (the SDK accepts any case)
+- [Phase 02]: Agent loads uses present|array|min:1 so an empty list reads 'must have at least 1 item(s)'; unreadable-but-present files count as present for loads
 
 ### Pending Todos
 
@@ -131,6 +134,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T01:26:11.981Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-10-12T01:32:35.748Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
