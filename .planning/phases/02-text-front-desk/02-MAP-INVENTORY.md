@@ -2,7 +2,7 @@
 
 **Fence:** the nouns a cold reader must understand before changing how an inbound text becomes a reply or a draft.
 
-Working artifact for Ian's ruling. It is never part of the map. Nothing under `map/` exists yet (`test ! -e map` holds), and no card is written until you have ruled on the flagged rows.
+Working artifact for Ian's ruling. It is never part of the map. Nothing under `map/` existed when this was written (`test ! -e map` held), and no card was written until Ian had ruled on the flagged rows (rulings below).
 
 Checked 2026-10-11 against commit 835a65c (working tree clean apart from the orchestrator's lock file). Paths are relative to the repo root. Statuses use the cartographer's four words: live, leftover, ghost, half-wired.
 
@@ -19,6 +19,23 @@ Checked 2026-10-11 against commit 835a65c (working tree clean apart from the orc
 5. **External consumers the tree cannot show.** Does your own AI read `records/` or the `gate:export` file, and does anything outside this repo (a cron line, Zapier, Twilio console settings, another repo) call `webhooks/text/*` or `leads`? Each one you name goes on the card it lands on.
 6. **Leftover and ghost rows.** The two SDK tables `agent_conversations` and `agent_conversation_messages` (leftover, no referrer) and the words "approval log" in `config/gate.php:41` (ghost). I will list both in the catalog ledger. Do you also want them on a `map/VERIFICATION.md` work list? I would write one for these two and for `escalate_to`; I would not write one otherwise.
 7. **The cut.** I propose the five object cards and one process card the plan names. Owner alerts are real enough for their own card (table, scheduler, three end states) but I have absorbed them as a catalog stub line plus a process-card step, to keep to five. Want an `owner-alert` card as a sixth?
+
+## Ian's rulings (recorded 2026-10-12)
+
+Ian answered the checkpoint on 2026-10-12. These rulings supersede the "Flag for Ian" cells below, which are kept as asked. Cards cite them as owner rulings.
+
+1. **Location: `map-root`.** The map lives at `map/` in the repository root. Ian approves the new top-level folder (CLAUDE.md asks for his approval of any new base folder).
+2. **Fence: confirmed.** The sentence stands as written. Web form leads stay a "Does not hit" on the process card.
+3. **Half-wired intent: all three are parked.**
+   - `escalate_to` on the agent file: parked for Phase 2.1, which lets it name a staff user (02-CONTEXT deferred list). Until then the hand-off is hard-wired to the owner (RunFrontDesk.php:252).
+   - `intake_answers.icm_version_id`: parked for Phase 3, per its migration (2026_10_12_000007:14-16) and D-33.
+   - `intake_answers.message_id`: parked, declared in D-33 ("the source message"). It is the answer's provenance: a correction row points at the text that corrected it. The intake card cites D-33.
+4. **Collisions: as proposed in the Collisions column.** The SDK `Message` class gets a note on the message card, not its own collision line. Also note "version" (the `icm_versions` row versus `gate.version` in the verdict JSON) on the agent-file card.
+5. **External consumers.** None today: the text channel is still fake, nothing posts to leads, and nothing outside the repo reads `records/` or the `gate:export` file. Intended consumers by design (not live ones): the owner's own AI reads `records/`, Twilio will call `webhooks/text/*` once the number is live, and a client's site form will post to `leads`. These go on the cards as intended, not live.
+6. **VERIFICATION.md: yes**, for the two `agent_conversation*` tables and the "approval log" comment only. `escalate_to` is parked with a reason, so it stays off. The two tables and the comment are not deleted: the file is a work list for Ian.
+7. **The cut: no sixth card.** Owner alerts sit downstream of the fence and are the center of Phase 2.1, so the owner-alert card comes with 2.1's map. Five object cards plus the answer-inbound process card.
+
+Effect on statuses: the three half-wired rows are now half-wired with intent **parked** (direction unchanged). The leftover and ghost rows stay as they are.
 
 ## Inventory
 
