@@ -141,3 +141,20 @@ it('shows nothing in the thread for a number that has not texted yet', function 
 
     expect(Activity::query()->count())->toBe(0);
 });
+
+it('opts the contact out when STOP is sent from the dev chat, the way Twilio would report it (D-39)', function () {
+    $this->app['env'] = 'local';
+
+    Livewire::test(DevChat::class)
+        ->set('from', '+12025550123')
+        ->set('body', 'stop')
+        ->call('send')
+        ->assertHasNoErrors();
+
+    $contact = Contact::query()->where('phone_e164', '+12025550123')->sole();
+    $message = Message::query()->sole();
+
+    expect($contact->isOptedOut())->toBeTrue()
+        ->and($message->meta['opt_out_type'])->toBe('STOP')
+        ->and($message->handled_at)->not->toBeNull();
+});

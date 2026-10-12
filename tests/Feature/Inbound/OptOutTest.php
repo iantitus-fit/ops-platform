@@ -1,10 +1,17 @@
 <?php
 
+use App\Actions\InboundData;
 use App\Actions\OutboundSender;
+use App\Actions\RecordInbound;
 use App\Actions\ResolveDraft;
 use App\Actions\SendOwnerReply;
+use App\Ai\Agents\FrontDeskAgent;
+use App\Channels\FakeTextChannel;
+use App\Channels\RecipientOptedOut;
 use App\Enums\ActivityType;
+use App\Enums\AlertReason;
 use App\Enums\MessageAuthor;
+use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Enums\SendOrigin;
 use App\Jobs\ProcessInbound;
@@ -12,8 +19,10 @@ use App\Livewire\ConversationThread;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\Models\User;
 use App\Records\CustomerCard;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
@@ -197,4 +206,182 @@ it('has a factory state for a contact who opted out', function () {
 
     expect($contact->isOptedOut())->toBeTrue()
         ->and(Contact::factory()->create()->isOptedOut())->toBeFalse();
+});
+
+/**
+ * Dana texts a word to the business with no OptOutType, the way a number would text before the carrier reports it.
+ */
+function optOutDanaTexts(string $body, string $sid): void
+{
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat($sid, 32), 'Body' => $body]))->assertOk();
+}
+
+it('opts a customer out from a STOP that arrives with no OptOutType, because the fake channel simulates Twilio (D-39)', function () {
+    $conversation = optOutDanaIsAnswered();
+    $sentBefore = count(textsSentToCustomers());
+
+    optOutDanaTexts('STOP', '8');
+
+    $stop = Message::query()->where('body', 'STOP')->sole();
+
+    expect($conversation->contact->refresh()->isOptedOut())->toBeTrue()
+        ->and($stop->meta['opt_out_type'])->toBe('STOP')
+        ->and($stop->handled_at)->not->toBeNull()
+        ->and(count(textsSentToCustomers()))->toBe($sentBefore);
+});
+
+it('opts a customer out from the backup matcher when the provider reports nothing (D-39)', function () {
+    $conversation = optOutDanaIsAnswered();
+
+    $inbound = new InboundData(
+        channel: MessageChannel::Sms,
+        source: 'text',
+        body: 'Unsubscribe',
+        phone: OPT_OUT_CUSTOMER_PHONE,
+        email: null,
+        name: null,
+        provider: 'fake',
+        providerMessageId: 'backup-1',
+    );
+
+    app(RecordInbound::class)->handle($inbound);
+
+    expect($conversation->contact->refresh()->isOptedOut())->toBeTrue();
+});
+
+it('treats a sentence that starts with stop as an ordinary message (D-39)', function () {
+    $conversation = optOutDanaIsAnswered();
+
+    optOutDanaTexts('stop the noise please', '9');
+
+    $message = Message::query()->where('body', 'stop the noise please')->sole();
+
+    expect($conversation->contact->refresh()->isOptedOut())->toBeFalse()
+        ->and($message->handled_at)->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $message->id);
+});
+
+it('clears the opt-out on START with an opted_in entry and no reply of our own (D-40)', function () {
+    $conversation = optOutDanaIsAnswered();
+    optOutDanaTextsStop();
+    $sentBefore = count(textsSentToCustomers());
+
+    optOutDanaTexts('START', 'a');
+
+    $start = Message::query()->where('body', 'START')->sole();
+    $contact = $conversation->contact->refresh();
+    $entry = $contact->activities()->where('type', ActivityType::OptedIn)->sole();
+
+    expect($contact->isOptedOut())->toBeFalse()
+        ->and($contact->sms_opted_out_at)->toBeNull()
+        ->and($entry->summary)->toBe('Opted back in by texting START')
+        ->and($entry->subject_id)->toBe($start->id)
+        ->and($start->handled_at)->not->toBeNull()
+        ->and(count(textsSentToCustomers()))->toBe($sentBefore);
+
+    Queue::assertNotPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $start->id);
+});
+
+it('lets YES from a contact who is not opted out reach the front desk as an ordinary answer (Pitfall 14)', function () {
+    $conversation = optOutDanaIsAnswered();
+
+    optOutDanaTexts('YES', 'b');
+
+    $yes = Message::query()->where('body', 'YES')->sole();
+
+    expect($yes->handled_at)->toBeNull()
+        ->and($conversation->contact->refresh()->activities()->where('type', ActivityType::OptedIn)->count())->toBe(0);
+
+    Queue::assertPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $yes->id);
+
+    scriptFrontDeskReplies(['reply' => 'Great, we will get that booked.']);
+    runQueuedFrontDeskJobs();
+
+    FrontDeskAgent::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'YES'));
+});
+
+it('opts a contact back in on YES when they are opted out (Pitfall 14)', function () {
+    $conversation = optOutDanaIsAnswered();
+    optOutDanaTextsStop();
+
+    optOutDanaTexts('Yes', 'd');
+
+    $yes = Message::query()->where('body', 'Yes')->sole();
+
+    expect($conversation->contact->refresh()->isOptedOut())->toBeFalse()
+        ->and($conversation->contact->activities()->where('type', ActivityType::OptedIn)->count())->toBe(1)
+        ->and($yes->handled_at)->not->toBeNull();
+
+    Queue::assertNotPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $yes->id);
+});
+
+it('handles HELP without sending anything of our own and keeps it from the front desk (D-39)', function () {
+    $conversation = optOutDanaIsAnswered();
+    $sentBefore = count(textsSentToCustomers());
+
+    optOutDanaTexts('HELP', 'e');
+
+    $help = Message::query()->where('body', 'HELP')->sole();
+
+    expect($help->handled_at)->not->toBeNull()
+        ->and($help->dispatched_at)->not->toBeNull()
+        ->and($conversation->contact->refresh()->isOptedOut())->toBeFalse()
+        ->and(count(textsSentToCustomers()))->toBe($sentBefore);
+
+    Queue::assertNotPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $help->id);
+});
+
+it('sends nothing to an opted-out customer who writes again and tells the owner so they can call (D-40)', function () {
+    $conversation = optOutDanaIsAnswered();
+    optOutDanaTextsStop();
+    $sentToDanaBefore = count(optOutTextsSentToDana());
+
+    optOutDanaTexts('Are you coming today?', 'f');
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect(count(optOutTextsSentToDana()))->toBe($sentToDanaBefore)
+        ->and($alert->reason)->toBe(AlertReason::OptedOutMessage)
+        ->and($alert->body)->toContain('Are you coming today?')
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($conversation->contact->refresh()->isOptedOut())->toBeTrue();
+
+    FrontDeskAgent::assertPromptedTimes(1);
+});
+
+it('keeps its own opted-out numbers like the carrier does and refuses a send to one (21610)', function () {
+    $channel = new FakeTextChannel;
+
+    $stop = $channel->parseInbound(Request::create('/', 'POST', fakeTextPayload(['Body' => 'Stop'])));
+
+    expect($stop->optOutType)->toBe('STOP');
+
+    expect(fn () => $channel->send(OPT_OUT_CUSTOMER_PHONE, 'Hello'))
+        ->toThrow(RecipientOptedOut::class, '21610');
+
+    expect($channel->sent())->toBe([])
+        ->and($channel->refused())->toBe([['to' => OPT_OUT_CUSTOMER_PHONE, 'body' => 'Hello']]);
+
+    $start = $channel->parseInbound(Request::create('/', 'POST', fakeTextPayload(['Body' => 'start'])));
+
+    expect($start->optOutType)->toBe('START');
+
+    $channel->send(OPT_OUT_CUSTOMER_PHONE, 'Welcome back');
+
+    expect($channel->sent())->toHaveCount(1);
+});
+
+it('lets a test opt a number out and back in on the fake channel directly', function () {
+    $channel = new FakeTextChannel;
+
+    $channel->optOut('+12025550123');
+
+    expect(fn () => $channel->send('+12025550123', 'Hi'))->toThrow(RecipientOptedOut::class);
+
+    $channel->optIn('+12025550123');
+    $channel->send('+12025550123', 'Hi');
+
+    expect($channel->sent())->toHaveCount(1);
 });
