@@ -79,7 +79,7 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 29/29 plans executed (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 29/33 plans executed, 4 gap-closure plans (02-30 to 02-33) to run (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
@@ -168,6 +168,12 @@ Plans:
 
 **Wave 29** *(has a decision checkpoint)*
 - [x] 02-29-PLAN.md — Cartographer map: inventory, Ian's ruling, catalog and cards (AGNT-02, GATE-01)
+
+**Gap closure** (Ian's ruling 2026-10-12: eight review findings fixed before UAT; one plan per wave, run in order)
+- [ ] 02-30-PLAN.md — Wave 1: the suite never reads `TEXT_CHANNEL`, `TWILIO_*` or `JEV_*` from `.env`; a guard proves it against a hostile environment (WR-16; INFRA-01)
+- [ ] 02-31-PLAN.md — Wave 2: Business Folder and Sync Now load with a Phase 1 version live, `owner_alert` read safely, a failed queue push stays sweepable (CR-02, WR-02; GATE-01, AGNT-02)
+- [ ] 02-32-PLAN.md — Wave 3: a claimed burst always reaches the owner: catch-all, `failed()`, job timeout, chain budget, `retry_after`, no-agent alert (CR-01, WR-01; AGNT-04, AGNT-02)
+- [ ] 02-33-PLAN.md — Wave 4: life-safety failures are loud, no holding reply after a danger, phrase lists fixed, a dangerous web form alerts the owner (WR-05, WR-06, WR-07; GATE-02, GATE-01)
 
 **UI hint**: yes
 
