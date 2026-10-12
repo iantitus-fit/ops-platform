@@ -11,6 +11,8 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\Classifier;
+use App\SendRule\JevClassifier;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -33,10 +35,15 @@ class AppServiceProvider extends ServiceProvider
      * TextChannel is bound to a closure that reads channels.text.driver each time it is
      * asked for, so asking for the interface gives whichever driver the config names.
      * FakeTextChannel is a singleton so the texts it remembers survive between asks.
+     *
+     * Classifier is bound to JevClassifier. Tests replace it with a FakeClassifier in tests/Pest.php,
+     * so no test can reach Jev.
      */
     public function register(): void
     {
         $this->app->scoped(ActiveConfig::class);
+
+        $this->app->bind(Classifier::class, JevClassifier::class);
 
         $this->app->singleton(FakeTextChannel::class);
         $this->app->bind(TextChannel::class, function (Application $app): TextChannel {

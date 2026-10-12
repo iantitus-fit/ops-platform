@@ -4,6 +4,8 @@ use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\FolderSync;
 use App\Models\IcmVersion;
+use App\SendRule\Classifier;
+use App\SendRule\FakeClassifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -28,6 +30,11 @@ pest()->extend(TestCase::class)
          * No test may reach a real model provider, Jev or Twilio: a request nobody faked throws.
          */
         Http::preventStrayRequests();
+
+        /**
+         * Every test gets a scripted classifier, so none can call Jev. fakeClassifier() returns it.
+         */
+        $this->app->instance(Classifier::class, new FakeClassifier);
 
         $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
 
@@ -70,6 +77,15 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * The scripted classifier every Feature test runs with: `answer()` sets what it says, `failWith()` makes it fail
+ * like Jev down, and `calls()` lists the texts it was asked about.
+ */
+function fakeClassifier(): FakeClassifier
+{
+    return app(Classifier::class);
 }
 
 /**

@@ -74,6 +74,14 @@ class Validator
     ];
 
     /**
+     * The yes or no questions rules/triage.md must hold, and the only ones it may hold: the send rule acts on each
+     * of these by name, so any other would be asked of Jev and then ignored.
+     *
+     * @var list<string>
+     */
+    private const TRIAGE_QUESTIONS = ['price', 'promise', 'discount', 'complaint', 'life_safety', 'asks_for_person'];
+
+    /**
      * The providers an agent file may name, worked out once per validation run.
      *
      * @var list<string>|null
@@ -129,6 +137,7 @@ class Validator
             'agent' => $this->agentErrors($file),
             'sending_rules' => $this->sendingRulesErrors($file),
             'voice' => $this->voiceErrors($file),
+            'triage' => $this->triageErrors($file),
             default => [],
         });
 
@@ -325,6 +334,43 @@ class Validator
             }
 
             $seen[$key] = true;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * What a rule string cannot say about the triage questions: the other intent must exist and can never send on its
+     * own (the checker leans toward the first option, so a message that fits nothing must land on a hold), an intent
+     * key may appear once, and the yes or no questions are exactly the six the send rule acts on (Pitfall 6).
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function triageErrors(IcmFile $file): array
+    {
+        $errors = [];
+        $intents = $file->frontMatter['intents'] ?? null;
+
+        if (is_array($intents) && $intents !== []) {
+            $others = array_filter($intents, fn (mixed $intent) => is_array($intent) && ($intent['key'] ?? null) === 'other');
+
+            if ($others === []) {
+                $errors[] = $this->error($file->path, 'intents', 'intents must include other: a message that fits nothing is never sent on its own');
+            } elseif (array_filter($others, fn (array $intent) => ($intent['sendable'] ?? null) === true) !== []) {
+                $errors[] = $this->error($file->path, 'intents', 'intents other must have sendable: false');
+            }
+
+            array_push($errors, ...$this->repeatedKeyErrors($file, 'intents', 'intents has more than one entry with key'));
+        }
+
+        $questions = $file->frontMatter['questions'] ?? null;
+
+        if (is_array($questions)) {
+            foreach (array_keys($questions) as $key) {
+                if (! in_array((string) $key, self::TRIAGE_QUESTIONS, true)) {
+                    $errors[] = $this->error($file->path, 'questions', 'questions has '.PlainWords::oneLine((string) $key).', which the send rule does not use; use '.implode(', ', self::TRIAGE_QUESTIONS));
+                }
+            }
         }
 
         return $errors;
