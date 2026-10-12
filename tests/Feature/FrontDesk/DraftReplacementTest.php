@@ -133,3 +133,18 @@ it('leaves a withdrawn draft out of the history the next run reads', function ()
         ['assistant', '(No reply was sent.)'],
     ]);
 });
+
+it('sends one alert for a chain of replacements, not one per draft (D-22)', function () {
+    draftReplacementFirstDraftHeld();
+    draftReplacementSecondDraftHeld();
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('e', 32), 'Body' => 'Hello? Anyone there?']))->assertOk();
+    scriptFrontDeskReplies(['reply' => 'Mike will text you about all of it.', 'label' => 'price']);
+    runQueuedFrontDeskJobs();
+
+    $drafts = draftReplacementAgentDrafts();
+
+    expect($drafts)->toHaveCount(3)
+        ->and(array_map(fn (Message $draft) => $draft->status, $drafts))->toBe([MessageStatus::Withdrawn, MessageStatus::Withdrawn, MessageStatus::Draft])
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});

@@ -8,6 +8,7 @@ use App\Ai\FrontDeskUnavailable;
 use App\Ai\RunFrontDeskAgent;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
+use App\Enums\DraftResolution;
 use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
@@ -21,6 +22,7 @@ use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\Verdict;
 use DomainException;
@@ -156,7 +158,9 @@ class RunFrontDesk
     /**
      * Keep the agent's words for the owner, with the verdict that held them, and tell the owner.
      *
-     * The draft and its timeline entry are written together, so a held reply never exists without a record of why.
+     * A conversation has one live draft (D-28). If an older draft is still waiting, it is withdrawn as replaced and
+     * kept as history in the same transaction that writes the new one, so the owner only ever sees the newest. The
+     * draft and its timeline entry are written together, so a held reply never exists without a record of why.
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
      * point at a draft that was rolled away (D-07, D-20).
      *
@@ -165,8 +169,28 @@ class RunFrontDesk
     private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes): void
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
+        $alertReason = $this->alertReasonFor($verdict);
 
-        $draft = DB::transaction(function () use ($conversation, $words, $verdict, $label, $attributes, $plainReason): Message {
+        [$draft, $replacedChain] = DB::transaction(function () use ($conversation, $words, $verdict, $label, $attributes, $plainReason): array {
+            $replaced = $conversation->messages()
+                ->where('status', MessageStatus::Draft)
+                ->lockForUpdate()
+                ->first();
+
+            $chain = [];
+
+            if ($replaced !== null) {
+                $chain = [...($replaced->meta['replaces'] ?? []), $replaced->id];
+
+                $replaced->update([
+                    'status' => MessageStatus::Withdrawn,
+                    'resolution' => DraftResolution::Replaced,
+                    'resolved_at' => now(),
+                ]);
+
+                $attributes['meta'] = [...($attributes['meta'] ?? []), 'replaces' => $chain];
+            }
+
             $draft = $conversation->messages()->create([
                 ...$attributes,
                 ...$verdict->toAttributes($label),
@@ -185,12 +209,43 @@ class RunFrontDesk
                 'occurred_at' => now(),
             ]);
 
-            return $draft;
+            return [$draft, $chain];
         });
 
         CustomerRecordChanged::dispatch($conversation->contact->id);
 
-        $this->raiseOwnerAlert->handle($conversation, $this->alertReasonFor($verdict), $draft, $plainReason);
+        if ($this->ownerNeedsAlertFor($alertReason, $replacedChain)) {
+            $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
+        }
+    }
+
+    /**
+     * Whether a replacement draft earns a new alert (D-22). A first draft always does. A replacement does only when
+     * urgency has risen, so a customer who texts three times in a row costs the owner one alert, not three.
+     *
+     * Urgency counts as risen when the reason is urgent and no alert that actually reached the owner for this draft
+     * chain was. An alert that never reached the owner, because it is still waiting for opening time or failed to
+     * send, does not count as telling them: the older draft is withdrawn, so its waiting alert would be dropped as
+     * handled, and the owner would never hear about the question.
+     *
+     * @param  list<int>  $replacedChain  The ids of the drafts this one replaces, oldest first; empty for a first draft.
+     */
+    private function ownerNeedsAlertFor(AlertReason $reason, array $replacedChain): bool
+    {
+        if ($replacedChain === []) {
+            return true;
+        }
+
+        $told = OwnerAlert::query()
+            ->whereIn('message_id', $replacedChain)
+            ->whereNotNull('sent_at')
+            ->get();
+
+        if ($told->isEmpty()) {
+            return true;
+        }
+
+        return $this->raiseOwnerAlert->isUrgent($reason) && ! $told->contains('urgent', true);
     }
 
     /**
