@@ -3,6 +3,8 @@
 namespace App\Icm;
 
 use App\Enums\IcmFileKind;
+use App\SendRule\CodeChecks;
+use App\Support\PhoneNumber;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as LaravelValidator;
@@ -27,6 +29,7 @@ class Validator
         'lead_sources' => 'business/lead-sources.md',
         'voice' => 'voice/how-we-talk.md',
         'sending_rules' => 'rules/sending.md',
+        'set_replies' => 'rules/replies.md',
     ];
 
     /**
@@ -35,6 +38,20 @@ class Validator
      * fail every inbound from that source or service.
      */
     private const int MAX_CENTS = 100_000_000;
+
+    /**
+     * The only fill-ins a fixed reply may use; the send path fills each one in.
+     *
+     * @var list<string>
+     */
+    private const REPLY_FILL_INS = ['owner_name', 'business_name', 'next_open'];
+
+    /**
+     * The reply fields that go out without the owner.
+     *
+     * @var list<string>
+     */
+    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply'];
 
     /**
      * @var list<string>
@@ -67,7 +84,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -167,6 +184,12 @@ class Validator
                 'loads' => 'bail|present|array|min:1',
                 'loads.*' => 'bail|string',
                 'escalate_to' => ['bail', 'required', Rule::in(['owner'])],
+            ],
+            'set_replies' => [
+                'owner_name' => 'bail|required|string',
+                'utility_phone' => 'bail|nullable|string',
+                'holding_reply' => 'bail|required|string',
+                'handoff_reply' => 'bail|required|string',
             ],
             default => [],
         };
@@ -452,6 +475,78 @@ class Validator
         }
 
         return $errors;
+    }
+
+    /**
+     * What is wrong with the fixed replies: a fill-in this app does not know, a price, discount, promise or
+     * never_say phrase in a text that goes out without the owner (D-12), and a utility phone nobody can dial.
+     * The never_say list comes from the voice file in the same folder, never from ActiveConfig, because the
+     * folder is not live yet. A folder with no readable voice file has no never_say list, and the other checks still run.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function repliesErrors(Collection $files): array
+    {
+        $voice = $files->first(fn (IcmFile $file) => $file->kind === IcmFileKind::Typed && $file->type === 'voice');
+        $neverSay = is_array($voice?->frontMatter['never_say'] ?? null) ? array_values($voice->frontMatter['never_say']) : [];
+        $errors = [];
+
+        foreach ($files as $file) {
+            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'set_replies') {
+                continue;
+            }
+
+            foreach (self::REPLY_FIELDS as $field) {
+                $text = $file->frontMatter[$field] ?? null;
+
+                if (! is_string($text)) {
+                    continue;
+                }
+
+                $unknownFillIn = $this->unknownFillIn($text);
+
+                if ($unknownFillIn !== null) {
+                    $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are {owner_name}, {business_name} and {next_open}');
+                }
+
+                $finding = CodeChecks::findings(preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay)[0] ?? null;
+
+                if ($finding === null) {
+                    continue;
+                }
+
+                $sentence = "{$field} ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+
+                $errors[] = $this->error($file->path, $field, $finding['rule'] === 'never_say'
+                    ? $sentence
+                    : "{$sentence}; a fixed reply goes out without you, so it cannot mention a price, offer a discount or make a promise");
+            }
+
+            $phone = $file->frontMatter['utility_phone'] ?? null;
+
+            if (is_string($phone) && trim($phone) !== '' && PhoneNumber::toE164($phone) === null) {
+                $errors[] = $this->error($file->path, 'utility_phone', 'utility_phone must be a phone number such as +13125550188 (you wrote '.PlainWords::oneLine($phone).')');
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first {name} in a reply that is not one of the three fill-ins, or null when every fill-in is known.
+     */
+    private function unknownFillIn(string $text): ?string
+    {
+        preg_match_all('/\{([^{}]*)\}/u', $text, $matches);
+
+        foreach ($matches[1] as $name) {
+            if (! in_array($name, self::REPLY_FILL_INS, true)) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     /**

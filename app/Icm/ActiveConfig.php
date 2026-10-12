@@ -91,6 +91,16 @@ class ActiveConfig
     }
 
     /**
+     * The owner-written fixed replies and the owner's name, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function replies(): array
+    {
+        return $this->singleton('set_replies');
+    }
+
+    /**
      * Every lead source with the cost of one lead in integer cents.
      *
      * @return list<array{key: string, name: string, cost_cents_per_lead: int}>
