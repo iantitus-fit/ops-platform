@@ -14,7 +14,7 @@ use Stringable;
 /**
  * The model that writes the front desk's reply. It proposes words and a label, nothing more.
  *
- * It implements no HasTools on purpose: with no tool to call, the model has no way to send a
+ * It declares no tools on purpose: with no tool to call, the model has no way to send a
  * text, so what it says is only ever a proposal that code checks before anything goes out.
  */
 class FrontDeskAgent implements Agent, Conversational, HasStructuredOutput
