@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\RecordIntakeAnswers;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
@@ -79,4 +80,27 @@ it('keeps the reply as a draft and sends nothing when the owner is sending to th
         ->and($draft->gate_outcome)->toBe(GateOutcome::Hold)
         ->and($draft->gate_reason)->toBe('send_refused')
         ->and($draft->gate['reason']['plain'])->toBe('Held: could not send right now');
+});
+
+it('tells the owner and writes a note when something unexpected breaks the run, and texts the customer nothing (CR-01)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    $this->mock(RecordIntakeAnswers::class, fn ($mock) => $mock->shouldReceive('handle')->andThrow(new RuntimeException('database went away: secret-detail-123')));
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+    $sent = textsSentToCustomers();
+
+    expect(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0)
+        ->and(Message::query()->where('direction', MessageDirection::In)->sole()->handled_at)->not->toBeNull()
+        ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: it stopped with an error')
+        ->and($alert->reason)->toBe(AlertReason::FrontDeskFailed)
+        ->and($alert->body)->toContain('Front desk stopped with an error')
+        ->and($alert->body)->not->toContain('database went away')
+        ->and($alert->body)->not->toContain('secret-detail-123')
+        ->and($alert->body)->not->toContain('RuntimeException')
+        ->and($sent)->toHaveCount(1)
+        ->and($sent[0]['to'])->toBe('+12025550199');
 });
