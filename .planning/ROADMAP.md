@@ -79,7 +79,7 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 30/34 plans executed, 5 gap-closure plans (02-30 to 02-34) to run (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 31/34 plans executed, 5 gap-closure plans (02-30 to 02-34) to run (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
@@ -171,7 +171,7 @@ Plans:
 
 **Gap closure** (Ian's ruling 2026-10-12: eight review findings fixed before UAT; one plan per wave, run in order)
 - [x] 02-30-PLAN.md — Wave 1: the suite never reads `TEXT_CHANNEL`, `TWILIO_*` or `JEV_*` from `.env`; a guard proves it against a hostile environment (WR-16; INFRA-01)
-- [ ] 02-31-PLAN.md — Wave 2: Business Folder and Sync Now load with a Phase 1 version live, `owner_alert` read safely, a failed queue push stays sweepable (CR-02, WR-02; GATE-01, AGNT-02)
+- [x] 02-31-PLAN.md — Wave 2: Business Folder and Sync Now load with a Phase 1 version live, `owner_alert` read safely, a failed queue push stays sweepable (CR-02, WR-02; GATE-01, AGNT-02)
 - [ ] 02-32-PLAN.md — Wave 3: a claimed burst always reaches the owner: catch-all, `failed()`, job timeout, chain budget, `retry_after`, no-agent alert (CR-01, WR-01; AGNT-04, AGNT-02)
 - [ ] 02-33-PLAN.md — Wave 4: life-safety failures are loud, no holding reply after a danger, phrase lists fixed, a dangerous web form alerts the owner (WR-05, WR-06, WR-07; GATE-02, GATE-01)
 - [ ] 02-34-PLAN.md — Wave 5: map re-check, once, after the code fixes: every card citation 02-31 to 02-33 moved re-pointed, and the cards describe the new failure, no-agent and safety paths (AGNT-02, AGNT-04, GATE-01, GATE-02)
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 30/34 | In Progress | - |
+| 2. Text Front Desk | 31/34 | In Progress | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog

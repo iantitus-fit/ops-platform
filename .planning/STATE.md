@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-30-PLAN.md
-last_updated: "2026-10-12T17:33:05.027Z"
+stopped_at: Completed 02-31-PLAN.md
+last_updated: "2026-10-12T17:39:08.105Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 02 execution started
-state_head: f2eca7a99d46d9af2f270a9463b259f33f9430b9
+state_head: 4c73f5ccdedb594940f61be479474eeea4bee212
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 41
-  completed_plans: 37
+  completed_plans: 38
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 2 of 34
+Plan: 3 of 34
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 02 execution started
 
@@ -93,6 +93,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P28 | 10 min | 2 tasks | 4 files |
 | Phase 02 P29 | 30min | 3 tasks | 11 files |
 | Phase 02 P30 | 20 min | 2 tasks | 4 files |
+| Phase 02 P31 | 20 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-28: gate:export decided_at is created_at in UTC; final_text is null when nothing was sent; resolved_by is the user id; --without-text also strips quoted findings and error messages
 - [Phase 02]: Ian approved the new top-level map/ folder (map-root, 2026-10-12); the cartographer map covers the text front desk, with escalate_to, intake_answers.icm_version_id and intake_answers.message_id parked, and no owner-alert card until Phase 2.1
 - [Phase 02]: 02-30: phpunit.xml pairs forced env lines with server lines because Laravel env() reads $_SERVER before $_ENV and PHPUnit 13 never sets $_SERVER for env
+- [Phase 02]: 02-31: an owner_alert RaiseOwnerAlert cannot read (Phase 1 sentence or no live version) is urgent and due now; the Business Folder page counts a non-array owner_alert as the text channel; a failed ProcessInbound push releases dispatched_at and rethrows
 
 ### Pending Todos
 
@@ -205,6 +207,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T17:33:04.981Z
-Stopped at: Completed 02-30-PLAN.md
+Last session: 2026-10-12T17:39:08.058Z
+Stopped at: Completed 02-31-PLAN.md
 Resume file: None
