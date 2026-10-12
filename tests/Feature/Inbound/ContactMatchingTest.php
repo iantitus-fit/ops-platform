@@ -89,7 +89,7 @@ it('creates a contact with a lowercased email when nobody matches', function () 
 it('matches by email when the phone is only spaces', function () {
     $contact = Contact::factory()->create(['email' => 'dana@example.com']);
 
-    postLead($this, ['phone' => '   ', 'email' => 'dana@example.com'])->assertOk();
+    postLead($this, ['name' => null, 'phone' => '   ', 'email' => 'dana@example.com'])->assertOk();
 
     expect(Contact::count())->toBe(1)
         ->and(Conversation::sole()->contact_id)->toBe($contact->id)
@@ -120,7 +120,7 @@ it('answers a plain form post with a 422 too, not a redirect', function () {
 it('fills in the phone when the matched contact had none', function () {
     $contact = Contact::factory()->withoutPhone()->create(['email' => 'dana@example.com']);
 
-    postLead($this, ['email' => 'dana@example.com', 'phone' => '+13125550162'])->assertOk();
+    postLead($this, ['name' => null, 'email' => 'dana@example.com', 'phone' => '+13125550162'])->assertOk();
 
     expect($contact->fresh()->phone_e164)->toBe('+13125550162')
         ->and(noteSummaries())->toBe([]);
@@ -129,7 +129,7 @@ it('fills in the phone when the matched contact had none', function () {
 it('keeps the stored phone and notes the different one the form gave', function () {
     $contact = Contact::factory()->create(['phone_e164' => '+12025550123', 'email' => 'dana@example.com']);
 
-    postLead($this, ['email' => 'dana@example.com', 'phone' => '+13125550162'])->assertOk();
+    postLead($this, ['name' => null, 'email' => 'dana@example.com', 'phone' => '+13125550162'])->assertOk();
 
     expect($contact->fresh()->phone_e164)->toBe('+12025550123')
         ->and(noteSummaries())->toBe(['form gave a different phone: +13125550162']);
@@ -154,7 +154,7 @@ it('lands on the contact the phone matches when the email belongs to someone els
 it('fills in an empty email on a contact matched by phone', function () {
     $contact = Contact::factory()->create(['phone_e164' => '+12025550123', 'email' => null]);
 
-    postLead($this, ['phone' => '(202) 555-0123', 'email' => 'Dana@Example.com'])->assertOk();
+    postLead($this, ['name' => null, 'phone' => '(202) 555-0123', 'email' => 'Dana@Example.com'])->assertOk();
 
     expect($contact->fresh()->email)->toBe('dana@example.com')
         ->and(noteSummaries())->toBe([]);
@@ -163,7 +163,7 @@ it('fills in an empty email on a contact matched by phone', function () {
 it('keeps a different stored email and notes the one the form gave', function () {
     $contact = Contact::factory()->create(['phone_e164' => '+12025550123', 'email' => 'dana@example.com']);
 
-    postLead($this, ['phone' => '(202) 555-0123', 'email' => 'other@example.com'])->assertOk();
+    postLead($this, ['name' => null, 'phone' => '(202) 555-0123', 'email' => 'other@example.com'])->assertOk();
 
     expect($contact->fresh()->email)->toBe('dana@example.com')
         ->and(noteSummaries())->toBe(['form gave a different email: other@example.com']);
@@ -172,7 +172,7 @@ it('keeps a different stored email and notes the one the form gave', function ()
 it('records the lead on the email contact and notes a phone it could not read', function () {
     $contact = Contact::factory()->withoutPhone()->create(['email' => 'dana@example.com']);
 
-    postLead($this, ['phone' => '555-0100', 'email' => 'dana@example.com'])->assertOk();
+    postLead($this, ['name' => null, 'phone' => '555-0100', 'email' => 'dana@example.com'])->assertOk();
 
     expect($contact->fresh()->phone_e164)->toBeNull()
         ->and(Conversation::sole()->contact_id)->toBe($contact->id)
@@ -246,7 +246,7 @@ it('does not copy an email onto a contact when another contact already owns it',
     $byPhone = Contact::factory()->create(['phone_e164' => '+12025550123', 'email' => null]);
     $owner = Contact::factory()->create(['phone_e164' => '+13125550162', 'email' => 'sam@example.com']);
 
-    postLead($this, ['phone' => '(202) 555-0123', 'email' => 'sam@example.com'])->assertOk();
+    postLead($this, ['name' => null, 'phone' => '(202) 555-0123', 'email' => 'sam@example.com'])->assertOk();
 
     expect($byPhone->fresh()->email)->toBeNull()
         ->and($owner->fresh()->email)->toBe('sam@example.com')

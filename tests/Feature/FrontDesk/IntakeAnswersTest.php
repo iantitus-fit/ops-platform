@@ -102,7 +102,7 @@ it('records the answers whether the reply is sent or held', function () {
 /**
  * A second text from Dana, as the fake webhook receives it.
  */
-function danaTextsAgain(string $body): void
+function danaCorrectsIntakeBySecondText(string $body): void
 {
     test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('d', 32), 'Body' => $body]))->assertOk();
 }
@@ -119,7 +119,7 @@ it('keeps the earlier answer and shows the correction as the current one (D-34)'
     );
     runQueuedFrontDeskJobs();
 
-    danaTextsAgain("actually it's about 12 years old");
+    danaCorrectsIntakeBySecondText("actually it's about 12 years old");
     runQueuedFrontDeskJobs();
 
     $card = app(CustomerCard::class)->render(Contact::sole());

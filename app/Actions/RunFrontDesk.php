@@ -18,6 +18,7 @@ use App\Enums\ReplyLabel;
 use App\Enums\SendOrigin;
 use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
+use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\SendRule\DecideSendOrDraft;
@@ -25,6 +26,7 @@ use App\SendRule\Verdict;
 use DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Answers one claimed burst of customer texts: the agent writes a reply, the send rule decides, and the reply is
@@ -71,6 +73,7 @@ class RunFrontDesk
         }
 
         $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
+        $this->fillEmptyName($conversation, $run->reply->customerName, $burst->last());
 
         $words = $run->reply->reply;
         $composed = $this->composeAutomatedText->forReply($conversation, $words);
@@ -104,6 +107,50 @@ class RunFrontDesk
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes);
+    }
+
+    /**
+     * Give a contact with no name the name the customer gave in their text, and leave a line on the timeline.
+     *
+     * The model's name is untrusted, so it is cut to one trimmed line of at most 120 characters, and the update only
+     * matches a contact whose name is still empty: a stored name is never overwritten, even by a run that raced
+     * another (D-43).
+     */
+    private function fillEmptyName(Conversation $conversation, ?string $given, Message $source): void
+    {
+        $name = trim(mb_substr(Str::squish((string) $given), 0, 120));
+
+        if ($name === '') {
+            return;
+        }
+
+        $contact = $conversation->contact;
+
+        $filled = DB::transaction(function () use ($contact, $name, $source): bool {
+            $updated = Contact::query()
+                ->whereKey($contact->id)
+                ->where(fn ($query) => $query->whereNull('name')->orWhere('name', ''))
+                ->update(['name' => $name]);
+
+            if ($updated === 0) {
+                return false;
+            }
+
+            $contact->activities()->create([
+                'type' => ActivityType::Note,
+                'summary' => "Name from the customer's text: {$name}",
+                'subject_type' => $source->getMorphClass(),
+                'subject_id' => $source->id,
+                'occurred_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if ($filled) {
+            $contact->refresh();
+            CustomerRecordChanged::dispatch($contact->id);
+        }
     }
 
     /**

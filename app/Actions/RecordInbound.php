@@ -12,6 +12,7 @@ use App\Enums\MessageStatus;
 use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Icm\PlainWords;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -143,8 +144,10 @@ class RecordInbound
      * Eloquent's update-or-create helper, which cannot express "phone, then email, and only
      * fill what is empty". A stored phone or email is never overwritten: a different one the
      * form gave becomes a note on the timeline instead, and so does an email another contact
-     * already owns, so two contacts never share one. The first-touch source and cost are
-     * set only when the contact is created.
+     * already owns, so two contacts never share one. A name is the same: the form's name goes
+     * on a contact only when the form creates it, because anyone can type any number into a
+     * form; for a contact found by phone or email a different name is a note (D-43, WR-13).
+     * The first-touch source and cost are set only when the contact is created.
      *
      * @return array{Contact, list<string>, string} the contact, the note summaries to put on the
      *                                              timeline, and how the contact was found: phone, email or new
@@ -200,6 +203,12 @@ class RecordInbound
             } elseif ($contact->email !== $email) {
                 $notes[] = "form gave a different email: {$email}";
             }
+        }
+
+        $formName = trim((string) preg_replace('/\s+/u', ' ', (string) $data->name));
+
+        if ($formName !== '' && mb_strtolower($formName) !== mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', (string) $contact->name)))) {
+            $notes[] = 'form gave the name: '.PlainWords::oneLine($formName);
         }
 
         $contact->save();
