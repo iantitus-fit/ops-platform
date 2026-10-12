@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-14-PLAN.md
-last_updated: "2026-10-12T02:36:29.123Z"
+stopped_at: Completed 02-15-PLAN.md
+last_updated: "2026-10-12T02:43:53.785Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 469813e932d5a9fb4abb9f42129f20ba478d3920
+state_head: 3ac6e49fdb7def14166183867ad1a66f3c35191d
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 21
+  completed_plans: 22
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 15 of 29
+Plan: 16 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -77,6 +77,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P12 | 25 min | 1 tasks | 8 files |
 | Phase 02 P13 | 6 min | 3 tasks | 13 files |
 | Phase 02 P14 | 6 min | 1 tasks | 14 files |
+| Phase 02 P15 | 10 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: AgentReply does not check reply length; the 1,600 character limit belongs to the send rule in plan 02-14
 - [Phase 02]: 02-14: every cheap send-rule check (label, length, code) is recorded on the verdict even after an earlier one fails; Jev runs only when all three pass and can only hold
 - [Phase 02]: 02-14: any classifier exception holds the reply as classifier_failed; OutboundSender also refuses blank and over-1,600-character bodies
+- [Phase 02]: 02-15: A channel failure keeps the failed message and alerts the owner (front_desk_failed); only a refusal such as the owner holding the reply lock becomes a send_refused draft
+- [Phase 02]: 02-15: OutboundSender::whyBlocked() words its reasons for whoever is sending; SendOwnerReply::whyCannotReply() delegates to it
 
 ### Pending Todos
 
@@ -163,6 +166,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T02:36:29.083Z
-Stopped at: Completed 02-14-PLAN.md
+Last session: 2026-10-12T02:43:53.741Z
+Stopped at: Completed 02-15-PLAN.md
 Resume file: None
