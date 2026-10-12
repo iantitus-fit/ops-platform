@@ -26,7 +26,7 @@ All commits are local on `gsd/phase-02-text-front-desk`. Nothing was pushed, mer
 
 ## Fixed Issues
 
-### CR-01: A retry after the safety line was sent skipped the pause and the owner alert
+### CR-01: A retry after the safety line was sent finds it "already answered" and skips the pause and the owner alert
 
 **Files modified:** `app/Actions/SendLifeSafetyLine.php`, `tests/Feature/FrontDesk/LifeSafetyTest.php`, `map/processes/answer-inbound.md`, `map/objects/messages/message-and-verdict.md`, `map/objects/conversations/conversation-and-pause.md`
 **Commits:** 2741862 (fix), 6643e49 (card wording: four pause call sites, not three)
@@ -34,7 +34,7 @@ All commits are local on `gsd/phase-02-text-front-desk`. Nothing was pushed, mer
 **What changed and why it matters:** If a customer reported a gas leak, the safety text went out, and then the database hiccuped before the conversation was paused, the retry used to say "already answered" and stop. The AI would then keep chatting and you would never be told. Now the retry finishes the job: it pauses the conversation and texts you, unless an alert for that text already exists (which means both steps were done, so a later hand-back by you is left alone).
 **Applied fix:** In the "already answered" branch of `answer()`, a new `finishHandOff()` checks for an existing life-safety `OwnerAlert` on that text. If none exists, it runs `PauseConversation` then `RaiseOwnerAlert` (alert text "Safety message sent"). I chose the alert-exists check over the review's plain "always pause and alert" because pause comes before alert, so an existing alert proves both are done, and it avoids re-pausing a conversation you handed back. Never sends a second line. Tests: `PauseConversation` throws once after a successful send, the retry pauses and alerts exactly once; and a repeat run after a hand-back does not re-pause.
 
-### WR-01: The keyword net missed common wordings
+### WR-01: The keyword net misses common ways of describing the same dangers (verified)
 
 **Files modified:** `app/SendRule/LifeSafety.php`, `tests/Unit/SendRule/LifeSafetyTest.php`
 **Commit:** d3f1fd3
@@ -45,35 +45,35 @@ All commits are local on `gsd/phase-02-text-front-desk`. Nothing was pushed, mer
 - No bare "burning" was added. New tests (in the `hazardIn` data provider) cover each new wording, plus "a burning question about my furnace filter" and "the burning issue is the heat bill", both of which stay `null`.
 - Known trade-off: `got a shock` and `got shocked` can fire on a non-electrical remark such as "I got a shock at the price". A false alarm costs the customer one safety message; a miss can cost a life, so it was kept.
 
-### WR-02: A valid gas company phone number was silently dropped
+### WR-02: A utility phone the sync accepts is silently dropped from the gas sentence (verified)
 
 **Files modified:** `app/SendRule/LifeSafety.php`, `app/Actions/SendLifeSafetyLine.php`, `tests/Unit/SendRule/LifeSafetyTest.php`, `tests/Feature/FrontDesk/LifeSafetyTest.php`
 **Commit:** 2a33e64
 **What changed and why it matters:** If the owner wrote the gas company number as `(312) 555-0188`, the sync accepted it but the safety text left the number out, with no warning. Now any format the sync accepts (brackets, dashes, dots, `1-` prefix) is printed as `+13125550188`.
 **Applied fix:** `gasLine()` now uses the same `PhoneNumber::toE164()` as the sync validator and prints only the E.164 digits, so no other folder words can ride along. `utilityPhone()` casts a bare number to text. Tests: `(312) 555-0188`, `312-555-0188`, `312.555.0188`, `+1 312 555 0188`, `1-312-555-0188`, text wrapped around a number, and a bare integer returned by a mocked `ActiveConfig`. Note: the unit test file now uses the app test case (`uses(TestCase::class)`) because the phone check reads `config('channels.phone_region')`. Observation: the sync validator rule for `utility_phone` is `string`, so an unquoted YAML number is rejected at sync today; the integer cast is defence in depth.
 
-### WR-03: A timed-out run was reported against the wrong customer text
+### WR-03: `ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed
 
 **Files modified:** `app/Jobs/ProcessInbound.php`, `tests/Feature/FrontDesk/FrontDeskFailureTest.php`, `map/processes/answer-inbound.md`
 **Commit:** bfc52cf
 **What changed and why it matters:** When a text-answering run was stopped, the owner's "front desk stopped" alert could name the wrong text (a newer one still waiting for its own run, or an old one), and the owner could be alerted twice. Now it names the text that run actually claimed.
 **Applied fix:** `failed()` now queries the newest customer SMS message that has been claimed (`handled_at` set) with `id <=` the message that queued the job. Extra finding while testing: the old code called `latest('id')` on `$conversation->messages()`, whose relation already orders by `created_at, id` ascending, so the SQL was `order by created_at asc, id asc, id desc` and it actually returned the **oldest** message in the conversation. The new query starts from `Message::query()`, avoiding that ordering. Tests: not an earlier answered text, not a newer unclaimed one, not a web form, one alert only after `handle()` already reported, and nothing when no text was claimed. Status: fixed: requires human verification (the "at or before the job's own message" rule is a judgement; if debounce fails open and two jobs run, the owner is still told once per conversation burst, possibly against a different text in that rare case).
 
-### WR-04: A deferred queue push could leave a text claimed but never queued
+### WR-04: The claim rollback in `DispatchInbound` does not cover a push deferred by `afterCommit()`
 
 **Files modified:** `app/Actions/DispatchInbound.php`, `tests/Feature/Inbound/DispatchInboundTest.php`, `map/processes/answer-inbound.md`, `map/objects/messages/message-and-verdict.md`
 **Commit:** 8a36b93
 **What changed and why it matters:** Today nothing breaks, but if any code ever wrapped this step in a database transaction and the queue was down, a customer's text would be marked "queued" while nothing was queued, and nobody would ever answer it. That can no longer happen.
 **Option chosen:** drop `->afterCommit()` (the review's first option), not the transaction-level guard. Reasons: it is a one-line change that makes the docblock true everywhere; the guard would throw in every test, since `RefreshDatabase` runs each test inside a transaction; and pushing early is harmless because the job waits out a 20 second debounce before it reads the message, and finds nothing if the surrounding transaction rolled back. The test uses the real database queue with its `jobs` table dropped (the existing fake queue ignores `afterCommit`, so it could not show the defect) and wraps `handle()` in `DB::transaction`; it failed before the fix.
 
-### WR-05: Retry and failure behaviour of `RespondToLifeSafety` did not match its comments
+### WR-05: Retry and failure semantics of `RespondToLifeSafety` do not match its comments
 
 **Files modified:** `app/Jobs/RespondToLifeSafety.php`, `app/Actions/SendLifeSafetyLine.php`, `tests/Feature/FrontDesk/LifeSafetyTest.php`, `map/processes/answer-inbound.md`, `map/objects/conversations/conversation-and-pause.md`
 **Commit:** 9d97dd7 (done after CR-01, as asked)
 **What changed and why it matters:** If the safety job fails for good, the owner's alert now tells the truth. "Safety message sent, but check the conversation was paused" when the customer did get the text, and "could not be sent" only when they did not. The job also has a time limit, so a stuck worker cannot hold a gas-leak response indefinitely.
 **Applied fix:** Docblock on `$tries` rewritten to say what really retries (pause or alert failures; a refused send is handled inside `SendLifeSafetyLine` and by the second look). `failed()` picks its alert text from a new public `SendLifeSafetyLine::lineSentFor()` (the former private `alreadyAnswered`, now taking only the inbound message). Explicit `$timeout = 120` with `$failOnTimeout = true`, comfortably above the 5 second reply lock, 10 second safety lock and the Twilio call, and below the database and redis `retry_after` of 360 (tested).
 
-### WR-06: The danger check failed open on an unreadable text
+### WR-06: `LifeSafety` fails open when a regex errors (verified)
 
 **Files modified:** `app/SendRule/LifeSafety.php`, `tests/Unit/SendRule/LifeSafetyTest.php`
 **Commit:** 3cb84f4
