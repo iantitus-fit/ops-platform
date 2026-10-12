@@ -37,6 +37,11 @@ pest()->extend(TestCase::class)
          */
         $this->app->instance(Classifier::class, new FakeClassifier);
 
+        /**
+         * No test may prompt a real front desk model: an unscripted prompt throws. scriptFrontDeskReplies() scripts one.
+         */
+        FrontDeskAgent::fake()->preventStrayPrompts();
+
         $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
 
         File::copyDirectory(base_path('examples/example-hvac'), $folder);

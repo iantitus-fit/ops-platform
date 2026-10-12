@@ -66,4 +66,23 @@ return [
         'asks_for_person_min_yes' => 0.85,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Front Desk Agent
+    |--------------------------------------------------------------------------
+    |
+    | timeout_seconds: how long one provider gets to answer before the chain
+    | moves to the next one. The SDK default is 60; a shorter limit keeps a
+    | stalled primary from holding up the customer's burst.
+    |
+    | lock_wait_seconds: how long an automated send waits for the owner's own
+    | send to the same customer to finish, so the two cannot go out together.
+    |
+    */
+
+    'agent' => [
+        'timeout_seconds' => 40,
+        'lock_wait_seconds' => 5,
+    ],
+
 ];
