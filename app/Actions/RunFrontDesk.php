@@ -7,6 +7,7 @@ use App\Ai\FrontDeskPrompt;
 use App\Ai\FrontDeskUnavailable;
 use App\Ai\RunFrontDeskAgent;
 use App\Enums\ActivityType;
+use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
@@ -30,6 +31,10 @@ use Illuminate\Support\Collection;
  *
  * A draft holds only the agent's own words. The disclosure and the sign-off are added when a text actually goes
  * out, so they land on whichever automated text reaches the customer first (D-50).
+ *
+ * This never throws for a front desk that cannot answer or cannot send: the customer's burst is already claimed,
+ * so the owner is alerted instead (AGNT-04). A send the channel refused stays on the record as failed. A send
+ * that was only refused, such as while the owner is sending to the same customer, becomes a draft.
  */
 class RunFrontDesk
 {
@@ -40,6 +45,7 @@ class RunFrontDesk
         private readonly ComposeAutomatedText $composeAutomatedText,
         private readonly DecideSendOrDraft $decideSendOrDraft,
         private readonly OutboundSender $outboundSender,
+        private readonly RaiseOwnerAlert $raiseOwnerAlert,
     ) {}
 
     /**
@@ -57,6 +63,7 @@ class RunFrontDesk
             $run = $this->runFrontDeskAgent->handle($agent, $conversation, $burst);
         } catch (FrontDeskUnavailable) {
             $this->noteThatNoModelAnswered($conversation, $burst);
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'Front desk could not answer');
 
             return;
         }
@@ -81,7 +88,13 @@ class RunFrontDesk
                 );
 
                 return;
-            } catch (DomainException) {
+            } catch (DomainException $exception) {
+                if (str_starts_with($exception->getMessage(), OutboundSender::NOT_SENT)) {
+                    $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The reply could not be sent');
+
+                    return;
+                }
+
                 $verdict = $verdict->heldFor('send_refused');
             }
         }
@@ -108,7 +121,7 @@ class RunFrontDesk
     }
 
     /**
-     * Leave a line on the timeline when every model in the agent file failed. A later plan raises the owner alert.
+     * Leave a line on the timeline when every model in the agent file failed.
      *
      * @param  Collection<int, Message>  $burst
      */

@@ -31,6 +31,11 @@ use Throwable;
  */
 class OutboundSender
 {
+    /**
+     * How the sentence begins when the text channel refused a send, so a caller can tell that failure from a refusal.
+     */
+    public const string NOT_SENT = 'The reply was not sent: ';
+
     public function __construct(private readonly TextChannel $textChannel) {}
 
     /**
@@ -60,17 +65,28 @@ class OutboundSender
     }
 
     /**
-     * Why nothing may be sent to this conversation at all, or null when a send could go out. Later plans add the
-     * paused and opted-out checks here.
+     * Why nothing may be sent to this conversation at all, or null when a send could go out. The owner's reply box
+     * shows this sentence in place of the live form, so it is worded for the owner when the owner is the sender.
+     * Later plans add the paused and opted-out checks here.
      */
     public function whyBlocked(Conversation $conversation, SendOrigin $origin): ?string
     {
+        $ownerIsSending = $origin === SendOrigin::Owner;
+
         if ($conversation->status === ConversationStatus::Closed) {
-            return 'This conversation is closed.';
+            return $ownerIsSending ? 'This conversation is closed. Reopen it to reply.' : 'This conversation is closed.';
         }
 
-        if (blank($conversation->contact->phone_e164)) {
-            return 'There is no phone number on file for this customer.';
+        $contact = $conversation->contact;
+
+        if (blank($contact->phone_e164)) {
+            if (! $ownerIsSending) {
+                return 'There is no phone number on file for this customer.';
+            }
+
+            return filled($contact->email)
+                ? "No phone number on file. Reply by email: {$contact->email}"
+                : 'No phone number or email on file.';
         }
 
         return null;
@@ -126,7 +142,7 @@ class OutboundSender
         } catch (Throwable $exception) {
             $this->recordFailure($contact, $message, $exception);
 
-            throw new DomainException("The reply was not sent: {$exception->getMessage()}", previous: $exception);
+            throw new DomainException(self::NOT_SENT.$exception->getMessage(), previous: $exception);
         }
 
         try {

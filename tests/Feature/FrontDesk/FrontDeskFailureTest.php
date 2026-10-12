@@ -29,6 +29,7 @@ it('tells the owner, and texts the customer nothing, when every model failed (AG
         ->and(Message::query()->where('direction', MessageDirection::In)->sole()->handled_at)->not->toBeNull()
         ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: every model failed')
         ->and($alert?->reason)->toBe(AlertReason::FrontDeskFailed)
+        ->and($alert?->reason->value)->toBe('front_desk_failed')
         ->and($alert?->sent_at)->not->toBeNull()
         ->and($sent)->toHaveCount(1)
         ->and($sent[0]['to'])->toBe('+12025550199')
