@@ -20,6 +20,7 @@ use App\Models\Message;
 use App\SendRule\LifeSafety;
 use App\Support\PhoneNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class RecordInbound
@@ -71,11 +72,27 @@ class RecordInbound
             $message = DB::transaction(fn (): Message => $this->record($data));
         }
 
+        if ($this->isStopKeyword($data)) {
+            // A keyword text is handled in full by record() and never reaches the front desk or the safety check (D-39).
+            CustomerRecordChanged::dispatch($message->conversation->contact_id);
+
+            return $message;
+        }
+
         $this->respondToDanger($message);
         $this->dispatchInbound->handle($message);
         CustomerRecordChanged::dispatch($message->conversation->contact_id);
 
         return $message;
+    }
+
+    /**
+     * Whether the provider reported this text as the customer's STOP. The provider has already sent its own
+     * confirmation (D-39), so the app records the opt-out and says nothing.
+     */
+    private function isStopKeyword(InboundData $data): bool
+    {
+        return $data->channel === MessageChannel::Sms && ($data->meta['opt_out_type'] ?? null) === 'STOP';
     }
 
     /**
@@ -108,7 +125,10 @@ class RecordInbound
         $notes = [...$sourceNotes, ...$contactNotes];
         $conversation = $this->openConversationFor($contact);
 
+        $optsOut = $this->isStopKeyword($data);
+
         $message = $conversation->messages()->create([
+            ...($optsOut ? ['dispatched_at' => $occurredAt, 'handled_at' => $occurredAt] : []),
             'channel' => $data->channel,
             'direction' => MessageDirection::In,
             'author' => MessageAuthor::Customer,
@@ -142,10 +162,36 @@ class RecordInbound
             ]);
         }
 
+        if ($optsOut) {
+            $this->recordOptOut($contact, $message, $occurredAt);
+        }
+
         $contact->update(['last_activity_at' => $occurredAt]);
         $conversation->update(['last_message_at' => $occurredAt]);
 
         return $message;
+    }
+
+    /**
+     * Mark the contact as opted out and put it on the timeline (D-40). The first STOP sets the date and a later one
+     * leaves it alone. The message was stored already dispatched and handled, so neither ProcessInbound nor the sweep
+     * will pick it up.
+     */
+    private function recordOptOut(Contact $contact, Message $message, Carbon $occurredAt): void
+    {
+        if ($contact->isOptedOut()) {
+            return;
+        }
+
+        $contact->sms_opted_out_at = $occurredAt;
+
+        $contact->activities()->create([
+            'type' => ActivityType::OptedOut,
+            'summary' => 'Opted out by texting STOP',
+            'subject_type' => $message->getMorphClass(),
+            'subject_id' => $message->id,
+            'occurred_at' => $occurredAt,
+        ]);
     }
 
     private function alreadyRecorded(InboundData $data): ?Message

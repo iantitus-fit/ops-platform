@@ -164,6 +164,8 @@ class CustomerCard
             ActivityType::IntakeAnswered => $this->intakeAnswerParts($activity),
             ActivityType::AgentPaused => ['Assistant paused', 'System note:', $activity->summary],
             ActivityType::AgentResumed => ['Assistant resumed', 'System note:', $activity->summary],
+            ActivityType::OptedOut => ['Opted out of texts', 'System note:', $activity->summary],
+            ActivityType::OptedIn => ['Opted back in to texts', 'System note:', $activity->summary],
         };
 
         return implode("\n", [

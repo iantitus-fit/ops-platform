@@ -56,6 +56,16 @@ class ContactFactory extends Factory
     }
 
     /**
+     * A contact who texted STOP and must not be texted.
+     */
+    public function optedOut(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'sms_opted_out_at' => now(),
+        ]);
+    }
+
+    /**
      * A contact whose first touch came from the given lead source.
      */
     public function fromSource(string $key, ?int $costCents = null): static

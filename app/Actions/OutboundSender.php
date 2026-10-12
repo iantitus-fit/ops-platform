@@ -11,6 +11,7 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Events\CustomerRecordChanged;
+use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -36,7 +37,10 @@ class OutboundSender
      */
     public const string NOT_SENT = 'The reply was not sent: ';
 
-    public function __construct(private readonly TextChannel $textChannel) {}
+    public function __construct(
+        private readonly TextChannel $textChannel,
+        private readonly ActiveConfig $activeConfig,
+    ) {}
 
     /**
      * Send a text to the customer of a conversation and record it.
@@ -97,12 +101,21 @@ class OutboundSender
      *
      * While the assistant is paused in the conversation, every automated text is refused; only the owner's own
      * reply and the life-safety line pass (D-24). deliver() asks again inside the send lock, on a freshly read
-     * conversation, so a Take over that lands while a reply is being composed wins. A later plan adds the opted-out
-     * check here.
+     * conversation, so a Take over that lands while a reply is being composed wins.
+     *
+     * A customer who texted STOP is refused first, for every origin: the owner's reply, an approved draft and the
+     * life-safety line included (D-40). The owner is alerted separately so they can call.
      */
     public function whyBlocked(Conversation $conversation, SendOrigin $origin): ?string
     {
         $ownerIsSending = $origin === SendOrigin::Owner;
+        $contact = $conversation->contact;
+
+        if ($contact->isOptedOut()) {
+            $date = $contact->sms_opted_out_at->clone()->setTimezone($this->activeConfig->displayTimezone())->format('M j');
+
+            return "Opted out by texting STOP on {$date}.";
+        }
 
         if ($conversation->status === ConversationStatus::Closed) {
             return $ownerIsSending ? 'This conversation is closed. Reopen it to reply.' : 'This conversation is closed.';
@@ -111,8 +124,6 @@ class OutboundSender
         if ($origin === SendOrigin::Automated && $conversation->isPaused()) {
             return 'The assistant is paused in this conversation.';
         }
-
-        $contact = $conversation->contact;
 
         if (blank($contact->phone_e164)) {
             if (! $ownerIsSending) {

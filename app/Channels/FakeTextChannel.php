@@ -54,11 +54,12 @@ class FakeTextChannel implements TextChannel
     }
 
     /**
-     * Read a Twilio-shaped form body (MessageSid, From, To, Body, NumMedia).
+     * Read a Twilio-shaped form body (MessageSid, From, To, Body, NumMedia, OptOutType).
      */
     public function parseInbound(Request $request): InboundText
     {
         $to = $request->input('To');
+        $optOutType = trim((string) $request->input('OptOutType'));
 
         return new InboundText(
             provider: $this->name(),
@@ -67,6 +68,7 @@ class FakeTextChannel implements TextChannel
             to: $to === null ? null : (string) $to,
             body: (string) $request->input('Body'),
             numMedia: (int) $request->input('NumMedia'),
+            optOutType: $optOutType === '' ? null : mb_strtoupper($optOutType),
         );
     }
 }

@@ -14,4 +14,6 @@ enum ActivityType: string
     case IntakeAnswered = 'intake_answered';
     case AgentPaused = 'agent_paused';
     case AgentResumed = 'agent_resumed';
+    case OptedOut = 'opted_out';
+    case OptedIn = 'opted_in';
 }
