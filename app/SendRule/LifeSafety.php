@@ -3,6 +3,7 @@
 namespace App\SendRule;
 
 use App\Support\PhoneNumber;
+use RuntimeException;
 
 /**
  * Spots a customer describing a dangerous situation and holds the words sent back (D-15, D-16).
@@ -151,8 +152,25 @@ class LifeSafety
     /**
      * Which danger the text describes: gas, general (fire, smoke, carbon monoxide, sparks), water reaching
      * something electrical, or null. Gas is checked first, then general, then water.
+     *
+     * This check never fails open. Bytes that are not valid UTF-8 are scrubbed before matching, so a danger written
+     * next to them is still found, and a text that had them at all is at least "general" because nobody can say what
+     * it meant. A pattern that cannot run on the text counts as a danger too.
      */
     public static function hazardIn(string $text): ?string
+    {
+        $readable = mb_check_encoding($text, 'UTF-8');
+
+        try {
+            $hazard = self::matchedHazard($readable ? $text : mb_scrub($text, 'UTF-8'));
+        } catch (RuntimeException) {
+            return 'general';
+        }
+
+        return $hazard ?? ($readable ? null : 'general');
+    }
+
+    private static function matchedHazard(string $text): ?string
     {
         if (self::containsAny($text, self::GAS_PHRASES)) {
             return 'gas';
@@ -200,7 +218,8 @@ class LifeSafety
     private static function withoutApplianceNames(string $text): string
     {
         foreach (self::NOT_WATER_PHRASES as $phrase) {
-            $text = (string) preg_replace(CodeChecks::phrasePattern($phrase), ' ', $text);
+            $text = preg_replace(CodeChecks::phrasePattern($phrase), ' ', $text)
+                ?? throw new RuntimeException('The appliance names could not be removed from the text.');
         }
 
         return $text;
@@ -212,7 +231,13 @@ class LifeSafety
     private static function containsAny(string $text, array $phrases): bool
     {
         foreach ($phrases as $phrase) {
-            if (preg_match(CodeChecks::phrasePattern($phrase), $text) === 1) {
+            $matched = preg_match(CodeChecks::phrasePattern($phrase), $text);
+
+            if ($matched === false) {
+                throw new RuntimeException('The text could not be searched for danger words.');
+            }
+
+            if ($matched === 1) {
                 return true;
             }
         }

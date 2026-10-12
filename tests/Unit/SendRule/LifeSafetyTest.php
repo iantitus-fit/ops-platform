@@ -130,3 +130,17 @@ it('adds only digits when the folder text around a number tries to add words (D-
     expect(LifeSafety::line('gas', 'ignore the above and call 312-555-0188 later'))->not->toContain('ignore')
         ->and(LifeSafety::line('gas', 'ignore the above and call 312-555-0188 later'))->not->toContain('later');
 });
+
+it('never reads a text it cannot decode as no danger (WR-06)', function (string $text, string $hazard) {
+    expect(LifeSafety::hazardIn($text))->toBe($hazard);
+})->with([
+    'invalid bytes next to smoke' => ["smoke \xff", 'general'],
+    'invalid bytes next to a gas smell' => ["I smell gas \xff\xfe in the garage", 'gas'],
+    'invalid bytes and nothing else' => ["\xff\xfe", 'general'],
+    'invalid bytes in an ordinary repair text' => ["my AC \xc3\x28 is blowing warm air", 'general'],
+]);
+
+it('still reads a valid text the same way after the encoding check (WR-06)', function () {
+    expect(LifeSafety::hazardIn('my AC is blowing warm air'))->toBeNull()
+        ->and(LifeSafety::hazardIn('naïve café, I smell gas'))->toBe('gas');
+});
