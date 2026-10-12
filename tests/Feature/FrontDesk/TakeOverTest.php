@@ -3,6 +3,8 @@
 use App\Actions\OutboundSender;
 use App\Actions\PauseConversation;
 use App\Ai\Agents\FrontDeskAgent;
+use App\Channels\FakeTextChannel;
+use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
@@ -11,6 +13,7 @@ use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
 use App\Enums\SendOrigin;
 use App\Filament\Resources\Conversations\Pages\ViewConversation;
+use App\Livewire\ConversationThread;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
@@ -225,4 +228,68 @@ it('refuses an automated send on a paused conversation inside the sender', funct
     ))->toThrow(DomainException::class, 'The assistant is paused in this conversation.');
 
     expect(takeOverTextsToDana())->toBe([]);
+});
+
+it('pauses the assistant with reason owner_replied when the owner sends a fresh reply (D-25)', function () {
+    $conversation = takeOverDanaHasTexted();
+
+    Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->set('body', 'I can come at 3')
+        ->call('sendReply')
+        ->assertHasNoErrors();
+
+    $conversation->refresh();
+
+    expect(takeOverTextsToDana())->toHaveCount(1)
+        ->and($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::OwnerReplied)
+        ->and($conversation->paused_by)->toBe($this->owner->id);
+});
+
+it('shows the handling banner on a paused thread and none on an active one (D-25)', function () {
+    $active = Conversation::factory()->create();
+    $takenOver = Conversation::factory()->paused(PausedReason::TakenOver)->create();
+    $replied = Conversation::factory()->paused(PausedReason::OwnerReplied)->create();
+    $asked = Conversation::factory()->paused(PausedReason::AskedForPerson)->create();
+
+    Livewire::test(ConversationThread::class, ['conversation' => $active])
+        ->assertDontSee("You're handling this.");
+
+    Livewire::test(ConversationThread::class, ['conversation' => $takenOver])
+        ->assertSee(e("You're handling this. Hand back to the assistant when done."), false);
+
+    Livewire::test(ConversationThread::class, ['conversation' => $replied])
+        ->assertSee(e("You're handling this. Hand back to the assistant when done."), false);
+
+    Livewire::test(ConversationThread::class, ['conversation' => $asked])
+        ->assertSee(e("The customer asked for a person. You're handling this. Hand back to the assistant when done."), false);
+});
+
+it('does not pause when the owner reply could not be sent', function () {
+    $conversation = takeOverDanaHasTexted();
+    $this->app->bind(TextChannel::class, fn () => new class extends FakeTextChannel
+    {
+        public function send(string $toE164, string $body): string
+        {
+            throw new RuntimeException('Carrier rejected the number');
+        }
+    });
+
+    Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->set('body', 'I can come at 3')
+        ->call('sendReply');
+
+    expect($conversation->fresh()->isPaused())->toBeFalse();
+});
+
+it('keeps the reason taken_over when the owner replies after taking over', function () {
+    $conversation = takeOverDanaHasTexted();
+    takeOverOwnerPressesTakeOver($conversation);
+
+    Livewire::test(ConversationThread::class, ['conversation' => $conversation->fresh()])
+        ->set('body', 'On my way')
+        ->call('sendReply')
+        ->assertHasNoErrors();
+
+    expect($conversation->fresh()->paused_reason)->toBe(PausedReason::TakenOver);
 });
