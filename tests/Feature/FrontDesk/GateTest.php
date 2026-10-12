@@ -55,6 +55,11 @@ it('turns the label, the code checks and Jev into the stated send or hold (GATE-
     'Jev is unsure of the intent' => ['faq_answer', 'We are open until 5 pm today.', ['faq', 0.84], 'hold', 'classifier_unsure:intent'],
     'Jev sees a price' => ['faq_answer', 'We are open until 5 pm today.', ['faq', 0.95, ['price' => 0.2]], 'hold', 'classifier:price'],
     'Jev reads a complaint' => ['faq_answer', 'We are open until 5 pm today.', ['complaint', 0.95], 'hold', 'classifier_intent:complaint'],
+    'UAT Test 2: a plain intake question sends despite Jev\'s leftover promise and complaint (D-56)' => ['intake_question', 'What is the system doing?', ['intake', 1.0, ['promise' => 0.09, 'complaint' => 0.07]], 'send', null],
+    'promise just over its own bar holds (D-56)' => ['intake_question', 'What is the system doing?', ['intake', 1.0, ['promise' => 0.1501]], 'hold', 'classifier:promise'],
+    'complaint just over its own bar holds (D-56)' => ['intake_question', 'What is the system doing?', ['intake', 1.0, ['complaint' => 0.1501]], 'hold', 'classifier:complaint'],
+    'price keeps the strict bar (D-45)' => ['intake_question', 'What is the system doing?', ['intake', 1.0, ['price' => 0.0751]], 'hold', 'classifier:price'],
+    'discount keeps the strict bar (D-45)' => ['intake_question', 'What is the system doing?', ['intake', 1.0, ['discount' => 0.0751]], 'hold', 'classifier:discount'],
     'too long for one text' => ['faq_answer', trim(str_repeat('Thanks for waiting on us. ', 66)), 'default', 'hold', 'too_long'],
 ]);
 

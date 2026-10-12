@@ -5,13 +5,23 @@ use App\SendRule\TriageQuestions;
 use App\SendRule\TriageReading;
 
 /**
- * Ian's thresholds (D-45, D-46, D-47), as config/gate.php holds them.
+ * Ian's thresholds (D-45, D-46, D-47, D-56), as config/gate.php holds them: price and discount keep the strict
+ * 0.075, promise and complaint use 0.15, and gate_check_max_yes is only the floor of the asks_for_person unsure band.
  *
  * @return array<string, float>
  */
 function readingThresholds(): array
 {
-    return ['intent_min_confidence' => 0.85, 'gate_check_max_yes' => 0.075, 'life_safety_min_yes' => 0.075, 'asks_for_person_min_yes' => 0.85];
+    return [
+        'intent_min_confidence' => 0.85,
+        'gate_check_max_yes' => 0.075,
+        'price_max_yes' => 0.075,
+        'promise_max_yes' => 0.15,
+        'discount_max_yes' => 0.075,
+        'complaint_max_yes' => 0.15,
+        'life_safety_min_yes' => 0.075,
+        'asks_for_person_min_yes' => 0.85,
+    ];
 }
 
 function readingQuestions(): TriageQuestions
@@ -58,6 +68,15 @@ dataset('jev readings', [
     'an intent that never sends and is also unsure' => ['other', 0.4, [], false, ['classifier_intent:other', 'classifier_unsure:intent'], false, false],
     'price exactly at the limit' => ['faq', 0.95, ['price' => 0.075], true, [], false, false],
     'price just over the limit' => ['faq', 0.95, ['price' => 0.0751], false, ['classifier:price'], false, false],
+    'promise exactly at its bar' => ['faq', 0.95, ['promise' => 0.15], true, [], false, false],
+    'promise just over its bar' => ['faq', 0.95, ['promise' => 0.1501], false, ['classifier:promise'], false, false],
+    'promise between the old and the new bar' => ['faq', 0.95, ['promise' => 0.0751], true, [], false, false],
+    'complaint exactly at its bar' => ['faq', 0.95, ['complaint' => 0.15], true, [], false, false],
+    'complaint just over its bar' => ['faq', 0.95, ['complaint' => 0.1501], false, ['classifier:complaint'], false, false],
+    'complaint between the old and the new bar' => ['faq', 0.95, ['complaint' => 0.0751], true, [], false, false],
+    'discount exactly at the limit' => ['faq', 0.95, ['discount' => 0.075], true, [], false, false],
+    'discount just over the limit' => ['faq', 0.95, ['discount' => 0.0751], false, ['classifier:discount'], false, false],
+    'the UAT intake reading' => ['intake', 1.0, ['promise' => 0.09, 'complaint' => 0.07], true, [], false, false],
     'a promise' => ['faq', 0.95, ['promise' => 0.5], false, ['classifier:promise'], false, false],
     'a discount' => ['faq', 0.95, ['discount' => 0.9], false, ['classifier:discount'], false, false],
     'a complaint' => ['faq', 0.95, ['complaint' => 0.3], false, ['classifier:complaint'], false, false],
@@ -113,5 +132,12 @@ it('copies the thresholds it used, the reasons and the two flags into the array 
 it('compares the numbers as they came with no rounding', function () {
     expect(readingOf(readingResult('faq', 0.84999999999))->sendable)->toBeFalse()
         ->and(readingOf(readingResult('faq', 0.85000000001, ['price' => 0.07500000001]))->reasons)->toBe(['classifier:price'])
-        ->and(readingOf(readingResult('faq', 0.85000000001, ['price' => 0.07499999999]))->sendable)->toBeTrue();
+        ->and(readingOf(readingResult('faq', 0.85000000001, ['price' => 0.07499999999]))->sendable)->toBeTrue()
+        ->and(readingOf(readingResult('faq', 0.95, ['promise' => 0.15000000001]))->reasons)->toBe(['classifier:promise']);
+});
+
+it('uses the same thresholds as config/gate.php', function () {
+    $config = require dirname(__DIR__, 3).'/config/gate.php';
+
+    expect(readingThresholds())->toBe($config['classifier']);
 });
