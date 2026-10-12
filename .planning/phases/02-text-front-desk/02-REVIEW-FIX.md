@@ -4,9 +4,10 @@ fixed_at: 2026-10-12T00:00:00Z
 review_path: .planning/phases/02-text-front-desk/02-REVIEW.md
 iteration: 1
 findings_in_scope: 7
-fixed: 7
+fixed: 6
+partly_fixed: 1
 skipped: 0
-status: all_fixed
+status: partial
 ---
 
 # Phase 02: Code Review Fix Report
@@ -17,7 +18,8 @@ status: all_fixed
 
 **Summary:**
 - Findings in scope: 7 (CR-01, WR-01 to WR-06; Info findings out of scope)
-- Fixed: 7
+- Fixed: 6
+- Partly fixed: 1 (WR-03; the rest is deferred to Phase 02.1)
 - Skipped: 0
 
 **Verification:** every fix was written tests first (the new test was run and seen to fail, then the code was fixed). The narrow tests were run after each fix. The final `php artisan test --compact` run was in the main checkout (`workflow.use_worktrees` is `false`, so no worktree was made) and gave **1026 passed, 0 failed** (4227 assertions). The run before any fix gave 985 passed, 0 failed, so nothing predates or broke; the 41 extra tests are the new ones. Pint was run before each commit that touched PHP.
@@ -52,13 +54,6 @@ All commits are local on `gsd/phase-02-text-front-desk`. Nothing was pushed, mer
 **What changed and why it matters:** If the owner wrote the gas company number as `(312) 555-0188`, the sync accepted it but the safety text left the number out, with no warning. Now any format the sync accepts (brackets, dashes, dots, `1-` prefix) is printed as `+13125550188`.
 **Applied fix:** `gasLine()` now uses the same `PhoneNumber::toE164()` as the sync validator and prints only the E.164 digits, so no other folder words can ride along. `utilityPhone()` casts a bare number to text. Tests: `(312) 555-0188`, `312-555-0188`, `312.555.0188`, `+1 312 555 0188`, `1-312-555-0188`, text wrapped around a number, and a bare integer returned by a mocked `ActiveConfig`. Note: the unit test file now uses the app test case (`uses(TestCase::class)`) because the phone check reads `config('channels.phone_region')`. Observation: the sync validator rule for `utility_phone` is `string`, so an unquoted YAML number is rejected at sync today; the integer cast is defence in depth.
 
-### WR-03: `ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed
-
-**Files modified:** `app/Jobs/ProcessInbound.php`, `tests/Feature/FrontDesk/FrontDeskFailureTest.php`, `map/processes/answer-inbound.md`
-**Commit:** bfc52cf
-**What changed and why it matters:** When a text-answering run was stopped, the owner's "front desk stopped" alert could name the wrong text (a newer one still waiting for its own run, or an old one), and the owner could be alerted twice. Now it names the text that run actually claimed.
-**Applied fix:** `failed()` now queries the newest customer SMS message that has been claimed (`handled_at` set) with `id <=` the message that queued the job. Extra finding while testing: the old code called `latest('id')` on `$conversation->messages()`, whose relation already orders by `created_at, id` ascending, so the SQL was `order by created_at asc, id asc, id desc` and it actually returned the **oldest** message in the conversation. The new query starts from `Message::query()`, avoiding that ordering. Tests: not an earlier answered text, not a newer unclaimed one, not a web form, one alert only after `handle()` already reported, and nothing when no text was claimed. Status: fixed: requires human verification (the "at or before the job's own message" rule is a judgement; if debounce fails open and two jobs run, the owner is still told once per conversation burst, possibly against a different text in that rare case).
-
 ### WR-04: The claim rollback in `DispatchInbound` does not cover a push deferred by `afterCommit()`
 
 **Files modified:** `app/Actions/DispatchInbound.php`, `tests/Feature/Inbound/DispatchInboundTest.php`, `map/processes/answer-inbound.md`, `map/objects/messages/message-and-verdict.md`
@@ -80,6 +75,15 @@ All commits are local on `gsd/phase-02-text-front-desk`. Nothing was pushed, mer
 **What changed and why it matters:** A text with garbled bytes used to count as "no danger", even if it said "smoke". Now the garbled bytes are scrubbed so a danger next to them is still found, and a text with garbled bytes is treated as at least a general danger. When in doubt, the customer gets the safety message.
 **Applied fix:** `hazardIn()` checks `mb_check_encoding`, scrubs with `mb_scrub`, then matches. If the text was not valid UTF-8 and nothing matched, it returns `general`. `containsAny()` and `withoutApplianceNames()` now throw on a regex error and `hazardIn()` turns that into `general`. Tests: `"smoke \xff"` is `general`, a gas smell next to invalid bytes is still `gas`, bare invalid bytes and an otherwise ordinary text with invalid bytes are `general`, and valid UTF-8 (`naïve café, I smell gas`) is unchanged. The regex-error branch itself has no test because the patterns cannot be made to fail through public input once the text is scrubbed. Trade-off: a garbage text from the public form or fake webhook now triggers a safety line; real Twilio texts are valid UTF-8, so this should not happen in practice.
 
+## Partly Fixed Issues
+
+### WR-03: `ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed
+
+**Files modified:** `app/Jobs/ProcessInbound.php`, `tests/Feature/FrontDesk/FrontDeskFailureTest.php`, `map/processes/answer-inbound.md`
+**Commit:** bfc52cf
+**What changed and why it matters:** When a text-answering run was stopped, the owner's "front desk stopped" alert could name the wrong text (a newer one still waiting for its own run, or an old one), and the owner could be alerted twice. Now it names the text that run actually claimed.
+**Applied fix:** `failed()` now queries the newest customer SMS message that has been claimed (`handled_at` set) with `id <=` the message that queued the job. Extra finding while testing: the old code called `latest('id')` on `$conversation->messages()`, whose relation already orders by `created_at, id` ascending, so the SQL was `order by created_at asc, id asc, id desc` and it actually returned the **oldest** message in the conversation. The new query starts from `Message::query()`, avoiding that ordering. Tests: not an earlier answered text, not a newer unclaimed one, not a web form, one alert only after `handle()` already reported, and nothing when no text was claimed. Status: partly fixed. The wrong-text and web-form cases are fixed. A duplicate alert can still happen when one run claims texts newer than the message that queued it (see Orchestrator check). That path is deferred to Phase 02.1, alongside the owner-alert de-duplication work. The preferred fix is a claim token stored on the claimed rows, not a time window in `ReportFrontDeskFailure`.
+
 ## Skipped Issues
 
 None.
@@ -98,4 +102,4 @@ _Iteration: 1_
 
 Full suite re-run by the orchestrator after the fixer finished: 1026 passed, 0 failed.
 
-**WR-03 is narrowed, not closed.** `ClaimInboundBurst` claims every unhandled customer text in the conversation, not only texts up to the message that queued the job. When the debounce fails open or the sweep dispatches a run for an older text, job X can claim a newer text Y. `failed()` then reports X (because of `id <= messageId`) while `handle()` reported `$burst->last()` = Y, so the duplicate alert WR-03 describes can still happen on that path. The bound does fix the opposite case (a later, separate run that claimed a newer text). A full fix needs the claimed burst to be identifiable after the worker dies, for example a claim token stored on the claimed rows, or `ReportFrontDeskFailure` deduping per conversation within a window. Left for a follow-up decision.
+**WR-03 is narrowed, not closed.** `ClaimInboundBurst` claims every unhandled customer text in the conversation, not only texts up to the message that queued the job. When the debounce fails open or the sweep dispatches a run for an older text, job X can claim a newer text Y. `failed()` then reports X (because of `id <= messageId`) while `handle()` reported `$burst->last()` = Y, so the duplicate alert WR-03 describes can still happen on that path. The bound does fix the opposite case (a later, separate run that claimed a newer text). A full fix needs the claimed burst to be identifiable after the worker dies, Decision (2026-10-12): the remaining path is deferred to Phase 02.1, alongside the owner-alert de-duplication work. The preferred fix is a claim token stored on the claimed rows, so `failed()` can find exactly the burst its run claimed. A per-conversation time window in `ReportFrontDeskFailure` was considered and is not preferred.

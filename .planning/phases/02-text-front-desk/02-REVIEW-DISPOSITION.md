@@ -17,7 +17,7 @@ findings:
     title: "A utility phone the sync accepts is silently dropped from the gas sentence (verified)"
   - id: WR-03
     severity: warning
-    disposition: fixed
+    disposition: deferred
     title: "`ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed"
   - id: WR-04
     severity: warning
@@ -167,7 +167,7 @@ recorded: 2026-10-12T19:36:03.510Z
 | CR-01 | critical | fixed | 02-REVIEW-FIX.md |
 | WR-01 | warning | fixed | 02-REVIEW-FIX.md |
 | WR-02 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-03 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-03 | warning | deferred | partly fixed (bfc52cf); remaining duplicate-alert path deferred to Phase 02.1 with the owner-alert de-dup work; preferred fix is a claim token on the claimed rows, not a time window |
 | WR-04 | warning | fixed | 02-REVIEW-FIX.md |
 | WR-05 | warning | fixed | 02-REVIEW-FIX.md |
 | WR-06 | warning | fixed | 02-REVIEW-FIX.md |
