@@ -35,6 +35,22 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         /**
+         * No test reads the text driver or a Twilio or Jev key from .env or the shell: a test that needs one sets it
+         * itself with config([...]). This runs after the app has booted, so it also beats a cached config.
+         */
+        config([
+            'channels.text.driver' => 'fake',
+            'services.twilio.account_sid' => null,
+            'services.twilio.auth_token' => null,
+            'services.twilio.messaging_service_sid' => null,
+            'services.twilio.webhook_url' => null,
+            'services.twilio.status_callback_url' => null,
+            'services.jev.key' => null,
+            'services.jev.model' => 'typesafe/jev-1.13',
+            'services.jev.base_url' => 'https://openrouter.ai/api/v1',
+        ]);
+
+        /**
          * No test may reach a real model provider, Jev or Twilio: a request nobody faked throws.
          */
         Http::preventStrayRequests();
