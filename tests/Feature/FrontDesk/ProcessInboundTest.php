@@ -2,7 +2,6 @@
 
 use App\Actions\OutboundSender;
 use App\Ai\Agents\FrontDeskAgent;
-use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\ConversationStatus;
@@ -20,46 +19,6 @@ use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Support\Facades\Cache;
 use Mockery\MockInterface;
-
-/**
- * The live example folder, and a text from Dana arriving through the fake webhook.
- *
- * @param  array<string, string>  $payload
- */
-function frontDeskCustomerTexts(string $body = 'My AC is blowing warm air', array $payload = []): void
-{
-    activateExampleFolder();
-
-    test()->post(route('webhooks.text.fake'), fakeTextPayload([...['Body' => $body], ...$payload]))->assertOk();
-}
-
-/**
- * The texts the fake channel was asked to send.
- *
- * @return list<array{to: string, body: string, provider_message_id: string}>
- */
-function textsSentToCustomers(): array
-{
-    return app(FakeTextChannel::class)->sent();
-}
-
-/**
- * The reply the front desk would send for a script: disclosure first, a blank line, the words, then the sign-off.
- */
-function composedFirstReply(string $words): string
-{
-    $voice = app(ActiveConfig::class)->voice();
-
-    return $voice['ai_disclosure']."\n\n".$words."\n".$voice['sign_off'];
-}
-
-/**
- * The one message the front desk wrote, whether it was sent or kept as a draft.
- */
-function theAgentMessage(): Message
-{
-    return Message::query()->where('direction', MessageDirection::Out)->sole();
-}
 
 it('answers a customer text with the disclosure, the reply and the sign-off, and stores the verdict', function () {
     frontDeskCustomerTexts();
