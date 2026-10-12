@@ -3,6 +3,7 @@
 namespace App\Ai;
 
 use App\Enums\MessageAuthor;
+use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -50,6 +51,13 @@ How to fill in the other fields:
 - customer_name: the customer's own name, only when they give it in their texts. Otherwise null.
 TEXT;
 
+    /**
+     * The statuses of texts the model is shown: ones that arrived, or that reached the customer.
+     *
+     * @var list<MessageStatus>
+     */
+    private const array SHOWN_STATUSES = [MessageStatus::Received, MessageStatus::Sent, MessageStatus::Delivered];
+
     public function __construct(
         private readonly ActiveConfig $activeConfig,
         private readonly CustomerCard $customerCard,
@@ -86,6 +94,12 @@ TEXT;
     /**
      * The thread before the new burst, as the turns the model is shown.
      *
+     * Only texts that reached the customer or came from them count: drafts, failed sends and anything
+     * not yet sent are left out by an allow-list. Some providers reject two turns in a row from one
+     * role, so same-role texts are joined into one turn, a thread the business started gets a
+     * placeholder user turn first, and a thread ending on an unanswered customer text gets a
+     * placeholder assistant turn last, so the turns always alternate and the new prompt follows a reply.
+     *
      * @param  Collection<int, Message>  $burst
      * @return list<AiMessage>
      */
@@ -99,32 +113,92 @@ TEXT;
                 break;
             }
 
-            $turns[] = new AiMessage(
-                $message->author === MessageAuthor::Customer ? 'user' : 'assistant',
-                (string) $message->body,
-            );
+            if (! in_array($message->status, self::SHOWN_STATUSES, true)) {
+                continue;
+            }
+
+            $isCustomer = $message->author === MessageAuthor::Customer;
+
+            if (! $isCustomer && trim((string) $message->body) === '') {
+                continue;
+            }
+
+            $role = $isCustomer ? 'user' : 'assistant';
+            $text = $this->textOf($message);
+            $last = array_key_last($turns);
+
+            if ($last !== null && $turns[$last]['role'] === $role) {
+                $turns[$last]['text'] .= "\n\n".$text;
+            } else {
+                $turns[] = ['role' => $role, 'text' => $text];
+            }
         }
 
-        return $turns;
+        if ($turns !== [] && $turns[0]['role'] === 'assistant') {
+            array_unshift($turns, ['role' => 'user', 'text' => '(The business texted first.)']);
+        }
+
+        if ($turns !== [] && $turns[array_key_last($turns)]['role'] === 'user') {
+            $turns[] = ['role' => 'assistant', 'text' => '(No reply was sent.)'];
+        }
+
+        return array_map(fn (array $turn): AiMessage => new AiMessage($turn['role'], $turn['text']), $turns);
     }
 
     /**
-     * The new burst as one prompt.
+     * The new burst as one prompt: each text on its own line, in arrival order.
      *
      * @param  Collection<int, Message>  $burst
      */
     public function promptText(Collection $burst): string
     {
-        return $burst->map(fn (Message $message): string => (string) $message->body)->implode("\n");
+        return $burst->map(fn (Message $message): string => $this->textOf($message))->implode("\n");
     }
 
     /**
-     * The folder paths the agent loads.
+     * The folder paths the agent loads. An entry ending in "/" is a folder: it becomes every typed
+     * file under it in the live version, in path order. Router files have no type and are left out.
+     * Any other entry is used as written.
      *
      * @return list<string>
      */
     public function loadedPaths(AgentFile $agent): array
     {
-        return $agent->loads();
+        $paths = [];
+
+        foreach ($agent->loads() as $entry) {
+            if (! str_ends_with($entry, '/')) {
+                $paths[] = $entry;
+
+                continue;
+            }
+
+            $inFolder = collect($this->activeConfig->files())
+                ->filter(fn (array $file): bool => $file['type'] !== null && str_starts_with($file['path'], $entry))
+                ->pluck('path')
+                ->sort()
+                ->values()
+                ->all();
+
+            array_push($paths, ...$inFolder);
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    /**
+     * What one text says, or a short note when it has no words, so a turn is never empty.
+     */
+    private function textOf(Message $message): string
+    {
+        $body = (string) $message->body;
+
+        if (trim($body) !== '') {
+            return $body;
+        }
+
+        return (int) ($message->meta['num_media'] ?? 0) > 0
+            ? '(The customer sent a picture with no text.)'
+            : '(The customer sent an empty text.)';
     }
 }
