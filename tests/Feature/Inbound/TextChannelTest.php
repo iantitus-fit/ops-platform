@@ -4,9 +4,8 @@ use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Channels\TwilioTextChannel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-
-const TWILIO_NOT_BUILT_MESSAGE = 'The Twilio text channel is built in Phase 2 (TXT-01). Set TEXT_CHANNEL=fake.';
 
 it('resolves the fake channel when the driver is fake', function () {
     config(['channels.text.driver' => 'fake']);
@@ -27,12 +26,21 @@ it('refuses an unknown driver and names it', function () {
         ->toThrow(InvalidArgumentException::class, 'Unknown text channel driver [carrier-pigeon]');
 });
 
-it('refuses to send through Twilio until Phase 2', function () {
+it('refuses to send through Twilio until it is configured, and sends nothing', function () {
+    config([
+        'services.twilio.account_sid' => null,
+        'services.twilio.auth_token' => null,
+        'services.twilio.messaging_service_sid' => null,
+    ]);
+    Http::fake();
+
     $channel = new TwilioTextChannel;
 
     expect($channel->name())->toBe('twilio')
         ->and(fn () => $channel->send('+12025550123', 'On our way'))
-        ->toThrow(LogicException::class, TWILIO_NOT_BUILT_MESSAGE);
+        ->toThrow(RuntimeException::class, 'Twilio is not configured');
+
+    Http::assertNothingSent();
 });
 
 it('reads a Twilio webhook into the same inbound text the fake channel produces', function () {
