@@ -79,11 +79,11 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 29 plans (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 1/29 plans executed (one plan per wave, run in order; every plan adds to the shared sprint-1.md walk-through log and most share the front-desk files; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
-- [ ] 02-01-PLAN.md — Wave 0: the suite passes on Postgres and SQLite, CI runs both, stray network calls fail every test, the example folder's file count in one test helper, `docs/sprints/sprint-1.md` opened (INFRA-01)
+- [x] 02-01-PLAN.md — Wave 0: the suite passes on Postgres and SQLite, CI runs both, stray network calls fail every test, the example folder's file count in one test helper, `docs/sprints/sprint-1.md` opened (INFRA-01)
 
 **Wave 2**
 - [ ] 02-02-PLAN.md — Agent files validated and compiled by channel, provider chain, Business Folder shows the front desk (AGNT-01, AGNT-04)
@@ -194,12 +194,14 @@ Plans:
 - `escalate_to` may name a staff user.
 - The LLM fallback classifier driver on a ZDR route.
 - A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
+
 **Success Criteria** (what must be TRUE):
   1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
   2. Replying to an alert text with its code sends the draft (or the replacement words) through the same path as a dashboard approval, recorded on the timeline; a reply with no valid code, or from an unregistered phone, sends nothing and gets a short help text.
   3. When a draft is handled on one channel, the other channel gets a follow-up naming who handled it and how; a draft left untouched past the set time re-alerts and reaches the backup recipient.
   4. After a person replies in a conversation the agent only drafts there until the quiet period passes, then resumes on its own; Take over still stops it fully until handed back.
   5. With the on-call switch on, an after-hours urgent request alerts the on-call person right away; with it off, it waits for opening time.
+
 **Plans:** 0 plans
 
 Plans:
@@ -234,7 +236,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 0/29 | Planned | - |
+| 2. Text Front Desk | 1/29 | In Progress | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog
