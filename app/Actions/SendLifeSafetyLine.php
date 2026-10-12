@@ -13,6 +13,7 @@ use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\SendRule\LifeSafety;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
@@ -42,8 +43,9 @@ class SendLifeSafetyLine
     /**
      * Send the safety line for one customer text, pause the conversation and alert the owner.
      *
-     * A customer text is answered at most once: when a safety line for it was already sent, nothing happens and null
-     * is returned. When another run is still sending it after gate.life_safety.lock_wait_seconds, this run pauses the
+     * A customer text is answered at most once: when a safety line for it was already sent, no second line goes out
+     * and null is returned, but the pause and the owner alert are finished if an earlier run died before making them.
+     * When another run is still sending it after gate.life_safety.lock_wait_seconds, this run pauses the
      * conversation and alerts the owner to check that the line went out, then returns null; if the other run succeeds
      * its own alert stands, because RaiseOwnerAlert skips an alert the owner already has for that text. A line that
      * failed to send, with any error, does not count as answered, so a later run tries again, and the owner is told.
@@ -80,6 +82,8 @@ class SendLifeSafetyLine
         $conversation = $inbound->conversation;
 
         if ($this->alreadyAnswered($conversation, $inbound)) {
+            $this->finishHandOff($conversation, $inbound);
+
             return null;
         }
 
@@ -110,6 +114,29 @@ class SendLifeSafetyLine
         $this->raiseOwnerAlert->handle($conversation, AlertReason::LifeSafety, $inbound, $why);
 
         return $sent;
+    }
+
+    /**
+     * Finish the pause and the owner alert for a text whose safety line already went out.
+     *
+     * A run can die, or the pause or the alert can fail, after the line was sent. The retry then finds the line and
+     * must not stop there, or the conversation would never be paused and the owner never told. The pause comes before
+     * the alert, so an alert on file for this text means both are done and the retry leaves a later hand back alone.
+     * Otherwise the pause and the alert are made now; both skip what already exists.
+     */
+    private function finishHandOff(Conversation $conversation, Message $inbound): void
+    {
+        $ownerTold = OwnerAlert::query()
+            ->where('message_id', $inbound->id)
+            ->where('reason', AlertReason::LifeSafety->value)
+            ->exists();
+
+        if ($ownerTold) {
+            return;
+        }
+
+        $this->pauseConversation->handle($conversation, PausedReason::LifeSafety);
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::LifeSafety, $inbound, 'Safety message sent');
     }
 
     /**

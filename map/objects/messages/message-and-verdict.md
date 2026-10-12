@@ -33,7 +33,7 @@ Belongs to a conversation (`Message.php:76`); has many owner alerts (`Message.ph
 **Does not hit:** `owner_alerts` (own table; it only points at a message and is read through `Message::alertFailure`); the agent file; `rules/sending.md` (read when a verdict is made, never written by it); the SDK's `agent_conversation*` tables.
 
 ## Surfaces
-Writers: `RecordInbound.php:139` (inbound), `OutboundSender.php:184` (queued outbound), `RunFrontDesk.php:346` (draft), `SendFixedReply.php:48,72` and `SendLifeSafetyLine.php:91` (fixed texts), `ResolveDraft.php:82` and `OutboundSender.php:213` (draft ends). Readers: above. Humans: the owner, in the thread and the Drafts widget. External consumers: none today; nothing outside the repo reads the `gate:export` file (Ian, 2026-10-12).
+Writers: `RecordInbound.php:139` (inbound), `OutboundSender.php:184` (queued outbound), `RunFrontDesk.php:346` (draft), `SendFixedReply.php:48,72` and `SendLifeSafetyLine.php:95` (fixed texts), `ResolveDraft.php:82` and `OutboundSender.php:213` (draft ends). Readers: above. Humans: the owner, in the thread and the Drafts widget. External consumers: none today; nothing outside the repo reads the `gate:export` file (Ian, 2026-10-12).
 
 ## See
 `app/Models/Message.php`, `app/SendRule/Verdict.php`, `app/SendRule/DecideSendOrDraft.php`; decisions D-07, D-28, D-54 in `.planning/phases/02-text-front-desk/02-CONTEXT.md`.

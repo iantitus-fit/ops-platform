@@ -2,6 +2,7 @@
 
 use App\Actions\InboundData;
 use App\Actions\OutboundSender;
+use App\Actions\PauseConversation;
 use App\Actions\RecordInbound;
 use App\Actions\SendLifeSafetyLine;
 use App\Ai\Agents\FrontDeskAgent;
@@ -368,6 +369,64 @@ it('pauses and alerts the owner when another run holds the safety lock past the 
         ->and($alert->body)->toContain('check the safety message went out');
 
     $heldLock->release();
+});
+
+it('pauses and alerts on the retry when the pause failed once after the safety line had already gone out (CR-01)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+    $realPause = new PauseConversation;
+    $pauseCalls = 0;
+
+    $this->mock(PauseConversation::class, fn ($mock) => $mock->shouldReceive('handle')->andReturnUsing(
+        function (Conversation $conversation, PausedReason $reason) use (&$pauseCalls, $realPause): void {
+            $pauseCalls++;
+
+            if ($pauseCalls === 1) {
+                throw new RuntimeException('database went away');
+            }
+
+            $realPause->handle($conversation, $reason);
+        },
+    ));
+
+    expect(fn () => app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword'))->toThrow(RuntimeException::class);
+
+    expect(Message::query()->where('kind', MessageKind::LifeSafety->value)->sole()->status)->toBe(MessageStatus::Sent)
+        ->and($message->conversation->refresh()->isPaused())->toBeFalse()
+        ->and(OwnerAlert::query()->count())->toBe(0);
+
+    $retry = app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword');
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($retry)->toBeNull()
+        ->and($message->conversation->refresh()->isPaused())->toBeTrue()
+        ->and($message->conversation->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->body)->toContain('Safety message sent')
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
+        ->and(lifeSafetyTextsToOwner())->toHaveCount(1);
+});
+
+it('does not pause again on a repeat run once the pause and the alert are both done, so a hand back stands (CR-01)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+
+    app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword');
+
+    $conversation = $message->conversation->refresh();
+    $conversation->update(['paused_at' => null, 'paused_reason' => null, 'paused_by' => null]);
+
+    app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword');
+
+    expect($conversation->refresh()->isPaused())->toBeFalse()
+        ->and(OwnerAlert::query()->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1);
 });
 
 it('sends no holding reply when the classifier found a danger and the safety line did not go out', function () {
