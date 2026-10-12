@@ -7,9 +7,12 @@ use App\Jobs\SweepUndispatched;
 use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Database\QueryException;
 use Illuminate\Queue\Attributes\DebounceFor;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Testing\Fakes\QueueFake;
 
 /**
@@ -222,6 +225,29 @@ it('clears the claim and rethrows when the queue push fails, so the text stays s
 
     expect(fn () => app(DispatchInbound::class)->handle($messages[0]))
         ->toThrow(RuntimeException::class, 'queue down')
+        ->and($messages[0]->fresh()->dispatched_at)->toBeNull();
+});
+
+/**
+ * Swap back to the real queue manager on a database queue whose jobs table is gone, so a push throws the way an
+ * unreachable queue does. Unlike the fake above, the real queue honours afterCommit(): inside a transaction it holds
+ * the push back until the commit.
+ */
+function dispatchTestBrokenDatabaseQueue(): void
+{
+    app()->forgetInstance('queue');
+    Queue::clearResolvedInstance('queue');
+
+    config(['queue.default' => 'database']);
+    Schema::drop('jobs');
+}
+
+it('clears the claim when the queue push fails even if a caller wraps the dispatch in a transaction (WR-04)', function () {
+    [, $messages] = dispatchTestConversationWithTexts(1);
+    dispatchTestBrokenDatabaseQueue();
+
+    expect(fn () => DB::transaction(fn () => app(DispatchInbound::class)->handle($messages[0])))
+        ->toThrow(QueryException::class)
         ->and($messages[0]->fresh()->dispatched_at)->toBeNull();
 });
 

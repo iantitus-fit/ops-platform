@@ -23,6 +23,10 @@ class DispatchInbound
      * queues the text later (WR-02). The job is still dispatched through ProcessInbound::dispatch(),
      * so the debounce still applies.
      *
+     * The push is not held back with afterCommit(): that would move it to the end of any transaction a caller opened
+     * around this action, outside the try below, and a failed push would then leave the claim set with nothing
+     * queued (WR-04). Pushing here is safe because the job waits out the debounce before it reads the message.
+     *
      * @return bool true when this call claimed the message and queued the job
      */
     public function handle(Message $message): bool
@@ -41,7 +45,7 @@ class DispatchInbound
         }
 
         try {
-            ProcessInbound::dispatch($message->id, $message->conversation_id)->afterCommit();
+            ProcessInbound::dispatch($message->id, $message->conversation_id);
         } catch (Throwable $exception) {
             Message::query()->whereKey($message->id)->update(['dispatched_at' => null]);
 
