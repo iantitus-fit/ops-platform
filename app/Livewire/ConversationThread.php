@@ -8,7 +8,6 @@ use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
 use App\Models\Message;
-use App\Models\OwnerAlert;
 use DomainException;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
@@ -146,13 +145,11 @@ class ConversationThread extends Component
             return null;
         }
 
-        $alerts = OwnerAlert::query()->where('message_id', $draft->id)->orderBy('id')->get();
+        $failure = $draft->alertFailure();
 
-        if ($alerts->isEmpty() || $alerts->contains(fn (OwnerAlert $alert): bool => $alert->failed_at === null)) {
+        if ($failure === null) {
             return null;
         }
-
-        $failure = rtrim(trim((string) $alerts->last()->failure), '.');
 
         return $failure === 'No phone on file'
             ? "Not alerted: {$failure}. Add your phone on your profile."

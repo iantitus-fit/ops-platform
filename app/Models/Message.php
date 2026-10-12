@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'conversation_id',
@@ -85,5 +86,31 @@ class Message extends Model
     public function resolvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    /**
+     * The texts to the owner that this message caused, oldest first.
+     *
+     * @return HasMany<OwnerAlert, $this>
+     */
+    public function ownerAlerts(): HasMany
+    {
+        return $this->hasMany(OwnerAlert::class)->orderBy('id');
+    }
+
+    /**
+     * Why nobody was told about this message, or null when somebody was or may yet be (D-19). It answers only when the
+     * message has alerts and every one of them failed: an alert still waiting to go, sent, or skipped on purpose is not
+     * a gap. An empty string means the last failure left no words.
+     */
+    public function alertFailure(): ?string
+    {
+        $alerts = $this->ownerAlerts;
+
+        if ($alerts->isEmpty() || $alerts->contains(fn (OwnerAlert $alert): bool => $alert->failed_at === null)) {
+            return null;
+        }
+
+        return rtrim(trim((string) $alerts->last()->failure), '.');
     }
 }
