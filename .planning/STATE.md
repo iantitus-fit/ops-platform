@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-11-PLAN.md
-last_updated: "2026-10-12T02:14:49.002Z"
+stopped_at: Completed 02-12-PLAN.md
+last_updated: "2026-10-12T02:18:48.775Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: fab8948d4885669cea830179850c631d52534a37
+state_head: df7d37e52efc9bef5232fb710e02680d06c932ef
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 18
+  completed_plans: 19
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 12 of 29
+Plan: 13 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -74,6 +74,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P10 | 3 min | 1 tasks | 12 files |
 | Phase 02 P07 | 6 min | 2 tasks | 12 files |
 | Phase 02 P11 | 15 min | 1 tasks | 8 files |
+| Phase 02 P12 | 25 min | 1 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-10: OwnerAlertText::clean swaps schemed links, emails, www, domain-with-path and bare domains with common endings, then digit runs of 7+; RaiseOwnerAlert is the one door for alerts and SendOwnerAlert never throws, storing failed_at and failure on the alert row
 - [Phase 02]: 02-07: JevClassifier accepts only JSON numbers from 0 to 1 and a choice among the options sent; any gap, HTTP error, timeout, blank key or latest model throws ClassifierFailed (no retry); a missing yes/no counts as a certain yes in TriageReading
 - [Phase 02]: 02-11: A delayed alert is stale only when its subject message is outbound and no longer a draft; skipped alerts also get an owner_alerted timeline entry; opening times are converted to the app time zone before storing.
+- [Phase 02]: 02-12: phone field uses inputMode('tel') not ->tel(), because tel() adds a regex rule whose 'format is invalid' message sits beside the plain-words sentence
 
 ### Pending Todos
 
@@ -153,6 +155,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T02:14:48.963Z
-Stopped at: Completed 02-11-PLAN.md
+Last session: 2026-10-12T02:18:48.739Z
+Stopped at: Completed 02-12-PLAN.md
 Resume file: None
