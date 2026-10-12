@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-26-PLAN.md
-last_updated: "2026-10-12T04:00:14.372Z"
+stopped_at: Completed 02-27-PLAN.md
+last_updated: "2026-10-12T04:06:31.673Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: a0fab44ea3b241e69e2028b4745b38e6deaa733a
+state_head: d739523f10dae56579cf252758347e7ba6c50d34
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 33
+  completed_plans: 34
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 27 of 29
+Plan: 28 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -89,6 +89,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P24 | 20 min | 1 tasks | 12 files |
 | Phase 02 P25 | 7 min | 2 tasks | 13 files |
 | Phase 02 P26 | 3 min | 1 tasks | 13 files |
+| Phase 02 P27 | 13 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-25: The opted-out alert in RunFrontDesk runs after the life-safety second chance and does not dedupe against the safety alert, so the owner of an opted-out customer who texts about danger gets both the urgent safety alert and the call-them alert; a carrier refusal (21610) is told apart from other send failures by the exception's previous being RecipientOptedOut
 - [Phase 02]: 02-26: Twilio webhook routes (webhooks/text/twilio*) skip trimStrings and convertEmptyStringsToNull so the signature is checked over the form exactly as Twilio sent it
 - [Phase 02]: 02-26: the real Twilio channel trusts OptOutType only; keyword matching in code stays in RecordInbound as the fallback
+- [Phase 02]: 02-27: Twilio send errors carry only the HTTP status and Twilio code; a 2xx with no sid is a failed send
+- [Phase 02]: 02-27: A 21610 status callback marks the contact opted out even if the message was already failed; callbacks touch only outbound rows in queued/sent/delivered/failed
 
 ### Pending Todos
 
@@ -196,6 +199,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T04:00:14.331Z
-Stopped at: Completed 02-26-PLAN.md
+Last session: 2026-10-12T04:06:31.632Z
+Stopped at: Completed 02-27-PLAN.md
 Resume file: None
