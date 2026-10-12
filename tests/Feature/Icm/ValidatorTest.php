@@ -153,7 +153,7 @@ it('accepts empty lists where a list is allowed to be empty', function () {
     $version = activateExampleFolder();
     $config = app(ActiveConfig::class);
 
-    expect($version->file_count)->toBe(8)
+    expect($version->file_count)->toBe(exampleFolderFileCount())
         ->and($config->voice()['never_say'])->toBe([])
         ->and($config->hours()['closures'])->toBe([]);
 });
@@ -170,7 +170,7 @@ it('treats a file saved with Windows line endings and a byte-order mark the same
     $result = app(FolderSync::class)->run();
 
     expect($result->outcome)->toBe(SyncOutcome::Activated)
-        ->and($result->fileCount)->toBe(8);
+        ->and($result->fileCount)->toBe(exampleFolderFileCount());
 
     $frontMatter = fn (IcmVersion $version) => collect($version->compiled['files'])->map(fn (array $file) => $file['front_matter'])->all();
 

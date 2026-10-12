@@ -23,7 +23,7 @@ it('activates a folder that starts out with a broken records file and a changelo
 
     $version = activateExampleFolder();
 
-    expect($version->file_count)->toBe(8)
+    expect($version->file_count)->toBe(exampleFolderFileCount())
         ->and($version->compiled['files'])->not->toHaveKeys(['records/customers/x.md', 'changelog.md']);
 });
 
@@ -32,6 +32,6 @@ it('still reads a typed file inside a nested business/records folder', function 
 
     $version = activateExampleFolder();
 
-    expect($version->file_count)->toBe(9)
+    expect($version->file_count)->toBe(exampleFolderFileCount() + 1)
         ->and($version->compiled['files'])->toHaveKey('business/records/notes.md');
 });

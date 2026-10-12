@@ -72,6 +72,17 @@ them, and `q` stops everything.
 php artisan test
 ```
 
+That runs the suite on SQLite. To run it on PostgreSQL 17 as well (needs Docker):
+
+```sh
+docker run --rm -d --name ops-pg-test -p 55432:5432 -e POSTGRES_PASSWORD=probe -e POSTGRES_DB=ops_test postgres:17
+DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=55432 DB_DATABASE=ops_test DB_USERNAME=postgres DB_PASSWORD=probe php artisan test
+docker rm -f ops-pg-test
+```
+
+Give the container a few seconds to start before the second command. GitHub
+Actions runs both databases on every push (`.github/workflows/tests.yml`).
+
 ## 6. First commit
 
 ```sh

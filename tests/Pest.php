@@ -5,6 +5,7 @@ use App\Icm\FolderSync;
 use App\Models\IcmVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -22,6 +23,11 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
+        /**
+         * No test may reach a real model provider, Jev or Twilio: a request nobody faked throws.
+         */
+        Http::preventStrayRequests();
+
         $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
 
         File::copyDirectory(base_path('examples/example-hvac'), $folder);
@@ -82,6 +88,15 @@ function resetRecordsToTrackedFiles(string $records): void
             File::delete($file->getPathname());
         }
     }
+}
+
+/**
+ * How many typed files examples/example-hvac holds. A plan that adds a typed file to the example
+ * folder changes this one number (plans 02-02, 02-03 and 02-06 do), not every test that counts.
+ */
+function exampleFolderFileCount(): int
+{
+    return 8;
 }
 
 /**

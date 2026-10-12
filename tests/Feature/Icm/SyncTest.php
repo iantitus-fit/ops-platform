@@ -13,9 +13,11 @@ it('activates the example folder as v1 with eight files', function () {
 
     $version = IcmVersion::first();
 
-    expect(Artisan::output())->toContain("Live as {$version->label()} (8 files)")
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain("Live as {$version->label()} ({$files} files)")
         ->and($version->status)->toBe(VersionStatus::Active)
-        ->and($version->file_count)->toBe(8)
+        ->and($version->file_count)->toBe(exampleFolderFileCount())
         ->and($version->fingerprint)->toHaveLength(64)
         ->and($version->activated_at)->not->toBeNull();
 });
@@ -29,7 +31,7 @@ it('shows the active version, its file count and its Chicago go-live time', func
 
     $this->artisan('icm:status')
         ->expectsOutputToContain("Active version: {$label}")
-        ->expectsOutputToContain('Files: 8')
+        ->expectsOutputToContain('Files: '.exampleFolderFileCount())
         ->expectsOutputToContain("Live since: {$liveSince} (America/Chicago)")
         ->assertExitCode(0);
 });
@@ -47,20 +49,22 @@ it('does not count README, CONTEXT or START-HERE files', function () {
     writeIcmFile('business/extras/CONTEXT.md', 'Points at other files.');
     writeIcmFile('agents/START-HERE.md', 'Start here.');
 
-    expect(activateExampleFolder()->file_count)->toBe(8);
+    expect(activateExampleFolder()->file_count)->toBe(exampleFolderFileCount());
 });
 
 it('skips later-sprint file types with a notice and still activates', function () {
-    $notice = 'agents/front-desk.md: type agent is not supported yet, so this file was skipped';
-    writeIcmFile('agents/front-desk.md', "---\ntype: agent\nname: Front desk\n---\nAnswers texts.");
+    $notice = 'automations/follow-up.md: type automation is not supported yet, so this file was skipped';
+    writeIcmFile('automations/follow-up.md', "---\ntype: automation\nname: Follow-up\n---\nChecks in after a quote.");
 
     expect(Artisan::call('icm:sync'))->toBe(0);
 
     $version = IcmVersion::first();
 
-    expect(Artisan::output())->toContain($notice)->toContain("Live as {$version->label()} (8 files)")
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain($notice)->toContain("Live as {$version->label()} ({$files} files)")
         ->and($version->notices)->toContain($notice)
-        ->and($version->compiled['files'])->not->toHaveKey('agents/front-desk.md');
+        ->and($version->compiled['files'])->not->toHaveKey('automations/follow-up.md');
 });
 
 it('treats a second sync with no changes as a no-op', function () {
@@ -92,7 +96,9 @@ it('goes live as v2 when a router file changes and supersedes v1', function () {
 
     $second = IcmVersion::query()->latest('id')->first();
 
-    expect(Artisan::output())->toContain("Live as {$second->label()} (8 files)")
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain("Live as {$second->label()} ({$files} files)")
         ->and($second->id)->not->toBe($first->id)
         ->and($first->fresh()->status)->toBe(VersionStatus::Superseded)
         ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(1);

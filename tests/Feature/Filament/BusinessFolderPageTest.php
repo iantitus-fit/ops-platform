@@ -26,8 +26,9 @@ it('says no version is live yet, then goes live from Sync Now', function () {
         ->callAction('syncNow');
 
     $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
 
-    $page->assertNotified("Live as {$label} (8 files)")
+    $page->assertNotified("Live as {$label} ({$files} files)")
         ->assertDontSee('No version is live yet. Click Sync Now.')
         ->assertSee($label);
 });
@@ -40,7 +41,7 @@ it('shows the live version, its file count, its Chicago go-live time and its fil
 
     Livewire::test(BusinessFolder::class)
         ->assertSee($version->label())
-        ->assertSee('8 files')
+        ->assertSee(exampleFolderFileCount().' files')
         ->assertSee("Live since {$liveSince}")
         ->assertSee('business/services/ac-repair.md')
         ->assertSee('service')
@@ -132,9 +133,9 @@ it('tells the owner a sync is already running and changes nothing', function () 
 });
 
 it('shows a skipped later-sprint file as not supported yet', function () {
-    writeIcmFile('agents/front-desk.md', "---\ntype: agent\nname: Front desk\n---\nAnswers texts.");
+    writeIcmFile('automations/follow-up.md', "---\ntype: automation\nname: Follow-up\n---\nChecks in after a quote.");
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertSee('Not supported yet: agents/front-desk.md');
+        ->assertSee('Not supported yet: automations/follow-up.md');
 });
