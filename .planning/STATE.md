@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-19-PLAN.md
-last_updated: "2026-10-12T03:10:56.531Z"
+stopped_at: Completed 02-20-PLAN.md
+last_updated: "2026-10-12T03:16:26.010Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: e2d754a0705b78a775cf7a82879a8511afcdf902
+state_head: 06e0b6ea585b8aa4ac7af687d9284a7542660fbd
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 26
+  completed_plans: 27
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 20 of 29
+Plan: 21 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -82,6 +82,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P18 | 6 min | 2 tasks | 15 files |
 | Phase 02 P17 | 14 min | 2 tasks | 14 files |
 | Phase 02 P19 | 12 min | 1 tasks | 13 files |
+| Phase 02 P20 | 25 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-17: One live draft per conversation is a partial unique index (messages_one_live_draft_per_conversation); a replaced draft is withdrawn with resolution replaced and kept; a holding reply is sent once per waiting draft and approved, edited or discarded resolutions end the wait
 - [Phase 02]: 02-19: Pause is checked in OutboundSender::whyBlocked() for Automated origin only, re-checked inside the send lock; RunFrontDesk alerts paused_message per burst and never asks the agent while paused
 - [Phase 02]: 02-19: Adding a foreign key column to a SQLite table rebuilds it and turns a partial unique index into a plain one; migrations that add FK columns to conversations or messages must drop and recreate the partial index afterwards
+- [Phase 02]: 02-20: RunFrontDesk order is paused check, reply cap, phrase handoff, agent, wants_person, verdict asksForPerson — Cap and phrase checks cost no model call; handoff alerts, texts, then pauses because OutboundSender refuses automated sends while paused
+- [Phase 02]: 02-20: CodeChecks::phrasePattern made public so AsksForPerson reuses the veto matching — Avoids a drifting copy of the normalisation and word-boundary rules
 
 ### Pending Todos
 
@@ -177,6 +180,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:10:56.493Z
-Stopped at: Completed 02-19-PLAN.md
+Last session: 2026-10-12T03:16:25.970Z
+Stopped at: Completed 02-20-PLAN.md
 Resume file: None
