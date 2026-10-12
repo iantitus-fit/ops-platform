@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-10-12T01:49:22.568Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-10-12T01:52:22.983Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: d9fe7fa570ca0629338d47ef7e1513ee63973cd1
+state_head: 1b901bd0d92d0a3de23b093d9be24c61ed7ba4a6
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 13
+  completed_plans: 14
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 7 of 29
+Plan: 8 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -69,6 +69,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P03 | 14 min | 1 tasks | 12 files |
 | Phase 02 P09 | 14 min | 1 tasks | 9 files |
 | Phase 02 P04 | 15 min | 1 tasks | 12 files |
+| Phase 02 P05 | 12 min | 1 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: Fixed replies (set_replies) are checked at sync with the voice file's never_say from the same candidate folder; fill-ins limited to owner_name, business_name, next_open
 - [Phase 02]: ProcessInbound::handle() returns bool (true = reaches front desk) so the D-41 form-lead stop is testable; sweep queues form messages too and ProcessInbound is the single place that stops them
 - [Phase 02]: 02-04: send_on_own entries are checked in code (not Rule::in) so price, promise, discount and complaint get the hard-floor sentence; ReplyLabel::neverOnItsOwn() is the single source for the floor
+- [Phase 02]: 02-05: {next_open} reads 'today' when moment + 60-minute margin <= closing time (boundary inclusive); closure date closes the whole local day; nextOpening scans 14 days then renders 'when we reopen'
 
 ### Pending Todos
 
@@ -143,6 +145,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T01:49:22.531Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-10-12T01:52:22.946Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
