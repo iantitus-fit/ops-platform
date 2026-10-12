@@ -232,6 +232,14 @@ it('records an emoji body unchanged when the signature was made over the UTF-8 t
     expect(Message::sole()->body)->toBe('Thanks 😊');
 });
 
+it('accepts a body with leading and trailing whitespace, because the signature covers the text as Twilio sent it', function () {
+    $body = "\n  Yes, please come today \n";
+
+    twilioPostInbound(twilioInboundPayload(['Body' => $body]))->assertOk();
+
+    expect(Message::sole()->body)->toBe($body);
+});
+
 it('stores a 1,600 character body from Twilio in full', function () {
     $body = str_repeat('x', 1600);
 

@@ -13,6 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->preventRequestForgery(except: ['webhooks/*', 'leads']);
+
+        /*
+         * Twilio signs the form exactly as it sent it, so the Twilio webhooks must not have their values trimmed or
+         * their empty strings turned into null before the signature is checked. A text that starts or ends with a
+         * space would otherwise be refused as unsigned, and the stored words would not be the customer's own.
+         */
+        $middleware->trimStrings(except: [fn (Request $request): bool => $request->is('webhooks/text/twilio*')]);
+        $middleware->convertEmptyStringsToNull(except: [fn (Request $request): bool => $request->is('webhooks/text/twilio*')]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
