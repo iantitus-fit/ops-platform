@@ -6,6 +6,7 @@ use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
+use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 
 /**
@@ -32,6 +33,28 @@ class ComposeAutomatedText
         }
 
         return $composed;
+    }
+
+    /**
+     * The safety line as the customer receives it: the line first, then a blank line and the AI disclosure when this
+     * is the first automated text of the conversation. It never carries the sign-off (D-17, D-50).
+     *
+     * The line must go out even when no business folder is live yet, so a missing folder means no disclosure rather
+     * than no line.
+     */
+    public function forLifeSafety(Conversation $conversation, string $line): string
+    {
+        $line = trim($line);
+
+        if (! $this->isFirstAutomatedText($conversation)) {
+            return $line;
+        }
+
+        try {
+            return $line."\n\n".$this->activeConfig->voice()['ai_disclosure'];
+        } catch (NoActiveVersion) {
+            return $line;
+        }
     }
 
     /**

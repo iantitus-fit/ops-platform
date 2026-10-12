@@ -181,13 +181,14 @@ function composedFirstReply(string $words): string
 
 /**
  * The texts the fake channel sent that carry the agent's own words, leaving out the holding reply that goes out
- * beside a held draft (D-12). A test that says "nothing the agent wrote reached the customer" reads this.
+ * beside a held draft (D-12) and the safety line, which is fixed in code (D-16). A test that says "nothing the agent
+ * wrote reached the customer" reads this.
  *
  * @return list<array{to: string, body: string, provider_message_id: string}>
  */
 function textsSentForAgentReplies(): array
 {
-    $holdingBodies = Message::query()->where('kind', MessageKind::HoldingReply->value)->pluck('body')->all();
+    $holdingBodies = Message::query()->whereIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value])->pluck('body')->all();
 
     return array_values(array_filter(
         textsSentToCustomers(),
@@ -197,13 +198,13 @@ function textsSentForAgentReplies(): array
 
 /**
  * The one message the front desk wrote, whether it was sent or kept as a draft. A holding reply sent beside a held
- * draft is a different message and is left out.
+ * draft and a safety line are different messages and are left out.
  */
 function theAgentMessage(): Message
 {
     return Message::query()
         ->where('direction', MessageDirection::Out)
-        ->where(fn ($query) => $query->whereNull('kind')->orWhere('kind', '!=', MessageKind::HoldingReply->value))
+        ->where(fn ($query) => $query->whereNull('kind')->orWhereNotIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value]))
         ->sole();
 }
 

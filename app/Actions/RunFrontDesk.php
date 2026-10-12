@@ -26,6 +26,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
+use App\SendRule\LifeSafety;
 use App\SendRule\Verdict;
 use DomainException;
 use Illuminate\Support\Collection;
@@ -65,6 +66,7 @@ class RunFrontDesk
         private readonly RecordIntakeAnswers $recordIntakeAnswers,
         private readonly SendFixedReply $sendFixedReply,
         private readonly PauseConversation $pauseConversation,
+        private readonly SendLifeSafetyLine $sendLifeSafetyLine,
     ) {}
 
     /**
@@ -72,8 +74,10 @@ class RunFrontDesk
      */
     public function handle(Conversation $conversation, Collection $burst): void
     {
-        if ($conversation->isPaused()) {
-            $this->raiseOwnerAlert->handle($conversation, AlertReason::PausedMessage, $burst->last(), 'New message while you are handling it');
+        $this->answerDanger($burst);
+
+        if ($conversation->refresh()->isPaused()) {
+            $this->alertAboutPausedBurst($conversation, $burst);
 
             return;
         }
@@ -119,7 +123,10 @@ class RunFrontDesk
         $composed = $this->composeAutomatedText->forReply($conversation, $words);
         $verdict = $this->decideSendOrDraft->decide($run, $this->prompt->promptText($burst), $composed);
 
-        if ($verdict->asksForPerson) {
+        if ($verdict->lifeSafety) {
+            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+            $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+        } elseif ($verdict->asksForPerson) {
             $this->handOffToOwner($conversation, $burst);
 
             return;
@@ -153,6 +160,39 @@ class RunFrontDesk
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes);
+    }
+
+    /**
+     * The second chance for the safety line (D-17): any text in the burst whose words describe a danger and that no
+     * safety line has answered yet gets one now, for the case where the immediate job never ran, such as a text the
+     * sweep queued. A text already answered is skipped inside SendLifeSafetyLine.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function answerDanger(Collection $burst): void
+    {
+        foreach ($burst as $message) {
+            $hazard = $message->channel === MessageChannel::Sms ? LifeSafety::hazardIn($message->body) : null;
+
+            if ($hazard !== null) {
+                $this->sendLifeSafetyLine->handle($message, $hazard, 'keyword');
+            }
+        }
+    }
+
+    /**
+     * Tell the owner a customer wrote while the assistant is paused, once per burst (D-24). A burst whose newest text
+     * already alerted the owner, such as a safety message that paused the conversation, is not alerted twice.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutPausedBurst(Conversation $conversation, Collection $burst): void
+    {
+        if (OwnerAlert::query()->where('message_id', $burst->last()->id)->exists()) {
+            return;
+        }
+
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::PausedMessage, $burst->last(), 'New message while you are handling it');
     }
 
     /**
@@ -294,7 +334,9 @@ class RunFrontDesk
             $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
         }
 
-        $this->sendFixedReply->holding($conversation);
+        if (! $conversation->refresh()->isPaused()) {
+            $this->sendFixedReply->holding($conversation);
+        }
     }
 
     /**

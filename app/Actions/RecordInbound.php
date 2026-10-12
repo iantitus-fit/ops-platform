@@ -13,9 +13,11 @@ use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Icm\PlainWords;
+use App\Jobs\RespondToLifeSafety;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\LifeSafety;
 use App\Support\PhoneNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -69,10 +71,31 @@ class RecordInbound
             $message = DB::transaction(fn (): Message => $this->record($data));
         }
 
+        $this->respondToDanger($message);
         $this->dispatchInbound->handle($message);
         CustomerRecordChanged::dispatch($message->conversation->contact_id);
 
         return $message;
+    }
+
+    /**
+     * A text from a customer that describes a danger is answered at once, without the burst wait (D-17). The job is
+     * queued after the transaction commits so it never reads a message that is rolled back. It is queued before
+     * ProcessInbound so the safety line is the first thing on the queue for this text.
+     */
+    private function respondToDanger(Message $message): void
+    {
+        if ($message->channel !== MessageChannel::Sms) {
+            return;
+        }
+
+        $hazard = LifeSafety::hazardIn($message->body);
+
+        if ($hazard === null) {
+            return;
+        }
+
+        RespondToLifeSafety::dispatch($message->id, $hazard)->afterCommit();
     }
 
     private function record(InboundData $data): Message
