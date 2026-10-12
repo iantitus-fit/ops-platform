@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SyncOutcome;
+use App\Enums\VersionStatus;
 use App\Filament\Pages\BusinessFolder;
 use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
@@ -222,4 +223,52 @@ it('escapes the reason an alert failed', function () {
     OwnerAlert::factory()->create(['failed_at' => now(), 'failure' => '<b>loud</b>']);
 
     Livewire::test(BusinessFolder::class)->assertDontSeeHtml('<b>loud</b>');
+});
+
+/**
+ * Make the live version look like one from Phase 1, when owner_alert in rules/sending.md was a
+ * sentence the owner wrote instead of the channels, right_away and after_hours settings.
+ */
+function businessFolderPhaseOneVersion(): IcmVersion
+{
+    $version = activateExampleFolder();
+
+    $compiled = $version->compiled;
+    $compiled['files']['rules/sending.md']['front_matter']['owner_alert'] = 'Text the owner when a draft is waiting or a customer asks for a person';
+    $version->update(['compiled' => $compiled]);
+
+    app()->forgetScopedInstances();
+
+    return $version;
+}
+
+it('opens the page and Sync Now while a Phase 1 version is live', function () {
+    businessFolderPhaseOneVersion();
+
+    $this->get('/admin/business-folder')->assertOk()->assertSee('Sync Now');
+});
+
+it('syncs forward from the dashboard while a Phase 1 version is live', function () {
+    businessFolderPhaseOneVersion();
+    breakFile('business/faq.md', fn (string $contents) => $contents."\nWe answer texts all day.\n");
+
+    Livewire::test(BusinessFolder::class)
+        ->callAction('syncNow')
+        ->assertNotified();
+
+    $newest = IcmVersion::query()->where('status', VersionStatus::Active->value)->latest('id')->firstOrFail();
+
+    expect($newest->compiled['files']['rules/sending.md']['front_matter']['owner_alert'])->toBeArray();
+});
+
+it('warns about a missing phone while a Phase 1 version is live, and not once a phone is on file', function () {
+    businessFolderPhaseOneVersion();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Alerts are set to go by text, but no one has a phone number on their profile');
+
+    User::factory()->withPhone()->create();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertDontSee('no one has a phone number on their profile');
 });
