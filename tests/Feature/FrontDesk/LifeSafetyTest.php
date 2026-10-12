@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\InboundData;
+use App\Actions\OutboundSender;
 use App\Actions\RecordInbound;
 use App\Actions\SendLifeSafetyLine;
 use App\Ai\Agents\FrontDeskAgent;
@@ -12,11 +13,13 @@ use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
 use App\Icm\ActiveConfig;
+use App\Jobs\RespondToLifeSafety;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 const LIFE_SAFETY_OWNER_PHONE = '+12025550199';
 
@@ -307,4 +310,78 @@ it('still sends the safety line when no business folder is live yet', function (
     expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
         ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(LIFE_SAFETY_GAS_LINE)
         ->and(Conversation::query()->sole()->isPaused())->toBeTrue();
+});
+
+it('pauses and alerts the owner when the safety job fails for good (WR-05)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+
+    (new RespondToLifeSafety($message->id, 'gas'))->failed(new RuntimeException('worker died'));
+
+    $alert = OwnerAlert::query()->sole();
+    $conversation = $message->conversation->refresh();
+
+    expect($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($alert->body)->toContain('Safety message could not be sent')
+        ->and($alert->body)->not->toContain('worker died')
+        ->and(lifeSafetyTextsToOwner())->toHaveCount(1);
+});
+
+it('pauses and alerts the owner when the safety send fails with any error, not only a refusal', function () {
+    $this->mock(OutboundSender::class, fn ($mock) => $mock->shouldReceive('send')->andThrow(new RuntimeException('database went away')));
+
+    lifeSafetyCustomerTexts('I smell gas in the basement');
+
+    $alert = OwnerAlert::query()->sole();
+    $conversation = Conversation::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->body)->toContain('Safety message could not be sent')
+        ->and($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::LifeSafety);
+});
+
+it('pauses and alerts the owner when another run holds the safety lock past the wait', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+    config(['gate.life_safety.lock_wait_seconds' => 0]);
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+    $heldLock = Cache::lock("life-safety:{$message->id}", 30);
+    $heldLock->get();
+
+    $result = app(SendLifeSafetyLine::class)->handle($message, 'gas', 'keyword');
+
+    $alert = OwnerAlert::query()->sole();
+    $conversation = $message->conversation->refresh();
+
+    expect($result)->toBeNull()
+        ->and($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->body)->toContain('check the safety message went out');
+
+    $heldLock->release();
+});
+
+it('sends no holding reply when the classifier found a danger and the safety line did not go out', function () {
+    $this->mock(SendLifeSafetyLine::class, fn ($mock) => $mock->shouldReceive('handle')->andReturnNull());
+
+    lifeSafetyCustomerTexts('my thermostat smells funny');
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.2]);
+
+    runQueuedFrontDeskJobs();
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('classifier:life_safety')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0)
+        ->and(lifeSafetyTextsToCustomer())->toBeEmpty();
 });
