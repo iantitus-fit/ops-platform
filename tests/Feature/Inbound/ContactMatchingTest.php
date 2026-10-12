@@ -262,3 +262,31 @@ it('matches an email shared by two contacts to the one created first', function 
 
     expect(Conversation::sole()->contact_id)->toBe($first->id);
 });
+
+it('records that a form from a new number matched nobody (D-41)', function () {
+    postLead($this, ['phone' => '(202) 555-0123'])->assertOk();
+
+    expect(Message::sole()->meta['matched_by'])->toBe('new');
+});
+
+it('records that a form matched the contact by phone (D-41)', function () {
+    Contact::factory()->create(['phone_e164' => '+12025550123']);
+
+    postLead($this, ['phone' => '(202) 555-0123'])->assertOk();
+
+    expect(Message::sole()->meta['matched_by'])->toBe('phone');
+});
+
+it('records that a form matched the contact by email (D-41)', function () {
+    Contact::factory()->create(['email' => 'dana@example.com']);
+
+    postLead($this, ['email' => 'dana@example.com'])->assertOk();
+
+    expect(Message::sole()->meta['matched_by'])->toBe('email');
+});
+
+it('keeps the form fields next to matched_by in the message meta', function () {
+    postLead($this, ['email' => 'dana@example.com'])->assertOk();
+
+    expect(Message::sole()->meta)->toHaveKeys(['form', 'matched_by']);
+});

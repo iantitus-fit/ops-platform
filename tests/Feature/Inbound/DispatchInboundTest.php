@@ -169,3 +169,23 @@ it('backfills dispatched_at and handled_at to created_at for messages from befor
     expect($alreadyDispatched->fresh()->dispatched_at->toDateTimeString())->toBe('2026-10-02 10:00:00')
         ->and($alreadyDispatched->fresh()->handled_at->toDateTimeString())->toBe('2026-10-02 10:00:20');
 });
+
+it('claims a burst of only web form messages and stops, so a form lead never reaches the front desk (D-41)', function () {
+    $conversation = Conversation::factory()->create();
+    $formMessages = Message::factory()->web()->for($conversation)->count(2)->create();
+    $job = new ProcessInbound($formMessages[1]->id, $conversation->id);
+
+    $reachedFrontDesk = app()->call([$job, 'handle']);
+
+    expect($reachedFrontDesk)->toBeFalse()
+        ->and(Message::query()->whereNull('handled_at')->count())->toBe(0);
+});
+
+it('goes on to the front desk when the burst holds a text from the customer, even next to a form message', function () {
+    $conversation = Conversation::factory()->create();
+    Message::factory()->web()->for($conversation)->create();
+    $text = Message::factory()->for($conversation)->create();
+    $job = new ProcessInbound($text->id, $conversation->id);
+
+    expect(app()->call([$job, 'handle']))->toBeTrue();
+});
