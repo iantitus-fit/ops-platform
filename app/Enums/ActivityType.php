@@ -8,4 +8,5 @@ enum ActivityType: string
     case FormReceived = 'form_received';
     case ReplySent = 'reply_sent';
     case Note = 'note';
+    case OwnerAlerted = 'owner_alerted';
 }

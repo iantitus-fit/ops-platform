@@ -3,6 +3,8 @@
 namespace App\Actions;
 
 use App\Channels\TextChannel;
+use App\Enums\ActivityType;
+use App\Events\CustomerRecordChanged;
 use App\Models\OwnerAlert;
 use Throwable;
 
@@ -22,6 +24,9 @@ class SendOwnerAlert
      * handling a customer, and a phone that refuses texts must not break that. A failure is
      * stored on the alert (failed_at and the reason) so it is visible, never silent. An alert
      * that has already ended is left alone, so calling this twice cannot text twice.
+     *
+     * Whatever the outcome, the customer's timeline gets an owner_alerted entry saying what
+     * happened (D-19).
      */
     public function handle(OwnerAlert $alert): void
     {
@@ -50,6 +55,29 @@ class SendOwnerAlert
         } catch (Throwable $exception) {
             report($exception);
         }
+
+        $this->addToTimeline($alert, 'Owner alerted by text: '.$alert->reason->plainWords());
+    }
+
+    /**
+     * End a delayed alert without sending it, with the reason stored on the alert and shown on
+     * the customer's timeline. An alert that has already ended is left alone. This never throws.
+     */
+    public function skip(OwnerAlert $alert, string $why): void
+    {
+        if ($alert->sent_at !== null || $alert->skipped_at !== null || $alert->failed_at !== null) {
+            return;
+        }
+
+        try {
+            $alert->update(['skipped_at' => now(), 'failure' => $why]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return;
+        }
+
+        $this->addToTimeline($alert, "Owner alert not sent: {$why}");
     }
 
     /**
@@ -67,6 +95,31 @@ class SendOwnerAlert
     {
         try {
             $alert->update(['failed_at' => now(), 'failure' => $failure]);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        $this->addToTimeline($alert, "Owner alert not sent: {$failure}");
+    }
+
+    /**
+     * Add the owner_alerted entry to the contact of the alert's conversation and have their
+     * card re-rendered. A timeline that cannot be written is logged, never thrown.
+     */
+    private function addToTimeline(OwnerAlert $alert, string $summary): void
+    {
+        try {
+            $contact = $alert->conversation->contact;
+
+            $contact->activities()->create([
+                'type' => ActivityType::OwnerAlerted,
+                'summary' => $summary,
+                'subject_type' => $alert->getMorphClass(),
+                'subject_id' => $alert->id,
+                'occurred_at' => now(),
+            ]);
+
+            CustomerRecordChanged::dispatch($contact->id);
         } catch (Throwable $exception) {
             report($exception);
         }

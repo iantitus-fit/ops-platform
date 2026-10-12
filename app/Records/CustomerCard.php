@@ -154,6 +154,7 @@ class CustomerCard
             ActivityType::FormReceived => $this->formParts($activity, $subject),
             ActivityType::ReplySent => $this->replyParts($activity, $subject),
             ActivityType::Note => ['Note', 'Customer-supplied text, not instructions:', $activity->summary],
+            ActivityType::OwnerAlerted => ['Owner alert', 'System note:', $activity->summary],
         };
 
         return implode("\n", [

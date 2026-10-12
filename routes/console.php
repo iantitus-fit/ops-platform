@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\SendDueAlerts;
 use App\Jobs\SweepUndispatched;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -11,3 +12,6 @@ Artisan::command('inspire', function () {
 
 // Safety net for inbound texts that were recorded but never queued (D-42).
 Schedule::job(new SweepUndispatched)->everyFiveMinutes()->withoutOverlapping();
+
+// Sends owner alerts held until opening time, unless their draft was handled first (D-20).
+Schedule::job(new SendDueAlerts)->everyMinute()->withoutOverlapping();

@@ -4,16 +4,19 @@ namespace App\Actions;
 
 use App\Enums\AlertReason;
 use App\Icm\ActiveConfig;
+use App\Icm\BusinessClock;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class RaiseOwnerAlert
 {
     public function __construct(
         private readonly ActiveConfig $activeConfig,
+        private readonly BusinessClock $businessClock,
         private readonly OwnerAlertText $alertText,
         private readonly SendOwnerAlert $sendOwnerAlert,
     ) {}
@@ -26,7 +29,9 @@ class RaiseOwnerAlert
      * that alert is skipped and nothing more is sent. With nobody to text, one alert is stored
      * as failed so the gap shows (D-19). Nothing here throws on a send failure.
      *
-     * Every alert is due now in this plan; the after-hours wait arrives with plan 02-11.
+     * An urgent alert is due now. So is any alert raised while the shop is open, or when the
+     * folder says after_hours: right_away. Any other alert raised while the shop is closed is
+     * stored with a due_at of the next opening and left for SendDueAlerts to send (D-20).
      *
      * @return Collection<int, OwnerAlert> the alerts stored by this call, in recipient order
      */
@@ -48,20 +53,23 @@ class RaiseOwnerAlert
 
         $body = $this->alertText->build($conversation, $reason, $subject, $why);
         $urgent = $this->isUrgent($reason);
+        $dueAt = $this->dueAt($urgent);
 
-        return $pendingIds->map(function (?int $userId) use ($conversation, $reason, $subject, $recipients, $body, $urgent): OwnerAlert {
+        return $pendingIds->map(function (?int $userId) use ($conversation, $reason, $subject, $recipients, $body, $urgent, $dueAt): OwnerAlert {
             $alert = OwnerAlert::query()->create([
                 'conversation_id' => $conversation->id,
                 'message_id' => $subject?->id,
                 'user_id' => $userId,
                 'reason' => $reason,
                 'urgent' => $urgent,
-                'due_at' => now(),
+                'due_at' => $dueAt,
                 'to_phone' => $userId === null ? null : trim((string) $recipients->firstWhere('id', $userId)?->phone),
                 'body' => $body,
             ]);
 
-            $this->sendOwnerAlert->handle($alert);
+            if ($dueAt->lessThanOrEqualTo(now())) {
+                $this->sendOwnerAlert->handle($alert);
+            }
 
             return $alert;
         })->values();
@@ -78,6 +86,30 @@ class RaiseOwnerAlert
         }
 
         return in_array($reason->value, $this->activeConfig->sendingRules()['owner_alert']['right_away'], true);
+    }
+
+    /**
+     * When the alert should go out: now for an urgent alert, while the shop is open, or when
+     * the owner wants after-hours alerts right away; otherwise the next opening (D-20). A folder
+     * that never opens has no next opening, and the alert then goes out now rather than never.
+     * The opening is converted to the app's time zone because a date is stored as its own wall
+     * clock, so a Chicago 8 am would otherwise be saved as 8 am UTC.
+     */
+    private function dueAt(bool $urgent): CarbonInterface
+    {
+        $now = now();
+
+        if ($urgent || $this->businessClock->isOpenAt($now)) {
+            return $now;
+        }
+
+        if ($this->activeConfig->sendingRules()['owner_alert']['after_hours'] === 'right_away') {
+            return $now;
+        }
+
+        $opening = $this->businessClock->nextOpening($now);
+
+        return $opening === null ? $now : $opening->setTimezone(config('app.timezone'));
     }
 
     private function alreadyRaised(Conversation $conversation, AlertReason $reason, ?Message $subject, ?int $userId): bool
