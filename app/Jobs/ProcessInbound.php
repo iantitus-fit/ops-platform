@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Actions\ClaimInboundBurst;
+use App\Enums\MessageChannel;
+use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\DebounceFor;
@@ -38,14 +40,25 @@ class ProcessInbound implements ShouldQueue
      * Execute the job.
      *
      * The first step claims every unhandled inbound customer message in the conversation. A run
-     * that finds nothing to claim has nothing to answer and stops.
+     * that finds nothing to claim has nothing to answer and stops. So does a burst with no text
+     * from the customer: the agent only answers a number that has texted the business, so web
+     * form leads are claimed and then stop here, and reach the owner through the dashboard and
+     * open-leads.md (D-41).
+     *
+     * @return bool true when the burst holds a text from the customer and goes on to the front desk
      */
-    public function handle(ClaimInboundBurst $claimInboundBurst): void
+    public function handle(ClaimInboundBurst $claimInboundBurst): bool
     {
         $burst = $claimInboundBurst->handle($this->conversationId);
 
         if ($burst->isEmpty()) {
-            return;
+            return false;
         }
+
+        if (! $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms)) {
+            return false;
+        }
+
+        return true;
     }
 }

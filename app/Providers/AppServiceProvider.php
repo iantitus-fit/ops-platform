@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -55,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
      * of class names, and refuses any model that is not listed.
      *
      * The "leads" rate limiter allows each IP address 10 lead form posts a minute.
+     *
+     * In local development `composer run dev` also runs the scheduler (schedule:work), so the
+     * sweep for undispatched texts fires without a cron line.
      */
     public function boot(): void
     {
@@ -66,5 +70,9 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
+        if ($this->app->isLocal()) {
+            DevCommands::artisan('schedule:work', 'schedule');
+        }
     }
 }

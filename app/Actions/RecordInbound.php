@@ -80,7 +80,7 @@ class RecordInbound
         [$leadSource, $sourceNotes] = $this->lookUpLeadSource($data->source);
         $costCents = $leadSource['cost_cents_per_lead'] ?? null;
 
-        [$contact, $contactNotes] = $this->matchOrCreateContact($data, $costCents);
+        [$contact, $contactNotes, $matchedBy] = $this->matchOrCreateContact($data, $costCents);
         $notes = [...$sourceNotes, ...$contactNotes];
         $conversation = $this->openConversationFor($contact);
 
@@ -92,7 +92,9 @@ class RecordInbound
             'status' => MessageStatus::Received,
             'provider' => $data->provider,
             'provider_message_id' => $data->providerMessageId,
-            'meta' => $data->meta,
+            'meta' => $data->channel === MessageChannel::Web
+                ? [...$data->meta, 'matched_by' => $matchedBy]
+                : $data->meta,
         ]);
         $message->setRelation('conversation', $conversation);
 
@@ -144,7 +146,8 @@ class RecordInbound
      * already owns, so two contacts never share one. The first-touch source and cost are
      * set only when the contact is created.
      *
-     * @return array{Contact, list<string>} the contact and the note summaries to put on the timeline
+     * @return array{Contact, list<string>, string} the contact, the note summaries to put on the
+     *                                              timeline, and how the contact was found: phone, email or new
      */
     private function matchOrCreateContact(InboundData $data, ?int $costCents): array
     {
@@ -176,7 +179,7 @@ class RecordInbound
                 'acquisition_cost_cents' => $costCents,
             ]);
 
-            return [$contact, $notes];
+            return [$contact, $notes, 'new'];
         }
 
         if ($matchedByEmail && $phone !== null) {
@@ -201,7 +204,7 @@ class RecordInbound
 
         $contact->save();
 
-        return [$contact, $notes];
+        return [$contact, $notes, $matchedByEmail ? 'email' : 'phone'];
     }
 
     /**
