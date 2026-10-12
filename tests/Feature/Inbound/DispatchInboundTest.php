@@ -1,0 +1,171 @@
+<?php
+
+use App\Actions\ClaimInboundBurst;
+use App\Actions\DispatchInbound;
+use App\Jobs\ProcessInbound;
+use App\Models\Conversation;
+use App\Models\Message;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Queue\Attributes\DebounceFor;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
+
+/**
+ * One conversation holding the given number of inbound customer texts, none yet dispatched or handled.
+ *
+ * @return array{Conversation, list<Message>}
+ */
+function dispatchTestConversationWithTexts(int $count): array
+{
+    $conversation = Conversation::factory()->create();
+    $messages = [];
+
+    for ($index = 0; $index < $count; $index++) {
+        $messages[] = Message::factory()->for($conversation)->create(['body' => "text {$index}"]);
+    }
+
+    return [$conversation, $messages];
+}
+
+it('queues the debounced job once for a text that comes in through the fake webhook and marks it dispatched', function () {
+    Queue::fake();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    $message = Message::sole();
+
+    expect($message->dispatched_at)->not->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, 1);
+    Queue::assertPushed(
+        ProcessInbound::class,
+        fn (ProcessInbound $job) => $job->messageId === $message->id && $job->conversationId === $message->conversation_id,
+    );
+});
+
+it('queues nothing more when the provider retries a text it already delivered', function () {
+    Queue::fake();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    expect(Message::count())->toBe(1);
+
+    Queue::assertPushed(ProcessInbound::class, 1);
+});
+
+it('queues a recorded text that was never queued when the provider retries it (WR-02)', function () {
+    Queue::fake();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+    Queue::assertPushed(ProcessInbound::class, 1);
+
+    // The process died after the commit and before the queue push: the row exists, undispatched.
+    Message::sole()->update(['dispatched_at' => null]);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    expect(Message::count())->toBe(1)
+        ->and(Message::sole()->dispatched_at)->not->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, 2);
+});
+
+it('claims a message once: the second call returns false and queues nothing more', function () {
+    Queue::fake();
+    [, $messages] = dispatchTestConversationWithTexts(1);
+
+    $dispatchInbound = app(DispatchInbound::class);
+
+    expect($dispatchInbound->handle($messages[0]))->toBeTrue()
+        ->and($dispatchInbound->handle($messages[0]->fresh()))->toBeFalse()
+        ->and($messages[0]->fresh()->dispatched_at)->not->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, 1);
+});
+
+it('does not queue an outbound or an owner message', function () {
+    Queue::fake();
+    $conversation = Conversation::factory()->create();
+    $agentReply = Message::factory()->for($conversation)->outbound()->create();
+    $ownerReply = Message::factory()->for($conversation)->fromOwner()->create();
+
+    $dispatchInbound = app(DispatchInbound::class);
+
+    expect($dispatchInbound->handle($agentReply))->toBeFalse()
+        ->and($dispatchInbound->handle($ownerReply))->toBeFalse()
+        ->and($agentReply->fresh()->dispatched_at)->toBeNull()
+        ->and($ownerReply->fresh()->dispatched_at)->toBeNull();
+
+    Queue::assertNothingPushed();
+});
+
+it('waits 20 seconds and debounces by conversation so a burst is answered together', function () {
+    Queue::fake();
+    [$conversation, $messages] = dispatchTestConversationWithTexts(1);
+
+    app(DispatchInbound::class)->handle($messages[0]);
+
+    Queue::assertPushed(
+        ProcessInbound::class,
+        fn (ProcessInbound $job) => $job->delay === 20 && $job->debounceId() === (string) $conversation->id,
+    );
+
+    $attribute = (new ReflectionClass(ProcessInbound::class))->getAttributes(DebounceFor::class)[0]->newInstance();
+
+    expect($attribute->debounceFor)->toBe(20)
+        ->and($attribute->maxWait)->toBe(90)
+        ->and(new ProcessInbound(1, 1))->not->toBeInstanceOf(ShouldBeUnique::class);
+});
+
+it('claims every unhandled text in the conversation on the first run and nothing on the second', function () {
+    [$conversation, $messages] = dispatchTestConversationWithTexts(3);
+    $job = new ProcessInbound($messages[2]->id, $conversation->id);
+
+    app()->call([$job, 'handle']);
+
+    expect(Message::query()->whereNull('handled_at')->count())->toBe(0);
+
+    $handledAt = $messages[0]->fresh()->handled_at;
+
+    Carbon::setTestNow(now()->addMinute());
+    app()->call([$job, 'handle']);
+    Carbon::setTestNow();
+
+    expect($messages[0]->fresh()->handled_at->equalTo($handledAt))->toBeTrue()
+        ->and(app(ClaimInboundBurst::class)->handle($conversation->id))->toBeEmpty();
+});
+
+it('hands back the claimed burst oldest first and leaves other conversations, replies and handled texts alone', function () {
+    [$conversation, $messages] = dispatchTestConversationWithTexts(3);
+    $messages[0]->update(['handled_at' => now()->subMinute()]);
+    $agentReply = Message::factory()->for($conversation)->outbound()->create();
+    [, $otherMessages] = dispatchTestConversationWithTexts(1);
+
+    $claimed = app(ClaimInboundBurst::class)->handle($conversation->id);
+
+    expect($claimed->pluck('id')->all())->toBe([$messages[1]->id, $messages[2]->id])
+        ->and($agentReply->fresh()->handled_at)->toBeNull()
+        ->and($otherMessages[0]->fresh()->handled_at)->toBeNull();
+});
+
+it('backfills dispatched_at and handled_at to created_at for messages from before this phase', function () {
+    $createdAt = Carbon::parse('2026-10-01 09:30:00');
+    [, $messages] = dispatchTestConversationWithTexts(2);
+    Message::query()->update(['created_at' => $createdAt, 'dispatched_at' => null, 'handled_at' => null]);
+    $alreadyDispatched = Message::factory()->for($messages[0]->conversation)->create([
+        'dispatched_at' => Carbon::parse('2026-10-02 10:00:00'),
+        'handled_at' => Carbon::parse('2026-10-02 10:00:20'),
+    ]);
+
+    $migration = require database_path('migrations/2026_10_12_000002_backfill_dispatch_columns_on_messages.php');
+    $migration->up();
+
+    foreach ($messages as $message) {
+        expect($message->fresh()->dispatched_at->equalTo($createdAt))->toBeTrue()
+            ->and($message->fresh()->handled_at->equalTo($createdAt))->toBeTrue();
+    }
+
+    expect($alreadyDispatched->fresh()->dispatched_at->toDateTimeString())->toBe('2026-10-02 10:00:00')
+        ->and($alreadyDispatched->fresh()->handled_at->toDateTimeString())->toBe('2026-10-02 10:00:20');
+});

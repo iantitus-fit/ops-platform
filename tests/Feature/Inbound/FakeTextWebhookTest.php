@@ -117,7 +117,8 @@ it('records a retried webhook once and queues nothing the second time', function
     $this->post(route('webhooks.text.fake'), twilioText())->assertOk();
 
     expect(Message::count())->toBe(1)
-        ->and(Activity::count())->toBe(1);
+        ->and(Activity::count())->toBe(1)
+        ->and(Message::sole()->dispatched_at)->not->toBeNull();
 
     Queue::assertPushed(ProcessInbound::class, 1);
     Event::assertDispatchedTimes(CustomerRecordChanged::class, 1);
