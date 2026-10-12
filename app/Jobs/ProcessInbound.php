@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Actions\ClaimInboundBurst;
+use App\Actions\RunFrontDesk;
 use App\Enums\MessageChannel;
+use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -16,7 +18,7 @@ use Illuminate\Queue\Attributes\DebounceFor;
  * seconds after the last text in the conversation (at most 90 seconds from the first), so a
  * burst of texts is answered together. A debounced job cannot also be unique, and the debounce
  * token lives in the cache and can fail open, so the real guarantee is the database claim in
- * handle(). Plan 02-14 runs the front desk here, after the claim.
+ * handle(). The front desk runs here, after the claim.
  */
 #[DebounceFor(20, maxWait: 90)]
 class ProcessInbound implements ShouldQueue
@@ -45,9 +47,12 @@ class ProcessInbound implements ShouldQueue
      * form leads are claimed and then stop here, and reach the owner through the dashboard and
      * open-leads.md (D-41).
      *
-     * @return bool true when the burst holds a text from the customer and goes on to the front desk
+     * Until a first business folder is live there is no agent to ask, so the burst is claimed and left quietly
+     * (Pitfall 7) instead of failing the job.
+     *
+     * @return bool true when the burst holds a text from the customer and went on to the front desk
      */
-    public function handle(ClaimInboundBurst $claimInboundBurst): bool
+    public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk): bool
     {
         $burst = $claimInboundBurst->handle($this->conversationId);
 
@@ -57,6 +62,12 @@ class ProcessInbound implements ShouldQueue
 
         if (! $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms)) {
             return false;
+        }
+
+        try {
+            $runFrontDesk->handle($burst->first()->conversation, $burst);
+        } catch (NoActiveVersion) {
+            return true;
         }
 
         return true;

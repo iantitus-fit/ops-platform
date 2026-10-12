@@ -204,7 +204,7 @@ it('holds a reply that uses a phrase the voice file says never to use', function
 
 it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)', function () {
     frontDeskCustomerTexts();
-    $words = trim(str_repeat('Thanks for waiting on us. ', 70));
+    $words = trim(str_repeat('Thanks for waiting on us. ', 57));
     scriptFrontDeskReplies(['reply' => $words, 'label' => 'faq_answer']);
 
     runQueuedFrontDeskJobs();
