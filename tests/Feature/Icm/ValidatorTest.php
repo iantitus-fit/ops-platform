@@ -7,18 +7,6 @@ use App\Icm\FolderSync;
 use App\Models\IcmVersion;
 use Illuminate\Support\Facades\File;
 
-/**
- * The lines the sync rejected the folder with, read back from the stored rejected version.
- *
- * @return list<string>
- */
-function rejectedErrors(): array
-{
-    $rejected = IcmVersion::query()->where('status', VersionStatus::Rejected->value)->latest('id')->firstOrFail();
-
-    return $rejected->errors;
-}
-
 /*
 | Each row: file to change, text to find, text to put in its place, and the exact line the owner must see.
 */

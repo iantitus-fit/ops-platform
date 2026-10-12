@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SyncOutcome;
+use App\Enums\VersionStatus;
 use App\Icm\FolderSync;
 use App\Models\IcmVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -153,4 +154,16 @@ function fakeTextPayload(array $overrides = []): array
         'Body' => 'My AC is blowing warm air',
         'NumMedia' => '0',
     ], $overrides);
+}
+
+/**
+ * The lines the sync rejected the folder with, read back from the stored rejected version.
+ *
+ * @return list<string>
+ */
+function rejectedErrors(): array
+{
+    $rejected = IcmVersion::query()->where('status', VersionStatus::Rejected->value)->latest('id')->firstOrFail();
+
+    return $rejected->errors;
 }

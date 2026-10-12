@@ -139,3 +139,18 @@ it('shows a skipped later-sprint file as not supported yet', function () {
         ->callAction('syncNow')
         ->assertSee('Not supported yet: automations/follow-up.md');
 });
+
+it('names the live front desk and the models it falls back to', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Front desk: Front desk answers texts with anthropic claude-sonnet-5-5, then openai gpt-6.1-sol.');
+});
+
+it('says the front desk is off when no agent file answers texts', function () {
+    File::delete(icmPath('agents/front-desk.md'));
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Front desk: off. No agent file answers texts, so customer texts wait for you here.');
+});
