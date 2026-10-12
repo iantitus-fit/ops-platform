@@ -71,6 +71,12 @@ Requirement-level map from research. The planner assigns task IDs; execution fil
 | 02-01-T1, 02-01-T2, 02-28-T2 | 02-01, 02-28 | 1, 28 | INFRA-01 | T-02-01, T-02-02, T-02-03, T-02-55 | N/A | CI + local docker | full suite commands above (SQLite and the Postgres recipe) | ✅ | ✅ green |
 
 | 02-29-T1, 02-29-T3 | 02-29 | 22 | AGNT-02, GATE-01 (map of) | N/A | N/A | structural check | the plan's own verify block (citation check: every `path:line` in `map/` resolves) | ✅ | ✅ green |
+| 02-30-T1, 02-30-T2 | 02-30 | 1 (gap) | INFRA-01 | T-02-02, T-02-64, T-02-65 | Suite never reads TEXT_CHANNEL, TWILIO_* or JEV_* from `.env` or the shell; stays green under a production-shaped environment | feature (child Pest process) | `php artisan test --compact tests/Feature/Quality/TestSafetyNetTest.php`, plus the full suite with live-looking TWILIO_*/JEV_* exported | ✅ | ✅ green |
+| 02-31-T1, 02-31-T2 | 02-31 | 2 (gap) | GATE-01 | T-02-66, T-02-67 | Business Folder, Sync Now and owner alerts work with a Phase 1 free-text `owner_alert`; unreadable setting alerts at once | feature | `php artisan test --compact tests/Feature/Alerts tests/Feature/Filament/BusinessFolderPageTest.php` | ✅ | ✅ green |
+| 02-31-T3 | 02-31 | 2 (gap) | AGNT-02 | T-02-68 | A failed queue push gives the dispatch claim back, so the sweep retries | feature | `php artisan test --compact tests/Feature/Inbound/DispatchInboundTest.php tests/Feature/Inbound/SweepUndispatchedTest.php` | ✅ | ✅ green |
+| 02-32-T1, 02-32-T2, 02-32-T3 | 02-32 | 3 (gap) | AGNT-04, AGNT-02 | T-02-69..T-02-72 | A claimed burst that throws, times out or has no sms agent reaches the owner; customer gets nothing; chain budget 150 s, retry_after 360 | feature | `php artisan test --compact tests/Feature/FrontDesk/FrontDeskFailureTest.php tests/Feature/FrontDesk/ProcessInboundTest.php tests/Feature/FrontDesk/AgentFallbackTest.php` and `php artisan config:show queue.connections.database.retry_after` | ✅ | ✅ green |
+| 02-33-T1, 02-33-T2, 02-33-T3 | 02-33 | 4 (gap) | GATE-02, GATE-01 | T-02-43, T-02-73..T-02-78 | A failed or stalled safety line still pauses and alerts; no holding reply for a danger; gas/fire phrasings caught, appliance leaks and "water heater" not; a dangerous web form alerts the owner | feature + unit | `php artisan test --compact tests/Feature/FrontDesk/LifeSafetyTest.php tests/Feature/FrontDesk/HoldingReplyTest.php tests/Unit/SendRule/LifeSafetyTest.php tests/Feature/Inbound/LeadFormTest.php` | ✅ | ✅ green |
+| 02-34-T1, 02-34-T2, 02-34-T3 | 02-34 | 5 (gap) | AGNT-02, AGNT-04, GATE-01, GATE-02 (map of) | T-02-79, T-02-80 | N/A | structural check | the plan's own verify block (whole-map citation check: 0 BAD) | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -97,6 +103,7 @@ Plan 02-01 covers the first two items, the CI workflow and the `exampleFolderFil
 | Live model reply through `/dev/chat` | AGNT-02 | Needs a provider key in `.env` | Set the key, text from `/dev/chat`, confirm a disclosed, signed reply |
 | First CI run on Postgres | INFRA-01 | No git remote; Ian pushes | Push the branch, confirm the workflow is green |
 | Live Twilio number | TXT-01 | Waits on A2P approval; does not gate this phase | After approval, text the test number |
+| A front desk run that outlives a real worker reaches the owner | AGNT-04 | The worker-kill timeout path cannot run inside the suite (02-32 backstop) | Run `php artisan queue:listen --tries=1 --timeout=0` with a stalled provider, confirm the `front_desk_failed` alert and timeline note |
 
 ---
 
