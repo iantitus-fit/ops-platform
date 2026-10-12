@@ -29,7 +29,7 @@ dataset('broken fields', [
     'service: slug with capitals and a space' => ['business/services/ac-repair.md', 'slug: ac-repair', 'slug: AC Repair', 'business/services/ac-repair.md: slug must use only lowercase letters, numbers, dashes or underscores (you wrote AC Repair)'],
     'service: the same intake key twice' => ['business/services/ac-repair.md', 'key: system_age', 'key: symptom', 'business/services/ac-repair.md: intake has more than one question with key symptom'],
     'voice: never_say deleted' => ['voice/how-we-talk.md', "never_say: [guaranteed, cheapest, no problem]\n", '', 'voice/how-we-talk.md: never_say is missing, and it is required'],
-    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert: Text the owner when a draft is waiting or a customer asks for a person\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
+    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap]\n  after_hours: next_opening\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
 ]);
 
 it('rejects a broken field with a sentence that names the file, the field and what was written', function (string $file, string $search, string $replace, string $line) {

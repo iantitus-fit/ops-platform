@@ -154,3 +154,32 @@ it('says the front desk is off when no agent file answers texts', function () {
     Livewire::test(BusinessFolder::class)
         ->assertSee('Front desk: off. No agent file answers texts, so customer texts wait for you here.');
 });
+
+it('lists what always waits for the owner: the checked phrases and the never_say list', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Always held for you')
+        ->assertSee('Price words')
+        ->assertSee('Discount phrases')
+        ->assertSee('discount')
+        ->assertSee('Promise phrases')
+        ->assertSee('guarantee')
+        ->assertSee('Never say')
+        ->assertSee('cheapest');
+});
+
+it('says nothing always waits yet while no version is live', function () {
+    Livewire::test(BusinessFolder::class)->assertDontSee('Always held for you');
+});
+
+it('escapes a never_say phrase the owner wrote when it is listed as always held', function () {
+    breakFile('voice/how-we-talk.md', fn (string $text) => str_replace('never_say: [guaranteed, cheapest, no problem]', 'never_say: [guaranteed, "<b>loud</b>"]', $text));
+    activateExampleFolder();
+
+    $page = Livewire::test(BusinessFolder::class);
+
+    expect($page->instance()->alwaysHeld()['Never say'])->toBe(['guaranteed', '<b>loud</b>']);
+
+    $page->assertSee('&lt;b&gt;loud&lt;/b&gt;', false)->assertDontSeeHtml('<b>loud</b>');
+});
