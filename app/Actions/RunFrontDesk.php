@@ -53,9 +53,11 @@ use Illuminate\Support\Str;
  * and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words are then
  * not stored or sent.
  *
- * This never throws for a front desk that cannot answer or cannot send: the customer's burst is already claimed,
- * so the owner is alerted instead (AGNT-04). A send the channel refused stays on the record as failed. A send
- * that was only refused, such as while the owner is sending to the same customer, becomes a draft.
+ * A front desk that cannot answer (every model failed, no agent for texts) or cannot send alerts the owner and
+ * returns, because the customer's burst is already claimed (AGNT-04). Anything else that goes wrong, such as a
+ * database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
+ * left silent. A send the channel refused stays on the record as failed. A send that was only refused, such as while
+ * the owner is sending to the same customer, becomes a draft.
  */
 class RunFrontDesk
 {
@@ -71,6 +73,7 @@ class RunFrontDesk
         private readonly SendFixedReply $sendFixedReply,
         private readonly PauseConversation $pauseConversation,
         private readonly SendLifeSafetyLine $sendLifeSafetyLine,
+        private readonly ReportFrontDeskFailure $reportFrontDeskFailure,
     ) {}
 
     /**
@@ -114,8 +117,7 @@ class RunFrontDesk
         try {
             $run = $this->runFrontDeskAgent->handle($agent, $conversation, $burst);
         } catch (FrontDeskUnavailable) {
-            $this->noteThatNoModelAnswered($conversation, $burst);
-            $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'Front desk could not answer');
+            $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'every model failed', 'Front desk could not answer');
 
             return;
         }
@@ -408,25 +410,5 @@ class RunFrontDesk
         $isComplaint = in_array($verdict->reasonCode, ['label:complaint', 'classifier:complaint', 'classifier_intent:complaint'], true);
 
         return $isComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting;
-    }
-
-    /**
-     * Leave a line on the timeline when every model in the agent file failed.
-     *
-     * @param  Collection<int, Message>  $burst
-     */
-    private function noteThatNoModelAnswered(Conversation $conversation, Collection $burst): void
-    {
-        $contact = $conversation->contact;
-
-        $contact->activities()->create([
-            'type' => ActivityType::Note,
-            'summary' => 'Front desk could not answer: every model failed',
-            'subject_type' => $burst->last()->getMorphClass(),
-            'subject_id' => $burst->last()->id,
-            'occurred_at' => now(),
-        ]);
-
-        CustomerRecordChanged::dispatch($contact->id);
     }
 }

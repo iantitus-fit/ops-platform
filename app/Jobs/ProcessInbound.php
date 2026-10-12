@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\ClaimInboundBurst;
+use App\Actions\ReportFrontDeskFailure;
 use App\Actions\RunFrontDesk;
 use App\Enums\MessageChannel;
 use App\Icm\Exceptions\NoActiveVersion;
@@ -10,6 +11,7 @@ use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\DebounceFor;
+use Throwable;
 
 /**
  * Handles the inbound customer texts of one conversation as a burst.
@@ -50,9 +52,13 @@ class ProcessInbound implements ShouldQueue
      * Until a first business folder is live there is no agent to ask, so the burst is claimed and left quietly
      * (Pitfall 7) instead of failing the job.
      *
+     * Anything else that goes wrong inside the front desk is logged and reported to the owner as a note and an
+     * alert in fixed words (CR-01, AGNT-04). The claim is not released: part of the run may already have texted the
+     * customer, and a second run could text them again.
+     *
      * @return bool true when the burst holds a text from the customer and went on to the front desk
      */
-    public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk): bool
+    public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk, ReportFrontDeskFailure $reportFrontDeskFailure): bool
     {
         $burst = $claimInboundBurst->handle($this->conversationId);
 
@@ -68,6 +74,10 @@ class ProcessInbound implements ShouldQueue
             $runFrontDesk->handle($burst->first()->conversation, $burst);
         } catch (NoActiveVersion) {
             return true;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $reportFrontDeskFailure->handle($burst->first()->conversation, $burst->last(), 'it stopped with an error', 'Front desk stopped with an error');
         }
 
         return true;
