@@ -81,7 +81,7 @@ class SendLifeSafetyLine
     {
         $conversation = $inbound->conversation;
 
-        if ($this->alreadyAnswered($conversation, $inbound)) {
+        if ($this->lineSentFor($inbound)) {
             $this->finishHandOff($conversation, $inbound);
 
             return null;
@@ -142,9 +142,9 @@ class SendLifeSafetyLine
     /**
      * Whether a safety line that reached, or is on its way to, the customer already lists this text as its trigger.
      */
-    private function alreadyAnswered(Conversation $conversation, Message $inbound): bool
+    public function lineSentFor(Message $inbound): bool
     {
-        return $conversation->messages()
+        return $inbound->conversation->messages()
             ->where('kind', MessageKind::LifeSafety)
             ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
             ->get()

@@ -347,6 +347,35 @@ it('pauses and alerts the owner when the safety job fails for good (WR-05)', fun
         ->and(lifeSafetyTextsToOwner())->toHaveCount(1);
 });
 
+it('says the safety message went out, and asks the owner to check the pause, when the job fails after the line was sent (WR-05)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+
+    $message = Message::factory()->create(['body' => 'I smell gas in the basement']);
+    Message::factory()->for($message->conversation)->outbound()->create([
+        'kind' => MessageKind::LifeSafety,
+        'meta' => ['in_reply_to' => [$message->id]],
+    ]);
+
+    (new RespondToLifeSafety($message->id, 'gas'))->failed(new RuntimeException('worker died'));
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($message->conversation->refresh()->isPaused())->toBeTrue()
+        ->and($alert->body)->toContain('Safety message sent, but check the conversation was paused')
+        ->and($alert->body)->not->toContain('could not be sent')
+        ->and($alert->urgent)->toBeTrue();
+});
+
+it('gives the safety job a time limit of its own, below the queue retry time (WR-05)', function () {
+    $job = new RespondToLifeSafety(1, 'gas');
+
+    expect($job->timeout)->toBe(120)
+        ->and($job->failOnTimeout)->toBeTrue()
+        ->and(config('queue.connections.database.retry_after'))->toBeGreaterThan($job->timeout)
+        ->and(config('queue.connections.redis.retry_after'))->toBeGreaterThan($job->timeout);
+});
+
 it('pauses and alerts the owner when the safety send fails with any error, not only a refusal', function () {
     $this->mock(OutboundSender::class, fn ($mock) => $mock->shouldReceive('send')->andThrow(new RuntimeException('database went away')));
 
