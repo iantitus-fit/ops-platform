@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Actions\InboundData;
 use App\Actions\RecordInbound;
 use App\Channels\InboundText;
+use App\Channels\TextKeywords;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Contact;
@@ -65,6 +66,7 @@ class DevChat extends Component
             to: $this->businessPhone($activeConfig),
             body: $this->body,
             numMedia: 0,
+            optOutType: TextKeywords::twilioOptOutType($this->body),
         );
 
         $recordInbound->handle(InboundData::fromText($inboundText));

@@ -43,6 +43,9 @@ use Illuminate\Support\Str;
  * While the assistant is paused in the conversation, the agent is not asked at all: the owner is alerted to the
  * customer's newest text instead, once per burst (D-24).
  *
+ * A customer who opted out of texts is never answered: the owner is alerted to the newest text so they can call, and
+ * the agent is not asked (D-40).
+ *
  * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
  * and alerts the owner (D-52), so two auto-responders cannot text each other all night. A customer who asks for a
  * person in words that cannot mean anything else is handed to the owner (D-23, D-47). The agent's own wants_person
@@ -75,6 +78,12 @@ class RunFrontDesk
     public function handle(Conversation $conversation, Collection $burst): void
     {
         $this->answerDanger($burst);
+
+        if ($conversation->contact->refresh()->isOptedOut()) {
+            $this->alertAboutOptedOutBurst($conversation, $burst);
+
+            return;
+        }
 
         if ($conversation->refresh()->isPaused()) {
             $this->alertAboutPausedBurst($conversation, $burst);
@@ -178,6 +187,22 @@ class RunFrontDesk
                 $this->sendLifeSafetyLine->handle($message, $hazard, 'keyword');
             }
         }
+    }
+
+    /**
+     * Tell the owner a customer who opted out of texts has written again, so they can call (D-40). Nothing is sent
+     * and the agent is not asked. A burst whose newest text already alerted the owner, such as a safety message that
+     * could not be sent to a number that opted out, is not alerted twice.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutOptedOutBurst(Conversation $conversation, Collection $burst): void
+    {
+        if (OwnerAlert::query()->where('message_id', $burst->last()->id)->exists()) {
+            return;
+        }
+
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::OptedOutMessage, $burst->last(), 'Opted out of texts, so call them');
     }
 
     /**

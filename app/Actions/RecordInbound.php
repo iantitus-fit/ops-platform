@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Channels\TextKeywords;
 use App\Enums\ActivityType;
 use App\Enums\ContactStatus;
 use App\Enums\ConversationStatus;
@@ -56,7 +57,7 @@ class RecordInbound
         }
 
         try {
-            $message = DB::transaction(fn (): Message => $this->record($data));
+            [$message, $keyword] = DB::transaction(fn (): array => $this->record($data));
         } catch (UniqueConstraintViolationException) {
             $existing = $this->alreadyRecorded($data);
 
@@ -69,10 +70,10 @@ class RecordInbound
 
             // Not a duplicate message: another request created the same contact first. Its
             // contact is committed now, so one more attempt matches it instead of creating.
-            $message = DB::transaction(fn (): Message => $this->record($data));
+            [$message, $keyword] = DB::transaction(fn (): array => $this->record($data));
         }
 
-        if ($this->isStopKeyword($data)) {
+        if ($keyword !== null) {
             // A keyword text is handled in full by record() and never reaches the front desk or the safety check (D-39).
             CustomerRecordChanged::dispatch($message->conversation->contact_id);
 
@@ -87,12 +88,17 @@ class RecordInbound
     }
 
     /**
-     * Whether the provider reported this text as the customer's STOP. The provider has already sent its own
-     * confirmation (D-39), so the app records the opt-out and says nothing.
+     * The keyword this text is, if any: stop, start or help (D-39). The provider has already sent its own confirmation,
+     * so the app records the effect and says nothing. Only a text can be a keyword, and YES counts only for a contact
+     * who is opted out (Pitfall 14).
      */
-    private function isStopKeyword(InboundData $data): bool
+    private function keywordIn(InboundData $data, Contact $contact): ?string
     {
-        return $data->channel === MessageChannel::Sms && ($data->meta['opt_out_type'] ?? null) === 'STOP';
+        if ($data->channel !== MessageChannel::Sms) {
+            return null;
+        }
+
+        return TextKeywords::actionFor($data->meta['opt_out_type'] ?? null, $data->body, $contact->isOptedOut());
     }
 
     /**
@@ -115,7 +121,10 @@ class RecordInbound
         RespondToLifeSafety::dispatch($message->id, $hazard)->afterCommit();
     }
 
-    private function record(InboundData $data): Message
+    /**
+     * @return array{Message, ?string} the stored message and the keyword it turned out to be
+     */
+    private function record(InboundData $data): array
     {
         $occurredAt = now();
         [$leadSource, $sourceNotes] = $this->lookUpLeadSource($data->source);
@@ -125,10 +134,10 @@ class RecordInbound
         $notes = [...$sourceNotes, ...$contactNotes];
         $conversation = $this->openConversationFor($contact);
 
-        $optsOut = $this->isStopKeyword($data);
+        $keyword = $this->keywordIn($data, $contact);
 
         $message = $conversation->messages()->create([
-            ...($optsOut ? ['dispatched_at' => $occurredAt, 'handled_at' => $occurredAt] : []),
+            ...($keyword !== null ? ['dispatched_at' => $occurredAt, 'handled_at' => $occurredAt] : []),
             'channel' => $data->channel,
             'direction' => MessageDirection::In,
             'author' => MessageAuthor::Customer,
@@ -162,20 +171,22 @@ class RecordInbound
             ]);
         }
 
-        if ($optsOut) {
-            $this->recordOptOut($contact, $message, $occurredAt);
-        }
+        match ($keyword) {
+            'stop' => $this->recordOptOut($contact, $message, $occurredAt),
+            'start' => $this->recordOptIn($contact, $message, $occurredAt),
+            default => null,
+        };
 
         $contact->update(['last_activity_at' => $occurredAt]);
         $conversation->update(['last_message_at' => $occurredAt]);
 
-        return $message;
+        return [$message, $keyword];
     }
 
     /**
      * Mark the contact as opted out and put it on the timeline (D-40). The first STOP sets the date and a later one
      * leaves it alone. The message was stored already dispatched and handled, so neither ProcessInbound nor the sweep
-     * will pick it up.
+     * will pick it up. START and the other keywords are stored the same way.
      */
     private function recordOptOut(Contact $contact, Message $message, Carbon $occurredAt): void
     {
@@ -188,6 +199,27 @@ class RecordInbound
         $contact->activities()->create([
             'type' => ActivityType::OptedOut,
             'summary' => 'Opted out by texting STOP',
+            'subject_type' => $message->getMorphClass(),
+            'subject_id' => $message->id,
+            'occurred_at' => $occurredAt,
+        ]);
+    }
+
+    /**
+     * Clear the contact's opt-out and put it on the timeline (D-40). A START from a contact who is not opted out
+     * changes nothing and writes nothing; the text is still kept as handled, because the carrier answers it.
+     */
+    private function recordOptIn(Contact $contact, Message $message, Carbon $occurredAt): void
+    {
+        if (! $contact->isOptedOut()) {
+            return;
+        }
+
+        $contact->sms_opted_out_at = null;
+
+        $contact->activities()->create([
+            'type' => ActivityType::OptedIn,
+            'summary' => 'Opted back in by texting START',
             'subject_type' => $message->getMorphClass(),
             'subject_id' => $message->id,
             'occurred_at' => $occurredAt,
