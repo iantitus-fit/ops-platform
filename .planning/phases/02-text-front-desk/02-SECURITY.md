@@ -126,7 +126,24 @@ created: "2026-10-12"
 | T-02-61 | Tampering (XSS) | Customer names, held reasons and message text in the home widgets and the restyled thread (02-23) | high | mitigate | Filament table columns escape by default; the view keeps escaped Blade echo only | closed |
 | T-02-62 | Repudiation (compliance) | The carrier's opt-out list ahead of ours, or the owner's own phone opted out of alerts (02-25) | medium | mitigate | RecipientOptedOut (21610) marks the contact opted out, stores the message failed and tells the owner; an alert to an opted-out owner phone is stored as failed with how to undo it (Pitfall 17) | closed |
 | T-02-63 | Spoofing | Forged or out-of-order status callback (02-27) | medium | mitigate | ValidateTwilioSignature:status against the configured status_callback_url; status only moves forward (queued < sent < delivered or failed); an unknown sid changes nothing | closed |
-| T-02-SC | Tampering | npm/pip/cargo installs (all 29 plans) | high | accept | No package is installed by this plan; composer.json is unchanged | closed (accepted) |
+| T-02-64 | Information disclosure | Feature tests reading TWILIO_* or JEV_API_KEY from .env (02-30) | medium | mitigate | Forced `<env>` and `<server>` lines set them to (null) (`phpunit.xml:33-50`); shared beforeEach nulls the config values (`tests/Pest.php:42-50`); `Http::preventStrayRequests()` still blocks any request (`:56`); child-process guard in `TestSafetyNetTest.php` | closed |
+| T-02-65 | Repudiation | Suite red under a production-shaped environment hides failures (02-30) | medium | mitigate | `channels.text.driver` pinned to fake in both layers (`phpunit.xml:33,42`, `tests/Pest.php:42`); full suite green with live-looking values exported | closed |
+| T-02-66 | Denial of service | Business Folder and Sync Now with a Phase 1 version live (02-31) | high | mitigate | `is_array` guard, non-array counts as text (`BusinessFolder.php:139`); page tests in `BusinessFolderPageTest.php` | closed |
+| T-02-67 | Repudiation | Alert raised under an unreadable owner_alert crashes or waits (02-31) | high | mitigate | `ownerAlertSetting()` returns null for non-array or no live version; null means urgent and due now (`RaiseOwnerAlert.php:92,117,133`); `OwnerAlertTimingTest.php` | closed |
+| T-02-68 | Repudiation | Failed push keeps dispatched_at, text never retried (02-31) | medium | mitigate | try/catch releases the claim and rethrows (`DispatchInbound.php:43-48`); `DispatchInboundTest.php` | closed |
+| T-02-69 | Repudiation | Claimed burst unanswered and un-alerted after an exception or timeout (02-32) | high | mitigate | `catch (Throwable)` around the run, `tries 1`, `timeout 300`, `failOnTimeout`, `failed()` (`ProcessInbound.php:40,45,50,103`), all through `ReportFrontDeskFailure` once per text; `FrontDeskFailureTest.php` | closed |
+| T-02-70 | Tampering | Two workers run one burst because retry_after is below the run time (02-32) | medium | mitigate | `retry_after` 360 for database and redis (`config/queue.php:44,72`); chain budget 150 s (`config/gate.php:90`, `RunFrontDeskAgent.php:87`) | closed |
+| T-02-71 | Repudiation | Live folder with no sms agent drops texts silently (02-32) | medium | mitigate | No-agent path reports to the owner (`RunFrontDesk.php:114`); `FrontDeskFailureTest.php` | closed |
+| T-02-72 | Information disclosure | Exception text copied into an owner alert or the timeline (02-32) | medium | mitigate | Only fixed wording reaches `ReportFrontDeskFailure` (`ReportFrontDeskFailure.php:46`); `report()` sends the exception to the log only (`ProcessInbound.php:104`); crash test asserts the alert holds no exception text | closed |
+| T-02-73 | Repudiation | Safety line failed, timed out on its lock, or its job failed for good, with no alert (02-33) | critical | mitigate | Send wrapped in a Throwable catch, pause and alert on `LockTimeoutException` (`SendLifeSafetyLine.php:61-62`), `failed()` pauses and alerts (`RespondToLifeSafety.php:56`); four tests in `LifeSafetyTest.php` | closed |
+| T-02-74 | Tampering | Generic holding reply sent to someone describing a danger (02-33) | high | mitigate | Holding reply skipped when the verdict found a danger (`RunFrontDesk.php:373`); `HoldingReplyTest.php` / `LifeSafetyTest.php` | closed |
+| T-02-75 | Repudiation | Common danger phrasings missed by the code layer (02-33) | high | mitigate | Six gas and four fire phrases added to `LifeSafety.php`; a unit row per phrase in `tests/Unit/SendRule/LifeSafetyTest.php` | closed |
+| T-02-76 | Denial of service | Ordinary appliance and panel leaks told to call 911 and paused (02-33) | medium | mitigate | Bare appliance(s) and panel removed from `ELECTRICAL_WORDS` (`LifeSafety.php:97`); "water heater" stripped before the water check (`:106,169`); no-hazard unit rows | closed |
+| T-02-77 | Repudiation | Web form describing a danger alerts no one (02-33) | high | mitigate | Urgent life_safety alert per dangerous form message before the form-only stop (`ProcessInbound.php:93,122-126`); no text to the lead; three tests | closed |
+| T-02-78 | Spoofing | Forged danger forms page the owner after hours (02-33) | low | accept | `/leads` limited to 10 posts a minute per IP (`AppServiceProvider.php:83`, `routes/web.php:31`); one alert per form message; deploy-time hardening tracked with WR-15 and T-01-37 | closed (accepted) |
+| T-02-79 | Tampering | Stale map citation sends a reader to the wrong line (02-34) | medium | mitigate | Every citation re-pointed at 04f95e7; whole-map citation check resolves every `path:line` (162 ok, 0 bad at audit) | closed |
+| T-02-80 | Repudiation | A card claims an alert the code does not raise (02-34) | low | mitigate | Each new behaviour clause cites its line; only `map/` edited, "the source wins over any card" | closed |
+| T-02-SC | Tampering | npm/pip/cargo installs (all 34 plans) | high | accept | No package is installed by this plan; composer.json is unchanged | closed (accepted) |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
 *Severity: critical > high > medium > low — only open threats at or above workflow.security_block_on count toward threats_open*
@@ -144,6 +161,7 @@ created: "2026-10-12"
 | AR-02-02 | T-02-20 | Alerts quote customer text to the owner's phone. The owner is the data controller; quotes are cut to 120 and 160 characters and cleaned first (`OwnerAlertText.php:31,36,86-103`). | Plan 02-10 threat model | 2026-10-12 |
 | AR-02-03 | T-02-40 | A customer text can fake a request for a person. A false handoff costs the owner one tap: it only alerts and pauses (`RunFrontDesk.php:252-257`). | Plan 02-20 threat model | 2026-10-12 |
 | AR-02-04 | T-02-SC | No plan installs a package. Verified: `git log main..HEAD -- composer.json composer.lock package.json package-lock.json` is empty. | All 29 plans; verified by audit | 2026-10-12 |
+| AR-02-05 | T-02-78 | Anyone can post a form describing a danger and page the owner. Same exposure as a text describing danger; `/leads` is rate limited to 10 a minute per IP (`AppServiceProvider.php:83`). Deploy-time hardening is tracked with WR-15 and T-01-37. | Plan 02-33 threat model | 2026-10-12 |
 | TR-02-01 | T-02-24 (transfer) | Customer text sent to the model providers named in `agents/*.md` and to TypeSafe's Jev via OpenRouter is governed by their data terms. The provider-terms and zero-retention checks are a go-live item in `docs/sprints/sprint-1.md:71-77` (D-37) and have not been run yet. | D-37 | 2026-10-12 |
 
 *Accepted risks do not resurface in future audit runs.*
@@ -170,4 +188,12 @@ created: "2026-10-12"
 |---|---|
 | Threats found | 92 |
 | Closed | 92 |
+| Open | 0 |
+
+## Security Audit 2026-10-12
+
+| Metric | Count |
+|---|---|
+| Threats found | 109 |
+| Closed | 109 |
 | Open | 0 |
