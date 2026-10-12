@@ -6,6 +6,7 @@ use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Jobs\ProcessInbound;
 use App\Models\Message;
+use Throwable;
 
 class DispatchInbound
 {
@@ -16,6 +17,11 @@ class DispatchInbound
      * sweep can never queue a message twice (D-42). The claim is one conditional update: it
      * changes the row only while dispatched_at is still empty, and only the caller whose
      * update changed a row goes on to queue the job.
+     *
+     * A push that fails gives the claim back: dispatched_at goes back to null and the exception
+     * is rethrown, so the provider's retry (RecordInbound's already-recorded path) or the sweep
+     * queues the text later (WR-02). The job is still dispatched through ProcessInbound::dispatch(),
+     * so the debounce still applies.
      *
      * @return bool true when this call claimed the message and queued the job
      */
@@ -34,7 +40,13 @@ class DispatchInbound
             return false;
         }
 
-        ProcessInbound::dispatch($message->id, $message->conversation_id)->afterCommit();
+        try {
+            ProcessInbound::dispatch($message->id, $message->conversation_id)->afterCommit();
+        } catch (Throwable $exception) {
+            Message::query()->whereKey($message->id)->update(['dispatched_at' => null]);
+
+            throw $exception;
+        }
 
         return true;
     }
