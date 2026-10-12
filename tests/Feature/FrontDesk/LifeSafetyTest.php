@@ -385,3 +385,71 @@ it('sends no holding reply when the classifier found a danger and the safety lin
         ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0)
         ->and(lifeSafetyTextsToCustomer())->toBeEmpty();
 });
+
+/**
+ * A web form posted to POST /leads by the example customer, with a message of the test's choosing.
+ */
+function lifeSafetyFormPosts(string $message): void
+{
+    test()->postJson(route('leads.store'), [
+        'name' => 'Dana Whitfield',
+        'phone' => '(202) 555-0123',
+        'email' => 'dana@example.com',
+        'message' => $message,
+        'source' => 'angi',
+    ])->assertOk();
+}
+
+it('alerts the owner at once, and texts the lead nothing, when a web form describes a danger (WR-07, D-41)', function () {
+    activateExampleFolder();
+    test()->travelTo(Carbon::parse('2026-10-13 21:00', 'America/Chicago'));
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    scriptFrontDeskReplies(['reply' => 'unused']);
+
+    lifeSafetyFormPosts('I smell gas in the basement');
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    FrontDeskAgent::assertNeverPrompted();
+
+    expect($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($alert->body)->toContain('Web form describes a danger')
+        ->and(lifeSafetyTextsToOwner())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer())->toBeEmpty()
+        ->and(Message::query()->where('direction', 'out')->count())->toBe(0);
+});
+
+it('alerts no one for a web form with no danger', function () {
+    activateExampleFolder();
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    scriptFrontDeskReplies(['reply' => 'unused']);
+
+    lifeSafetyFormPosts('Need AC looked at this week');
+    runQueuedFrontDeskJobs();
+
+    expect(OwnerAlert::query()->count())->toBe(0)
+        ->and(textsSentToCustomers())->toBeEmpty();
+});
+
+it('alerts for a dangerous form that shares a burst with a customer text, and still answers the text', function () {
+    test()->travelTo(Carbon::parse('2026-10-13 10:00', 'America/Chicago'));
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+
+    frontDeskCustomerTexts('My AC is blowing warm air');
+    lifeSafetyFormPosts('I smell gas in the basement');
+    runQueuedFrontDeskJobs();
+
+    $form = Message::query()->where('channel', MessageChannel::Web->value)->sole();
+    $alert = OwnerAlert::query()->where('reason', AlertReason::LifeSafety->value)->sole();
+
+    FrontDeskAgent::assertPromptedTimes(1);
+
+    expect($alert->message_id)->toBe($form->id)
+        ->and($alert->body)->toContain('Web form describes a danger')
+        ->and(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(composedFirstReply('What is the system doing?'));
+});
