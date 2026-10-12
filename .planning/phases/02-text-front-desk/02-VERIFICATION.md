@@ -1,111 +1,43 @@
 ---
 phase: 02-text-front-desk
-verified: 2026-10-12T14:30:00Z
-status: gaps_found
-score: 5/5 roadmap success criteria verified (all 10 requirement IDs satisfied); 0 behavior-unverified
-covered_files: [".github/workflows/tests.yml", "app/Actions/OutboundSender.php", "app/Actions/RunFrontDesk.php", "app/Ai/RunFrontDeskAgent.php", "app/Channels/TwilioTextChannel.php", "app/Filament/Pages/BusinessFolder.php", "app/Jobs/ProcessInbound.php", "app/SendRule/CodeChecks.php", "app/SendRule/DecideSendOrDraft.php", "resources/views/livewire/conversation-thread.blade.php", "tests/Feature/FrontDesk/GateTest.php", "tests/Feature/Inbound/OptOutTest.php"]
-covered_digest: "v3:sha256:d72aaa80d0d7889c413b1c156b935c98bcc0213e47750aeff5752fd2bbe52b4b"
+verified: 2026-10-12T20:30:00Z
+status: human_needed
+score: 5/5 roadmap success criteria verified; 8/8 prior gaps closed; 0 behavior-unverified
+covered_files: [".planning/phases/02-text-front-desk/02-01-PLAN.md", ".planning/phases/02-text-front-desk/02-01-SUMMARY.md", ".planning/phases/02-text-front-desk/02-02-PLAN.md", ".planning/phases/02-text-front-desk/02-02-SUMMARY.md", ".planning/phases/02-text-front-desk/02-03-PLAN.md", ".planning/phases/02-text-front-desk/02-03-SUMMARY.md", ".planning/phases/02-text-front-desk/02-04-PLAN.md", ".planning/phases/02-text-front-desk/02-04-SUMMARY.md", ".planning/phases/02-text-front-desk/02-05-PLAN.md", ".planning/phases/02-text-front-desk/02-05-SUMMARY.md", ".planning/phases/02-text-front-desk/02-06-PLAN.md", ".planning/phases/02-text-front-desk/02-06-SUMMARY.md", ".planning/phases/02-text-front-desk/02-07-PLAN.md", ".planning/phases/02-text-front-desk/02-07-SUMMARY.md", ".planning/phases/02-text-front-desk/02-08-PLAN.md", ".planning/phases/02-text-front-desk/02-08-SUMMARY.md", ".planning/phases/02-text-front-desk/02-09-PLAN.md", ".planning/phases/02-text-front-desk/02-09-SUMMARY.md", ".planning/phases/02-text-front-desk/02-10-PLAN.md", ".planning/phases/02-text-front-desk/02-10-SUMMARY.md", ".planning/phases/02-text-front-desk/02-11-PLAN.md", ".planning/phases/02-text-front-desk/02-11-SUMMARY.md", ".planning/phases/02-text-front-desk/02-12-PLAN.md", ".planning/phases/02-text-front-desk/02-12-SUMMARY.md", ".planning/phases/02-text-front-desk/02-13-PLAN.md", ".planning/phases/02-text-front-desk/02-13-SUMMARY.md", ".planning/phases/02-text-front-desk/02-14-PLAN.md", ".planning/phases/02-text-front-desk/02-14-SUMMARY.md", ".planning/phases/02-text-front-desk/02-15-PLAN.md", ".planning/phases/02-text-front-desk/02-15-SUMMARY.md", ".planning/phases/02-text-front-desk/02-16-PLAN.md", ".planning/phases/02-text-front-desk/02-16-SUMMARY.md", ".planning/phases/02-text-front-desk/02-17-PLAN.md", ".planning/phases/02-text-front-desk/02-17-SUMMARY.md", ".planning/phases/02-text-front-desk/02-18-PLAN.md", ".planning/phases/02-text-front-desk/02-18-SUMMARY.md", ".planning/phases/02-text-front-desk/02-19-PLAN.md", ".planning/phases/02-text-front-desk/02-19-SUMMARY.md", ".planning/phases/02-text-front-desk/02-20-PLAN.md", ".planning/phases/02-text-front-desk/02-20-SUMMARY.md", ".planning/phases/02-text-front-desk/02-21-PLAN.md", ".planning/phases/02-text-front-desk/02-21-SUMMARY.md", ".planning/phases/02-text-front-desk/02-22-PLAN.md", ".planning/phases/02-text-front-desk/02-22-SUMMARY.md", ".planning/phases/02-text-front-desk/02-23-PLAN.md", ".planning/phases/02-text-front-desk/02-23-SUMMARY.md", ".planning/phases/02-text-front-desk/02-24-PLAN.md", ".planning/phases/02-text-front-desk/02-24-SUMMARY.md", ".planning/phases/02-text-front-desk/02-25-PLAN.md", ".planning/phases/02-text-front-desk/02-25-SUMMARY.md", ".planning/phases/02-text-front-desk/02-26-PLAN.md", ".planning/phases/02-text-front-desk/02-26-SUMMARY.md", ".planning/phases/02-text-front-desk/02-27-PLAN.md", ".planning/phases/02-text-front-desk/02-27-SUMMARY.md", ".planning/phases/02-text-front-desk/02-28-PLAN.md", ".planning/phases/02-text-front-desk/02-28-SUMMARY.md", ".planning/phases/02-text-front-desk/02-29-PLAN.md", ".planning/phases/02-text-front-desk/02-29-SUMMARY.md", ".planning/phases/02-text-front-desk/02-30-PLAN.md", ".planning/phases/02-text-front-desk/02-30-SUMMARY.md", ".planning/phases/02-text-front-desk/02-31-PLAN.md", ".planning/phases/02-text-front-desk/02-31-SUMMARY.md", ".planning/phases/02-text-front-desk/02-32-PLAN.md", ".planning/phases/02-text-front-desk/02-32-SUMMARY.md", ".planning/phases/02-text-front-desk/02-33-PLAN.md", ".planning/phases/02-text-front-desk/02-33-SUMMARY.md", ".planning/phases/02-text-front-desk/02-34-PLAN.md", ".planning/phases/02-text-front-desk/02-34-SUMMARY.md", "app/Actions/DispatchInbound.php", "app/Actions/RaiseOwnerAlert.php", "app/Actions/ReportFrontDeskFailure.php", "app/Actions/RunFrontDesk.php", "app/Actions/SendLifeSafetyLine.php", "app/Ai/RunFrontDeskAgent.php", "app/Filament/Pages/BusinessFolder.php", "app/Jobs/ProcessInbound.php", "app/Jobs/RespondToLifeSafety.php", "app/SendRule/LifeSafety.php", "config/gate.php", "config/queue.php", "phpunit.xml", "tests/Feature/FrontDesk/FrontDeskFailureTest.php", "tests/Feature/FrontDesk/LifeSafetyTest.php", "tests/Feature/Quality/TestSafetyNetTest.php", "tests/Pest.php"]
+covered_digest: "v3:sha256:8b1785a06ca78df1eb55c159736afa524a342190adc93716997dd0c2f00e2485"
 behavior_unverified: 0
 overrides_applied: 0
+re_verification:
+  previous_status: gaps_found
+  previous_score: "5/5 roadmap criteria; 8 gaps open (CR-01, CR-02, WR-01, WR-02, WR-05, WR-06, WR-07, WR-16)"
+  gaps_closed:
+    - "CR-01: a claimed text is answered or reaches the owner when the run throws or the worker times out"
+    - "CR-02: Business Folder page and Sync Now load while a Phase 1 version is live"
+    - "WR-01: a live folder with no sms agent alerts the owner"
+    - "WR-02: a failed queue push releases the dispatch claim"
+    - "WR-05: life-safety send failures, lock timeouts and job failure pause and alert; no holding reply after a classifier danger"
+    - "WR-06: gas and fire phrasings added as phrases; appliance and panel over-trigger removed"
+    - "WR-07: a web form describing a danger alerts the owner, no text sent to the lead"
+    - "WR-16: the suite is pinned to the fake driver and null keys regardless of .env"
+  gaps_remaining: []
+  regressions: []
 warnings_recommended_before_live_traffic:
-  - id: CR-01
-    summary: "A claimed burst is lost with no owner alert when the front desk run throws (anything other than FrontDeskUnavailable or NoActiveVersion) or the worker times out"
+  - id: "REVIEW CR-01 (new)"
+    summary: "SendLifeSafetyLine::alreadyAnswered() short-circuits before the pause and the owner alert. If the process dies or PauseConversation/RaiseOwnerAlert throws after the line was sent, a retry (RespondToLifeSafety $tries 3, or RunFrontDesk's second look) returns null and never pauses or alerts. The customer did get the line; the conversation is not paused and the owner is not told."
     confirmed_in_code: true
     defeats_must_have: false
-  - id: CR-02
-    summary: "Business Folder page 500s while a Phase 1 version is live (owner_alert is a string); true in the local dev database right now (v1, 8 files)"
+  - id: "REVIEW WR-01 (new)"
+    summary: "The keyword net still misses 'I am smelling gas', 'I smelled gas', 'gas is hissing', 'something is burning', 'smells burning', 'electrocuted' (run in this verification: hazardIn returns null for all). Jev is the only backstop for these."
     confirmed_in_code: true
     defeats_must_have: false
-gaps_source: "Ian's ruling 2026-10-12: CR-01, CR-02, WR-01, WR-02, WR-05, WR-06, WR-07 and WR-16 from 02-REVIEW.md are fixed before UAT, as gap closure"
-gaps:
-  - truth: "A customer text that the front desk claims is either answered or reaches the owner; a run that throws or outlives the worker never leaves it claimed and silent (AGNT-04, phase goal)"
-    status: failed
-    reason: "CR-01: ProcessInbound claims the burst (handled_at) before RunFrontDesk runs; any throwable other than NoActiveVersion/FrontDeskUnavailable/sender DomainException, or a worker timeout, leaves the texts claimed, unanswered and un-alerted, and neither a retry nor the sweep can find them"
-    artifacts:
-      - path: "app/Jobs/ProcessInbound.php"
-        issue: "No $timeout, $tries or failed(); claim happens before the run and is never released"
-      - path: "app/Actions/RunFrontDesk.php"
-        issue: "Docblock says it never throws; only FrontDeskUnavailable and sender DomainException are caught"
-      - path: "app/Ai/RunFrontDeskAgent.php"
-        issue: "40 s per provider x chain + 8 s Jev can exceed the default 60 s worker timeout"
-    missing:
-      - "Job $timeout above the worst-case provider chain plus Jev, and queue retry_after above the job timeout"
-      - "A failed() hook (or a catch Throwable around RunFrontDesk) that releases the claim or raises a FrontDeskFailed owner alert for the burst's last text, with a timeline note"
-      - "Tests: an unexpected exception inside the run alerts the owner and leaves no claimed-but-silent text; the timeout values are pinned"
-  - truth: "The Business Folder page and Sync Now load while a Phase 1 folder version is still live, so the owner can sync forward from the dashboard (DASH-02 regression)"
-    status: failed
-    reason: "CR-02: BusinessFolder::alertWarning() indexes sendingRules()['owner_alert']['channels'], but in a Phase 1 version owner_alert is a free-text string; the TypeError 500s the whole page including Sync Now. True in the local dev database now (v1, 8 files)"
-    artifacts:
-      - path: "app/Filament/Pages/BusinessFolder.php"
-        issue: "alertWarning() assumes owner_alert is an array (line 132)"
-    missing:
-      - "Guard owner_alert with is_array (and any other reader of owner_alert that assumes the Phase 2 shape)"
-      - "Test: the page renders with a compiled version whose owner_alert is a string"
-  - truth: "A live folder with no text agent never drops customer texts silently"
-    status: failed
-    reason: "WR-01: RunFrontDesk returns with the burst claimed, no timeline note and no owner alert when the live version has no agent for sms; the Validator does not require one"
-    artifacts:
-      - path: "app/Actions/RunFrontDesk.php"
-        issue: "Silent return at lines 108-112 when AgentFile::forChannel() is null"
-    missing:
-      - "Treat a missing sms agent like the unavailable case: timeline note plus a FrontDeskFailed owner alert ('No front desk agent is set up for texts'), or make the Validator require an sms agent"
-      - "Test for a live version with no sms agent"
-  - truth: "Every inbound text is queued; a failed queue push is recovered by the sweep"
-    status: failed
-    reason: "WR-02: DispatchInbound sets dispatched_at before pushing ProcessInbound; if the push throws, the row keeps dispatched_at and SweepUndispatched (whereNull dispatched_at) never retries it"
-    artifacts:
-      - path: "app/Actions/DispatchInbound.php"
-        issue: "Claim at lines 28-39 is not undone when the dispatch fails"
-    missing:
-      - "Release dispatched_at when the push throws (and rethrow), or give the sweep a staleness path for dispatched-but-unhandled rows"
-      - "Test: a failing push leaves the text sweepable"
-  - truth: "A customer who describes a danger always gets the safety line or the owner is alerted; a failed or timed-out safety send is never followed by the generic holding reply"
-    status: failed
-    reason: "WR-05: SendLifeSafetyLine catches only DomainException; RespondToLifeSafety has $tries = 3 and no failed(); a lock timeout returns null with no alert or pause; RunFrontDesk's classifier path ignores that null and can send the holding reply to someone describing a fire or gas leak"
-    artifacts:
-      - path: "app/Jobs/RespondToLifeSafety.php"
-        issue: "No failed() hook"
-      - path: "app/Actions/SendLifeSafetyLine.php"
-        issue: "Non-DomainException failures and LockTimeoutException end silently (lines 56-60, 94-98)"
-      - path: "app/Actions/RunFrontDesk.php"
-        issue: "Holding reply not suppressed when the verdict is life-safety (lines 136-138, 367-369)"
-    missing:
-      - "failed() on RespondToLifeSafety raising AlertReason::LifeSafety with 'Safety message could not be sent'"
-      - "Owner alert on lock timeout in SendLifeSafetyLine (the alert is idempotent)"
-      - "RunFrontDesk skips the holding reply when the verdict is life-safety"
-      - "Tests for each path"
-  - truth: "Common ways of describing a gas leak, fire or burning smell trigger the safety line, and ordinary leak and appliance repair texts do not"
-    status: failed
-    reason: "WR-06: LifeSafety's phrase lists miss 'gas is leaking', 'gas leaking', 'smells of gas', 'gas odor', 'electrical fire', 'the house is burning', 'burnt smell'; the water-plus-electrical pairing over-triggers on bare 'appliance(s)' and 'panel' (e.g. 'my dishwasher appliance is leaking')"
-    artifacts:
-      - path: "app/SendRule/LifeSafety.php"
-        issue: "GAS_PHRASES / FIRE_PHRASES gaps; ELECTRICAL_WORDS includes bare 'appliance', 'appliances', 'panel'"
-    missing:
-      - "Add the missed gas and fire phrasings AS PHRASES. Keep the 93ce078 rule: phrases only, never the bare words propane, natural gas, sulfur or sulphur (no 'gas near leak/smell' proximity match on those words)"
-      - "Narrow the water-electrical pairing (drop bare 'appliance(s)' and 'panel'; keep electrical panel, breaker panel, outlet, socket, plugged in, wiring)"
-      - "Unit examples for each added phrase and for the narrowed pairing; keep 'how much to switch from propane to natural gas?' as a no-hazard example (tests/Unit/SendRule/LifeSafetyTest.php:27)"
-  - truth: "A web form that describes a danger alerts the owner (no text is sent to the lead, per D-41)"
-    status: failed
-    reason: "WR-07: respondToDanger() returns early for non-SMS messages and ProcessInbound drops web-only bursts, so 'I smell gas in the basement' on a form only appears on the dashboard"
-    artifacts:
-      - path: "app/Actions/RecordInbound.php"
-        issue: "respondToDanger() skips non-SMS (lines 109-122)"
-      - path: "app/Jobs/ProcessInbound.php"
-        issue: "Web-only burst returns at lines 63-65"
-    missing:
-      - "Raise AlertReason::LifeSafety ('Web form describes a danger') when LifeSafety::hazardIn() matches a form message; send no text"
-      - "Test for a hazard form and a non-hazard form"
-  - truth: "The test suite stays green and never reads live credentials when .env is configured for production as docs/SETUP.md section 11 instructs (INFRA-01, tests-first rule)"
-    status: failed
-    reason: "WR-16: tests/Pest.php pins the folder, HTTP, classifier, agent and queue but not TEXT_CHANNEL, TWILIO_* or JEV_*; with TEXT_CHANNEL=twilio in .env every fake-webhook test 404s and the JEV_MODEL pin test fails"
-    artifacts:
-      - path: "tests/Pest.php"
-        issue: "Shared beforeEach does not pin channels.text.driver or the Twilio and Jev config (lines 34-64)"
-      - path: "phpunit.xml"
-        issue: "No <env> lines for TEXT_CHANNEL, TWILIO_*, JEV_*"
-    missing:
-      - "Pin channels.text.driver = fake and null the Twilio and Jev credentials (Jev model at its default) in the shared beforeEach or phpunit.xml"
-      - "A guard test that the suite runs on the fake driver with no live keys regardless of .env"
+  - id: "REVIEW WR-03 (new)"
+    summary: "ProcessInbound::failed() reports on the newest inbound customer text, with no channel or handled_at filter, so it can report a later unclaimed text or a web form, and double-alert for a burst whose own text was already reported."
+    confirmed_in_code: true
+    defeats_must_have: false
+  - id: "REVIEW WR-06 (new)"
+    summary: "LifeSafety::hazardIn() fails open on a regex error: hazardIn(\"smoke \\xff\") returns null (run in this verification). Low reachability."
+    confirmed_in_code: true
+    defeats_must_have: false
 human_verification:
   - test: "Open an owner-alert link on a real phone over Wi-Fi after triggering a held draft from /dev/chat"
     expected: "Lands on the conversation; held reason, draft and Send are visible without scrolling"
@@ -115,96 +47,127 @@ human_verification:
     why_human: "Needs live provider keys; every automated test uses laravel/ai fakes and a scripted Jev"
   - test: "Push the branch (no git remote exists yet) and watch the tests workflow"
     expected: "Both matrix legs (sqlite, pgsql) green"
-    why_human: "CI has never run. Local evidence: 931 passed on SQLite (re-run in this verification) and 02-28 recorded the same on PostgreSQL 17"
+    why_human: "CI has never run. Local evidence: 985 passed on SQLite (re-run in this verification); 02-28 recorded a Postgres 17 pass at the earlier suite size"
 ---
 
 # Phase 02: Text Front Desk Verification Report
 
 **Phase Goal:** A customer who texts gets a reply that moves the conversation forward without the owner, from an agent defined in a file, and nothing risky is ever sent without the owner.
 **Verified:** 2026-10-12
-**Status:** gaps_found (set by Ian's ruling 2026-10-12; the verifier's own call was human_needed)
-**Re-verification:** No, initial verification
+**Status:** human_needed
+**Re-verification:** Yes, after gap closure (plans 02-30 to 02-34)
 
 ## Goal Achievement
 
-The goal is achieved in the codebase. The code and tests deliver every roadmap success criterion, and no must-have truth fails. Two confirmed review defects (CR-01, CR-02) are real and I recommend closing them before live traffic, but neither defeats a must-have. The remaining items are the manual checks the phase always listed.
+The goal is achieved in the codebase. All five roadmap success criteria hold, all eight gaps from the first verification are closed in code and pinned by tests, and the full suite passes. The fresh code review (02-REVIEW.md: 1 critical, 6 warnings, 5 info) was weighed finding by finding against the phase must-haves. None of them defeats a must-have. They are hardening items on the safety-line and failure-report paths, and four of them are worth fixing before live traffic (see below). What remains is the three manual checks the phase always listed, so the status is `human_needed`.
 
 ### Observable Truths (ROADMAP Success Criteria)
 
+Regression check on the five criteria verified in the first run. The files this round touched (`RunFrontDesk`, `ProcessInbound`, `RunFrontDeskAgent`, `DispatchInbound`, `RaiseOwnerAlert`, `LifeSafety`) were re-read, and the full suite was re-run.
+
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | A text through the fake channel gets an agent reply in the same conversation; first reply discloses AI, uses the sign-off, never uses a `never_say` phrase; intake questions asked and answers on the timeline and card | VERIFIED | `DevChat` route `/dev/chat` (routes/web.php:34, local-only, 404 test). `RunFrontDesk::handle()` runs the agent, `ComposeAutomatedText`, then `OutboundSender::send()`. `DisclosureTest` (first text only, even when owner texted first, new conversation after close, sign-off on every agent text, never_say held). `IntakeAnswersTest` (stored against conversation/message/version, `intake_answered` timeline entry, shown on card). `ProcessInboundTest` end-to-end with scripted agent. Needs a live model for real wording (human item 2) |
-| 2 | Price/promise/discount/complaint is never sent: drafted, owner alerted; intake/scheduling/FAQ send on their own, even when a scripted model tries to send the draft | VERIFIED | `DecideSendOrDraft` runs three checks in code: label floor (`ReplyLabel::neverOnItsOwn()` ANDed with the stored list, so a stored rule cannot lower it), `CodeChecks` hard veto, then Jev (fail closed, can only hold). `GateTest` dataset covers each label, `$`/% discount/"guarantee" in text mislabelled `faq_answer`, Jev down, Jev unsure, too long. `ProcessInboundTest` "keeps the floor in code: a stored rule that lists price as sendable still holds a price reply". Arch test limits `TextChannel` to `OutboundSender`, `SendOwnerAlert`, `App\Channels`, `App\Providers`. `HeldDraftTest` for the alert. See WR-10 below for the limit of the code veto |
-| 3 | Owner can take over (agent silent until handed back), approve/edit/discard a draft; "asks for a person" goes to `escalate_to` | VERIFIED | `PauseConversation`/`HandBackConversation`, `OutboundSender::whyBlocked()` refuses Automated sends while paused (checked again inside the send lock). `TakeOverTest` (13 cases incl. a reply composed before Take over is held, hand back resumes). `DraftReviewTest` (approve as written, edit, discard, replaced draft refused, 1,600 boundary). `HandoffTest` (every way of asking, agent `wants_person`, Jev at 0.9, unsure Jev only holds) |
-| 4 | Provider/model/fallback is an edit to `agents/*.md` via normal sync; broken agent file rejected in plain words; primary failure falls to fallback | VERIFIED | `examples/example-hvac/agents/front-desk.md` carries provider, model, fallback. `RunFrontDeskAgent` loops `providerChain()` and catches any Throwable. `AgentFileTest` (parametrised plain-words rejections, previous version stays live, one agent per channel). `AgentFallbackTest` (overloaded, SDK-unsafe error, malformed JSON/bogus label/empty reply, all fail, no fallback) |
-| 5 | Twilio driver behind `TextChannel`, selected by config alone, verified on Twilio-shaped payloads; suite passes on Postgres in CI and SQLite locally | VERIFIED (CI run pending, human item 3) | `AppServiceProvider` binds `TextChannel` by `config('channels.text.driver')` (`TEXT_CHANNEL`, default `fake`). `tests/Feature/Channels/*` (signature check against Twilio's published vector, 403 on missing/wrong/altered, MessageSid dedupe, 21610, status callbacks). `.github/workflows/tests.yml` matrix `[sqlite, pgsql]` with postgres:17. 931 passed / 3961 assertions on SQLite, re-run by me. Postgres pass relies on the 02-28 summary; no CI run has occurred |
+| 1 | A text through the fake channel gets an agent reply in the same conversation; first reply discloses AI, uses the sign-off, never uses `never_say`; intake answers on the timeline and card | VERIFIED | `RunFrontDesk::handle()` still runs agent, `ComposeAutomatedText::forReply`, `OutboundSender::send`. `DisclosureTest`, `IntakeAnswersTest`, `ProcessInboundTest` pass in the 985. Needs a live model for real wording (human item 2) |
+| 2 | Price/promise/discount/complaint never sent: drafted, owner alerted; intake/scheduling/FAQ send on their own | VERIFIED | `DecideSendOrDraft` three-layer check unchanged this round. `storeDraft()` now also skips the holding reply when `$verdict->lifeSafety` (RunFrontDesk.php:~380), which only removes a text, never adds one. `GateTest`, `HeldDraftTest` green. WR-10 (spelled-out amounts) stays deferred with its reason |
+| 3 | Owner can take over, approve/edit/discard; "asks for a person" goes to `escalate_to` | VERIFIED | `handOffToOwner()`, pause check at RunFrontDesk.php:92-95 and the pause refusal inside `OutboundSender` unchanged. `TakeOverTest`, `DraftReviewTest`, `HandoffTest` green |
+| 4 | Provider/model/fallback is an edit to `agents/*.md`; broken agent file rejected; primary failure falls to fallback | VERIFIED | `RunFrontDeskAgent` loop now adds a chain time budget (`gate.agent.chain_budget_seconds` 150, line 87): a fallback starts only if time spent plus the 40 s per-provider limit fits, and a skipped entry is recorded as `skipped: not enough time left in this run`. Order is never changed. `AgentFileTest`, `AgentFallbackTest` green |
+| 5 | Twilio driver behind `TextChannel`, selected by config alone, verified on Twilio-shaped payloads; suite passes on Postgres in CI and SQLite locally | VERIFIED locally (CI run pending, human item 3) | `tests/Feature/Channels/*` green. 985 passed / 4158 assertions on SQLite, run by me (30 s). `.github/workflows/tests.yml` matrix `[sqlite, pgsql]` unchanged. Postgres pass relies on 02-28's record; no CI run has happened |
 
-**Score:** 5/5 truths verified, 0 present-but-behavior-unverified.
+**Score:** 5/5 roadmap truths verified, 0 present-but-behavior-unverified.
 
-Plan-level must-haves spot-read against code and tests: 02-08/09 (claim by `handled_at`, `DebounceFor(20, maxWait: 90)`, sweep, forms never reach the agent), 02-13 (agent given no tool, provider chain), 02-15 (all providers fail: nothing sent, timeline note, `front_desk_failed` alert, job does not throw), 02-24 (opt-out). All present and tested.
+### Prior Gaps: Closure Evidence
 
-### Opt-out indicator (question from the UI audit)
+Each gap was checked in the code, then against the test that pins it. The tests were read, not just listed.
 
-The UI auditor's "no opt-out indicator" finding is incorrect. 02-24 promised "the reply box shows 'Opted out by texting STOP on `<date>`.' in place of the form". It exists: `OutboundSender::whyBlocked()` (app/Actions/OutboundSender.php:124) returns that sentence first for every origin, `SendOwnerReply::whyCannotReply()` passes it through, `ConversationThread::replyBlockedReason()` computes it, and `conversation-thread.blade.php` lines 69-77 render it above a disabled box. `OptOutTest` "shows the owner why they cannot reply, in place of the form" asserts it with `assertSee`. The audit grepped for "opt" in views and missed the computed property path. It is present only on the conversation thread (not on the contact list), which matches what 02-24 promised.
+| Gap | Closed by | Code evidence | Test evidence | Status |
+|-----|-----------|---------------|---------------|--------|
+| CR-01 claimed text lost on throw/timeout | 02-32 | `ProcessInbound`: `$tries = 1`, `$timeout = 300`, `$failOnTimeout = true`, `catch (Throwable)` around `RunFrontDesk` calling `ReportFrontDeskFailure`, and `failed()`. `ReportFrontDeskFailure` writes the note and the `front_desk_failed` alert once per text with fixed words only. Claim is deliberately not released (no second customer text). `config/queue.php` `retry_after` 360 for database and redis, above 300. `gate.agent.chain_budget_seconds` 150 + Jev 8 + 120 < 300 | `FrontDeskFailureTest`: crash alerts owner and texts the customer nothing and leaks no exception words; `failed()` path; report-once; missing conversation; timeout values pinned | CLOSED |
+| CR-02 Business Folder 500 on Phase 1 version | 02-31 | `BusinessFolder::alertWarning()` guards `is_array($alert)` and treats a string as the text channel. `RaiseOwnerAlert::ownerAlertSetting()` returns null for a non-array and for no live version | `BusinessFolderPageTest`: page and Sync Now open, sync forward, phone warning under a Phase 1 version | CLOSED |
+| WR-01 no sms agent drops text | 02-32 | `RunFrontDesk.php:~108-114`: null agent calls `ReportFrontDeskFailure` ("No front desk agent is set up for texts") | `FrontDeskFailureTest`: Phase 2 folder without `agents/front-desk.md`, and a live Phase 1 version | CLOSED |
+| WR-02 failed push strands text | 02-31 | `DispatchInbound`: `try { ProcessInbound::dispatch(...)->afterCommit(); } catch (Throwable) { dispatched_at => null; throw }` | `DispatchInboundTest`: a queue whose `push` and `later` throw; claim cleared and rethrown; the sweep queues it; the provider retry queues it once | CLOSED (see review WR-04 for the latent `afterCommit` caveat) |
+| WR-05 silent life-safety failures | 02-33 | `SendLifeSafetyLine` catches `Throwable` from the send, still pauses and alerts "Safety message could not be sent"; `LockTimeoutException` now pauses and alerts. `RespondToLifeSafety::failed()` pauses and raises the alert. `storeDraft()` skips the holding reply when the verdict is life-safety | `LifeSafetyTest`: failed job, any-error send, lock held past the wait, no holding reply after a classifier danger | CLOSED (see review CR-01 for the residual retry hole) |
+| WR-06 phrase gaps / appliance over-trigger | 02-33 | `LifeSafety::GAS_PHRASES` and `FIRE_PHRASES` hold the added phrasings as phrases only; `ELECTRICAL_WORDS` drops bare `appliance(s)` and `panel`; `water heater` stripped before the water check. No bare propane/natural gas/sulfur/sulphur entry | I ran `hazardIn()`: "gas is leaking" -> gas, "my house is on fire" -> general, "how much to switch from propane to natural gas?" -> null, "my dishwasher appliance is leaking" -> null, "water is pouring onto the outlet" -> water | CLOSED for the named phrasings (see review WR-01 for further misses) |
+| WR-07 web form danger alerts no one | 02-33 | `ProcessInbound::alertOwnerToDangerousForms()` raises `AlertReason::LifeSafety` "Web form describes a danger" for each Web message where `LifeSafety::hazardIn()` matches, before the SMS-less early return; nothing is texted | `LifeSafetyTest`: hazard form alerts and texts the lead nothing; non-hazard form alerts no one; hazard form in a burst with a customer text still answers the text | CLOSED |
+| WR-16 suite reads `.env` | 02-30 | `phpunit.xml` forces `TEXT_CHANNEL=fake`, null Twilio and Jev credentials, pinned `JEV_MODEL` and `JEV_BASE_URL` (both `<env force>` and `<server>`). `tests/Pest.php` shared `beforeEach` pins the same via `config([...])` | `TestSafetyNetTest`: in-suite pin assertions; a child Pest process under a hostile environment; `JEV_MODEL` default stays `typesafe/jev-1.13` | CLOSED |
 
 ### Required Artifacts / Key Links
 
-Plan artifacts and key links for the plans read (02-08, 02-09, 02-13, 02-15, 02-24) are present, substantive and wired (grep and call-site reading). Data flows from the database: `FrontDeskPrompt` renders the card from the DB and loads files through `ActiveConfig`. No hollow props or static returns found.
+Artifacts named in plans 02-30 to 02-34 exist, are substantive and are wired:
+
+| Artifact | Wired through | Status |
+|----------|---------------|--------|
+| `app/Actions/ReportFrontDeskFailure.php` | Injected into `RunFrontDesk` (no-agent, all-failed) and `ProcessInbound::handle()` and `failed()` | VERIFIED |
+| `app/Jobs/ProcessInbound.php` (`failed`, `catch Throwable`, `alertOwnerToDangerousForms`) | Queued only through `DispatchInbound` | VERIFIED |
+| `app/Jobs/RespondToLifeSafety.php` (`failed`) | Dispatched by `RecordInbound::respondToDanger()` | VERIFIED |
+| `app/Actions/RaiseOwnerAlert.php` (`ownerAlertSetting`) | Used by `isUrgent()` and `dueAt()` | VERIFIED |
+| `config/gate.php` (`chain_budget_seconds`, `life_safety.lock_wait_seconds`) | Read by `RunFrontDeskAgent` and `SendLifeSafetyLine` | VERIFIED |
+| `tests/Pest.php`, `phpunit.xml` pins | Shared `beforeEach`; guard test spawns a child process | VERIFIED |
+| `map/**` cards (02-34) | Spot-read `answer-inbound.md`: the line cites for `ProcessInbound.php:95`, `RunFrontDesk.php:82`, the step 7 failure report match the code | VERIFIED (spot-check) |
+
+Data flows from the database: alerts read the live `owner_alert` rule through `ActiveConfig`, never from disk.
+
+### Behavioral Spot-Checks
+
+| Behavior | Command | Result | Status |
+|----------|---------|--------|--------|
+| Full suite | `php artisan test --compact` (run once) | 985 passed, 4158 assertions, 30 s | PASS |
+| Keyword net on the fixed phrasings | `LifeSafety::hazardIn()` on 17 samples | Named fixes behave as claimed; the nine review-listed variants still return null | PASS for gap scope, see warnings |
+| Fail-open on bad bytes | `hazardIn("smoke \xff")` | null | confirms review WR-06 |
+
+Probes: none declared by the plans (Step 7c not applicable).
 
 ### Requirements Coverage
 
-All 10 IDs appear in plan frontmatter and are marked Complete in REQUIREMENTS.md. No orphaned requirement IDs.
+All 10 IDs are declared in plan frontmatter and marked Complete in REQUIREMENTS.md. No orphaned IDs.
 
 | Requirement | Source Plans | Status | Evidence |
 |-------------|--------------|--------|----------|
-| AGNT-01 | 02-02 | SATISFIED | `AgentFileTest`; Validator rejects broken agent file |
-| AGNT-02 | 02-08, 09, 13, 14, 29 | SATISFIED | `ProcessInbound` -> `RunFrontDesk` -> `FrontDeskPrompt` (files via `ActiveConfig`, fresh card) |
-| AGNT-03 | 02-18 | SATISFIED | `IntakeAnswersTest` (timeline entry and card) |
-| AGNT-04 | 02-02, 13, 15 | SATISFIED as specified (fallback; all-fail alerts owner). Gap outside the spec: CR-01 | `AgentFallbackTest`, `FrontDeskFailureTest` |
-| GATE-01 | 02-03..07, 10..12, 14..17, 21, 28, 29 | SATISFIED (defence in depth, see WR-10) | `GateTest`, `HeldDraftTest`, alert tests |
-| GATE-02 | 02-03..05, 15, 20, 21 | SATISFIED | `DisclosureTest`, `HandoffTest`, `LifeSafetyTest` |
+| AGNT-01 | 02-02 | SATISFIED | `AgentFileTest`; Validator rejects broken agent files |
+| AGNT-02 | 02-08, 09, 13, 14, 29, 31, 32, 34 | SATISFIED | `ProcessInbound` -> `RunFrontDesk` -> `FrontDeskPrompt`; claim released on failed dispatch |
+| AGNT-03 | 02-18 | SATISFIED | `IntakeAnswersTest` |
+| AGNT-04 | 02-02, 13, 15, 32, 34 | SATISFIED, now including the unexpected-failure and timeout paths | `AgentFallbackTest`, `FrontDeskFailureTest` |
+| GATE-01 | 02-03..07, 10..12, 14..17, 21, 28, 29, 31, 33, 34 | SATISFIED (layered; WR-10 deferred) | `GateTest`, `HeldDraftTest`, alert tests |
+| GATE-02 | 02-03..05, 15, 20, 21, 33, 34 | SATISFIED | `DisclosureTest`, `HandoffTest`, `LifeSafetyTest` |
 | GATE-03 | 02-19, 20 | SATISFIED | `TakeOverTest`, `ReplyCapTest` |
 | GATE-04 | 02-17, 22, 23 | SATISFIED | `DraftReviewTest`, `ConversationViewTest` |
 | TXT-01 | 02-24..27 | SATISFIED (live number waits on A2P, does not gate) | `tests/Feature/Channels`, `OptOutTest` |
-| INFRA-01 | 02-01, 28 | SATISFIED locally; CI run pending | workflow matrix present; SQLite 931 green |
+| INFRA-01 | 02-01, 28, 30 | SATISFIED locally, now independent of `.env`; CI run pending | pinned env, SQLite 985 green, workflow matrix present |
 
-### Anti-Patterns
+### Anti-Patterns Found
 
-No `TBD`/`FIXME`/`XXX` in any of the 180 non-planning files changed on the branch, and no `TODO`/`HACK`/`PLACEHOLDER` in `app`, `config`, `routes`, `resources`, `database`. No probes are declared by the plans (Step 7c not applicable). Security: 02-SECURITY.md reports 92/92 threats closed, `threats_open: 0`.
+No `TBD`, `FIXME` or `XXX` in `app`, `config`, `routes`, `resources`, `database`, `tests/Pest.php` or `phpunit.xml`. No stubs or hollow returns in the files this round changed.
 
-### Code review findings weighed against the goal
+### Fresh Review (02-REVIEW.md) Weighed Against the Must-Haves
 
-**CR-01 (confirmed, WARNING, does not defeat a must-have).** I read the code path. `ProcessInbound::handle()` claims the burst (`ClaimInboundBurst` sets `handled_at`), then calls `RunFrontDesk`, catching only `NoActiveVersion`. `RunFrontDesk` catches `FrontDeskUnavailable` and `DomainException` from the sender only. Any other throwable, or a worker kill, leaves the texts permanently claimed. A retry finds nothing, and `SweepUndispatched` selects on `dispatched_at`, so it cannot rescue them. The job has no `$timeout`, `$tries` or `failed()`. Worst-case chain time (2 providers x 40 s + 8 s Jev) exceeds the default 60 s worker timeout. This makes the `RunFrontDesk` docblock ("This never throws ... the owner is alerted instead (AGNT-04)") false for unguarded failures. Why it does not fail a truth: the AGNT-04 behaviour the roadmap and plans specify (provider falls through; every provider failing alerts the owner and sends nothing) is verified and tested, and CR-01 never causes anything risky to be sent, so "nothing risky is ever sent without the owner" holds. It is a real hole in "a customer who texts gets a reply" under failure, and the customer's text sits unanswered with no owner alert. Fix before live traffic: `failed()` hook or a catch-all around `RunFrontDesk` that raises `FrontDeskFailed` and/or un-claims, plus an explicit `$timeout` above the provider chain and `retry_after` above that.
+Counts are not the test. Each finding was checked against what a roadmap criterion or a plan must-have actually promises. I confirmed CR-01, WR-01, WR-03 and WR-06 in code (reading plus running `hazardIn()`), and read WR-02, WR-04 and WR-05 against the source. None defeats a must-have.
 
-**CR-02 (confirmed, WARNING, does not defeat a Phase 2 must-have, but is a live defect).** `BusinessFolder::alertWarning()` indexes `['owner_alert']['channels']` and catches only `NoActiveVersion`. I ran `app(ActiveConfig::class)->sendingRules()['owner_alert']` against the local database and got the Phase 1 free-text string, so `icm:status` shows v1 with 8 files live and the Business Folder page would currently return a 500, including its Sync Now button. This regresses a Phase 1 deliverable (DASH-02) in an upgrade state. Phase 2 SC 4 still holds because `php artisan icm:sync` goes live normally and all roadmap criteria are met on a fresh Phase 2 folder. Immediate workaround: run `php artisan icm:sync`. Also note that until the Phase 2 folder is synced there is no `sms` agent, which hits WR-01 (claimed and silently dropped). Fix: the guard in the review's CR-02 section plus a test.
+| Finding | Confirmed | Defeats a must-have? | Reasoning |
+|---------|-----------|----------------------|-----------|
+| CR-01 (reviewer: critical) | Yes | No | `SendLifeSafetyLine::handle()` returns null from `alreadyAnswered()` before pausing or alerting. After a successful send, a crash or a DB error in `PauseConversation`/`RaiseOwnerAlert` leaves a retry as a no-op, so there is no pause and no alert. This is a double fault on the safety path. The customer did receive the line (the gap truth "always gets the safety line or the owner is alerted" holds), and the plan 02-33 truths (send throws, lock timeout, job failed) are all pinned and pass. It contradicts the class docblock ("never neither") and is the reason it is the first fix to make. The reviewer's suggested fix (pause and alert in the already-answered branch, both idempotent) is three lines |
+| WR-01 | Yes | No | Keyword net misses "smelling gas", "smelled gas", "gas is hissing", "something is burning", "electrocuted". 02-33's must-have named a specific phrase list, all of which work. The roadmap does not promise a complete hazard vocabulary and Jev is the backstop. Worth extending before real traffic because "I am smelling gas" is a natural phrasing |
+| WR-02 | Read | No | Utility phone in `(312) 555-0188` form is dropped from the gas sentence (the regex needs a leading digit or plus). The safety sentence itself still sends. Cosmetic loss of the gas company line |
+| WR-03 | Yes | No | `failed()` picks `latest('id')` inbound customer text with no channel or `handled_at` filter. It can alert on an unclaimed later text (and then dedup suppresses that text's own later failure report), or double-alert. It always alerts someone; it cannot lose an alert for the burst it fires on |
+| WR-04 | Read | No | `afterCommit()` would defer the push outside the `try` if a caller wrapped `DispatchInbound` in a transaction. Today's callers (`RecordInbound`, `SweepUndispatched`) run outside a transaction, so the claim rollback works as the tests show |
+| WR-05 | Read | No | `RespondToLifeSafety` docblock and `failed()` text are misleading (a send error is caught and never retried by the job; `failed()` always says "could not be sent"). Wording and an explicit `$timeout`, not a behavior hole |
+| WR-06 | Yes | No | `hazardIn("smoke \xff")` returns null. Low reachability (Twilio sends valid UTF-8; Postgres rejects bad bytes), but the form and fake webhook accept any bytes |
+| IN-01..IN-05 | Read | No | Message-prefix exception classification, raw provider error stored in `gate`, owner-alert settings parsed twice, non-atomic alert check-then-insert, scaffold leftovers and a narrow queue guard. Hardening |
 
-**Warnings that touch a must-have, none defeating one.** WR-10 (spelled-out amounts such as "two hundred dollars" and "free estimate" pass the code veto): GATE-01 says "whatever the model outputs". The label floor and Jev (fail closed, thresholds 0.075) still stand behind the code veto, and with no Jev key every reply is held. So the guarantee is layered, not absolute on the code veto alone. Worth tightening. WR-05/06/07 (life-safety coverage and failure paths) concern a safety feature beyond the five roadmap criteria. WR-01 and WR-02 are the same silent-drop family as CR-01. The remaining warnings (WR-03/04 duplicate alerts, WR-08, WR-09, WR-11..21) are hardening and test-isolation items. All 38 findings are still `open` in 02-REVIEW-DISPOSITION.md.
+Recommended order if Ian wants a short follow-up before live traffic: CR-01, then WR-01 (phrasings), then WR-03, then WR-06. None blocks UAT.
 
 ### Human Verification Required
 
-1. **Alert link on a real phone** (D-29, D-30). Trigger a held draft from `/dev/chat`, open the alert link on a phone on the same Wi-Fi. Expected: conversation opens, held reason, draft and Send visible without scrolling.
-2. **Live model reply through `/dev/chat`** (AGNT-02). Needs `JEV_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, the Phase 2 folder synced, and a queue worker (database queue, 20 s debounce). Expected: disclosed, signed reply that asks the intake question; a price question becomes a draft.
+These three carry over unchanged; `02-UAT.md` holds them.
+
+1. **Alert link on a real phone** (D-29, D-30). Trigger a held draft from `/dev/chat`, open the alert link on a phone on the same Wi-Fi. Expected: the conversation opens; held reason, draft and Send are visible without scrolling.
+2. **Live model reply through `/dev/chat`** (AGNT-02). Needs `JEV_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, the Phase 2 folder synced and a queue worker (database queue, 20 s debounce). Expected: a disclosed, signed reply that asks the intake question; a price question becomes a draft.
 3. **First CI run on Postgres** (INFRA-01). Ian pushes; both matrix legs should be green.
-4. **Live Twilio number**: waits on A2P approval (DEC-05) and does not gate this phase.
+
+The live Twilio number waits on A2P approval (DEC-05) and does not gate this phase.
 
 ## Gaps Summary
 
-**Ian's ruling (2026-10-12): fix these before UAT, as gaps.** The verifier found no failed roadmap criterion or plan must-have and returned `human_needed`; Ian chose the stricter reading and routes eight confirmed code-review findings (`02-REVIEW.md`) to gap closure. They are in the `gaps:` frontmatter for `/gsd-plan-phase 2 --gaps`.
+No gaps. All eight gaps from the first verification are closed and pinned by tests. The fresh review's 1 critical and 6 warnings are real in the four places I confirmed by running the code, but each sits on top of a must-have that still holds. They are recorded above as recommended-before-live-traffic warnings, and the 38 earlier review rows plus the 12 new ones stay with their dispositions in `02-REVIEW-DISPOSITION.md`.
 
-| Gap | Finding | What it breaks |
-|-----|---------|----------------|
-| 1 | CR-01 | A claimed text is lost with no owner alert when the run throws or the worker times out (AGNT-04 "never silent") |
-| 2 | CR-02 | Business Folder page and Sync Now 500 while a Phase 1 version is live (DASH-02 regression) |
-| 3 | WR-01 | A live folder with no `sms` agent drops texts silently |
-| 4 | WR-02 | A failed queue push strands the text past the sweep |
-| 5 | WR-05 | Life-safety failures and lock timeouts are silent, and the holding reply can follow |
-| 6 | WR-06 | Safety phrase gaps and appliance/panel over-triggering. Keep the 93ce078 rule: phrases only, never bare propane, natural gas, sulfur or sulphur; keep "how much to switch from propane to natural gas?" as a no-hazard test |
-| 7 | WR-07 | A web form describing a danger alerts no one |
-| 8 | WR-16 | The suite reads `.env`; the documented go-live step turns it red |
-
-Not gaps (recorded in `02-REVIEW-DISPOSITION.md`): WR-15 before first deploy (same root as T-01-37), WR-08 and WR-10 before first client, WR-03 and WR-04 Phase 2.1. Every other finding stays open.
-
-The three human verification items above still apply after the gaps close; `02-UAT.md` holds them.
 ---
 
 _Verified: 2026-10-12_
