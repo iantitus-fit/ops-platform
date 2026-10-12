@@ -3,12 +3,14 @@
 use App\Actions\ClaimInboundBurst;
 use App\Actions\DispatchInbound;
 use App\Jobs\ProcessInbound;
+use App\Jobs\SweepUndispatched;
 use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Queue\Attributes\DebounceFor;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Testing\Fakes\QueueFake;
 
 /**
  * One conversation holding the given number of inbound customer texts, none yet dispatched or handled.
@@ -188,4 +190,70 @@ it('goes on to the front desk when the burst holds a text from the customer, eve
     $job = new ProcessInbound($text->id, $conversation->id);
 
     expect(app()->call([$job, 'handle']))->toBeTrue();
+});
+
+/**
+ * Swap in a queue that cannot be reached: pushing a job throws, and so does pushing one with a delay,
+ * which is what the debounced ProcessInbound does. A later Queue::fake() brings the working fake back.
+ */
+function dispatchTestFailingQueue(): QueueFake
+{
+    $queue = new class(app(), [ProcessInbound::class], Queue::getFacadeRoot()) extends QueueFake
+    {
+        public function push($job, $data = '', $queue = null)
+        {
+            throw new RuntimeException('queue down');
+        }
+
+        public function later($delay, $job, $data = '', $queue = null)
+        {
+            throw new RuntimeException('queue down');
+        }
+    };
+
+    Queue::swap($queue);
+
+    return $queue;
+}
+
+it('clears the claim and rethrows when the queue push fails, so the text stays sweepable', function () {
+    [, $messages] = dispatchTestConversationWithTexts(1);
+    dispatchTestFailingQueue();
+
+    expect(fn () => app(DispatchInbound::class)->handle($messages[0]))
+        ->toThrow(RuntimeException::class, 'queue down')
+        ->and($messages[0]->fresh()->dispatched_at)->toBeNull();
+});
+
+it('queues a text whose push failed once the sweep runs', function () {
+    [, $messages] = dispatchTestConversationWithTexts(1);
+    dispatchTestFailingQueue();
+
+    expect(fn () => app(DispatchInbound::class)->handle($messages[0]))->toThrow(RuntimeException::class);
+
+    Queue::fake([ProcessInbound::class]);
+    $this->travel(3)->minutes();
+    app()->call([new SweepUndispatched, 'handle']);
+
+    expect($messages[0]->fresh()->dispatched_at)->not->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, 1);
+    Queue::assertPushed(ProcessInbound::class, fn (ProcessInbound $job) => $job->messageId === $messages[0]->id);
+});
+
+it('queues a text whose push failed when the provider retries it', function () {
+    dispatchTestFailingQueue();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertStatus(500);
+
+    expect(Message::sole()->dispatched_at)->toBeNull();
+
+    Queue::fake([ProcessInbound::class]);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    expect(Message::count())->toBe(1)
+        ->and(Message::sole()->dispatched_at)->not->toBeNull();
+
+    Queue::assertPushed(ProcessInbound::class, 1);
 });
