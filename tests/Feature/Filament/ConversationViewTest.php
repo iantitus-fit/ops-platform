@@ -118,7 +118,7 @@ it('gives the reply box and the draft box inner padding (D-29)', function () {
 
     $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
 
-    expect(substr_count($html, 'padding: 0.5rem 0.75rem'))->toBe(2);
+    expect(preg_match_all('/<textarea[^>]*style="[^"]*padding: 0\.5rem 0\.75rem/', $html))->toBe(2);
 });
 
 it('flags a held draft whose alert could not be sent (D-19)', function () {

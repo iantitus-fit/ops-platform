@@ -8,6 +8,7 @@ use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use DomainException;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
@@ -133,6 +134,32 @@ class ConversationThread extends Component
     }
 
     /**
+     * The flag shown on a held draft nobody was told about, or null (D-19). It appears only when the draft has alerts
+     * and every one of them failed: an alert still waiting to go, sent, or skipped on purpose is not a gap.
+     */
+    #[Computed]
+    public function draftNotAlerted(): ?string
+    {
+        $draft = $this->liveDraft;
+
+        if ($draft === null) {
+            return null;
+        }
+
+        $alerts = OwnerAlert::query()->where('message_id', $draft->id)->orderBy('id')->get();
+
+        if ($alerts->isEmpty() || $alerts->contains(fn (OwnerAlert $alert): bool => $alert->failed_at === null)) {
+            return null;
+        }
+
+        $failure = rtrim(trim((string) $alerts->last()->failure), '.');
+
+        return $failure === 'No phone on file'
+            ? "Not alerted: {$failure}. Add your phone on your profile."
+            : 'Not alerted: '.($failure !== '' ? $failure : 'the text could not be sent').'.';
+    }
+
+    /**
      * The sentence that replaces the reply box when the owner cannot reply, or null.
      */
     #[Computed]
@@ -173,7 +200,7 @@ class ConversationThread extends Component
         // The message can carry provider text, and Filament renders a title as HTML.
         Notification::make()->title(e($exception->getMessage()))->danger()->send();
 
-        unset($this->liveDraft);
+        unset($this->liveDraft, $this->draftNotAlerted);
 
         if ($keepWords && $this->liveDraft === null && trim($this->draftBody) !== '') {
             $this->body = trim($this->draftBody);
@@ -182,7 +209,7 @@ class ConversationThread extends Component
 
     private function draftResolved(string $title): void
     {
-        unset($this->liveDraft, $this->messages);
+        unset($this->liveDraft, $this->messages, $this->draftNotAlerted);
 
         $this->reset('draftId', 'draftBody');
 
