@@ -2,13 +2,13 @@
 type: object
 cluster: contacts
 status: live
-verified: 2026-10-12 @ be50284 (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-12 @ 04f95e7 (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Models/Contact.php
 ---
 
 # Contact opt-out
 
-**Type:** object · **Mark:** live · **Checked:** 2026-10-12 @ be50284 · **Where:** `contacts.sms_opted_out_at`, `app/Models/Contact.php:47`
+**Type:** object · **Mark:** live · **Checked:** 2026-10-12 @ 04f95e7 · **Where:** `contacts.sms_opted_out_at`, `app/Models/Contact.php:47`
 
 **One sentence.** `contacts.sms_opted_out_at` is set when the customer texted STOP (or the carrier said the number opted out); while it is set, nobody may text them.
 
@@ -18,7 +18,7 @@ entity: app/Models/Contact.php
 - Column: `database/migrations/2026_10_12_000009_add_sms_opt_out_to_contacts_table.php:17`; cast and `Contact::isOptedOut()` at `Contact.php:40-50`.
 - Set on STOP: `RecordInbound.php:197`; cleared on START: `RecordInbound.php:218` (only for a contact who is opted out). Set when the carrier refuses a send, Twilio error 21610: `OutboundSender.php:359`. Set when a status callback reports it: `TwilioStatusCallbackController.php:97`. The first date is kept (`RecordInbound.php:193`).
 - What a keyword is: the provider's own word first, then the same words matched in code (`app/Channels/TextKeywords.php:59`). YES opts back in only for a contact who is opted out, so a plain "yes" to an intake question is never swallowed. A keyword text is stored already dispatched and handled (`RecordInbound.php:140`), so the queue, the sweep and the front desk skip it. Twilio sends its own confirmation; the app records the effect and says nothing (`RecordInbound.php:90-93`, D-39).
-- Enforced in `OutboundSender::whyBlocked`, first, for every origin: agent, owner, approved draft and the safety line (`OutboundSender.php:121`). The front desk also checks before asking the agent, and alerts the owner to call (`RunFrontDesk.php:83`, `:208`).
+- Enforced in `OutboundSender::whyBlocked`, first, for every origin: agent, owner, approved draft and the safety line (`OutboundSender.php:121`). The front desk also checks before asking the agent, and alerts the owner to call (`RunFrontDesk.php:86`, `:212`).
 
 ## Words on this card
 "Opted out" is per contact and blocks every text. "Paused" is per conversation and blocks automated texts only ([conversation-and-pause](../conversations/conversation-and-pause.md)). A customer who is opted out can still text the business; the message is recorded and the owner is alerted.

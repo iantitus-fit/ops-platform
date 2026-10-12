@@ -2,13 +2,13 @@
 type: object
 cluster: intake
 status: live
-verified: 2026-10-12 @ be50284 (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-12 @ 04f95e7 (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Models/IntakeAnswer.php
 ---
 
 # Intake answer
 
-**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-12 @ be50284 · **Where:** `app/Models/IntakeAnswer.php:20`
+**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-12 @ 04f95e7 · **Where:** `app/Models/IntakeAnswer.php:20`
 
 **One sentence.** An `intake_answers` row is one answer a customer gave to one of a service's intake questions, found by the agent in their texts; a correction is a new row, never an update.
 
@@ -16,7 +16,7 @@ entity: app/Models/IntakeAnswer.php
 
 ## Shape
 - Table: `database/migrations/2026_10_12_000007_create_intake_answers_table.php:19`; lookup index `:30`. Columns: `conversation_id`, `message_id`, `icm_version_id`, `service_slug`, `question_key`, `option` (nullable), `raw_text`.
-- Written once per answer, together with an `intake_answered` timeline entry, inside one transaction: `RecordIntakeAnswers.php:56-71`. Called by `RunFrontDesk.php:129` after the agent answers and before the send rule runs, so an answer is stored even when the reply is held.
+- Written once per answer, together with an `intake_answered` timeline entry, inside one transaction: `RecordIntakeAnswers.php:56-71`. Called by `RunFrontDesk.php:133` after the agent answers and before the send rule runs, so an answer is stored even when the reply is held.
 - The agent proposes answers in its structured output (`AgentReply.php:58`, schema `FrontDeskAgent.php:60`); the question list comes from the live service file (`RecordIntakeAnswers.php:92`).
 - Read: `CustomerCard::intakeAnswerLines` (`CustomerCard.php:299`, latest per question) and the timeline arm (`CustomerCard.php:276`). Morph alias `intake_answer` at `AppServiceProvider.php:77`.
 
