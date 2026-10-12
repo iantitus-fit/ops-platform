@@ -34,6 +34,17 @@ class UserFactory extends Factory
     }
 
     /**
+     * A user the owner alerts can reach by text. The default is the fictional 555-01XX block
+     * that tests write by hand, in E.164.
+     */
+    public function withPhone(string $e164 = '+12025550199'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'phone' => $e164,
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

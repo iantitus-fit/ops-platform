@@ -9,6 +9,7 @@ use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
@@ -66,6 +67,7 @@ class AppServiceProvider extends ServiceProvider
             'contact' => Contact::class,
             'conversation' => Conversation::class,
             'message' => Message::class,
+            'owner_alert' => OwnerAlert::class,
             'user' => User::class,
         ]);
 
