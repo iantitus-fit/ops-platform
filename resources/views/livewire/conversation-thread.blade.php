@@ -1,4 +1,10 @@
 <div wire:poll.5s>
+    @if ($this->pausedBanner !== null)
+        <x-filament::section compact style="margin-bottom: 1rem;">
+            <p>{{ $this->pausedBanner }}</p>
+        </x-filament::section>
+    @endif
+
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         @forelse ($this->messages as $message)
             <div wire:key="message-{{ $message->id }}">

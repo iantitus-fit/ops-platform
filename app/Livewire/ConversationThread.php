@@ -28,7 +28,7 @@ class ConversationThread extends Component
     public function sendReply(SendOwnerReply $sendOwnerReply): void
     {
         try {
-            $sendOwnerReply->handle($this->conversation, $this->body);
+            $sendOwnerReply->handle($this->conversation, $this->body, auth()->user());
         } catch (DomainException $exception) {
             // The message can carry provider text, and Filament renders a title as HTML.
             Notification::make()->title(e($exception->getMessage()))->danger()->send();
@@ -59,6 +59,21 @@ class ConversationThread extends Component
     public function replyBlockedReason(): ?string
     {
         return app(SendOwnerReply::class)->whyCannotReply($this->conversation);
+    }
+
+    /**
+     * The banner above a paused thread, or null while the assistant is active (D-25).
+     */
+    #[Computed]
+    public function pausedBanner(): ?string
+    {
+        $conversation = $this->conversation->refresh();
+
+        if (! $conversation->isPaused()) {
+            return null;
+        }
+
+        return trim($conversation->paused_reason?->bannerLead()." You're handling this. Hand back to the assistant when done.");
     }
 
     public function render(ActiveConfig $activeConfig): View
