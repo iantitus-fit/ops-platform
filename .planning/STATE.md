@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-25-PLAN.md
-last_updated: "2026-10-12T03:54:34.308Z"
+stopped_at: Completed 02-26-PLAN.md
+last_updated: "2026-10-12T04:00:14.372Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 049dba45bfe255cf807895dbe3e653a89917a8d0
+state_head: a0fab44ea3b241e69e2028b4745b38e6deaa733a
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 32
+  completed_plans: 33
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 26 of 29
+Plan: 27 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -88,6 +88,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P23 | 25 min | 2 tasks | 12 files |
 | Phase 02 P24 | 20 min | 1 tasks | 12 files |
 | Phase 02 P25 | 7 min | 2 tasks | 13 files |
+| Phase 02 P26 | 3 min | 1 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-23: home screen widgets set $isLazy = false so they render with the page
 - [Phase 02]: 02-24: STOP is stored already dispatched and handled inside the record transaction; a repeat STOP keeps the first opt-out date
 - [Phase 02]: 02-25: The opted-out alert in RunFrontDesk runs after the life-safety second chance and does not dedupe against the safety alert, so the owner of an opted-out customer who texts about danger gets both the urgent safety alert and the call-them alert; a carrier refusal (21610) is told apart from other send failures by the exception's previous being RecipientOptedOut
+- [Phase 02]: 02-26: Twilio webhook routes (webhooks/text/twilio*) skip trimStrings and convertEmptyStringsToNull so the signature is checked over the form exactly as Twilio sent it
+- [Phase 02]: 02-26: the real Twilio channel trusts OptOutType only; keyword matching in code stays in RecordInbound as the fallback
 
 ### Pending Todos
 
@@ -193,6 +196,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T03:54:34.261Z
-Stopped at: Completed 02-25-PLAN.md
+Last session: 2026-10-12T04:00:14.331Z
+Stopped at: Completed 02-26-PLAN.md
 Resume file: None
