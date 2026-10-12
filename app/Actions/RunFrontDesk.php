@@ -111,6 +111,8 @@ class RunFrontDesk
         $agent = AgentFile::forChannel($this->activeConfig, 'sms');
 
         if ($agent === null) {
+            $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'no agent file answers texts', 'No front desk agent is set up for texts');
+
             return;
         }
 
