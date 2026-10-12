@@ -21,11 +21,11 @@ findings:
     title: "`DispatchInbound` marks a message dispatched before the job is pushed, so a failed push strands it forever [slice A, was WR-A02]"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "Owner alerts can be texted twice (non-atomic send claim) [slice A, was WR-A03]"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "`RaiseOwnerAlert` de-duplication is check-then-insert with no unique index [slice A, was WR-A04]"
   - id: WR-05
     severity: warning
@@ -41,7 +41,7 @@ findings:
     title: "A form that describes a danger gets neither a safety line nor an owner alert [slice A, was WR-A07]"
   - id: WR-08
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "The owner-alert link scrubber is an allow-list of top-level domains [slice A, was WR-A08]"
   - id: WR-09
     severity: warning
@@ -49,7 +49,7 @@ findings:
     title: "`gate:export` reports failed and queued sends as \"what went out\", and `original_text` differs by path [slice A, was WR-A09]"
   - id: WR-10
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "The code-level price and discount veto has easy bypasses [slice A, was WR-A10]"
   - id: WR-11
     severity: warning
@@ -69,7 +69,7 @@ findings:
     title: "`ConversationThread::$conversation` is a public, unlocked model property [slice B, was WR-B04]"
   - id: WR-15
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "The unauthenticated fake webhook is on by default in every environment [slice B, was WR-B05]"
   - id: WR-16
     severity: warning
@@ -155,7 +155,7 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 38
+open: 33
 total: 38
 recorded: 2026-10-12T13:11:24.328236Z
 ---
@@ -168,19 +168,19 @@ recorded: 2026-10-12T13:11:24.328236Z
 | CR-02 | critical | open | - |
 | WR-01 | warning | open | - |
 | WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
+| WR-03 | warning | deferred | Phase 2.1 (2.1 rebuilds alerts) |
+| WR-04 | warning | deferred | Phase 2.1 (2.1 rebuilds alerts) |
 | WR-05 | warning | open | - |
 | WR-06 | warning | open | - |
 | WR-07 | warning | open | - |
-| WR-08 | warning | open | - |
+| WR-08 | warning | deferred | before first client |
 | WR-09 | warning | open | - |
-| WR-10 | warning | open | - |
+| WR-10 | warning | deferred | before first client |
 | WR-11 | warning | open | - |
 | WR-12 | warning | open | - |
 | WR-13 | warning | open | - |
 | WR-14 | warning | open | - |
-| WR-15 | warning | open | - |
+| WR-15 | warning | deferred | before first deploy (same root as T-01-37) |
 | WR-16 | warning | open | - |
 | WR-17 | warning | open | - |
 | WR-18 | warning | open | - |

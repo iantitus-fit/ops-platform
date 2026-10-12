@@ -194,6 +194,8 @@ Plans:
 - `escalate_to` may name a staff user.
 - The LLM fallback classifier driver on a ZDR route.
 - A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
+- Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW.md` WR-03, WR-04; 2.1 rebuilds alerts).
+- Carried from the Phase 2 UI review (`02-UI-REVIEW.md`): a held draft's Send and Discard buttons show a loading state and are disabled while running, and Discard asks for confirmation.
 
 **Success Criteria** (what must be TRUE):
   1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
