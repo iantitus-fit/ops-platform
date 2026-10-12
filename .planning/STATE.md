@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-18-PLAN.md
-last_updated: "2026-10-12T02:55:25.780Z"
+stopped_at: Completed 02-17-PLAN.md
+last_updated: "2026-10-12T03:05:19.103Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 497264c58d8f06afae239bca0811a6cf0a1b98ec
+state_head: 28728f4b3a8cf90094e72efc91d2ec6e7a7474a6
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 24
+  completed_plans: 25
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 18 of 29
+Plan: 19 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -80,6 +80,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P15 | 10 min | 2 tasks | 13 files |
 | Phase 02 P16 | 14 min | 1 tasks | 7 files |
 | Phase 02 P18 | 6 min | 2 tasks | 15 files |
+| Phase 02 P17 | 14 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-16: a send_refused hold goes through the same storeDraft path, so it also lands on the timeline and alerts the owner as draft_waiting
 - [Phase 02]: 02-18: Intake answers are rows (latest id per conversation, service and question is current); unknown keys dropped, unknown options stored null with raw words
 - [Phase 02]: 02-18: A web form names a contact only when it created it; matched contacts get a 'form gave the name' note. The agent's customer_name fills only an empty name via an atomic conditional update
+- [Phase 02]: 02-17: A replacement draft alerts only when urgency rises or no alert in its draft chain was actually sent; the chain is kept in the new draft's meta.replaces so three texts in a row give one alert
+- [Phase 02]: 02-17: One live draft per conversation is a partial unique index (messages_one_live_draft_per_conversation); a replaced draft is withdrawn with resolution replaced and kept; a holding reply is sent once per waiting draft and approved, edited or discarded resolutions end the wait
 
 ### Pending Todos
 
@@ -171,6 +174,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T02:55:25.741Z
-Stopped at: Completed 02-18-PLAN.md
+Last session: 2026-10-12T03:05:19.061Z
+Stopped at: Completed 02-17-PLAN.md
 Resume file: None
