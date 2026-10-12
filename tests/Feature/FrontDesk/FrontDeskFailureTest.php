@@ -15,7 +15,9 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 
 it('tells the owner, and texts the customer nothing, when every model failed (AGNT-04)', function () {
     User::factory()->withPhone('+12025550199')->create();
@@ -166,4 +168,48 @@ it('gives the job more time than the slowest front desk run, and the queue more 
         ->and($job->timeout)->toBeGreaterThan(config('gate.agent.chain_budget_seconds') + config('services.jev.timeout') + 120)
         ->and(config('queue.connections.database.retry_after'))->toBeGreaterThan(300)
         ->and(config('queue.connections.redis.retry_after'))->toBeGreaterThan(300);
+});
+
+it('tells the owner when the live folder has no agent for texts (WR-01)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    File::delete(icmPath('agents/front-desk.md'));
+    frontDeskCustomerTexts();
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+    $sent = textsSentToCustomers();
+
+    expect(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0)
+        ->and(Message::query()->where('direction', MessageDirection::In)->sole()->handled_at)->not->toBeNull()
+        ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: no agent file answers texts')
+        ->and($alert->reason)->toBe(AlertReason::FrontDeskFailed)
+        ->and($alert->body)->toContain('No front desk agent is set up for texts')
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($sent)->toHaveCount(1)
+        ->and($sent[0]['to'])->toBe('+12025550199');
+});
+
+it('tells the owner, at once, when a Phase 1 version with no agent is still live', function () {
+    User::factory()->withPhone('+12025550199')->create();
+
+    $version = activateExampleFolder();
+    $compiled = $version->compiled;
+    unset($compiled['index']['agent']);
+    $compiled['files']['rules/sending.md']['front_matter']['owner_alert'] = 'Text the owner when a draft is waiting or a customer asks for a person';
+    $version->update(['compiled' => $compiled]);
+    app()->forgetScopedInstances();
+
+    $this->travelTo(Carbon::parse('2026-10-13 21:00', 'America/Chicago'));
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::FrontDeskFailed)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($alert->body)->toContain('No front desk agent is set up for texts')
+        ->and(textsSentToCustomers())->toHaveCount(1);
 });
