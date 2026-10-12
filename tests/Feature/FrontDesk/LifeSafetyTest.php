@@ -1,8 +1,13 @@
 <?php
 
+use App\Actions\InboundData;
+use App\Actions\RecordInbound;
+use App\Actions\SendLifeSafetyLine;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\AlertReason;
+use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
+use App\Enums\MessageChannel;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
@@ -135,4 +140,171 @@ it('ends the gas line after "from outside." when the folder has no utility phone
 
     expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
         ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(lifeSafetyExpectedFirstText(LIFE_SAFETY_GAS_LINE));
+});
+
+const LIFE_SAFETY_GENERAL_LINE = 'Please get everyone out to safety now and call 911 from outside.';
+
+/**
+ * A further text from the same customer through the fake webhook, once the example folder is live. The letter picks
+ * the MessageSid, so the same letter twice is the provider delivering the same text again.
+ */
+function lifeSafetyLaterText(string $body, string $sidLetter): void
+{
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['Body' => $body, 'MessageSid' => 'SM'.str_repeat($sidLetter, 32)]))->assertOk();
+}
+
+/**
+ * A first text that is not about danger, then the owner taking over before the next text arrives.
+ */
+function lifeSafetyOwnerHasTakenOver(): Conversation
+{
+    lifeSafetyCustomerTexts('Are you open tomorrow?', ['MessageSid' => 'SM'.str_repeat('a', 32)]);
+
+    $conversation = Conversation::query()->sole();
+    $conversation->update(['paused_at' => now(), 'paused_reason' => PausedReason::TakenOver]);
+
+    return $conversation;
+}
+
+it('still sends the safety line in a conversation the owner took over, and keeps the pause reason (D-17)', function () {
+    $conversation = lifeSafetyOwnerHasTakenOver();
+
+    lifeSafetyLaterText('the outlet is sparking', 'b');
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(lifeSafetyExpectedFirstText(LIFE_SAFETY_GENERAL_LINE))
+        ->and($conversation->fresh()->paused_reason)->toBe(PausedReason::TakenOver)
+        ->and($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->sent_at)->not->toBeNull();
+});
+
+it('does not alert a second time for that text when the burst wait ends in a conversation the owner took over', function () {
+    lifeSafetyOwnerHasTakenOver();
+    lifeSafetyLaterText('the outlet is sparking', 'b');
+    scriptFrontDeskReplies(['reply' => 'unused']);
+
+    runQueuedFrontDeskJobs();
+
+    FrontDeskAgent::assertNeverPrompted();
+
+    expect(OwnerAlert::query()->pluck('reason')->all())->toBe([AlertReason::LifeSafety])
+        ->and(lifeSafetyTextsToCustomer())->toHaveCount(1);
+});
+
+it('is never counted or blocked by the reply cap (D-52)', function () {
+    lifeSafetyCustomerTexts('Are you still coming?', ['MessageSid' => 'SM'.str_repeat('a', 32)]);
+    $conversation = Conversation::query()->sole();
+
+    foreach ([5, 10, 20, 30, 40, 55] as $minutes) {
+        Message::factory()->for($conversation)->outbound()->create([
+            'kind' => MessageKind::AgentReply,
+            'body' => 'Earlier automated text',
+            'created_at' => now()->subMinutes($minutes),
+        ]);
+    }
+
+    lifeSafetyLaterText('I smell gas', 'b');
+    scriptFrontDeskReplies(['reply' => 'unused']);
+    runQueuedFrontDeskJobs();
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toStartWith('If you smell gas')
+        ->and(OwnerAlert::query()->pluck('reason')->all())->toBe([AlertReason::LifeSafety])
+        ->and($conversation->fresh()->paused_reason)->toBe(PausedReason::LifeSafety);
+});
+
+it('leaves the disclosure off when the conversation already had an automated text (D-50)', function () {
+    lifeSafetyCustomerTexts('Are you still coming?', ['MessageSid' => 'SM'.str_repeat('a', 32)]);
+    Message::factory()->for(Conversation::query()->sole())->outbound()->create(['body' => 'Earlier automated text']);
+
+    lifeSafetyLaterText('I smell gas', 'b');
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(LIFE_SAFETY_GAS_LINE.' Then call the gas company at +13125550188.');
+});
+
+it('sends no second safety line when the provider delivers the same text again', function () {
+    lifeSafetyCustomerTexts('I smell gas in the basement');
+
+    lifeSafetyLaterText('I smell gas in the basement', 'c');
+
+    $inbound = Message::query()->where('author', MessageAuthor::Customer->value)->sole();
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(app(SendLifeSafetyLine::class)->handle($inbound, 'gas', 'keyword'))->toBeNull()
+        ->and(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('answers a second text that describes a different danger in a paused conversation with its own line', function () {
+    lifeSafetyCustomerTexts('I smell gas in the basement', ['MessageSid' => 'SM'.str_repeat('a', 32)]);
+
+    lifeSafetyLaterText('now the outlet is sparking', 'b');
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(2)
+        ->and(lifeSafetyTextsToCustomer()[1]['body'])->toBe(LIFE_SAFETY_GENERAL_LINE)
+        ->and(OwnerAlert::query()->count())->toBe(2);
+});
+
+it('catches a danger the words missed through Jev, sends the line, pauses and holds the reply (D-46)', function () {
+    lifeSafetyCustomerTexts('my thermostat smells funny');
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.2]);
+
+    runQueuedFrontDeskJobs();
+
+    $line = Message::query()->where('kind', MessageKind::LifeSafety->value)->sole();
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+    $alert = OwnerAlert::query()->where('reason', AlertReason::LifeSafety->value)->sole();
+    $conversation = Conversation::query()->sole();
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(lifeSafetyExpectedFirstText(LIFE_SAFETY_GENERAL_LINE))
+        ->and($line->gate['life_safety'])->toBe(['hazard' => 'general', 'trigger' => 'classifier'])
+        ->and($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($draft->gate_outcome)->toBe(GateOutcome::Hold)
+        ->and($draft->gate_reason)->toBe('classifier:life_safety')
+        ->and($draft->body)->toBe('What is the system doing?');
+});
+
+it('alerts the owner at once and pauses when the safety line cannot be sent (T-02-43)', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+    activateExampleFolder();
+    config(['channels.text.driver' => 'twilio']);
+
+    app(RecordInbound::class)->handle(new InboundData(
+        channel: MessageChannel::Sms,
+        source: 'text',
+        body: 'I smell gas in the basement',
+        phone: LIFE_SAFETY_CUSTOMER_PHONE,
+        email: null,
+        name: null,
+        provider: 'twilio',
+        providerMessageId: 'SM'.str_repeat('d', 32),
+    ));
+
+    $alert = OwnerAlert::query()->sole();
+    $conversation = Conversation::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->body)->toContain('Safety message could not be sent')
+        ->and($conversation->isPaused())->toBeTrue()
+        ->and($conversation->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->sole()->status)->toBe(MessageStatus::Failed);
+});
+
+it('still sends the safety line when no business folder is live yet', function () {
+    User::factory()->withPhone(LIFE_SAFETY_OWNER_PHONE)->create();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['Body' => 'I smell gas in the basement']))->assertOk();
+
+    expect(lifeSafetyTextsToCustomer())->toHaveCount(1)
+        ->and(lifeSafetyTextsToCustomer()[0]['body'])->toBe(LIFE_SAFETY_GAS_LINE)
+        ->and(Conversation::query()->sole()->isPaused())->toBeTrue();
 });
