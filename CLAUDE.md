@@ -37,6 +37,7 @@ Full picture: `docs/SPEC.md`.
 | `examples/` | Fictional business folders used in development and tests |
 | `docs/` | Spec, decisions, setup, sprint plans, GSD ingest manifest |
 | `.planning/` | GSD: project, requirements, roadmap, state, phase plans and summaries |
+| `map/CLAUDE.md` | Cartographer map: catalog then one card, for changing how a text becomes a reply or a draft |
 | `tests/` | Pest tests |
 
 ## Rules
