@@ -4,12 +4,14 @@ use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\FolderSync;
+use App\Jobs\ProcessInbound;
 use App\Models\IcmVersion;
 use App\SendRule\Classifier;
 use App\SendRule\FakeClassifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -41,6 +43,12 @@ pest()->extend(TestCase::class)
          * No test may prompt a real front desk model: an unscripted prompt throws. scriptFrontDeskReplies() scripts one.
          */
         FrontDeskAgent::fake()->preventStrayPrompts();
+
+        /**
+         * Only ProcessInbound is held back, so no text is answered until a test runs the job with runQueuedFrontDeskJobs().
+         * Every other job still runs on the sync queue, so the earlier tests keep their timelines.
+         */
+        Queue::fake([ProcessInbound::class]);
 
         $folder = sys_get_temp_dir().'/icm-'.Str::uuid();
 
@@ -112,6 +120,26 @@ function scriptFrontDeskReplies(array ...$replies): void
     ];
 
     FrontDeskAgent::fake(array_map(fn (array $reply) => [...$defaults, ...$reply], $replies))->preventStrayPrompts();
+}
+
+/**
+ * Run each ProcessInbound job the app queued since the test started, once, the way the queue worker would after
+ * the debounce. A job that already ran is skipped, so calling this again only runs what was queued since.
+ */
+function runQueuedFrontDeskJobs(): void
+{
+    $alreadyRun = app()->bound('front-desk-jobs-run') ? app('front-desk-jobs-run') : [];
+
+    foreach (Queue::pushed(ProcessInbound::class) as $job) {
+        if (in_array($job, $alreadyRun, true)) {
+            continue;
+        }
+
+        $alreadyRun[] = $job;
+        app()->instance('front-desk-jobs-run', $alreadyRun);
+
+        app()->call([$job, 'handle']);
+    }
 }
 
 /**
