@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-10-12T01:59:42.807Z"
+stopped_at: Completed 02-10-PLAN.md
+last_updated: "2026-10-12T02:04:46.030Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 02 execution started
-state_head: 316f5fd35eca9b0701300dc7b08a518cf8b500cb
+state_head: 4ad3735a3b2e96b24f41862d738fc35814947fb5
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 36
-  completed_plans: 15
+  completed_plans: 16
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 9 of 29
+Plan: 10 of 29
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 02 execution started
 
@@ -71,6 +71,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P04 | 15 min | 1 tasks | 12 files |
 | Phase 02 P05 | 12 min | 1 tasks | 6 files |
 | Phase 02 P06 | 25 min | 1 tasks | 15 files |
+| Phase 02 P10 | 3 min | 1 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-04: send_on_own entries are checked in code (not Rule::in) so price, promise, discount and complaint get the hard-floor sentence; ReplyLabel::neverOnItsOwn() is the single source for the floor
 - [Phase 02]: 02-05: {next_open} reads 'today' when moment + 60-minute margin <= closing time (boundary inclusive); closure date closes the whole local day; nextOpening scans 14 days then renders 'when we reopen'
 - [Phase 02]: 02-06: a Jev model string containing 'latest' is refused by JevClassifier before any request; request body is exactly model, state{customer_message,draft_reply}, questions
+- [Phase 02]: 02-10: OwnerAlertText::clean swaps schemed links, emails, www, domain-with-path and bare domains with common endings, then digit runs of 7+; RaiseOwnerAlert is the one door for alerts and SendOwnerAlert never throws, storing failed_at and failure on the alert row
 
 ### Pending Todos
 
@@ -147,6 +149,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-12T01:59:42.769Z
-Stopped at: Completed 02-06-PLAN.md
+Last session: 2026-10-12T02:04:45.989Z
+Stopped at: Completed 02-10-PLAN.md
 Resume file: None
