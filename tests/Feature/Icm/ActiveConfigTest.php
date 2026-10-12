@@ -67,7 +67,7 @@ it('lists the typed files with their types and the router files without one', fu
     activateExampleFolder();
     $files = collect(app(ActiveConfig::class)->files());
 
-    expect($files->whereNotNull('type')->pluck('path')->all())->toHaveCount(8)
+    expect($files->whereNotNull('type')->pluck('path')->all())->toHaveCount(exampleFolderFileCount())
         ->and($files->firstWhere('path', 'business/profile.md')['type'])->toBe('business')
         ->and($files->whereNull('type')->pluck('path')->sort()->values()->all())->toBe([
             'CLAUDE.md',

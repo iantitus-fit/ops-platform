@@ -76,7 +76,7 @@ it('rejects a file whose type or front matter cannot be understood', function (s
 
     expect(rejectedErrors())->toBe([$line]);
 })->with([
-    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules (you wrote recipe)'],
+    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent (you wrote recipe)'],
     'front matter without a type' => ['notes/x.md', "---\nname: Notes\n---\nBody", 'notes/x.md: type is missing, and it is required'],
     'no front matter at all' => ['notes/y.md', 'Just some words.', 'notes/y.md: the file must start with front matter (a --- line, then type: and its fields, then another --- line)'],
     'empty front matter' => ['notes/z.md', "---\n---\nBody", 'notes/z.md: the front matter is empty; add type: and the fields for that type'],

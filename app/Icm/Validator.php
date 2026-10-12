@@ -144,6 +144,18 @@ class Validator
                 'draft_for_owner.*' => 'bail|string',
                 'owner_alert' => 'bail|required',
             ],
+            'agent' => [
+                'name' => 'bail|required|string',
+                'channel' => ['bail', 'required', Rule::in(['sms'])],
+                'provider' => 'bail|required|string',
+                'model' => 'bail|required|string',
+                'fallback' => 'bail|present|array',
+                'fallback.*.provider' => 'bail|required|string',
+                'fallback.*.model' => 'bail|required|string',
+                'loads' => 'bail|required|array|min:1',
+                'loads.*' => 'bail|string',
+                'escalate_to' => ['bail', 'required', Rule::in(['owner'])],
+            ],
             default => [],
         };
     }

@@ -6,7 +6,7 @@ use App\Models\IcmVersion;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
-it('activates the example folder as v1 with eight files', function () {
+it('activates the example folder as v1', function () {
     expect(Artisan::call('icm:sync'))->toBe(0);
 
     expect(IcmVersion::count())->toBe(1);

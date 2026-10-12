@@ -148,6 +148,19 @@ class ActiveConfig
     }
 
     /**
+     * The agent that serves one channel such as "sms": its front matter plus the markdown body
+     * under "body", or null when no agent file serves that channel.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function agent(string $channel): ?array
+    {
+        $path = $this->version()->compiled['index']['agent'][$channel] ?? null;
+
+        return $path === null ? null : $this->typedFile($path);
+    }
+
+    /**
      * Every compiled file in the live version. Router files have no type.
      *
      * @return list<array{path: string, type: ?string}>
