@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Enums\AlertReason;
 use App\Icm\ActiveConfig;
 use App\Icm\BusinessClock;
+use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
@@ -77,7 +78,10 @@ class RaiseOwnerAlert
 
     /**
      * Whether the owner wants this event at once: a safety message always does, and so does
-     * any event the business folder lists under owner_alert right_away.
+     * any event the business folder lists under owner_alert right_away. An owner_alert the code
+     * cannot read (no live version, or a folder from before the front desk) counts as urgent:
+     * the alert goes out now rather than risk being held, because an alert must never fail
+     * silently (D-19).
      */
     public function isUrgent(AlertReason $reason): bool
     {
@@ -85,7 +89,13 @@ class RaiseOwnerAlert
             return true;
         }
 
-        return in_array($reason->value, $this->activeConfig->sendingRules()['owner_alert']['right_away'], true);
+        $setting = $this->ownerAlertSetting();
+
+        if ($setting === null) {
+            return true;
+        }
+
+        return in_array($reason->value, (array) ($setting['right_away'] ?? []), true);
     }
 
     /**
@@ -93,7 +103,8 @@ class RaiseOwnerAlert
      * the owner wants after-hours alerts right away; otherwise the next opening (D-20). A folder
      * that never opens has no next opening, and the alert then goes out now rather than never.
      * The opening is converted to the app's time zone because a date is stored as its own wall
-     * clock, so a Chicago 8 am would otherwise be saved as 8 am UTC.
+     * clock, so a Chicago 8 am would otherwise be saved as 8 am UTC. An owner_alert the code cannot
+     * read is never a reason to wait: isUrgent() has already made such an alert due now.
      */
     private function dueAt(bool $urgent): CarbonInterface
     {
@@ -103,13 +114,31 @@ class RaiseOwnerAlert
             return $now;
         }
 
-        if ($this->activeConfig->sendingRules()['owner_alert']['after_hours'] === 'right_away') {
+        if (($this->ownerAlertSetting()['after_hours'] ?? null) === 'right_away') {
             return $now;
         }
 
         $opening = $this->businessClock->nextOpening($now);
 
         return $opening === null ? $now : $opening->setTimezone(config('app.timezone'));
+    }
+
+    /**
+     * The live folder's owner_alert settings (channels, right_away, after_hours), or null when they cannot be
+     * read: nothing is live, or the folder is from Phase 1, where owner_alert was a sentence the owner wrote.
+     * Only readers tolerate that old shape; the Validator still demands the Phase 2 one.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function ownerAlertSetting(): ?array
+    {
+        try {
+            $setting = $this->activeConfig->sendingRules()['owner_alert'] ?? null;
+        } catch (NoActiveVersion) {
+            return null;
+        }
+
+        return is_array($setting) ? $setting : null;
     }
 
     private function alreadyRaised(Conversation $conversation, AlertReason $reason, ?Message $subject, ?int $userId): bool
