@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 02
-current_phase_name: Text Front Desk
-status: verifying
-stopped_at: Completed 02-41-PLAN.md
-last_updated: "2026-10-13T15:13:03.602Z"
+current_phase: "02.1"
+current_phase_name: Owner Loop
+status: planning
+stopped_at: Phase 02 complete, ready to plan Phase 02.1
+last_updated: "2026-10-13T20:22:49.822Z"
 last_activity: 2026-10-13
-last_activity_desc: Phase 02 execution resumed (wave continue)
-state_head: acc2c1f9309f976a307e241a2d33624c4ffe1bb6
+last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
+state_head: 0d460dd081f90b718c7ddd85640edcbab11a4f07
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 48
   completed_plans: 48
-  percent: 25
+  percent: 67
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-11)
+See: .planning/PROJECT.md (updated 2026-10-13)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 02 — Text Front Desk
+**Current focus:** Phase 02.1 — Owner Loop
 
 ## Current Position
 
-Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 41 of 41 (02-35 complete)
-Status: Phase complete — ready for verification
-Last activity: 2026-10-13 — Phase 02 execution resumed (wave continue)
+Phase: 02.1 — Owner Loop
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
 
-Progress: [███░░░░░░░] 25%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 48
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -46,6 +46,7 @@ Progress: [███░░░░░░░] 25%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7 | - | - |
+| 02 | 41 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -207,6 +208,8 @@ None yet.
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
+- [Phase 2]: Open review items (02-REVIEW.md 2026-10-13, ledger 02-REVIEW-DISPOSITION.md): the Customers waiting widget still treats a queued or failed owner text as the owner speaking last (PausedConversationsWaiting.php:32; fix with MessageStatus::onTheCustomersPhone() plus a failed-owner-text test), and the map note and MessageStatus docblock don't list RecordsWriter as a reader. Advisory, not blocking.
+- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.1 scope.
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 
 ### Roadmap Evolution
@@ -226,6 +229,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-13T15:13:03.519Z
-Stopped at: Completed 02-41-PLAN.md
+Last session: 2026-10-13T20:23:31Z
+Stopped at: Phase 02 complete, ready to plan Phase 02.1
 Resume file: None
