@@ -384,10 +384,24 @@ it('expands a folder entry to every typed file under it and keeps the others as 
         'business/hours.md',
         'business/faq.md',
         'business/services/ac-repair.md',
+        'business/services/furnace-repair.md',
         'business/services/furnace-tune-up.md',
         'voice/how-we-talk.md',
         'rules/sending.md',
     ]);
+});
+
+it('loads the furnace repair service and its intake questions', function () {
+    [$agent, , $contact] = promptTestThread();
+
+    $instructions = app(FrontDeskPrompt::class)->instructions($agent, $contact);
+    $service = app(ActiveConfig::class)->service('furnace-repair');
+
+    expect($instructions)->toContain('What is the furnace doing?')->toContain('Is it gas or electric?')
+        ->and($service['name'])->toBe('Furnace repair')
+        ->and($service['price_policy'])->toBe('starting_at')
+        ->and($service['price_cents'])->toBe(8900)
+        ->and(array_column($service['intake'], 'key'))->toBe(['symptom', 'fuel']);
 });
 
 it('keeps a router file out of a folder entry', function () {

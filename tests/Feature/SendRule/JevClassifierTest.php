@@ -61,7 +61,7 @@ it('puts the owner triage file in the live folder', function () {
         ->expectsOutputToContain('('.exampleFolderFileCount().' files)')
         ->assertExitCode(0);
 
-    expect(exampleFolderFileCount())->toBe(11)
+    expect(exampleFolderFileCount())->toBe(12)
         ->and(array_column(app(ActiveConfig::class)->files(), 'path'))->toContain('rules/triage.md');
 });
 
