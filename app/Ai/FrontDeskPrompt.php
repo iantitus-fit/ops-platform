@@ -57,7 +57,8 @@ TEXT;
     ) {}
 
     /**
-     * The whole instruction text: the rules, the agent file's body, each loaded file, and the customer's card.
+     * The whole instruction text: the rules, the agent file's body, each loaded file, the customer's card, and last,
+     * what time it is now. The changing part goes last so everything above it stays the same from run to run.
      */
     public function instructions(AgentFile $agent, Contact $contact): string
     {
@@ -80,12 +81,17 @@ TEXT;
         }
 
         $parts[] = "## Customer card (generated from the database, read-only)\n\n".$this->customerCard->render($contact);
+        $parts[] = $this->rightNow();
 
         return implode("\n\n", $parts);
     }
 
     /**
      * The thread before the new burst, as the turns the model is shown.
+     *
+     * Each earlier text starts with the time it happened in brackets, in the business's time zone. The new burst
+     * does not: promptText() also feeds the ask-for-a-person check and the Jev classifier, so it stays the
+     * customer's words alone, and "Right now" in the instructions covers the burst's time.
      *
      * Only texts on the customer's phone count (MessageStatus::onTheCustomersPhone()): drafts, failed sends and
      * anything not yet sent are left out by that allow-list. Some providers reject two turns in a row from one
@@ -117,7 +123,7 @@ TEXT;
             }
 
             $role = $isCustomer ? 'user' : 'assistant';
-            $text = $this->textOf($message);
+            $text = $this->timeOf($message).' '.$this->textOf($message);
             $last = array_key_last($turns);
 
             if ($last !== null && $turns[$last]['role'] === $role) {
@@ -177,6 +183,32 @@ TEXT;
         }
 
         return array_values(array_unique($paths));
+    }
+
+    /**
+     * The "Right now" section: the weekday, date and time to the minute in the business's time zone.
+     *
+     * The model has no clock of its own, and the app clock is UTC, which is already tomorrow for part of every
+     * evening in the Americas, so the time is converted to the business's zone before it is written. To the minute,
+     * not the second, so the text only changes once a minute.
+     */
+    private function rightNow(): string
+    {
+        $zone = $this->activeConfig->displayTimezone();
+        $now = now()->toImmutable()->setTimezone($zone);
+
+        return "## Right now\n\nIt is {$now->format('l, F j, Y, g:i a')} in {$zone}, the business's time zone.";
+    }
+
+    /**
+     * The bracketed time an earlier text starts with, in the business's time zone, for example "[Sun Oct 11, 9:31 am]".
+     * It is when the text happened (Message::happenedAt()): a text that went out shows its send time.
+     */
+    private function timeOf(Message $message): string
+    {
+        $time = $message->happenedAt()->setTimezone($this->activeConfig->displayTimezone());
+
+        return '['.$time->format('D M j, g:i a').']';
     }
 
     /**
