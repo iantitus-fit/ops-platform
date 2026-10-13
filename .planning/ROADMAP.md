@@ -212,6 +212,8 @@ Plans:
 - A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
 - Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW-DISPOSITION.md` WR-03, WR-04; 2.1 rebuilds alerts).
 - Carried from the Phase 2 review fix (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-22): a front-desk run that claims texts newer than the one that queued it can still alert the owner twice when it fails. Fix with a claim token stored on the claimed rows, so `ProcessInbound::failed()` reports exactly the burst its run claimed; not with a time window in `ReportFrontDeskFailure`.
+- Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-09): `gate:export` reports failed and queued sends as what went out, and `original_text` differs by path; fix before the export feeds threshold tuning.
+- Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-17 to WR-19), test hardening: the reply-cap "does not count" test cannot detect most of what it claims (WR-17); `toContain('fi-collapsed')` is always true, so the collapsed customer details are not tested (WR-18); "throws NoActiveVersion from every accessor" omits the accessors Phase 2 added (WR-19).
 - Carried from the Phase 2 UI review (`02-UI-REVIEW.md`): a held draft's Send and Discard buttons show a loading state and are disabled while running, and Discard asks for confirmation.
 
 **Success Criteria** (what must be TRUE):

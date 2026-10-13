@@ -65,7 +65,7 @@ findings:
     title: "The owner-alert link scrubber is an allow-list of top-level domains [slice A, was WR-A08]"
   - id: WR-09
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "`gate:export` reports failed and queued sends as \"what went out\", and `original_text` differs by path [slice A, was WR-A09]"
   - id: WR-10
     severity: warning
@@ -73,19 +73,19 @@ findings:
     title: "The code-level price and discount veto has easy bypasses [slice A, was WR-A10]"
   - id: WR-11
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "Unauthenticated request with a nested array field turns a 403 into a 500 [slice B, was WR-B01]"
   - id: WR-12
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "Empty `MessageSid` with a `SmsSid` yields an empty provider message id [slice B, was WR-B02]"
   - id: WR-13
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "Sync Now only catches `IcmFolderMissing`; invalid UTF-8 or a DB error becomes a 500 [slice B, was WR-B03]"
   - id: WR-14
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "`ConversationThread::$conversation` is a public, unlocked model property [slice B, was WR-B04]"
   - id: WR-15
     severity: warning
@@ -97,15 +97,15 @@ findings:
     title: "The test run is not isolated from `.env`; the documented go-live step breaks the suite [slice C, was WR-C01]"
   - id: WR-17
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "The reply-cap \"does not count\" test cannot detect most of what it claims [slice C, was WR-C02]"
   - id: WR-18
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "`toContain('fi-collapsed')` is always true, so \"collapses the customer details section\" is not tested [slice C, was WR-C03]"
   - id: WR-19
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "\"throws NoActiveVersion from every accessor\" omits the accessors this phase added [slice C, was WR-C04]"
   - id: IN-01
     severity: info
@@ -243,7 +243,7 @@ findings:
     severity: info
     disposition: open
     title: "Small inconsistencies in `ConversationThread` and the Needs you card [review 3, was IN-03]"
-open: 36
+open: 28
 total: 60
 recorded: 2026-10-13T20:55:05.278Z
 ---
@@ -267,17 +267,17 @@ recorded: 2026-10-13T20:55:05.278Z
 | WR-06 | warning | fixed | 02-33: a72f8bd, c7f13f1 (test e229e2d) (not in the current review) |
 | WR-07 | warning | fixed | 02-33: 4cd98fc (test 7b2dd82) (not in the current review) |
 | WR-08 | warning | deferred | before first client (not in the current review) |
-| WR-09 | warning | open | - (not in the current review) |
+| WR-09 | warning | deferred | Phase 2.1, gate:export feeds threshold tuning (not in the current review) |
 | WR-10 | warning | deferred | before first client (not in the current review) |
-| WR-11 | warning | open | - (not in the current review) |
-| WR-12 | warning | open | - (not in the current review) |
-| WR-13 | warning | open | - (not in the current review) |
-| WR-14 | warning | open | - (not in the current review) |
+| WR-11 | warning | deferred | before first deploy (not in the current review) |
+| WR-12 | warning | deferred | before Twilio go-live (not in the current review) |
+| WR-13 | warning | deferred | before first deploy (not in the current review) |
+| WR-14 | warning | deferred | before first deploy (not in the current review) |
 | WR-15 | warning | deferred | before first deploy (same root as T-01-37) (not in the current review) |
 | WR-16 | warning | fixed | 02-30: cbe36a3, f2eca7a (test 589229e) (not in the current review) |
-| WR-17 | warning | open | - (not in the current review) |
-| WR-18 | warning | open | - (not in the current review) |
-| WR-19 | warning | open | - (not in the current review) |
+| WR-17 | warning | deferred | Phase 2.1, test hardening (not in the current review) |
+| WR-18 | warning | deferred | Phase 2.1, test hardening (not in the current review) |
+| WR-19 | warning | deferred | Phase 2.1, test hardening (not in the current review) |
 | IN-01 | info | open | - (not in the current review) |
 | IN-02 | info | open | - (not in the current review) |
 | IN-03 | info | open | - (not in the current review) |
