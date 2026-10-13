@@ -1,39 +1,55 @@
 ---
-status: diagnosed
+status: testing
 phase: 02-text-front-desk
 source: [02-VERIFICATION.md]
-started: 2026-10-12T13:16:50Z
-updated: 2026-10-12T22:14:26.014Z
+started: 2026-10-13T15:30:34Z
+updated: 2026-10-13T15:30:34Z
 ---
 
 ## Current Test
 
-[testing complete]
+number: 1
+name: Needs you card at phone size (WINDOWS 10, UAT Test 1 re-run). Text 'How much for a new unit?' from /dev/chat, open the alert link on a phone or at 390x664 in Chrome device mode. Repeat with a ~14-message thread and a several-hundred-character customer text.
+expected: |
+  Without scrolling: held reason, a 'Customer wrote, <time>:' line, the draft, Send and Discard; customer details collapsed. Scrolling down shows the thread oldest first with its box ending at the latest message.
+awaiting: user response
 
 ## Tests
 
-### 1. Open an owner-alert link on a real phone over Wi-Fi after triggering a held draft from /dev/chat
-expected: Lands on the conversation; held reason, draft and Send are visible without scrolling
-result: issue
-reported: "Mostly passes: held reason, draft, Send and Discard are visible without scrolling, customer details are collapsed, sign-in worked, and Send delivered the draft with the sign-off and no second AI note. Two minor issues: (1) the thread under the Needs you card starts at the oldest message, not the latest (D-29 says it opens at the latest); (2) after Send, the sent reply is listed above the holding reply in /dev/chat because it keeps the draft's creation time; outbound messages should sort by when they were sent. Suggestion for 2.1, not an issue: show the customer's last message in the Needs you card, so the owner sees what they're answering without scrolling."
-severity: minor
+### 1. Needs you card at phone size (WINDOWS 10, UAT Test 1 re-run). Text 'How much for a new unit?' from /dev/chat, open the alert link on a phone or at 390x664 in Chrome device mode. Repeat with a ~14-message thread and a several-hundred-character customer text.
+expected: Without scrolling: held reason, a 'Customer wrote, <time>:' line, the draft, Send and Discard; customer details collapsed. Scrolling down shows the thread oldest first with its box ending at the latest message.
+result: [pending]
 
-### 2. Set JEV_API_KEY, ANTHROPIC_API_KEY and OPENAI_API_KEY, run icm:sync for the Phase 2 folder, run a queue worker, text from /dev/chat
-expected: A reply that opens with the AI disclosure, ends with the sign-off, asks the matching service's intake question, and a price question is held as a draft
-result: issue
-reported: "Issue, major: ordinary intake replies never send on their own. Live run: \"My AC is blowing warm air\" got a correct intake question (label intake_question, code checks clean, Jev intent intake at 1.0), but Jev scored complaint 0.47 and promise 0.30 against the 0.075 bar, so it was held. Rewording the complaint and promise questions in examples/example-hvac/rules/triage.md (uncommitted; keep it) cut those to complaint 0.07 and promise 0.09, and the reply was still held on promise. Fix: keep the new triage wording, and make the yes/no bar per question in config/gate.php: price and discount stay at 0.075, promise and complaint go to 0.15. This amends D-45; record it. Life-safety and asks_for_person thresholds unchanged. Working as designed: the AI disclosure, intake question and sign-off are right on every first reply; a furnace repair message with no matching service was held as \"other\"; \"I smell gas\" got the safety line at once, paused the conversation and alerted the owner; a 401 from a wrong Jev key held the reply. Second issue, major: the agent doesn't know today's date. Dana's draft said her visit is \"tomorrow at 9\" because she wrote \"tomorrow at 9\" on Oct 11; that visit was this morning. FrontDeskPrompt gives the model no current date or time, and the thread messages carry no timestamps. Fix: put the current date, weekday and time in the business's time zone in the prompt, and a timestamp on each thread message. Minor: /dev/chat shows held drafts as if they were sent; the furnace draft said \"We do repair furnaces\", which no business file says."
-severity: major
+### 2. Live run after icm:sync with the three keys (WINDOWS 6, UAT Test 2 re-run). Text 'My AC is blowing warm air', then a few ordinary intake, scheduling and FAQ texts; read gate:export.
+expected: The intake reply sends on its own. Promise and complaint scores stay under 0.15 with margin on other ordinary texts (0.09 against 0.15 is a thin margin); price and discount still hold.
+result: [pending]
 
-### 3. Push the branch (no git remote exists yet) and watch the tests workflow
-expected: Both matrix legs (sqlite, pgsql) green
-result: pass
+### 3. Send order on the screen (WINDOWS 7). Hold a draft from /dev/chat, send it from the conversation screen a few minutes after the holding reply.
+expected: Conversation screen: customer text, holding reply, sent draft, each with its own time. /dev/chat the same.
+result: [pending]
+
+### 4. /dev/chat after a held draft (WINDOWS 8).
+expected: Only the customer's text and the holding reply show; the draft's words appear after Send.
+result: [pending]
+
+### 5. Dana's draft and a furnace text (WINDOWS 9). Re-run Dana's held draft after icm:sync; text 'My furnace won't turn on.' from a new number.
+expected: The draft does not call the visit 'tomorrow' or booked; the furnace text gets a furnace-repair intake question instead of a held 'other'.
+result: [pending]
+
+### 6. Alert link on a real phone (WINDOWS 5, carried from the first verification).
+expected: Link opens the conversation; held reason, draft and Send visible without scrolling.
+result: [pending]
+
+### 7. First CI run on Postgres (INFRA-01). The Postgres leg was not run in this round; the new sent_at migration drops and recreates the partial unique index messages_one_live_draft_per_conversation.
+expected: Both matrix legs (sqlite, pgsql) green.
+result: [pending]
 
 ## Summary
 
-total: 3
-passed: 1
-issues: 2
-pending: 0
+total: 7
+passed: 0
+issues: 0
+pending: 7
 skipped: 0
 blocked: 0
 
