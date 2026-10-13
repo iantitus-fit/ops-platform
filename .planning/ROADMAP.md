@@ -79,7 +79,7 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 40/41 plans executed; 35 executed, 6 UAT gap-closure plans (02-36 to 02-41) to run (one plan per wave, run in order: one working tree per DEC-01, each plan runs the full suite, and most share the front-desk files or the sprint-1.md walk-through log; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 41/41 plans executed; 35 executed, 6 UAT gap-closure plans (02-36 to 02-41) to run (one plan per wave, run in order: one working tree per DEC-01, each plan runs the full suite, and most share the front-desk files or the sprint-1.md walk-through log; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
@@ -183,7 +183,7 @@ Plans:
 - [x] 02-38-PLAN.md — Wave 4: /dev/chat shows only what is on the customer's phone, one status list shared with the model's history (G-02-2.3; DASH-02, GATE-04)
 - [x] 02-39-PLAN.md — Wave 5: the prompt carries the time now and each earlier text's send time, RULES on reading dates and on visits never being set, a furnace-repair service in the example folder (G-02-2.2, G-02-2.4; AGNT-02, AGNT-03)
 - [x] 02-40-PLAN.md — Wave 6: the Needs you card shows the customer's last message above the draft and Send; the carried item leaves Phase 02.1's scope (G-02-1.1; GATE-04)
-- [ ] 02-41-PLAN.md — Wave 7: map re-check, once, after the UAT fixes (AGNT-02, GATE-01, GATE-04)
+- [x] 02-41-PLAN.md — Wave 7: map re-check, once, after the UAT fixes (AGNT-02, GATE-01, GATE-04)
 
 **UI hint**: yes
 
@@ -255,7 +255,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 40/41 | In Progress | - |
+| 2. Text Front Desk | 41/41 | In Progress | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog
