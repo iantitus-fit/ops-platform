@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\ContactStatus;
+use App\Enums\DraftResolution;
+use App\Enums\MessageKind;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -122,6 +124,34 @@ it('lists only leads with an open conversation in open-leads.md, newest activity
             '| Ann Lee | angi | 2026-10-11 09:00 | Is anyone there? \\| urgent please |',
             '| Cy Park | referral | 2026-10-11 06:00 | '.rtrim(str_repeat('long ', 16)).'… |',
         ]);
+});
+
+it('reports a draft the owner sent later as the last reply, at its send time', function () {
+    activateExampleFolder();
+
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'last_activity_at' => '2026-10-11 14:10:00', 'lead_source_key' => 'angi']);
+    $conversation = Conversation::factory()->for($contact)->create();
+
+    Message::factory()->for($conversation)->create(['body' => 'How much for a new unit?', 'created_at' => '2026-10-11 14:00:00', 'updated_at' => '2026-10-11 14:00:00']);
+    Message::factory()->for($conversation)->outbound()->create([
+        'kind' => MessageKind::HoldingReply,
+        'body' => 'Mike will get back to you.',
+        'created_at' => '2026-10-11 14:00:01',
+        'sent_at' => '2026-10-11 14:00:01',
+    ]);
+    Message::factory()->for($conversation)->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'resolution' => DraftResolution::Approved,
+        'body' => 'Mike can come Tuesday.',
+        'created_at' => '2026-10-11 14:00:00',
+        'sent_at' => '2026-10-11 14:10:00',
+    ]);
+
+    app(RecordsWriter::class)->writeSummaries();
+
+    expect(tableRows(icmPath('records/open-leads.md')))->toBe([
+        '| Dana Whitfield | angi | replied 2026-10-11 09:10 | Mike can come Tuesday. |',
+    ]);
 });
 
 it('updates INDEX.md and open-leads.md in the same render as the card', function () {
