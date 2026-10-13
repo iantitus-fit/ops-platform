@@ -15,4 +15,16 @@ enum MessageStatus: string
     case Failed = 'failed';
     case Received = 'received';
     case Withdrawn = 'withdrawn';
+
+    /**
+     * The texts a customer has on their phone: the ones they sent us, and ours that reached them. A draft, a
+     * withdrawn draft, a queued text and a failed one never reached them. This is the one definition for any view of
+     * the conversation as the customer sees it (the dev chat page, the model's history).
+     *
+     * @return list<self>
+     */
+    public static function onTheCustomersPhone(): array
+    {
+        return [self::Received, self::Sent, self::Delivered];
+    }
 }
