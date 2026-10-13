@@ -79,7 +79,7 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: 41 plans; 34 executed, 7 UAT gap-closure plans (02-35 to 02-41) to run (one plan per wave, run in order: one working tree per DEC-01, each plan runs the full suite, and most share the front-desk files or the sprint-1.md walk-through log; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+**Plans**: 41 plans; 35 executed, 6 UAT gap-closure plans (02-36 to 02-41) to run (one plan per wave, run in order: one working tree per DEC-01, each plan runs the full suite, and most share the front-desk files or the sprint-1.md walk-through log; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
 
 Plans:
 **Wave 1**
@@ -177,7 +177,7 @@ Plans:
 - [x] 02-34-PLAN.md — Wave 5: map re-check, once, after the code fixes: every card citation 02-31 to 02-33 moved re-pointed, and the cards describe the new failure, no-agent and safety paths (AGNT-02, AGNT-04, GATE-01, GATE-02)
 
 **Gap closure, UAT** (02-UAT.md, six gaps diagnosed 2026-10-12; Ian decided G-02-1.1, G-02-2.1 and G-02-2.4; one plan per wave, run in order)
-- [ ] 02-35-PLAN.md — Wave 1: a yes/no bar per Jev question (price and discount 0.075, promise and complaint 0.15), Ian's triage wording committed, D-56 amends D-45 (G-02-2.1; GATE-01)
+- [x] 02-35-PLAN.md — Wave 1: a yes/no bar per Jev question (price and discount 0.075, promise and complaint 0.15), Ian's triage wording committed, D-56 amends D-45 (G-02-2.1; GATE-01)
 - [ ] 02-36-PLAN.md — Wave 2: `messages.sent_at` written on send and backfilled, threads ordered and labelled by when each message happened, a sent draft listed after the holding reply (G-02-1.2; GATE-04, AGNT-02)
 - [ ] 02-37-PLAN.md — Wave 3: the newest holding reply decides the next one, the reply cap and open-leads.md read the send time (G-02-1.2; GATE-01, GATE-02)
 - [ ] 02-38-PLAN.md — Wave 4: /dev/chat shows only what is on the customer's phone, one status list shared with the model's history (G-02-2.3; DASH-02, GATE-04)
@@ -256,7 +256,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 34/41 | In Progress | - |
+| 2. Text Front Desk | 35/41 | In Progress | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog
