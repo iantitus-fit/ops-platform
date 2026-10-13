@@ -1,23 +1,27 @@
 ---
 phase: 02-text-front-desk
-reviewed: 2026-10-12T00:00:00Z
+reviewed: 2026-10-13T00:00:00Z
 depth: standard
-files_reviewed: 31
+files_reviewed: 41
 files_reviewed_list:
-  - app/Actions/DispatchInbound.php
-  - app/Actions/RaiseOwnerAlert.php
-  - app/Actions/ReportFrontDeskFailure.php
+  - app/Actions/OutboundSender.php
   - app/Actions/RunFrontDesk.php
-  - app/Actions/SendLifeSafetyLine.php
-  - app/Ai/RunFrontDeskAgent.php
-  - app/Filament/Pages/BusinessFolder.php
-  - app/Jobs/ProcessInbound.php
-  - app/Jobs/RespondToLifeSafety.php
-  - app/SendRule/LifeSafety.php
+  - app/Actions/SendFixedReply.php
+  - app/Ai/FrontDeskPrompt.php
+  - app/Enums/MessageStatus.php
+  - app/Livewire/ConversationThread.php
+  - app/Livewire/DevChat.php
+  - app/Models/Conversation.php
+  - app/Models/Message.php
+  - app/Records/RecordsWriter.php
+  - app/SendRule/TriageReading.php
   - config/gate.php
-  - config/queue.php
+  - database/migrations/2026_10_12_000010_add_sent_at_to_messages_table.php
+  - database/migrations/2026_10_12_000011_backfill_sent_at_on_messages.php
   - docs/sprints/sprint-1.md
-  - map/CLAUDE.md
+  - examples/example-hvac/business/services/CONTEXT.md
+  - examples/example-hvac/business/services/furnace-repair.md
+  - examples/example-hvac/rules/triage.md
   - map/objects/contacts/contact-opt-out.md
   - map/objects/conversations/conversation-and-pause.md
   - map/objects/folder/agent-file-and-version.md
@@ -25,192 +29,149 @@ files_reviewed_list:
   - map/objects/messages/message-and-verdict.md
   - map/processes/answer-inbound.md
   - map/VERIFICATION.md
-  - phpunit.xml
-  - tests/Feature/Alerts/OwnerAlertTimingTest.php
-  - tests/Feature/Filament/BusinessFolderPageTest.php
-  - tests/Feature/FrontDesk/AgentFallbackTest.php
-  - tests/Feature/FrontDesk/FrontDeskFailureTest.php
-  - tests/Feature/FrontDesk/LifeSafetyTest.php
-  - tests/Feature/Inbound/DispatchInboundTest.php
-  - tests/Feature/Quality/TestSafetyNetTest.php
+  - resources/views/livewire/conversation-thread.blade.php
+  - resources/views/livewire/dev-chat.blade.php
+  - tests/Feature/DevChatTest.php
+  - tests/Feature/Filament/ConversationViewTest.php
+  - tests/Feature/FrontDesk/DraftReplacementTest.php
+  - tests/Feature/FrontDesk/FrontDeskPromptTest.php
+  - tests/Feature/FrontDesk/GateTest.php
+  - tests/Feature/FrontDesk/HoldingReplyTest.php
+  - tests/Feature/FrontDesk/ReplyCapTest.php
+  - tests/Feature/FrontDesk/SentTimeTest.php
+  - tests/Feature/Icm/ActiveConfigTest.php
+  - tests/Feature/Icm/ValidatorTest.php
+  - tests/Feature/Records/SummaryFilesTest.php
+  - tests/Feature/SendRule/JevClassifierTest.php
   - tests/Pest.php
-  - tests/Unit/SendRule/LifeSafetyTest.php
+  - tests/Unit/SendRule/TriageReadingTest.php
 findings:
-  critical: 1
-  warning: 6
-  info: 5
-  total: 12
+  critical: 0
+  warning: 2
+  info: 3
+  total: 5
 status: issues_found
 ---
 
-# Phase 02: Code Review Report
+# Phase 02: Code Review Report (gap plans 02-35 to 02-41)
 
-**Reviewed:** 2026-10-12
+**Reviewed:** 2026-10-13
 **Depth:** standard
-**Files Reviewed:** 31
+**Files Reviewed:** 41
 **Status:** issues_found
 
 ## Summary
 
-The change set hardens the front desk: failure reporting (`ReportFrontDeskFailure`, `ProcessInbound::failed()`), the safety-line paths (`SendLifeSafetyLine`, `RespondToLifeSafety`), the agent fallback chain, claim rollback in `DispatchInbound`, and queue timing. The structure is sound and the map documents match the code (line references spot-checked against `ProcessInbound`, `RunFrontDesk`, `SendLifeSafetyLine`, `config/gate.php`). The weak spots are in the safety path. A retry after partial completion silently drops the pause and the owner alert. The keyword list misses common phrasings. A validated utility phone number is dropped in common formats. `failed()` reports against the wrong text.
+Scope was the changes since `4fbbd45` in the listed files. I read the full diff, including the changed files outside the
+list (`DispatchInbound`, `SendLifeSafetyLine`, `LifeSafety`, `ProcessInbound`, `RespondToLifeSafety`), for context. I
+also ran the affected suites (`tests/Feature/FrontDesk`, `DevChatTest`, `ConversationViewTest`, `tests/Feature/Records`,
+`tests/Unit/SendRule`, `tests/Feature/Icm`): 649 tests pass.
 
-Some findings below were confirmed by running the code (`LifeSafety::hazardIn()` and `::line()` via `php -r`) and are marked "verified".
+The core of this batch holds up:
 
-No fallow structural findings were supplied.
+- `sent_at` is captured once after the channel accepts the text and reused in the transaction, the activity row, the
+  conversation, and the fallback path.
+- `reorder('id', 'desc')` correctly replaces the new relation order in `SendFixedReply::holdingAlreadySent`,
+  `OwnerAlertText`, and `ConversationThread::lastCustomerMessage`.
+- `FrontDeskPrompt::history()` now skips the burst instead of stopping at it, and drops customer texts newer than the
+  burst.
+- The Needs you card escapes customer text.
+- The backfill is correct for the statuses it touches.
 
-## Critical Issues
-
-### CR-01: A retry after the safety line was sent finds it "already answered" and skips the pause and the owner alert
-
-**File:** `app/Actions/SendLifeSafetyLine.php:82-84` (with `app/Jobs/RespondToLifeSafety.php:29,39-48`)
-**Issue:** The class promises "The line is sent, or the owner is told; never neither." `answer()` sends the line (`:91`) and only then pauses (`:109`) and alerts (`:110`). If the process dies, or `PauseConversation` or `RaiseOwnerAlert` throws (a DB error), after the send succeeded, the run fails with the line already stored as `sent`.
-
-- `RespondToLifeSafety` has `$tries = 3`, so the next attempt calls `answer()`. `alreadyAnswered()` sees the sent line and returns `null` immediately. The attempt succeeds as a no-op, so `failed()` never runs.
-- The ProcessInbound second look (`RunFrontDesk::answerDanger`) takes the same early return.
-
-Result: the customer got the line, but the conversation is never paused and the owner is never told. The AI then carries on answering a gas-leak conversation. The tests only cover the send-failed path and the lock-timeout path, not this one.
-**Fix:** Make the early return depend on the whole outcome, not only on the send. Either do the pause and alert in `alreadyAnswered` mode too (both are idempotent):
-
-```php
-if ($this->alreadyAnswered($conversation, $inbound)) {
-    $this->pauseConversation->handle($conversation, PausedReason::LifeSafety);
-    $this->raiseOwnerAlert->handle($conversation, AlertReason::LifeSafety, $inbound, 'Safety message sent');
-
-    return null;
-}
-```
-
-Or run pause and alert in a `finally` right after the send attempt, and add a test where `PauseConversation` throws once after a successful send.
+The new send-time ordering (D-54) was not carried through to every reader of "the thread" or "who spoke last". That
+leaves two WARNING-level inconsistencies, both described below. No security issue or data-loss defect was found in this
+scope. Jev is left as is, as the project requires.
 
 ## Warnings
 
-### WR-01: The keyword net misses common ways of describing the same dangers (verified)
+### WR-01: `RecordsWriter` treats unsent messages as part of the thread (open-leads.md reports "replied" for a lead nobody has answered)
 
-**File:** `app/SendRule/LifeSafety.php:24-80`
-**Issue:** The class says "when a text could mean danger the line is sent" and the keyword layer is the only guaranteed one. The Jev classifier is a fallback, and `RunFrontDesk` only reaches it after the agent has run. Running `hazardIn()` returns `null` for all of these:
+**File:** `app/Records/RecordsWriter.php:232-290` (touched in this batch at `:267`, `:274`)
+**Issue:** `openLeadsMarkdown()` loads `openConversation.messages` with no status filter. `waitingSince()` and
+`lastMessage()` then treat the last row as what happened last. A held draft (status `draft`), a withdrawn or failed
+text, or a still-queued text is an outbound row and is usually the newest row.
 
-- "I am smelling gas", "I smelled gas", "it smells gas in here"
-- "gas is hissing from the stove"
-- "something is burning", "smells like something burning", "the furnace smells burning"
-- "my son got electrocuted by the outlet", "got a shock from the panel"
+A customer whose price question is held for the owner is the case this file exists for. That lead's last row is the
+unsent draft, so:
 
-The lists only cover `smell`, `smells like`, `smell of` and a few more fixed forms.
-**Fix:** Add inflections and nearby wordings (`smelling gas`, `smelled gas`, `smells gas`, `gas hissing`, `hissing gas`, `something burning`, `smells burning`, `electrocuted`, `electric shock`, `got shocked`). Add each to the `hazardIn` data-provider in `tests/Unit/SendRule/LifeSafetyTest.php`. Treat the lists as the owner-safety floor, not a best effort.
+- "Waiting since" reads `replied <time the draft was written>` instead of the time the customer started waiting.
+- "Last message" prints the AI's unsent draft body, such as the very price or promise the gate refused to send.
 
-### WR-02: A utility phone the sync accepts is silently dropped from the gas sentence (verified)
+This batch edited both lines to use `happenedAt()` and added a test for a *sent* draft. It added none for a *held*
+draft, so the gap is still open. The thread view in `ConversationThread::messages()` and the model history already
+exclude these statuses. This file did not get the same treatment.
 
-**File:** `app/SendRule/LifeSafety.php:157`
-**Issue:** The sync validator accepts any number `PhoneNumber::toE164()` parses with the configured region (`app/Icm/Validator.php:738`), so `(312) 555-0188` and `312-555-0188` pass. `gasLine()` requires `^\+?[0-9]`, so a number that starts with `(` fails the regex. `LifeSafety::line('gas', '(312) 555-0188')` returns the sentence with no gas-company line, and nothing tells the owner. The unit tests only use `+13125550188`. `utilityPhone()` also drops a YAML-unquoted integer, because `is_string` fails.
-**Fix:** Normalize with the same helper the validator uses and print the E.164 form:
-
+**Fix:** Filter to what reached the customer, using the one shared list the batch just introduced:
 ```php
-$e164 = PhoneNumber::toE164(is_scalar($utilityPhone) ? (string) $utilityPhone : null);
-
-if ($e164 === null) {
-    return self::GAS_LINE;
-}
-
-return self::GAS_LINE.' '.self::GAS_COMPANY_LINE.' '.$e164.'.';
+$messages = $contact->openConversation->messages
+    ->filter(fn (Message $m): bool => in_array($m->status, MessageStatus::onTheCustomersPhone(), true))
+    ->values();
 ```
+Add a SummaryFilesTest case with a held draft newer than the customer's text. It should expect the customer's text time
+and the customer's text as the last message.
 
-Make `utilityPhone()` cast ints to strings, and add a test with `(312) 555-0188`.
+### WR-02: `PausedConversationsWaiting` decides "who spoke last" by `created_at`, so a draft the owner sent later still looks unanswered
 
-### WR-03: `ProcessInbound::failed()` reports on the newest customer text, not on the burst that failed
+**File:** `app/Filament/Widgets/PausedConversationsWaiting.php:29-34` (a changed-behavior consumer; the file itself is not in the diff)
+**Issue:** D-54 moved a message to its send time via `coalesce(sent_at, created_at)`, so an owner-approved draft sorts
+after a customer text that arrived while the draft waited. This widget's "latest author" subquery still orders by
+`created_at desc`.
 
-**File:** `app/Jobs/ProcessInbound.php:146-156`
-**Issue:** `failed()` takes `latest('id')` of all inbound customer messages, with no channel filter and no `handled_at` filter. Two real consequences:
+Scenario: a conversation is paused (take over, or asked for a person). It has a live draft D, created at t1. The
+customer texts again at t2. The owner approves D at t3. `sendDraft` does not clear the pause, and `whyBlocked` allows
+an owner send while paused.
 
-- A text that arrived after the burst was claimed (it has its own queued job) gets a "Front desk stopped before answering" note and alert. `ReportFrontDeskFailure` then suppresses any later real failure report for that text.
-- If `handle()` already reported `$burst->last()` and the job then times out, `failed()` reports a different message and the owner is alerted twice. The dedup in `ReportFrontDeskFailure` is keyed on `message_id`, and the ids differ.
+- The conversation view lists D last, at t3, so the owner has answered.
+- The dashboard's latest-author subquery sorts D at t1, before the customer's t2 text, so it picks the customer.
+- The widget shows the customer under "Customers waiting while you handle it" after the owner replied.
 
-A web-form message would also be reported as a front-desk failure.
-**Fix:** Report on the claimed burst's newest SMS text: pass or store the burst, or query:
+The thread and the dashboard now disagree about the same conversation.
 
+**Fix:** Use the same ordering definition as `Conversation::messages()`:
 ```php
-$text = $conversation->messages()
-    ->where('direction', MessageDirection::In)
-    ->where('author', MessageAuthor::Customer)
-    ->where('channel', MessageChannel::Sms)
-    ->whereNotNull('handled_at')
-    ->latest('id')
-    ->first();
+->orderByRaw('coalesce(sent_at, created_at) desc')
+->orderByDesc('id')
 ```
-
-Even better, key the dedup in `ReportFrontDeskFailure` on conversation plus a window, or carry `$this->messageId` into the lookup.
-
-### WR-04: The claim rollback in `DispatchInbound` does not cover a push deferred by `afterCommit()`
-
-**File:** `app/Actions/DispatchInbound.php:43-49`
-**Issue:** `->afterCommit()` is what makes the dispatch wait for an open transaction. Today the callers (`RecordInbound`, `SweepUndispatched`) run outside any transaction, so the push happens inside the `try`. If a caller ever wraps `handle()` in `DB::transaction`, the push runs at commit time, outside this `try`. A failed push then leaves `dispatched_at` set, the sweep (`whereNull('dispatched_at')`) never picks the text up, and it is never answered. The docblock promises that a failed push gives the claim back.
-**Fix:** Either drop `afterCommit()` here, since `dispatched_at` is set before the push and nothing in this action needs the commit to have happened. Or guard the case:
-
-```php
-if (DB::transactionLevel() > 0) {
-    throw new LogicException('DispatchInbound must run outside a transaction.');
-}
-```
-
-Add a test that calls `handle()` inside `DB::transaction()` with the failing queue.
-
-### WR-05: Retry and failure semantics of `RespondToLifeSafety` do not match its comments
-
-**File:** `app/Jobs/RespondToLifeSafety.php:26-29,50-67`
-**Issue:**
-
-- "A failed run is tried again" is misleading. `SendLifeSafetyLine` now catches every `Throwable` from the send (`:103`) and returns normally, so a transient channel failure never fails the job and is never retried by it. Only a pause or alert failure fails the job, and that retry hits CR-01. The effective retry for a failed send is the ProcessInbound second look.
-- `failed()` always writes "Safety message could not be sent", even when the line did go out and only the pause or alert failed.
-- There is no `$timeout`, so the worker default applies to a job that can block 5 s on the reply lock and 10 s on the safety lock before talking to Twilio.
-
-**Fix:** After fixing CR-01, adjust the docblock. Choose the `failed()` alert text from whether a sent safety line exists for the text, for example "Safety message sent, but check the conversation was paused". Set an explicit `$timeout`.
-
-### WR-06: `LifeSafety` fails open when a regex errors (verified)
-
-**File:** `app/SendRule/LifeSafety.php:170,182`
-**Issue:** `preg_match(...) === 1` treats an error (`false`, for example invalid UTF-8 with the `/u` flag) as "no hazard". `LifeSafety::hazardIn("smoke \xff")` returns `null`. `(string) preg_replace(...)` turns a `null` error into an empty string. For the function that decides whether to send the safety line, an error should mean "assume hazard". Reachability is low (Twilio sends valid UTF-8, and Postgres rejects invalid bytes), but the public `/leads` form and the fake webhook accept any bytes.
-**Fix:** Scrub the input first with `mb_convert_encoding($text, 'UTF-8', 'UTF-8')` or `mb_scrub()` before matching. Check `preg_last_error() !== PREG_NO_ERROR` and fall back to `'general'` (or a plain `stripos` pass).
+Then add a widget test that mirrors the scenario above.
 
 ## Info
 
-### IN-01: Exception classification by message prefix
+### IN-01: `TriageReading::read` reads four new threshold keys with no guard
 
-**File:** `app/Actions/RunFrontDesk.php:166`
-**Issue:** `str_starts_with($exception->getMessage(), OutboundSender::NOT_SENT)` ties control flow to message text. The opt-out branch just below already uses `getPrevious()`. Any reword of `NOT_SENT` silently turns a failed send into a held draft with `send_refused`.
-**Fix:** Throw a small `ChannelSendFailed extends DomainException` (and a `SendRefused` for the rest) from `OutboundSender::transmit()` and catch by type.
+**File:** `app/SendRule/TriageReading.php:62`
+**Issue:** `$thresholds["{$check}_max_yes"]` raises an undefined-key `ErrorException` if a deployment has a stale
+published or cached `gate.classifier` array without the four new keys. `DecideSendOrDraft::askJev()` calls `read()`
+outside its `try`. The run therefore fails with the owner told, and the customer's text goes unanswered. It fails
+closed, which is safe, but it is an avoidable hard failure. The new unit test, `uses the same thresholds as
+config/gate.php`, guards only the repo copy of the config, not a deployed one.
+**Fix:** Either fall back to the old key (`$thresholds["{$check}_max_yes"] ?? $thresholds['gate_check_max_yes']`), or
+make the failure explicit and held with `Verdict::hold('classifier_failed', ...)` by moving `read()` inside the guarded
+block.
 
-### IN-02: Raw provider exception text is persisted on every message verdict
+### IN-02: Two gate dials for `promise` and `complaint` were loosened together on one live reading
 
-**File:** `app/Ai/RunFrontDeskAgent.php:74` (stored via `app/SendRule/DecideSendOrDraft.php:61`)
-**Issue:** `failed_attempts[].error` keeps 200 characters of `getMessage()` in the message's `gate` JSON. `ReportFrontDeskFailure` explicitly keeps exception text out of notes and alerts because it can hold SQL, customer words or a key. Provider errors often echo part of the request or key. This is the same data in a different place.
-**Fix:** Store `class_basename($exception)` plus an HTTP status when available, and keep the message in the log only.
+**File:** `config/gate.php:46-80`, `examples/example-hvac/rules/triage.md:28-30`
+**Issue:** D-56 raises the `promise` and `complaint` bars from 0.075 to 0.15 and also rewords both Jev questions to be
+narrower. Both change the classifier's behavior on the same check: a higher bar, and a question that scores lower. The
+stated evidence is one live observation (promise 0.09 on an intake question). This is a recorded decision, so it is not
+reopened here. The tuning record shows no way to tell later which of the two changes moved the score. Per the "Gate
+checks are tuned by `gate:export`" intent, record the before/after scores for the reworded questions alongside the new
+bars when the next live run happens.
+**Fix:** Capture the answers from the next live run in the phase notes. No code change needed.
 
-### IN-03: Owner-alert settings are parsed in two places, and `alertWarning()` has no type guard
+### IN-03: Small inconsistencies in `ConversationThread` and the Needs you card
 
-**File:** `app/Filament/Pages/BusinessFolder.php:134-141`, `app/Actions/RaiseOwnerAlert.php:133-142`
-**Issue:** Both read `sendingRules()['owner_alert']` and handle the Phase 1 sentence shape separately. `alertWarning()` passes `$alert['channels']` straight to `in_array`, which throws a `TypeError` (page crash) if a version ever holds a non-array `channels`.
-**Fix:** Expose one `OwnerAlertSettings` reader (or make `RaiseOwnerAlert::ownerAlertSetting()` public) and cast with `(array)`.
-
-### IN-04: `RaiseOwnerAlert` check-then-insert is not atomic, and a no-recipient alert can be deferred
-
-**File:** `app/Actions/RaiseOwnerAlert.php:47-69`
+**File:** `app/Livewire/ConversationThread.php:225`, `resources/views/livewire/conversation-thread.blade.php:13-15`
 **Issue:**
-
-- `alreadyRaised()` followed by `create()` has no unique index behind it. Two concurrent raisers (for example the lock-timeout path of `SendLifeSafetyLine` and the run that holds the lock) can each insert and text the owner twice.
-- With no recipient, the "stored as failed so the gap shows" alert is only marked failed when `SendOwnerAlert` runs. For a non-urgent reason raised after hours, that is deferred until the next opening.
-
-**Fix:** Add a unique index on `(conversation_id, message_id, reason, user_id)` (note nullable columns on SQLite and Postgres) or use `firstOrCreate` inside a lock. Send the no-recipient alert immediately regardless of `due_at`.
-
-### IN-05: Test scaffolding leftovers and a narrow queue guard
-
-**File:** `tests/Pest.php` (`something()`), `config/queue.php:52,43`, `tests/Feature/FrontDesk/FrontDeskFailureTest.php` (timeout test)
-**Issue:**
-
-- `tests/Pest.php` still defines the scaffold `function something() { // .. }`, which is dead code.
-- The new `retry_after` guard and its test cover only `database` and `redis`. `beanstalkd` stays at 90 s, below the 300 s `ProcessInbound` timeout. It is unused today but is the same hazard if the connection is switched.
-
-**Fix:** Delete `something()`. Raise the `beanstalkd` default (and note the SQS visibility timeout) or add a test that every in-use connection's `retry_after` exceeds 300.
+1. The cleanup `unset($this->liveDraft, $this->messages, $this->draftNotAlerted)` does not include the new
+   `lastCustomerMessage` computed property. It is harmless today, because the card is hidden once the draft is
+   resolved. It is the sort of omission that bites when an action starts re-rendering the card in the same request.
+2. `Str::limit(Str::squish($body), 160) ?: '(no words)'` treats a body of exactly `0` as empty, because `'0'` is
+   falsy in PHP. A customer who texts "0" shows as "(no words)". Use `=== ''` instead.
+**Fix:** Add `$this->lastCustomerMessage` to the `unset(...)` list, and compare the limited string with `=== ''`.
 
 ---
 
-_Reviewed: 2026-10-12_
+_Reviewed: 2026-10-13_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
