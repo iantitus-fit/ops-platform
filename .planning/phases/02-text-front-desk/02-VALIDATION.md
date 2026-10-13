@@ -48,6 +48,13 @@ Requirement-level map from research. The planner assigns task IDs; execution fil
 | 02-02-T1, 02-02-T2 | 02-02 | 2 | AGNT-01, D-35 | T-02-04, T-02-05, T-02-06 | Broken agent file rejected in plain words; one agent per channel | feature | `php artisan test --compact tests/Feature/Icm/AgentFileTest.php` | ✅ | ✅ green |
 | 02-04-T1 | 02-04 | 4 | D-08, D-09 | T-02-07, T-02-58 | price/promise/discount/complaint can never be in `send_on_own`; unknown key rejected | feature | `php artisan test --compact tests/Feature/Icm/SendingRulesValidationTest.php` | ✅ | ✅ green |
 | 02-03-T1 | 02-03 | 3 | D-10..D-12 | T-02-08 | Fixed replies with dollar/discount/promise/`never_say` text rejected at sync | feature + unit | `php artisan test --compact tests/Feature/Icm/RepliesValidationTest.php tests/Unit/SendRule/CodeChecksTest.php` | ✅ | ✅ green |
+| 02-35-T1, 02-35-T2 | 02-35 | gap 1 | GATE-01, D-56 | T-02-81, T-02-82 | Promise and complaint hold only above 0.15, price and discount above 0.075; every verdict stores the bars it was judged by | unit + feature | `php artisan test --compact tests/Unit/SendRule/TriageReadingTest.php tests/Feature/FrontDesk/GateTest.php tests/Feature/FrontDesk/GateVerdictTest.php tests/Feature/Icm/TriageValidationTest.php` | ✅ | ✅ green |
+| 02-36-T1, 02-36-T2 | 02-36 | gap 2 | GATE-04, AGNT-02 | — | A sent draft is listed and labelled at its send time, after the holding reply | feature | `php artisan test --compact tests/Feature/FrontDesk/SentTimeTest.php tests/Feature/Filament/ConversationViewTest.php` | ✅ | ✅ green |
+| 02-37-T1..T3 | 02-37 | gap 3 | GATE-01, GATE-02 | — | The newest holding reply decides whether another goes out; the reply cap counts texts by send time | feature | `php artisan test --compact tests/Feature/FrontDesk/HoldingReplyTest.php tests/Feature/FrontDesk/ReplyCapTest.php tests/Feature/Records` | ✅ | ✅ green |
+| 02-38-T1, 02-38-T2 | 02-38 | gap 4 | DASH-02, GATE-04 | T-02-89 | /dev/chat and the model's history show only received, sent and delivered texts | feature | `php artisan test --compact tests/Feature/DevChatTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | ✅ | ✅ green |
+| 02-39-T1..T3 | 02-39 | gap 5 | AGNT-02, AGNT-03 | — | The prompt states the time now and each earlier text's send time in the business zone; the furnace repair service syncs | feature | `php artisan test --compact tests/Feature/FrontDesk/FrontDeskPromptTest.php tests/Feature/FrontDesk/DraftReplacementTest.php tests/Feature/Icm` | ✅ | ✅ green |
+| 02-40-T1, 02-40-T2 | 02-40 | gap 6 | GATE-04 | T-02-95, T-02-96 | The Needs you card shows the customer's last text, escaped and cut to 160 characters, above Send | feature | `php artisan test --compact tests/Feature/Filament/ConversationViewTest.php` | ✅ | ✅ green |
+| 02-41-T1..T3 | 02-41 | gap 7 | AGNT-02, GATE-01, GATE-04 | — | Every `file.php:N` citation in `map/` lands on the symbol its card names | shell check | the citation loop in 02-41-PLAN.md Task 3 `<automated>` (185 citations, 0 BAD) | ✅ | ✅ green |
 | 02-09-T1, 02-13-T2, 02-14-T1 | 02-09, 02-13, 02-14 | 9, 13, 14 | AGNT-02, D-36, D-41 | T-02-16, T-02-22 | Agent never texts a number that has not texted in that conversation | feature | `php artisan test --compact tests/Feature/FrontDesk/ProcessInboundTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | ✅ | ✅ green |
 | 02-18-T1, 02-18-T2 | 02-18 | 18 | AGNT-03, D-33, D-34 | T-02-34, T-02-36 | N/A | feature | `php artisan test --compact tests/Feature/FrontDesk/IntakeAnswersTest.php` | ✅ | ✅ green |
 | 02-13-T3, 02-15-T2 | 02-13, 02-15 | 13, 15 | AGNT-04 | T-02-23, T-02-29 | Provider failure falls through; all fail → owner alerted, nothing sent | feature | `php artisan test --compact tests/Feature/FrontDesk/AgentFallbackTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php` | ✅ | ✅ green |
@@ -104,6 +111,7 @@ Plan 02-01 covers the first two items, the CI workflow and the `exampleFolderFil
 | First CI run on Postgres | INFRA-01 | No git remote; Ian pushes | Push the branch, confirm the workflow is green |
 | Live Twilio number | TXT-01 | Waits on A2P approval; does not gate this phase | After approval, text the test number |
 | A front desk run that outlives a real worker reaches the owner | AGNT-04 | The worker-kill timeout path cannot run inside the suite (02-32 backstop) | Run `php artisan queue:listen --tries=1 --timeout=0` with a stalled provider, confirm the `front_desk_failed` alert and timeline note |
+| Gap-closure hand checks carried to end-of-phase UAT (WINDOWS.md entries 6 to 10) | GATE-01, GATE-04, DASH-02, AGNT-02 | Live keys, a browser or a phone; Ian chose not to pause the run for them | Steps in 02-35, 02-36, 02-38, 02-39 and 02-40 SUMMARY.md under the carried-to-UAT heading |
 
 ---
 
@@ -116,7 +124,7 @@ Plan 02-01 covers the first two items, the CI workflow and the `exampleFolderFil
 - [x] Feedback latency < 30s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** validated 2026-10-12 (validate-phase, State A: every mapped test file exists; full suite 931/931 green on SQLite at wave 22 and on PostgreSQL 17 in 02-28)
+**Approval:** validated 2026-10-12 (validate-phase, State A: every mapped test file exists; full suite 931/931 green on SQLite at wave 22 and on PostgreSQL 17 in 02-28). Re-validated 2026-10-13 after gap plans 02-35 to 02-41: every gap task has an automated verify, full suite 1074/1074 green on SQLite (PostgreSQL leg left for CI).
 
 ## Validation Audit 2026-10-12
 
