@@ -5,24 +5,24 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: fixed
-    title: "`RecordsWriter` treats unsent messages as part of the thread (open-leads.md reports \"replied\" for a lead nobody has answered)"
+    disposition: open
+    title: "Widget still counts queued and failed texts as \"the owner spoke last\""
   - id: WR-02
     severity: warning
-    disposition: fixed
-    title: "`PausedConversationsWaiting` decides \"who spoke last\" by `created_at`, so a draft the owner sent later still looks unanswered"
+    disposition: open
+    title: "The map note and the enum docblock are stale after the open-leads change"
   - id: IN-01
     severity: info
     disposition: open
-    title: "`TriageReading::read` reads four new threshold keys with no guard"
+    title: "`waitingSince()` and `openLeadsMarkdown()` docblocks do not say the thread is filtered"
   - id: IN-02
     severity: info
     disposition: open
-    title: "Two gate dials for `promise` and `complaint` were loosened together on one live reading"
+    title: "Map citation points at the method signature, not at the `happenedAt()` calls"
   - id: IN-03
     severity: info
     disposition: open
-    title: "Small inconsistencies in `ConversationThread` and the Needs you card"
+    title: "Test coverage of the two fixes is one-sided"
   - id: CR-01
     severity: critical
     disposition: fixed
@@ -155,17 +155,17 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 28
+open: 30
 total: 38
-recorded: 2026-10-13T15:44:42.410Z
+recorded: 2026-10-13T19:57:13.320Z
 ---
 
 # Phase 02: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-02 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-01 | warning | open | - |
+| WR-02 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
