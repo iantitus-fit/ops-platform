@@ -230,9 +230,9 @@ class RunFrontDesk
     }
 
     /**
-     * Whether the assistant has already sent as many texts in this conversation as the reply cap allows, in the last
-     * hour or the last 24 hours (D-52). Only texts that were sent or are on their way count, and the safety line
-     * never does, so the cap can neither be used up by it nor stop it.
+     * Whether the assistant has already sent as many texts here as the reply cap allows, in the last hour or the last
+     * 24 hours (D-52). Each text counts when it went out; one still queued counts at its creation, a second earlier.
+     * Only sent or queued texts count, and the safety line never does, so it can neither use up the cap nor be stopped.
      */
     private function replyCapReached(Conversation $conversation): bool
     {
@@ -242,8 +242,8 @@ class RunFrontDesk
             ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
             ->where(fn ($query) => $query->whereNull('kind')->orWhere('kind', '!=', MessageKind::LifeSafety));
 
-        return $counted()->where('created_at', '>=', now()->subHour())->count() >= config('gate.reply_cap.per_hour')
-            || $counted()->where('created_at', '>=', now()->subDay())->count() >= config('gate.reply_cap.per_day');
+        return $counted()->whereRaw('coalesce(sent_at, created_at) >= ?', [now()->subHour()])->count() >= config('gate.reply_cap.per_hour')
+            || $counted()->whereRaw('coalesce(sent_at, created_at) >= ?', [now()->subDay()])->count() >= config('gate.reply_cap.per_day');
     }
 
     /**
