@@ -8,6 +8,12 @@
                 @if ($this->draftNotAlerted !== null)
                     <p><x-filament::badge color="warning">{{ $this->draftNotAlerted }}</x-filament::badge></p>
                 @endif
+                @if ($this->lastCustomerMessage !== null)
+                    <p style="font-size: 0.875rem;">
+                        <strong>Customer wrote, {{ $this->lastCustomerMessage->happenedAt()->setTimezone($timezone)->format('M j, g:i a') }}:</strong>
+                        <span>{{ Str::limit(Str::squish($this->lastCustomerMessage->body), 160) ?: '(no words)' }}</span>
+                    </p>
+                @endif
                 @if (trim($draftBody) !== trim($this->liveDraft->body))
                     <p style="font-size: 0.875rem;">
                         <strong>The assistant wrote:</strong>

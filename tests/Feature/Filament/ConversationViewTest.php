@@ -169,9 +169,15 @@ it("shows the customer's last message in the Needs you card, above the draft and
     activateExampleFolder();
     $this->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
     $conversation = conversationViewWithLiveDraft();
-    Message::factory()->for($conversation)->create([
+    // The helper's first text becomes the older one (it has the lower id, as a text that arrived first would), and
+    // the question that is held arrives after it.
+    Message::query()->where('conversation_id', $conversation->id)->where('direction', 'in')->sole()->update([
         'body' => 'Hi, my AC is acting up',
         'created_at' => now()->subMinutes(20),
+    ]);
+    Message::factory()->for($conversation)->create([
+        'body' => CONVERSATION_VIEW_FIRST_TEXT,
+        'created_at' => now()->subMinutes(10),
     ]);
 
     $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))

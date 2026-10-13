@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Actions\ResolveDraft;
 use App\Actions\SendOwnerReply;
+use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
@@ -130,6 +131,21 @@ class ConversationThread extends Component
     public function liveDraft(): ?Message
     {
         return $this->conversation->messages()->where('status', MessageStatus::Draft)->first();
+    }
+
+    /**
+     * The newest text the customer sent, or null when they have sent none. The Needs you card shows it so the owner can
+     * read the customer's last words next to the draft, before reaching the thread (G-02-1.1).
+     *
+     * The relation sorts oldest first, so reorder() puts the newest first.
+     */
+    #[Computed]
+    public function lastCustomerMessage(): ?Message
+    {
+        return $this->conversation->messages()
+            ->reorder('id', 'desc')
+            ->where('direction', MessageDirection::In->value)
+            ->first();
     }
 
     /**
