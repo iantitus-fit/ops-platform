@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Filament\Widgets\DraftsWaiting;
@@ -117,6 +118,26 @@ it('treats a draft the owner approved after the customer texted again as the own
     Livewire::test(PausedConversationsWaiting::class)
         ->assertCanNotSeeTableRecords([$conversation]);
 });
+
+it('keeps a customer waiting when the owner reply after their text is still queued or failed to send', function (MessageStatus $status) {
+    $conversation = Conversation::factory()
+        ->for(Contact::factory()->create(['name' => 'Dana Whitfield']))
+        ->paused(PausedReason::TakenOver)
+        ->create(['last_message_at' => now()->subMinutes(10)]);
+
+    Message::factory()->for($conversation)->create(['created_at' => now()->subMinutes(10)]);
+    Message::factory()->for($conversation)->fromOwner()->create([
+        'status' => $status,
+        'created_at' => now()->subMinutes(5),
+        'sent_at' => null,
+    ]);
+
+    Livewire::test(PausedConversationsWaiting::class)
+        ->assertCanSeeTableRecords([$conversation]);
+})->with([
+    'queued' => MessageStatus::Queued,
+    'failed' => MessageStatus::Failed,
+]);
 
 it('lists contacts who became leads in the last 7 days, newest first, with the cost per lead in dollars', function () {
     $recent = Contact::factory()->fromSource('google', 4250)->create(['name' => 'Dana Whitfield', 'created_at' => now()->subDays(1)]);
