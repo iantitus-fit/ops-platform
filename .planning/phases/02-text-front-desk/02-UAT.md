@@ -1,55 +1,51 @@
 ---
-status: testing
+status: complete
 phase: 02-text-front-desk
 source: [02-VERIFICATION.md]
 started: 2026-10-13T15:30:34Z
-updated: 2026-10-13T15:30:34Z
+updated: 2026-10-13T19:54:59.688Z
 ---
 
 ## Current Test
 
-number: 1
-name: Needs you card at phone size (WINDOWS 10, UAT Test 1 re-run). Text 'How much for a new unit?' from /dev/chat, open the alert link on a phone or at 390x664 in Chrome device mode. Repeat with a ~14-message thread and a several-hundred-character customer text.
-expected: |
-  Without scrolling: held reason, a 'Customer wrote, <time>:' line, the draft, Send and Discard; customer details collapsed. Scrolling down shows the thread oldest first with its box ending at the latest message.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
 ### 1. Needs you card at phone size (WINDOWS 10, UAT Test 1 re-run). Text 'How much for a new unit?' from /dev/chat, open the alert link on a phone or at 390x664 in Chrome device mode. Repeat with a ~14-message thread and a several-hundred-character customer text.
 expected: Without scrolling: held reason, a 'Customer wrote, <time>:' line, the draft, Send and Discard; customer details collapsed. Scrolling down shows the thread oldest first with its box ending at the latest message.
-result: [pending]
+result: pass
 
 ### 2. Live run after icm:sync with the three keys (WINDOWS 6, UAT Test 2 re-run). Text 'My AC is blowing warm air', then a few ordinary intake, scheduling and FAQ texts; read gate:export.
 expected: The intake reply sends on its own. Promise and complaint scores stay under 0.15 with margin on other ordinary texts (0.09 against 0.15 is a thin margin); price and discount still hold.
-result: [pending]
+result: pass
 
 ### 3. Send order on the screen (WINDOWS 7). Hold a draft from /dev/chat, send it from the conversation screen a few minutes after the holding reply.
 expected: Conversation screen: customer text, holding reply, sent draft, each with its own time. /dev/chat the same.
-result: [pending]
+result: pass
 
 ### 4. /dev/chat after a held draft (WINDOWS 8).
 expected: Only the customer's text and the holding reply show; the draft's words appear after Send.
-result: [pending]
+result: pass
 
 ### 5. Dana's draft and a furnace text (WINDOWS 9). Re-run Dana's held draft after icm:sync; text 'My furnace won't turn on.' from a new number.
 expected: The draft does not call the visit 'tomorrow' or booked; the furnace text gets a furnace-repair intake question instead of a held 'other'.
-result: [pending]
+result: pass
 
 ### 6. Alert link on a real phone (WINDOWS 5, carried from the first verification).
 expected: Link opens the conversation; held reason, draft and Send visible without scrolling.
-result: [pending]
+result: pass
 
 ### 7. First CI run on Postgres (INFRA-01). The Postgres leg was not run in this round; the new sent_at migration drops and recreates the partial unique index messages_one_live_draft_per_conversation.
 expected: Both matrix legs (sqlite, pgsql) green.
-result: [pending]
+result: pass
 
 ## Summary
 
 total: 7
-passed: 0
+passed: 7
 issues: 0
-pending: 7
+pending: 0
 skipped: 0
 blocked: 0
 
@@ -57,7 +53,9 @@ blocked: 0
 
 - gap_id: G-02-1.1
   truth: "The thread under the Needs you card opens at the latest message (D-29)"
-  status: failed
+  status: resolved
+  resolved_by: 02-40-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: the thread under the Needs you card starts at the oldest message, not the latest (D-29 says it opens at the latest)"
   severity: minor
   test: 1
@@ -74,7 +72,9 @@ blocked: 0
 
 - gap_id: G-02-1.2
   truth: "Outbound messages sort by when they were sent, so a draft sent from the conversation screen appears after the holding reply in /dev/chat"
-  status: failed
+  status: resolved
+  resolved_by: 02-41-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: after Send, the sent reply is listed above the holding reply in /dev/chat because it keeps the draft's creation time; outbound messages should sort by when they were sent"
   severity: minor
   test: 1
@@ -100,7 +100,9 @@ blocked: 0
 
 - gap_id: G-02-2.1
   truth: "An ordinary intake reply with clean code checks and no real price, discount, promise or complaint content sends on its own instead of being held"
-  status: failed
+  status: resolved
+  resolved_by: 02-41-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: ordinary intake replies never send on their own. \"My AC is blowing warm air\" got a correct intake question (code checks clean, Jev intent intake 1.0) but Jev scored complaint 0.47 and promise 0.30 against the 0.075 bar. After rewording the complaint and promise questions in examples/example-hvac/rules/triage.md (uncommitted; keep it) they fell to 0.07 and 0.09 and the reply was still held on promise. Proposed fix: keep the new triage wording; make the yes/no bar per question in config/gate.php (price and discount stay 0.075, promise and complaint go to 0.15); this amends D-45 and must be recorded; life-safety and asks_for_person thresholds unchanged."
   severity: major
   test: 2
@@ -127,7 +129,9 @@ blocked: 0
 
 - gap_id: G-02-2.2
   truth: "The front-desk agent knows the current date and time, so relative dates in the thread (\"tomorrow at 9\") are read correctly"
-  status: failed
+  status: resolved
+  resolved_by: 02-41-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: Dana's draft said her visit is \"tomorrow at 9\" because she wrote \"tomorrow at 9\" on Oct 11; that visit was this morning. FrontDeskPrompt gives the model no current date or time, and thread messages carry no timestamps. Proposed fix: put the current date, weekday and time in the business's time zone in the prompt, and a timestamp on each thread message."
   severity: major
   test: 2
@@ -149,7 +153,9 @@ blocked: 0
 
 - gap_id: G-02-2.3
   truth: "/dev/chat shows held drafts as held, not as if they were sent"
-  status: failed
+  status: resolved
+  resolved_by: 02-41-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: /dev/chat shows held drafts as if they were sent"
   severity: minor
   test: 2
@@ -169,7 +175,9 @@ blocked: 0
 
 - gap_id: G-02-2.4
   truth: "Drafts make no claims the business files don't support"
-  status: failed
+  status: resolved
+  resolved_by: 02-39-PLAN.md
+  resolved_at: 2026-10-13
   reason: "User reported: the furnace draft said \"We do repair furnaces\", which no business file says"
   severity: minor
   test: 2
