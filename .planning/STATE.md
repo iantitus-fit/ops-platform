@@ -208,7 +208,6 @@ None yet.
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
-- [Phase 2]: Open review items (02-REVIEW.md 2026-10-13, ledger 02-REVIEW-DISPOSITION.md): the Customers waiting widget still treats a queued or failed owner text as the owner speaking last (PausedConversationsWaiting.php:32; fix with MessageStatus::onTheCustomersPhone() plus a failed-owner-text test), and the map note and MessageStatus docblock don't list RecordsWriter as a reader. Advisory, not blocking.
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.1 scope.
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 
