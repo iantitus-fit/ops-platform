@@ -5,6 +5,7 @@ namespace App\Records;
 use App\Enums\ContactStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
@@ -237,7 +238,9 @@ class RecordsWriter
             ->sort(fn (Contact $a, Contact $b): int => [$b->last_activity_at?->getTimestamp() ?? 0, $b->id] <=> [$a->last_activity_at?->getTimestamp() ?? 0, $a->id]);
 
         $rows = $contacts->map(function (Contact $contact) use ($timezone): array {
-            $messages = $contact->openConversation->messages;
+            $messages = $contact->openConversation->messages
+                ->filter(fn (Message $message): bool => in_array($message->status, MessageStatus::onTheCustomersPhone(), true))
+                ->values();
             $name = $this->markdown->tableCell($contact->name);
 
             return [

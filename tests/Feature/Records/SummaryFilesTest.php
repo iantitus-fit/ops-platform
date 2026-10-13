@@ -3,6 +3,7 @@
 use App\Enums\ContactStatus;
 use App\Enums\DraftResolution;
 use App\Enums\MessageKind;
+use App\Enums\MessageStatus;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -151,6 +152,29 @@ it('reports a draft the owner sent later as the last reply, at its send time', f
 
     expect(tableRows(icmPath('records/open-leads.md')))->toBe([
         '| Dana Whitfield | angi | replied 2026-10-11 09:10 | Mike can come Tuesday. |',
+    ]);
+});
+
+it('ignores a held draft, a withdrawn draft and a failed text when reading who spoke last', function () {
+    activateExampleFolder();
+
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'last_activity_at' => '2026-10-11 14:10:00', 'lead_source_key' => 'angi']);
+    $conversation = Conversation::factory()->for($contact)->create();
+
+    Message::factory()->for($conversation)->create(['body' => 'How much for a new unit?', 'created_at' => '2026-10-11 14:00:00', 'updated_at' => '2026-10-11 14:00:00']);
+    Message::factory()->for($conversation)->withdrawn()->create(['body' => 'About $9,000.', 'created_at' => '2026-10-11 14:05:00', 'updated_at' => '2026-10-11 14:05:00']);
+    Message::factory()->for($conversation)->draft()->create(['body' => 'About $8,500, installed.', 'created_at' => '2026-10-11 14:06:00', 'updated_at' => '2026-10-11 14:06:00']);
+    Message::factory()->for($conversation)->outbound()->create([
+        'status' => MessageStatus::Failed,
+        'body' => 'Mike will be in touch.',
+        'created_at' => '2026-10-11 14:07:00',
+        'updated_at' => '2026-10-11 14:07:00',
+    ]);
+
+    app(RecordsWriter::class)->writeSummaries();
+
+    expect(tableRows(icmPath('records/open-leads.md')))->toBe([
+        '| Dana Whitfield | angi | 2026-10-11 09:00 | How much for a new unit? |',
     ]);
 });
 
