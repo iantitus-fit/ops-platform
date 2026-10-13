@@ -271,6 +271,70 @@ it('shows a draft the owner sent later at its send time', function () {
     ]);
 });
 
+it('tells the model how to read the times in the thread (G-02-2.2)', function (string $sentence) {
+    [$agent, , $contact] = promptTestThread();
+
+    expect(FrontDeskPrompt::RULES)->toContain($sentence)
+        ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($sentence);
+})->with([
+    'times lead each earlier text' => "Earlier texts start with the time they were sent, in brackets, in the business's time zone.",
+    'relative words mean that text\'s day' => 'A word like today, tomorrow or this morning in an earlier text means the day that text was sent, not today.',
+    'no bracketed time in a reply' => 'Never put a bracketed time in your reply.',
+]);
+
+it('tells the model the thread is not a booking (G-02-2.4)', function (string $sentence) {
+    [$agent, , $contact] = promptTestThread();
+
+    expect(FrontDeskPrompt::RULES)->toContain($sentence)
+        ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($sentence);
+})->with([
+    'thread and card are what the customer said' => 'The thread and the customer card show what the customer said and did, not what the business has agreed to.',
+    'nothing is set until the owner confirms' => 'Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.',
+]);
+
+it('keeps a reply that went out after the burst arrived', function () {
+    [, $conversation] = promptTestThread();
+    promptTestFreezeAtTenInTheMorning();
+
+    Message::factory()->for($conversation)->create(['body' => 'How much for a new unit?']);
+    Message::factory()->for($conversation)->outbound()->create(['body' => 'This is the virtual assistant.', 'sent_at' => now()]);
+    $draft = Message::factory()->for($conversation)->draft()->create(['body' => 'Mike will text you a price.']);
+
+    $this->travel(2)->minutes();
+    $burst = Message::factory()->for($conversation)->create(['body' => 'Any news?']);
+
+    $this->travel(1)->minutes();
+    $draft->update(['status' => MessageStatus::Sent, 'sent_at' => now(), 'resolution' => DraftResolution::Approved, 'resolved_at' => now()]);
+
+    $history = app(FrontDeskPrompt::class)->history($conversation, promptTestBurst($burst));
+
+    expect(promptTestTurns($history))->toBe([
+        ['user', '[Tue Oct 13, 10:00 am] How much for a new unit?'],
+        ['assistant', "[Tue Oct 13, 10:00 am] This is the virtual assistant.\n\n[Tue Oct 13, 10:03 am] Mike will text you a price."],
+    ]);
+});
+
+it('leaves out a customer text that came in after the burst', function () {
+    [, $conversation] = promptTestThread();
+    promptTestFreezeAtTenInTheMorning();
+
+    Message::factory()->for($conversation)->create(['body' => 'My AC stopped']);
+    Message::factory()->for($conversation)->outbound()->create(['body' => 'What is the system doing?', 'sent_at' => now()]);
+
+    $this->travel(1)->minutes();
+    $burst = Message::factory()->for($conversation)->create(['body' => 'It is blowing warm air']);
+
+    $this->travel(1)->minutes();
+    Message::factory()->for($conversation)->create(['body' => 'Hello? Anyone there?']);
+
+    $history = app(FrontDeskPrompt::class)->history($conversation, promptTestBurst($burst));
+
+    expect(promptTestTurns($history))->toBe([
+        ['user', '[Tue Oct 13, 10:00 am] My AC stopped'],
+        ['assistant', '[Tue Oct 13, 10:00 am] What is the system doing?'],
+    ]);
+});
+
 it('has no history for the first text in a conversation', function () {
     [, $conversation] = promptTestThread();
 
