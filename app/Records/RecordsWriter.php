@@ -9,7 +9,7 @@ use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Models\Message;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -253,7 +253,8 @@ class RecordsWriter
 
     /**
      * When the customer started waiting: the oldest message in the unanswered run at the end of
-     * the thread, or when the owner replied if the owner spoke last.
+     * the thread, or when the owner replied if the owner spoke last. Times are when each message
+     * happened: the send time for a text that went out, the creation time for anything else.
      *
      * @param  Collection<int, Message>  $messages  oldest first
      */
@@ -266,12 +267,12 @@ class RecordsWriter
         }
 
         if ($newest->direction === MessageDirection::Out) {
-            return 'replied '.$this->time($newest->created_at, $timezone);
+            return 'replied '.$this->time($newest->happenedAt(), $timezone);
         }
 
         $unanswered = $messages->reverse()->takeWhile(fn (Message $message): bool => $message->direction === MessageDirection::In);
 
-        return $this->time($unanswered->last()->created_at, $timezone);
+        return $this->time($unanswered->last()->happenedAt(), $timezone);
     }
 
     private function lastMessage(?Message $message): string
@@ -285,7 +286,7 @@ class RecordsWriter
         return $prefix.$this->orPlaceholder($this->markdown->tableCell($message->body), 'none');
     }
 
-    private function time(Carbon $time, string $timezone): string
+    private function time(CarbonInterface $time, string $timezone): string
     {
         return $time->clone()->setTimezone($timezone)->format('Y-m-d H:i');
     }
