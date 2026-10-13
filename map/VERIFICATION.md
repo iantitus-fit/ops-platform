@@ -7,7 +7,7 @@ A work list for Ian, not a card and not part of the catalog's routing. One entry
 - **Where:** `database/migrations/2026_10_10_191255_create_agent_conversations_table.php:17`
 - **Type:** orphan (leftover, no referrer)
 - **Expected:** a table in the schema has a writer or a reader in the app.
-- **Actual:** grep for `agent_conversation` and `AgentConversation` over `app/`, `config/`, `routes/`, `resources/`, `tests/`, `database/seeders` and `database/factories` finds no referrer. The front desk passes its own thread to the SDK (`app/Ai/FrontDeskPrompt.php:106`, `app/Ai/RunFrontDeskAgent.php:61`).
+- **Actual:** grep for `agent_conversation` and `AgentConversation` over `app/`, `config/`, `routes/`, `resources/`, `tests/`, `database/seeders` and `database/factories` finds no referrer. The front desk passes its own thread to the SDK (`app/Ai/FrontDeskPrompt.php:112`, `app/Ai/RunFrontDeskAgent.php:61`).
 - **Related card:** `objects/conversations/conversation-and-pause.md`
 
 ## 2. `agent_conversation_messages` table

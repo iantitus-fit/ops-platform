@@ -2,13 +2,13 @@
 type: object
 cluster: folder
 status: live
-verified: 2026-10-12 @ 04f95e7 (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-13 @ 2bac8cb (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Ai/AgentFile.php
 ---
 
 # Agent file and compiled version
 
-**Type:** object · **Mark:** live; one field half-wired (`escalate_to`: admitted-but-unrouted, intent parked for Phase 2.1) · **Checked:** 2026-10-12 @ 04f95e7 · **Where:** `agents/*.md` in the business folder, `app/Ai/AgentFile.php:10`
+**Type:** object · **Mark:** live; one field half-wired (`escalate_to`: admitted-but-unrouted, intent parked for Phase 2.1) · **Checked:** 2026-10-13 @ 2bac8cb · **Where:** `agents/*.md` in the business folder, `app/Ai/AgentFile.php:10`
 
 **One sentence.** An agent file (`type: agent`) says who answers a channel, with which models and loading which folder files; the app never reads it from disk but from the live compiled copy in `icm_versions.compiled`.
 
@@ -18,8 +18,8 @@ entity: app/Ai/AgentFile.php
 - Example: `examples/example-hvac/agents/front-desk.md` (frontmatter fields name, channel, provider, model, fallback, loads, escalate_to; the body is the agent's instruction text). Field rules: `Validator.php:202-213`; `channel` admits only `sms`.
 - One agent per channel: `Validator.php:628`. `records/` can never be loaded, since the customer card is added by code: `Validator.php:679`.
 - Compile: the sync writes `compiled.index.agent[<channel>] = <path>` (`FolderSync.php:223`). Read: `ActiveConfig::agent()` (`ActiveConfig.php:187`), typed by `AgentFile::forChannel` (`AgentFile.php:30`). The front desk asks for channel `sms` (`RunFrontDesk.php:111`); a live version with no agent for texts writes a note on the timeline and alerts the owner (`RunFrontDesk.php:113-117`, through `ReportFrontDeskFailure.php:31`). Zero agents stays legal, and the Business Folder page still shows "Front desk: off" (`BusinessFolder.php:91`).
-- Provider chain: primary then each fallback in file order (`AgentFile.php:62`), tried in turn by `RunFrontDeskAgent.php:49`. A fallback starts only while the time already spent plus `gate.agent.timeout_seconds` fits inside `gate.agent.chain_budget_seconds` (`config/gate.php:88,90`, checked at `RunFrontDeskAgent.php:50` and `:85-88`); an entry skipped for time is recorded as skipped (`RunFrontDeskAgent.php:51-55`), and the order never changes. Every one failing raises `FrontDeskUnavailable` (`RunFrontDeskAgent.php:79`) and the front desk writes a note and alerts the owner (`RunFrontDesk.php:119-125`).
-- Prompt: the body is added at `FrontDeskPrompt.php:71`; each `loads` entry is expanded at `FrontDeskPrompt.php:169`; the customer card is added by code (`FrontDeskPrompt.php:89`).
+- Provider chain: primary then each fallback in file order (`AgentFile.php:62`), tried in turn by `RunFrontDeskAgent.php:49`. A fallback starts only while the time already spent plus `gate.agent.timeout_seconds` fits inside `gate.agent.chain_budget_seconds` (`config/gate.php:101,103`, checked at `RunFrontDeskAgent.php:50` and `:85-88`); an entry skipped for time is recorded as skipped (`RunFrontDeskAgent.php:51-55`), and the order never changes. Every one failing raises `FrontDeskUnavailable` (`RunFrontDeskAgent.php:79`) and the front desk writes a note and alerts the owner (`RunFrontDesk.php:119-125`).
+- Prompt: the body is added at `FrontDeskPrompt.php:67`; each `loads` entry is expanded at `FrontDeskPrompt.php:180`; the customer card is added by code (`FrontDeskPrompt.php:85`). The instructions end with a Right now section, the time in the business's zone, after the customer card (`FrontDeskPrompt.php:86`, `:207-213`).
 - The model class is `FrontDeskAgent` (`app/Ai/Agents/FrontDeskAgent.php:20`): no tools, so it can only propose words (`:15-19`).
 
 ## Half-wired field: `escalate_to`

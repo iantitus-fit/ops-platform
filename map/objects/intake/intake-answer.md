@@ -2,13 +2,13 @@
 type: object
 cluster: intake
 status: live
-verified: 2026-10-12 @ 04f95e7 (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-13 @ 2bac8cb (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Models/IntakeAnswer.php
 ---
 
 # Intake answer
 
-**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-12 @ 04f95e7 · **Where:** `app/Models/IntakeAnswer.php:20`
+**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-13 @ 2bac8cb · **Where:** `app/Models/IntakeAnswer.php:20`
 
 **One sentence.** An `intake_answers` row is one answer a customer gave to one of a service's intake questions, found by the agent in their texts; a correction is a new row, never an update.
 
