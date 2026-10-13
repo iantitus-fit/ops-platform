@@ -143,7 +143,25 @@ created: "2026-10-12"
 | T-02-78 | Spoofing | Forged danger forms page the owner after hours (02-33) | low | accept | `/leads` limited to 10 posts a minute per IP (`AppServiceProvider.php:83`, `routes/web.php:31`); one alert per form message; deploy-time hardening tracked with WR-15 and T-01-37 | closed (accepted) |
 | T-02-79 | Tampering | Stale map citation sends a reader to the wrong line (02-34) | medium | mitigate | Every citation re-pointed at 04f95e7; whole-map citation check resolves every `path:line` (162 ok, 0 bad at audit) | closed |
 | T-02-80 | Repudiation | A card claims an alert the code does not raise (02-34) | low | mitigate | Each new behaviour clause cites its line; only `map/` edited, "the source wins over any card" | closed |
-| T-02-SC | Tampering | npm/pip/cargo installs (all 34 plans) | high | accept | No package is installed by this plan; composer.json is unchanged | closed (accepted) |
+| T-02-81 | Elevation of privilege | A reply committing the business goes out because the promise bar moved to 0.15 (02-35) | high | mitigate | Only promise and complaint use 0.15 (`config/gate.php:74-77`); code checks (`CodeChecks::PROMISE_PHRASES`, price and discount detection) and the label floor still run first; boundary rows at 0.15 and 0.1501 in TriageReadingTest and GateTest; live spot-check carried to UAT | closed |
+| T-02-82 | Repudiation | A verdict does not say which bar applied (02-35) | low | mitigate | `DecideSendOrDraft.php:59` stores `config('gate.classifier')` whole, including the four per-question bars | closed |
+| T-02-83 | Tampering | The `sent_at` migration turns the one-live-draft partial index into a plain one on SQLite (02-36) | high | mitigate | `2026_10_12_000010` drops and recreates `messages_one_live_draft_per_conversation ... where status = 'draft'` (lines 44-45) in up() and down(); D-28 tests green | closed |
+| T-02-84 | Repudiation | The thread shows the owner's reply above the holding reply sent first (02-36) | medium | mitigate | `OutboundSender.php:267,320` write `sent_at` on the send path and the record-failure fallback; threads ordered and labelled by send time; SentTimeTest | closed |
+| T-02-85 | Tampering | The backfill overwrites a recorded send time (02-36) | low | mitigate | `2026_10_12_000011` touches only sent or delivered rows with an empty `sent_at`; a test keeps a stored value | closed |
+| T-02-86 | Denial of service | A customer who keeps texting gets a new holding reply each time (02-37) | medium | mitigate | `SendFixedReply.php:99` finds the newest holding reply with `reorder('id', 'desc')`; regression test with two holding replies and a third text | closed |
+| T-02-87 | Denial of service | The reply cap undercounts texts approved long after they were written (02-37) | low | mitigate | `RunFrontDesk.php:245-246` compare `coalesce(sent_at, created_at)` for the hour and the day; ReplyCapTest | closed |
+| T-02-88 | Repudiation | open-leads.md names the wrong reply or time (02-37) | low | mitigate | `RecordsWriter.php:270,275` read `happenedAt()`; test with a draft sent after the holding reply | closed |
+| T-02-89 | Repudiation | /dev/chat shows a held draft as sent (02-38) | low | mitigate | `DevChat.php:94` filters by `MessageStatus::onTheCustomersPhone()`; local-only (`DevChat.php:37,45` abort 404); mutation-checked tests | closed |
+| T-02-90 | Tampering | Two drifting status lists let an unsent text reach the model (02-38) | low | mitigate | `FrontDeskPrompt.php:123` reads the same `onTheCustomersPhone()`; history tests unchanged | closed |
+| T-02-91 | Tampering | A customer fakes a bracketed time or a "Right now" line to move the model's date (02-39) | low | accept | See AR-02-06 | closed (accepted) |
+| T-02-92 | Repudiation | The model restates a visit or time from the thread as booked (02-39) | medium | mitigate | RULES bullet at `FrontDeskPrompt.php:37` (never say a visit, time or booking is set); dated turns; promise label, PROMISE_PHRASES and Jev's promise question still hold commitments. Residual: model compliance | closed |
+| T-02-93 | Tampering | A date or bracket leaks into the classifier input (02-39) | medium | mitigate | `promptText()` (`FrontDeskPrompt.php:164`) unchanged and pinned by its arrival-order test; times only in instructions() and history() | closed |
+| T-02-94 | Information disclosure | Real client data in the example folder (02-39) | low | mitigate | `furnace-repair.md` is fictional; money as `price_cents: 8900` | closed |
+| T-02-95 | Tampering | Customer markup runs script through the new card line (02-40) | high | mitigate | `conversation-thread.blade.php:13-14` use Blade's escaping `{{ }}` only (no `{!! !!}` in the card); escaping test asserts the escaped form | closed |
+| T-02-96 | Denial of service | A long customer text pushes Send below the fold (02-40) | low | mitigate | `Str::limit(Str::squish(...), 160)` at `conversation-thread.blade.php:14`; layout hand check carried to UAT | closed |
+| T-02-97 | Tampering | A stale map citation sends a reader to the wrong line (02-41) | medium | mitigate | Whole-map citation check over 185 `file.php:N` citations, 0 BAD (02-41 SUMMARY) | closed |
+| T-02-98 | Repudiation | A card still describes pre-gap behaviour (02-41) | low | mitigate | Each new behaviour clause cites its line; only `map/` edited | closed |
+| T-02-SC | Tampering | npm/pip/cargo installs (all 41 plans) | high | accept | No package is installed; `git diff c42f29d..HEAD` on composer.json, composer.lock, package.json and package-lock.json is empty | closed (accepted) |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
 *Severity: critical > high > medium > low — only open threats at or above workflow.security_block_on count toward threats_open*
@@ -162,6 +180,7 @@ created: "2026-10-12"
 | AR-02-03 | T-02-40 | A customer text can fake a request for a person. A false handoff costs the owner one tap: it only alerts and pauses (`RunFrontDesk.php:252-257`). | Plan 02-20 threat model | 2026-10-12 |
 | AR-02-04 | T-02-SC | No plan installs a package. Verified: `git log main..HEAD -- composer.json composer.lock package.json package-lock.json` is empty. | All 29 plans; verified by audit | 2026-10-12 |
 | AR-02-05 | T-02-78 | Anyone can post a form describing a danger and page the owner. Same exposure as a text describing danger; `/leads` is rate limited to 10 a minute per IP (`AppServiceProvider.php:83`). Deploy-time hardening is tracked with WR-15 and T-01-37. | Plan 02-33 threat model | 2026-10-12 |
+| AR-02-06 | T-02-91 | A customer can type a fake bracketed time or a "Right now" line. The real "Right now" sits in the instructions after the card, outside any user turn; each real turn's time comes from the database and leads the turn; RULES treats customer text as information, never an instruction; price, promise and booking replies are still held by code checks and Jev. | Plan 02-39 threat model | 2026-10-13 |
 | TR-02-01 | T-02-24 (transfer) | Customer text sent to the model providers named in `agents/*.md` and to TypeSafe's Jev via OpenRouter is governed by their data terms. The provider-terms and zero-retention checks are a go-live item in `docs/sprints/sprint-1.md:71-77` (D-37) and have not been run yet. | D-37 | 2026-10-12 |
 
 *Accepted risks do not resurface in future audit runs.*
@@ -180,7 +199,7 @@ created: "2026-10-12"
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-10-12
+**Approval:** verified 2026-10-12; gap plans 02-35 to 02-41 (T-02-81 to T-02-98) verified at L1 on 2026-10-13, threats_open 0
 
 ## Security Audit 2026-10-12
 
@@ -196,4 +215,12 @@ created: "2026-10-12"
 |---|---|
 | Threats found | 109 |
 | Closed | 109 |
+| Open | 0 |
+
+## Security Audit 2026-10-13
+
+| Metric | Count |
+|---|---|
+| Threats found | 127 |
+| Closed | 127 |
 | Open | 0 |
