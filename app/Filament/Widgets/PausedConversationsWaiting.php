@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * The conversations the assistant has stepped back from where the customer spoke last, so they are waiting on the
- * owner, longest wait first (D-32).
+ * owner, longest wait first (D-32). Who spoke last counts only texts on the customer's phone
+ * (MessageStatus::onTheCustomersPhone()), so an owner reply still queued or that failed to send leaves them waiting.
  */
 class PausedConversationsWaiting extends TableWidget
 {
@@ -29,7 +30,7 @@ class PausedConversationsWaiting extends TableWidget
         $latestAuthor = Message::query()
             ->select('author')
             ->whereColumn('messages.conversation_id', 'conversations.id')
-            ->whereNotIn('status', [MessageStatus::Draft, MessageStatus::Withdrawn])
+            ->whereIn('status', MessageStatus::onTheCustomersPhone())
             ->orderByRaw('coalesce(sent_at, created_at) desc')
             ->orderByDesc('id')
             ->limit(1);
