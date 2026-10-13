@@ -33,6 +33,7 @@ function contactTimelineEntry(Contact $contact, string $body, array $attributes 
 }
 
 it('lists contacts with the most recent activity first, breaking ties by id', function () {
+    $this->travelTo('2026-10-12 12:00:00');
     $oldest = Contact::factory()->create(['last_activity_at' => now()->subDays(2)]);
     $sameSecondFirst = Contact::factory()->create(['last_activity_at' => '2026-10-11 09:00:00']);
     $sameSecondSecond = Contact::factory()->create(['last_activity_at' => '2026-10-11 09:00:00']);
