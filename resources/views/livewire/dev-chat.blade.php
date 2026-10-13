@@ -7,7 +7,7 @@
             <div wire:key="message-{{ $message->id }}">
                 <div style="font-size: 0.875rem;">
                     <strong>{{ $message->author->name }}</strong>
-                    <span>{{ $message->created_at->setTimezone($timezone)->format('M j, g:i a') }}</span>
+                    <span>{{ $message->happenedAt()->setTimezone($timezone)->format('M j, g:i a') }}</span>
                 </div>
                 <div style="white-space: pre-line;">{{ $message->body }}</div>
             </div>

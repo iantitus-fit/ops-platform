@@ -49,7 +49,7 @@
             <div wire:key="message-{{ $message->id }}" data-author="{{ $message->author->value }}" style="align-self: {{ $authorSide }}; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 0.75rem; background: {{ $authorBackground }};">
                 <div style="font-size: 0.875rem;">
                     <strong>{{ $authorLabel }}</strong>
-                    <span>{{ $message->channel->value }} · {{ $message->created_at->setTimezone($timezone)->format('M j, g:i a') }}</span>
+                    <span>{{ $message->channel->value }} · {{ $message->happenedAt()->setTimezone($timezone)->format('M j, g:i a') }}</span>
                     @if ($message->direction === \App\Enums\MessageDirection::Out)
                         <x-filament::badge size="sm" :color="match ($message->status) {
                             \App\Enums\MessageStatus::Failed => 'danger',
