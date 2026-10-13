@@ -10,6 +10,7 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\ReplyLabel;
+use Carbon\CarbonImmutable;
 use Database\Factories\MessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'resolved_by',
     'resolved_at',
     'original_body',
+    'sent_at',
 ])]
 class Message extends Model
 {
@@ -65,7 +67,18 @@ class Message extends Model
             'handled_at' => 'datetime',
             'resolution' => DraftResolution::class,
             'resolved_at' => 'datetime',
+            'sent_at' => 'datetime',
         ];
+    }
+
+    /**
+     * When this message happened, for the thread order and every time shown: for a text that went out, when it was
+     * sent; otherwise when it was recorded (a customer's text arriving, a draft being written, a text still queued
+     * or one that failed). A copy, so changing its time zone for display never changes the model.
+     */
+    public function happenedAt(): CarbonImmutable
+    {
+        return ($this->sent_at ?? $this->created_at)->toImmutable();
     }
 
     /**

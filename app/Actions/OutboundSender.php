@@ -16,6 +16,7 @@ use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use Carbon\CarbonInterface;
 use DomainException;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -256,13 +257,14 @@ class OutboundSender
             throw new DomainException(self::NOT_SENT.$exception->getMessage(), previous: $exception);
         }
 
-        try {
-            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId, $origin, $summary): void {
-                $sentAt = now();
+        $sentAt = now();
 
+        try {
+            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId, $origin, $summary, $sentAt): void {
                 $message->update([
                     'status' => MessageStatus::Sent,
                     'provider_message_id' => $providerMessageId,
+                    'sent_at' => $sentAt,
                 ]);
 
                 $contact->activities()->create([
@@ -279,7 +281,7 @@ class OutboundSender
         } catch (Throwable $exception) {
             report($exception);
 
-            $this->markSentAfterRecordingFailed($message, $providerMessageId);
+            $this->markSentAfterRecordingFailed($message, $providerMessageId, $sentAt);
         }
 
         CustomerRecordChanged::dispatch($contact->id);
@@ -306,14 +308,16 @@ class OutboundSender
 
     /**
      * The text has gone out but its record failed. Save the least that keeps the thread honest:
-     * the message as sent with the provider's id. If even that fails, the failure is logged.
+     * the message as sent, with the provider's id and the moment the channel accepted it. If even that fails, the
+     * failure is logged.
      */
-    private function markSentAfterRecordingFailed(Message $message, string $providerMessageId): void
+    private function markSentAfterRecordingFailed(Message $message, string $providerMessageId, CarbonInterface $sentAt): void
     {
         try {
             $message->refresh()->update([
                 'status' => MessageStatus::Sent,
                 'provider_message_id' => $providerMessageId,
+                'sent_at' => $sentAt,
             ]);
         } catch (Throwable $exception) {
             report($exception);

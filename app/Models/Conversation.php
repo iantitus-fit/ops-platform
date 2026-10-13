@@ -63,14 +63,16 @@ class Conversation extends Model
     }
 
     /**
-     * The messages in arrival order. Timestamps have one-second resolution, so the id
-     * breaks ties between messages recorded in the same second.
+     * The messages in the order they happened: a text that went out sits at its send time, anything else at the time
+     * it was recorded, so a draft the owner sends later moves to where it went out (still one row, D-54). Timestamps
+     * have one-second resolution, so the id breaks ties. `latest()` or `oldest()` on this relation only adds a
+     * tie-break after this order; use `reorder()` to replace it.
      *
      * @return HasMany<Message, $this>
      */
     public function messages(): HasMany
     {
-        return $this->hasMany(Message::class)->orderBy('created_at')->orderBy('id');
+        return $this->hasMany(Message::class)->orderByRaw('coalesce(sent_at, created_at)')->orderBy('id');
     }
 
     /**
