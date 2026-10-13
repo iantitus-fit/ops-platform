@@ -120,6 +120,8 @@ it('allows a draft in each of two conversations, and a new draft once the old on
 });
 
 it('leaves a withdrawn draft out of the history the next run reads', function () {
+    // No live folder here, so the business zone falls back to the app zone, UTC.
+    $this->travelTo(Carbon::parse('2026-10-13 15:00', 'UTC'));
     $conversation = Conversation::factory()->create();
 
     Message::factory()->for($conversation)->create(['body' => 'My AC stopped']);
@@ -129,7 +131,7 @@ it('leaves a withdrawn draft out of the history the next run reads', function ()
     $history = app(FrontDeskPrompt::class)->history($conversation, Message::query()->whereKey($new->id)->get());
 
     expect(array_map(fn ($turn) => [$turn->role->value, $turn->content], $history))->toBe([
-        ['user', 'My AC stopped'],
+        ['user', '[Tue Oct 13, 3:00 pm] My AC stopped'],
         ['assistant', '(No reply was sent.)'],
     ]);
 });
