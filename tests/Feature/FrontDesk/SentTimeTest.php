@@ -3,9 +3,11 @@
 use App\Actions\SendOwnerReply;
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
+use App\Enums\DraftResolution;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Livewire\ConversationThread;
+use App\Livewire\DevChat;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -163,4 +165,71 @@ it('says when a message happened, without changing the model', function () {
     $happened->setTimezone('America/Chicago');
 
     expect($message->sent_at->getTimezone()->getName())->toBe($timezoneBefore);
+});
+
+it('backfills the send time of texts sent before this change', function () {
+    $conversation = Conversation::factory()->create();
+    $sent = fn (array $attributes) => Message::factory()->outbound()->for($conversation)->create($attributes);
+    $nine = Carbon::parse('2026-10-01 09:00', 'UTC');
+
+    $agentText = $sent(['created_at' => $nine]);
+    $delivered = $sent(['status' => MessageStatus::Delivered, 'created_at' => $nine->copy()->addMinutes(10)]);
+    $approved = $sent(['created_at' => $nine, 'resolution' => DraftResolution::Approved, 'resolved_at' => $nine->copy()->addMinutes(5)]);
+    $edited = $sent(['created_at' => $nine, 'resolution' => DraftResolution::Edited, 'resolved_at' => $nine->copy()->addMinutes(7)]);
+    $alreadyStamped = $sent(['created_at' => $nine, 'sent_at' => $nine->copy()->addHour()]);
+
+    $received = Message::factory()->for($conversation)->create(['created_at' => $nine]);
+    $draft = Message::factory()->draft()->for($conversation)->create(['created_at' => $nine]);
+    $withdrawn = Message::factory()->withdrawn()->for($conversation)->create(['created_at' => $nine]);
+    $queued = $sent(['status' => MessageStatus::Queued, 'created_at' => $nine]);
+    $failed = $sent(['status' => MessageStatus::Failed, 'created_at' => $nine]);
+
+    $migration = require database_path('migrations/2026_10_12_000011_backfill_sent_at_on_messages.php');
+    $migration->up();
+
+    expect($agentText->fresh()->sent_at->equalTo($nine))->toBeTrue()
+        ->and($delivered->fresh()->sent_at->equalTo($nine->copy()->addMinutes(10)))->toBeTrue()
+        ->and($approved->fresh()->sent_at->equalTo($nine->copy()->addMinutes(5)))->toBeTrue()
+        ->and($edited->fresh()->sent_at->equalTo($nine->copy()->addMinutes(7)))->toBeTrue()
+        ->and($alreadyStamped->fresh()->sent_at->equalTo($nine->copy()->addHour()))->toBeTrue()
+        ->and($received->fresh()->sent_at)->toBeNull()
+        ->and($draft->fresh()->sent_at)->toBeNull()
+        ->and($withdrawn->fresh()->sent_at)->toBeNull()
+        ->and($queued->fresh()->sent_at)->toBeNull()
+        ->and($failed->fresh()->sent_at)->toBeNull();
+});
+
+it('lists the sent draft after the holding reply in /dev/chat', function () {
+    $this->app['env'] = 'local';
+    sentTimePriceQuestionHeld();
+    $holdingReply = sentTimeTheHoldingReply();
+    $draft = sentTimeTheDraft();
+    $customerText = Message::query()->where('author', 'customer')->sole();
+
+    $this->travel(3)->minutes();
+
+    Livewire::test(ConversationThread::class, ['conversation' => Conversation::query()->sole()])->call('approveDraft');
+
+    Livewire::test(DevChat::class)
+        ->set('from', '+12025550123')
+        ->assertSeeInOrder(['Mike answers questions like this himself', SENT_TIME_DRAFT_WORDS])
+        ->tap(fn ($chat) => expect($chat->instance()->thread->pluck('id')->all())->toBe([$customerText->id, $holdingReply->id, $draft->id]));
+});
+
+it('shows each message at the time it happened', function () {
+    $this->app['env'] = 'local';
+    sentTimePriceQuestionHeld();
+
+    $this->travel(3)->minutes();
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => Conversation::query()->sole()])->call('approveDraft');
+
+    $thread->assertSeeInOrder(['Oct 13, 4:30 pm', 'Oct 13, 4:33 pm', SENT_TIME_DRAFT_WORDS]);
+
+    Livewire::test(DevChat::class)
+        ->set('from', '+12025550123')
+        ->assertSeeInOrder(['Oct 13, 4:30 pm', 'Oct 13, 4:33 pm', SENT_TIME_DRAFT_WORDS]);
+
+    expect(sentTimeTheDraft()->created_at->setTimezone('America/Chicago')->format('M j, g:i a'))->toBe('Oct 13, 4:30 pm')
+        ->and(sentTimeTheDraft()->happenedAt()->setTimezone('America/Chicago')->format('M j, g:i a'))->toBe('Oct 13, 4:33 pm');
 });
