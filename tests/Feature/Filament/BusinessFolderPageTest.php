@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\SyncOutcome;
+use App\Enums\VersionStatus;
 use App\Filament\Pages\BusinessFolder;
 use App\Icm\FolderSync;
 use App\Icm\SyncStatus;
 use App\Models\IcmVersion;
+use App\Models\OwnerAlert;
 use App\Models\User;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
@@ -21,25 +23,27 @@ it('opens the business folder page for a signed-in owner', function () {
 });
 
 it('says no version is live yet, then goes live from Sync Now', function () {
-    Livewire::test(BusinessFolder::class)
+    $page = Livewire::test(BusinessFolder::class)
         ->assertSee('No version is live yet. Click Sync Now.')
-        ->callAction('syncNow')
-        ->assertNotified('Live as v1 (8 files)')
-        ->assertDontSee('No version is live yet. Click Sync Now.')
-        ->assertSee('v1');
+        ->callAction('syncNow');
 
-    expect(IcmVersion::count())->toBe(1);
+    $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
+
+    $page->assertNotified("Live as {$label} ({$files} files)")
+        ->assertDontSee('No version is live yet. Click Sync Now.')
+        ->assertSee($label);
 });
 
 it('shows the live version, its file count, its Chicago go-live time and its files', function () {
     $this->freezeTime();
-    activateExampleFolder();
+    $version = activateExampleFolder();
 
     $liveSince = now()->setTimezone('America/Chicago')->format('M j, g:i a');
 
     Livewire::test(BusinessFolder::class)
-        ->assertSee('v1')
-        ->assertSee('8 files')
+        ->assertSee($version->label())
+        ->assertSee(exampleFolderFileCount().' files')
         ->assertSee("Live since {$liveSince}")
         ->assertSee('business/services/ac-repair.md')
         ->assertSee('service')
@@ -47,24 +51,24 @@ it('shows the live version, its file count, its Chicago go-live time and its fil
 });
 
 it('reports an unchanged folder as already active and as no changes', function () {
-    activateExampleFolder();
+    $version = activateExampleFolder();
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertNotified('Already active: v1, no changes')
+        ->assertNotified("Already active: {$version->label()}, no changes")
         ->assertSee('No changes');
 
     expect(IcmVersion::count())->toBe(1);
 });
 
 it('rejects a broken file, keeps v1 live and lists the error under the last sync', function () {
-    activateExampleFolder();
+    $version = activateExampleFolder();
     breakFile('business/services/ac-repair.md', fn (string $contents) => str_replace('price_policy: starting_at', 'price_policy: maybe', $contents));
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertNotified('Rejected. v1 stays live.')
-        ->assertSee('v1')
+        ->assertNotified("Rejected. {$version->label()} stays live.")
+        ->assertSee($version->label())
         ->assertSee('Rejected')
         ->assertSee('business/services/ac-repair.md: price_policy must be one of none, starting_at, fixed (you wrote maybe)');
 
@@ -131,9 +135,140 @@ it('tells the owner a sync is already running and changes nothing', function () 
 });
 
 it('shows a skipped later-sprint file as not supported yet', function () {
-    writeIcmFile('agents/front-desk.md', "---\ntype: agent\nname: Front desk\n---\nAnswers texts.");
+    writeIcmFile('automations/follow-up.md', "---\ntype: automation\nname: Follow-up\n---\nChecks in after a quote.");
 
     Livewire::test(BusinessFolder::class)
         ->callAction('syncNow')
-        ->assertSee('Not supported yet: agents/front-desk.md');
+        ->assertSee('Not supported yet: automations/follow-up.md');
+});
+
+it('names the live front desk and the models it falls back to', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Front desk: Front desk answers texts with anthropic claude-sonnet-5-5, then openai gpt-6.1-sol.');
+});
+
+it('says the front desk is off when no agent file answers texts', function () {
+    File::delete(icmPath('agents/front-desk.md'));
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Front desk: off. No agent file answers texts, so customer texts wait for you here.');
+});
+
+it('lists what always waits for the owner: the checked phrases and the never_say list', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Always held for you')
+        ->assertSee('Price words')
+        ->assertSee('Discount phrases')
+        ->assertSee('discount')
+        ->assertSee('Promise phrases')
+        ->assertSee('guarantee')
+        ->assertSee('Never say')
+        ->assertSee('cheapest');
+});
+
+it('says nothing always waits yet while no version is live', function () {
+    Livewire::test(BusinessFolder::class)->assertDontSee('Always held for you');
+});
+
+it('escapes a never_say phrase the owner wrote when it is listed as always held', function () {
+    breakFile('voice/how-we-talk.md', fn (string $text) => str_replace('never_say: [guaranteed, cheapest, no problem]', 'never_say: [guaranteed, "<b>loud</b>"]', $text));
+    activateExampleFolder();
+
+    $page = Livewire::test(BusinessFolder::class);
+
+    expect($page->instance()->alwaysHeld()['Never say'])->toBe(['guaranteed', '<b>loud</b>']);
+
+    $page->assertSee('&lt;b&gt;loud&lt;/b&gt;', false)->assertDontSeeHtml('<b>loud</b>');
+});
+
+it('warns when alerts go by text but no one has a phone number on their profile', function () {
+    activateExampleFolder();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Alerts are set to go by text, but no one has a phone number on their profile. Add yours on your profile page so held drafts reach you.');
+});
+
+it('does not warn about alerts once someone has a phone number', function () {
+    activateExampleFolder();
+    User::factory()->withPhone()->create();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertDontSee('no one has a phone number on their profile');
+});
+
+it('shows the last alert that was not sent with its reason', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['failed_at' => now()->subHour(), 'failure' => 'Twilio refused the number']);
+    OwnerAlert::factory()->create(['failed_at' => now(), 'failure' => 'No phone on file']);
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('The last alert was not sent: No phone on file')
+        ->assertDontSee('Twilio refused the number');
+});
+
+it('shows no failed alert line when every alert went out', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['sent_at' => now()]);
+
+    Livewire::test(BusinessFolder::class)->assertDontSee('The last alert was not sent');
+});
+
+it('escapes the reason an alert failed', function () {
+    activateExampleFolder();
+    OwnerAlert::factory()->create(['failed_at' => now(), 'failure' => '<b>loud</b>']);
+
+    Livewire::test(BusinessFolder::class)->assertDontSeeHtml('<b>loud</b>');
+});
+
+/**
+ * Make the live version look like one from Phase 1, when owner_alert in rules/sending.md was a
+ * sentence the owner wrote instead of the channels, right_away and after_hours settings.
+ */
+function businessFolderPhaseOneVersion(): IcmVersion
+{
+    $version = activateExampleFolder();
+
+    $compiled = $version->compiled;
+    $compiled['files']['rules/sending.md']['front_matter']['owner_alert'] = 'Text the owner when a draft is waiting or a customer asks for a person';
+    $version->update(['compiled' => $compiled]);
+
+    app()->forgetScopedInstances();
+
+    return $version;
+}
+
+it('opens the page and Sync Now while a Phase 1 version is live', function () {
+    businessFolderPhaseOneVersion();
+
+    $this->get('/admin/business-folder')->assertOk()->assertSee('Sync Now');
+});
+
+it('syncs forward from the dashboard while a Phase 1 version is live', function () {
+    businessFolderPhaseOneVersion();
+    breakFile('business/faq.md', fn (string $contents) => $contents."\nWe answer texts all day.\n");
+
+    Livewire::test(BusinessFolder::class)
+        ->callAction('syncNow')
+        ->assertNotified();
+
+    $newest = IcmVersion::query()->where('status', VersionStatus::Active->value)->latest('id')->firstOrFail();
+
+    expect($newest->compiled['files']['rules/sending.md']['front_matter']['owner_alert'])->toBeArray();
+});
+
+it('warns about a missing phone while a Phase 1 version is live, and not once a phone is on file', function () {
+    businessFolderPhaseOneVersion();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('Alerts are set to go by text, but no one has a phone number on their profile');
+
+    User::factory()->withPhone()->create();
+
+    Livewire::test(BusinessFolder::class)
+        ->assertDontSee('no one has a phone number on their profile');
 });

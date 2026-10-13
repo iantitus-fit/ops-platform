@@ -8,11 +8,16 @@ use App\Channels\TwilioTextChannel;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
+use App\Models\IntakeAnswer;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\Classifier;
+use App\SendRule\JevClassifier;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -31,10 +36,15 @@ class AppServiceProvider extends ServiceProvider
      * TextChannel is bound to a closure that reads channels.text.driver each time it is
      * asked for, so asking for the interface gives whichever driver the config names.
      * FakeTextChannel is a singleton so the texts it remembers survive between asks.
+     *
+     * Classifier is bound to JevClassifier. Tests replace it with a FakeClassifier in tests/Pest.php,
+     * so no test can reach Jev.
      */
     public function register(): void
     {
         $this->app->scoped(ActiveConfig::class);
+
+        $this->app->bind(Classifier::class, JevClassifier::class);
 
         $this->app->singleton(FakeTextChannel::class);
         $this->app->bind(TextChannel::class, function (Application $app): TextChannel {
@@ -55,16 +65,25 @@ class AppServiceProvider extends ServiceProvider
      * of class names, and refuses any model that is not listed.
      *
      * The "leads" rate limiter allows each IP address 10 lead form posts a minute.
+     *
+     * In local development `composer run dev` also runs the scheduler (schedule:work), so the
+     * sweep for undispatched texts fires without a cron line.
      */
     public function boot(): void
     {
         Relation::enforceMorphMap([
             'contact' => Contact::class,
             'conversation' => Conversation::class,
+            'intake_answer' => IntakeAnswer::class,
             'message' => Message::class,
+            'owner_alert' => OwnerAlert::class,
             'user' => User::class,
         ]);
 
         RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
+        if ($this->app->isLocal()) {
+            DevCommands::artisan('schedule:work', 'schedule');
+        }
     }
 }

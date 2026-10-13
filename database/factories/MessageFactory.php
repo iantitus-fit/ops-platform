@@ -2,9 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Enums\DraftResolution;
+use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -44,6 +47,37 @@ class MessageFactory extends Factory
             'direction' => MessageDirection::Out,
             'author' => MessageAuthor::Agent,
             'status' => MessageStatus::Sent,
+        ]);
+    }
+
+    /**
+     * A reply the front desk wrote and the send rule kept for the owner. A conversation has at most one.
+     */
+    public function draft(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'direction' => MessageDirection::Out,
+            'author' => MessageAuthor::Agent,
+            'status' => MessageStatus::Draft,
+            'kind' => MessageKind::AgentReply,
+            'gate_outcome' => GateOutcome::Hold,
+            'gate_reason' => 'code:price',
+            'gate' => [
+                'version' => 1,
+                'reason' => ['code' => 'code:price', 'plain' => 'Held: asks about price'],
+            ],
+        ]);
+    }
+
+    /**
+     * A draft that never went out because a newer one replaced it.
+     */
+    public function withdrawn(): static
+    {
+        return $this->draft()->state(fn (array $attributes) => [
+            'status' => MessageStatus::Withdrawn,
+            'resolution' => DraftResolution::Replaced,
+            'resolved_at' => now(),
         ]);
     }
 

@@ -30,6 +30,16 @@ class ActiveConfig
     }
 
     /**
+     * The id of the live version, for a record that must say which folder version it was made under.
+     *
+     * @throws NoActiveVersion
+     */
+    public function versionId(): int
+    {
+        return $this->version()->id;
+    }
+
+    /**
      * The business's time zone, such as "America/Chicago".
      */
     public function timezone(): string
@@ -91,6 +101,27 @@ class ActiveConfig
     }
 
     /**
+     * The owner-written fixed replies and the owner's name, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function replies(): array
+    {
+        return $this->singleton('set_replies');
+    }
+
+    /**
+     * The safety check's questions: the intent list, the intent question and the six yes or no
+     * questions, plus the markdown body under "body".
+     *
+     * @return array<string, mixed>
+     */
+    public function triage(): array
+    {
+        return $this->singleton('triage');
+    }
+
+    /**
      * Every lead source with the cost of one lead in integer cents.
      *
      * @return list<array{key: string, name: string, cost_cents_per_lead: int}>
@@ -143,6 +174,19 @@ class ActiveConfig
     public function service(string $slug): ?array
     {
         $path = $this->version()->compiled['index']['service'][$slug] ?? null;
+
+        return $path === null ? null : $this->typedFile($path);
+    }
+
+    /**
+     * The agent that serves one channel such as "sms": its front matter plus the markdown body
+     * under "body", or null when no agent file serves that channel.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function agent(string $channel): ?array
+    {
+        $path = $this->version()->compiled['index']['agent'][$channel] ?? null;
 
         return $path === null ? null : $this->typedFile($path);
     }

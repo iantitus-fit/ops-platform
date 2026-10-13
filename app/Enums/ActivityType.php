@@ -8,4 +8,12 @@ enum ActivityType: string
     case FormReceived = 'form_received';
     case ReplySent = 'reply_sent';
     case Note = 'note';
+    case OwnerAlerted = 'owner_alerted';
+    case DraftHeld = 'draft_held';
+    case DraftDiscarded = 'draft_discarded';
+    case IntakeAnswered = 'intake_answered';
+    case AgentPaused = 'agent_paused';
+    case AgentResumed = 'agent_resumed';
+    case OptedOut = 'opted_out';
+    case OptedIn = 'opted_in';
 }

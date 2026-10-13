@@ -37,16 +37,16 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 
 ### Text Front Desk (Phase 2)
 
-- [ ] **AGNT-01**: Agent files (`agents/*.md`, type `agent`: name, channel, provider, model, fallback, loads, escalate_to) are validated by the sync with plain-words errors and compiled into the active version; a broken agent file is rejected like any other file.
-- [ ] **AGNT-02**: On an inbound text, the `ProcessInbound` job runs the agent built from the active agent file: it loads the routed files named in `loads` whole (from `ActiveConfig`, never from disk) plus the customer's card rendered fresh from the database, and replies in the same conversation.
-- [ ] **AGNT-03**: The agent asks the intake questions defined in the matching `business/services/*.md` file (using their options) and captures the answers as structured output against the contact or conversation, visible on the timeline and the customer card. *(derived: SPEC says "asks intake questions" and "structured output"; the storage shape is a discuss-phase decision)*
-- [ ] **AGNT-04**: Provider and model are set per agent in its file, with a `fallback` list: if the primary provider or model fails, the agent falls through the list; swapping a model is an edit to the agent file, not code. (DEC-07)
-- [ ] **GATE-01**: The send-or-draft gate is enforced in code from `rules/sending.md`: intake questions, scheduling and FAQ answers send on their own; anything with a price, a promise, a discount or a complaint is saved as a draft for the owner and never sent, whatever the model outputs. The owner is alerted as `owner_alert` specifies.
-- [ ] **GATE-02**: The first outbound message to a customer discloses that it is an AI using `ai_disclosure` from `voice/how-we-talk.md`; `never_say` phrases are never sent; `sign_off` is applied; and a customer who asks for a person is handed to `escalate_to` and the owner is alerted. (Principle 5)
-- [ ] **GATE-03**: The owner can take over a conversation from the dashboard; while taken over the agent sends nothing in that conversation, and the owner can hand it back.
-- [ ] **GATE-04**: The owner can review a draft in the dashboard and approve, edit and send, or discard it. *(derived: SPEC says price/promise/discount/complaint "goes to the owner as a draft")*
-- [ ] **TXT-01**: A `TwilioTextChannel` implements the `TextChannel` interface (outbound send, inbound webhook with signature verification and unique provider message id), selected by config with no other code change. Verified against Twilio-shaped payloads; going live on Ian's registered test number follows A2P approval and does not gate this phase. (DEC-05)
-- [ ] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
+- [x] **AGNT-01**: Agent files (`agents/*.md`, type `agent`: name, channel, provider, model, fallback, loads, escalate_to) are validated by the sync with plain-words errors and compiled into the active version; a broken agent file is rejected like any other file.
+- [x] **AGNT-02**: On an inbound text, the `ProcessInbound` job runs the agent built from the active agent file: it loads the routed files named in `loads` whole (from `ActiveConfig`, never from disk) plus the customer's card rendered fresh from the database, and replies in the same conversation.
+- [x] **AGNT-03**: The agent asks the intake questions defined in the matching `business/services/*.md` file (using their options) and captures the answers as structured output against the contact or conversation, visible on the timeline and the customer card. *(derived: SPEC says "asks intake questions" and "structured output"; the storage shape is a discuss-phase decision)*
+- [x] **AGNT-04**: Provider and model are set per agent in its file, with a `fallback` list: if the primary provider or model fails, the agent falls through the list; swapping a model is an edit to the agent file, not code. (DEC-07)
+- [x] **GATE-01**: The send-or-draft gate is enforced in code from `rules/sending.md`: intake questions, scheduling and FAQ answers send on their own; anything with a price, a promise, a discount or a complaint is saved as a draft for the owner and never sent, whatever the model outputs. The owner is alerted as `owner_alert` specifies.
+- [x] **GATE-02**: The first outbound message to a customer discloses that it is an AI using `ai_disclosure` from `voice/how-we-talk.md`; `never_say` phrases are never sent; `sign_off` is applied; and a customer who asks for a person is handed to `escalate_to` and the owner is alerted. (Principle 5)
+- [x] **GATE-03**: The owner can take over a conversation from the dashboard; while taken over the agent sends nothing in that conversation, and the owner can hand it back.
+- [x] **GATE-04**: The owner can review a draft in the dashboard and approve, edit and send, or discard it. *(derived: SPEC says price/promise/discount/complaint "goes to the owner as a draft")*
+- [x] **TXT-01**: A `TwilioTextChannel` implements the `TextChannel` interface (outbound send, inbound webhook with signature verification and unique provider message id), selected by config with no other code change. Verified against Twilio-shaped payloads; going live on Ian's registered test number follows A2P approval and does not gate this phase. (DEC-05)
+- [x] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
 
 ### Booking and the Gate (Phase 3)
 
@@ -148,16 +148,16 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | DASH-01 | Phase 1 | Complete |
 | DASH-02 | Phase 1 | Complete |
 | QUAL-01 | Phase 1 | Complete |
-| AGNT-01 | Phase 2 | Pending |
-| AGNT-02 | Phase 2 | Pending |
-| AGNT-03 | Phase 2 | Pending |
-| AGNT-04 | Phase 2 | Pending |
-| GATE-01 | Phase 2 | Pending |
-| GATE-02 | Phase 2 | Pending |
-| GATE-03 | Phase 2 | Pending |
-| GATE-04 | Phase 2 | Pending |
-| TXT-01 | Phase 2 | Pending |
-| INFRA-01 | Phase 2 | Pending |
+| AGNT-01 | Phase 2 | Complete |
+| AGNT-02 | Phase 2 | Complete |
+| AGNT-03 | Phase 2 | Complete |
+| AGNT-04 | Phase 2 | Complete |
+| GATE-01 | Phase 2 | Complete |
+| GATE-02 | Phase 2 | Complete |
+| GATE-03 | Phase 2 | Complete |
+| GATE-04 | Phase 2 | Complete |
+| TXT-01 | Phase 2 | Complete |
+| INFRA-01 | Phase 2 | Complete |
 | BOOK-01 | Phase 3 | Pending |
 | BOOK-02 | Phase 3 | Pending |
 | BOOK-03 | Phase 3 | Pending |

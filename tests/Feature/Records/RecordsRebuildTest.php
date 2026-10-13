@@ -52,7 +52,7 @@ it('keeps the tracked router in the example folder equal to the rendered one', f
 });
 
 it('leaves the sync unchanged however many records files exist', function () {
-    activateExampleFolder();
+    $version = activateExampleFolder();
 
     $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
     $this->artisan('records:rebuild')->assertExitCode(0);
@@ -60,7 +60,7 @@ it('leaves the sync unchanged however many records files exist', function () {
     expect(File::exists(icmPath('records/open-leads.md')))->toBeTrue();
 
     $this->artisan('icm:sync')
-        ->expectsOutputToContain('Already active: v1, no changes')
+        ->expectsOutputToContain("Already active: {$version->label()}, no changes")
         ->assertExitCode(0);
 });
 

@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\Conversations\Pages;
 
 use App\Actions\CloseConversation;
+use App\Actions\HandBackConversation;
+use App\Actions\PauseConversation;
 use App\Actions\ReopenConversation;
 use App\Enums\ConversationStatus;
+use App\Enums\PausedReason;
 use App\Filament\Resources\Conversations\ConversationResource;
 use DomainException;
 use Filament\Actions\Action;
@@ -18,6 +21,23 @@ class ViewConversation extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('takeOver')
+                ->label('Take over')
+                ->color('warning')
+                ->visible(fn (): bool => app(PauseConversation::class)->isAvailableFor($this->getRecord()))
+                ->action(function (PauseConversation $pauseConversation): void {
+                    $pauseConversation->handle($this->getRecord(), PausedReason::TakenOver, auth()->user());
+
+                    Notification::make()->title(e("You're handling this conversation"))->success()->send();
+                }),
+            Action::make('handBack')
+                ->label('Hand back')
+                ->visible(fn (): bool => app(HandBackConversation::class)->isAvailableFor($this->getRecord()))
+                ->action(function (HandBackConversation $handBackConversation): void {
+                    $handBackConversation->handle($this->getRecord(), auth()->user());
+
+                    Notification::make()->title(e('Handed back to the assistant'))->success()->send();
+                }),
             Action::make('close')
                 ->label('Close conversation')
                 ->color('gray')

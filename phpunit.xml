@@ -30,6 +30,24 @@
         <env name="ICM_PATH" value="/nonexistent/icm-path-tests-must-override"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="TEXT_CHANNEL" value="fake" force="true"/>
+        <env name="TWILIO_ACCOUNT_SID" value="(null)" force="true"/>
+        <env name="TWILIO_AUTH_TOKEN" value="(null)" force="true"/>
+        <env name="TWILIO_MESSAGING_SERVICE_SID" value="(null)" force="true"/>
+        <env name="TWILIO_WEBHOOK_URL" value="(null)" force="true"/>
+        <env name="TWILIO_STATUS_CALLBACK_URL" value="(null)" force="true"/>
+        <env name="JEV_API_KEY" value="(null)" force="true"/>
+        <env name="JEV_MODEL" value="typesafe/jev-1.13" force="true"/>
+        <env name="JEV_BASE_URL" value="https://openrouter.ai/api/v1" force="true"/>
+        <server name="TEXT_CHANNEL" value="fake"/>
+        <server name="TWILIO_ACCOUNT_SID" value="(null)"/>
+        <server name="TWILIO_AUTH_TOKEN" value="(null)"/>
+        <server name="TWILIO_MESSAGING_SERVICE_SID" value="(null)"/>
+        <server name="TWILIO_WEBHOOK_URL" value="(null)"/>
+        <server name="TWILIO_STATUS_CALLBACK_URL" value="(null)"/>
+        <server name="JEV_API_KEY" value="(null)"/>
+        <server name="JEV_MODEL" value="typesafe/jev-1.13"/>
+        <server name="JEV_BASE_URL" value="https://openrouter.ai/api/v1"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ConversationStatus;
+use App\Enums\PausedReason;
 use App\Models\Contact;
 use App\Models\Conversation;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -35,6 +36,17 @@ class ConversationFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => ConversationStatus::Closed,
             'closed_at' => now(),
+        ]);
+    }
+
+    /**
+     * A thread the assistant has stepped back from.
+     */
+    public function paused(PausedReason $reason = PausedReason::TakenOver): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'paused_at' => now(),
+            'paused_reason' => $reason,
         ]);
     }
 }

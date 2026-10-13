@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Channels\TextKeywords;
 use App\Enums\ActivityType;
 use App\Enums\ContactStatus;
 use App\Enums\ConversationStatus;
@@ -12,12 +13,15 @@ use App\Enums\MessageStatus;
 use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
-use App\Jobs\ProcessInbound;
+use App\Icm\PlainWords;
+use App\Jobs\RespondToLifeSafety;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\LifeSafety;
 use App\Support\PhoneNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class RecordInbound
@@ -27,56 +31,113 @@ class RecordInbound
      */
     public const array RESERVED_SOURCES = ['text', 'direct'];
 
-    public function __construct(private readonly ActiveConfig $activeConfig) {}
+    public function __construct(
+        private readonly ActiveConfig $activeConfig,
+        private readonly DispatchInbound $dispatchInbound,
+    ) {}
 
     /**
      * Record one inbound text or form: find or create the contact, put the message in the
      * contact's open conversation, and write the timeline entry, all or nothing.
      *
-     * A message the provider already delivered is returned as it was recorded, and nothing
-     * is dispatched a second time. A new message queues ProcessInbound and announces
-     * CustomerRecordChanged once its transaction has committed.
+     * A message the provider already delivered is returned as it was recorded. DispatchInbound
+     * queues ProcessInbound for a message only once, so a retry of a delivered message queues
+     * nothing, and a retry of one that was recorded but never queued (a crash after commit,
+     * WR-02) queues it then. A new message also announces CustomerRecordChanged once its
+     * transaction has committed.
      */
     public function handle(InboundData $data): Message
     {
         $existing = $this->alreadyRecorded($data);
 
         if ($existing !== null) {
+            $this->dispatchInbound->handle($existing);
+
             return $existing;
         }
 
         try {
-            $message = DB::transaction(fn (): Message => $this->record($data));
+            [$message, $keyword] = DB::transaction(fn (): array => $this->record($data));
         } catch (UniqueConstraintViolationException) {
             $existing = $this->alreadyRecorded($data);
 
             if ($existing !== null) {
                 // A concurrent retry won the race; its transaction recorded the message.
+                $this->dispatchInbound->handle($existing);
+
                 return $existing;
             }
 
             // Not a duplicate message: another request created the same contact first. Its
             // contact is committed now, so one more attempt matches it instead of creating.
-            $message = DB::transaction(fn (): Message => $this->record($data));
+            [$message, $keyword] = DB::transaction(fn (): array => $this->record($data));
         }
 
-        ProcessInbound::dispatch($message->id)->afterCommit();
+        if ($keyword !== null) {
+            // A keyword text is handled in full by record() and never reaches the front desk or the safety check (D-39).
+            CustomerRecordChanged::dispatch($message->conversation->contact_id);
+
+            return $message;
+        }
+
+        $this->respondToDanger($message);
+        $this->dispatchInbound->handle($message);
         CustomerRecordChanged::dispatch($message->conversation->contact_id);
 
         return $message;
     }
 
-    private function record(InboundData $data): Message
+    /**
+     * The keyword this text is, if any: stop, start or help (D-39). The provider has already sent its own confirmation,
+     * so the app records the effect and says nothing. Only a text can be a keyword, and YES counts only for a contact
+     * who is opted out (Pitfall 14).
+     */
+    private function keywordIn(InboundData $data, Contact $contact): ?string
+    {
+        if ($data->channel !== MessageChannel::Sms) {
+            return null;
+        }
+
+        return TextKeywords::actionFor($data->meta['opt_out_type'] ?? null, $data->body, $contact->isOptedOut());
+    }
+
+    /**
+     * A text from a customer that describes a danger is answered at once, without the burst wait (D-17). The job is
+     * queued after the transaction commits so it never reads a message that is rolled back. It is queued before
+     * ProcessInbound so the safety line is the first thing on the queue for this text.
+     */
+    private function respondToDanger(Message $message): void
+    {
+        if ($message->channel !== MessageChannel::Sms) {
+            return;
+        }
+
+        $hazard = LifeSafety::hazardIn($message->body);
+
+        if ($hazard === null) {
+            return;
+        }
+
+        RespondToLifeSafety::dispatch($message->id, $hazard)->afterCommit();
+    }
+
+    /**
+     * @return array{Message, ?string} the stored message and the keyword it turned out to be
+     */
+    private function record(InboundData $data): array
     {
         $occurredAt = now();
         [$leadSource, $sourceNotes] = $this->lookUpLeadSource($data->source);
         $costCents = $leadSource['cost_cents_per_lead'] ?? null;
 
-        [$contact, $contactNotes] = $this->matchOrCreateContact($data, $costCents);
+        [$contact, $contactNotes, $matchedBy] = $this->matchOrCreateContact($data, $costCents);
         $notes = [...$sourceNotes, ...$contactNotes];
         $conversation = $this->openConversationFor($contact);
 
+        $keyword = $this->keywordIn($data, $contact);
+
         $message = $conversation->messages()->create([
+            ...($keyword !== null ? ['dispatched_at' => $occurredAt, 'handled_at' => $occurredAt] : []),
             'channel' => $data->channel,
             'direction' => MessageDirection::In,
             'author' => MessageAuthor::Customer,
@@ -84,7 +145,9 @@ class RecordInbound
             'status' => MessageStatus::Received,
             'provider' => $data->provider,
             'provider_message_id' => $data->providerMessageId,
-            'meta' => $data->meta,
+            'meta' => $data->channel === MessageChannel::Web
+                ? [...$data->meta, 'matched_by' => $matchedBy]
+                : $data->meta,
         ]);
         $message->setRelation('conversation', $conversation);
 
@@ -108,10 +171,59 @@ class RecordInbound
             ]);
         }
 
+        match ($keyword) {
+            'stop' => $this->recordOptOut($contact, $message, $occurredAt),
+            'start' => $this->recordOptIn($contact, $message, $occurredAt),
+            default => null,
+        };
+
         $contact->update(['last_activity_at' => $occurredAt]);
         $conversation->update(['last_message_at' => $occurredAt]);
 
-        return $message;
+        return [$message, $keyword];
+    }
+
+    /**
+     * Mark the contact as opted out and put it on the timeline (D-40). The first STOP sets the date and a later one
+     * leaves it alone. The message was stored already dispatched and handled, so neither ProcessInbound nor the sweep
+     * will pick it up. START and the other keywords are stored the same way.
+     */
+    private function recordOptOut(Contact $contact, Message $message, Carbon $occurredAt): void
+    {
+        if ($contact->isOptedOut()) {
+            return;
+        }
+
+        $contact->sms_opted_out_at = $occurredAt;
+
+        $contact->activities()->create([
+            'type' => ActivityType::OptedOut,
+            'summary' => 'Opted out by texting STOP',
+            'subject_type' => $message->getMorphClass(),
+            'subject_id' => $message->id,
+            'occurred_at' => $occurredAt,
+        ]);
+    }
+
+    /**
+     * Clear the contact's opt-out and put it on the timeline (D-40). A START from a contact who is not opted out
+     * changes nothing and writes nothing; the text is still kept as handled, because the carrier answers it.
+     */
+    private function recordOptIn(Contact $contact, Message $message, Carbon $occurredAt): void
+    {
+        if (! $contact->isOptedOut()) {
+            return;
+        }
+
+        $contact->sms_opted_out_at = null;
+
+        $contact->activities()->create([
+            'type' => ActivityType::OptedIn,
+            'summary' => 'Opted back in by texting START',
+            'subject_type' => $message->getMorphClass(),
+            'subject_id' => $message->id,
+            'occurred_at' => $occurredAt,
+        ]);
     }
 
     private function alreadyRecorded(InboundData $data): ?Message
@@ -133,10 +245,13 @@ class RecordInbound
      * Eloquent's update-or-create helper, which cannot express "phone, then email, and only
      * fill what is empty". A stored phone or email is never overwritten: a different one the
      * form gave becomes a note on the timeline instead, and so does an email another contact
-     * already owns, so two contacts never share one. The first-touch source and cost are
-     * set only when the contact is created.
+     * already owns, so two contacts never share one. A name is the same: the form's name goes
+     * on a contact only when the form creates it, because anyone can type any number into a
+     * form; for a contact found by phone or email a different name is a note (D-43, WR-13).
+     * The first-touch source and cost are set only when the contact is created.
      *
-     * @return array{Contact, list<string>} the contact and the note summaries to put on the timeline
+     * @return array{Contact, list<string>, string} the contact, the note summaries to put on the
+     *                                              timeline, and how the contact was found: phone, email or new
      */
     private function matchOrCreateContact(InboundData $data, ?int $costCents): array
     {
@@ -168,7 +283,7 @@ class RecordInbound
                 'acquisition_cost_cents' => $costCents,
             ]);
 
-            return [$contact, $notes];
+            return [$contact, $notes, 'new'];
         }
 
         if ($matchedByEmail && $phone !== null) {
@@ -191,9 +306,15 @@ class RecordInbound
             }
         }
 
+        $formName = trim((string) preg_replace('/\s+/u', ' ', (string) $data->name));
+
+        if ($formName !== '' && mb_strtolower($formName) !== mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', (string) $contact->name)))) {
+            $notes[] = 'form gave the name: '.PlainWords::oneLine($formName);
+        }
+
         $contact->save();
 
-        return [$contact, $notes];
+        return [$contact, $notes, $matchedByEmail ? 'email' : 'phone'];
     }
 
     /**

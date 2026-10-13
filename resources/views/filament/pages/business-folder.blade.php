@@ -3,6 +3,8 @@
         $version = $this->liveVersion();
         $lastSync = $this->lastSync();
         $timezone = $this->timezone();
+        $alertWarning = $this->alertWarning();
+        $failedAlert = $this->lastFailedAlert();
     @endphp
 
     <x-filament::section heading="Live version">
@@ -18,6 +20,32 @@
     </x-filament::section>
 
     @if ($version !== null)
+        <x-filament::section heading="Front desk">
+            <p>{{ $this->frontDeskLine() }}</p>
+        </x-filament::section>
+
+        <x-filament::section heading="Always held for you">
+            <p>A text that uses any of these never goes out without you. You can see them here, but only the Never say list is yours to change.</p>
+            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                @foreach ($this->alwaysHeld() as $label => $phrases)
+                    <p wire:key="held-{{ $label }}"><strong>{{ $label }}:</strong> {{ $phrases === [] ? 'none yet' : implode(', ', $phrases) }}</p>
+                @endforeach
+            </div>
+        </x-filament::section>
+
+        @if ($alertWarning !== null || $failedAlert !== null)
+            <x-filament::section heading="Alerts">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    @if ($alertWarning !== null)
+                        <p style="color: #dc2626;">{{ $alertWarning }} <a href="{{ \Filament\Facades\Filament::getProfileUrl() }}" style="text-decoration: underline;">Open your profile</a></p>
+                    @endif
+                    @if ($failedAlert !== null)
+                        <p>The last alert was not sent: {{ $failedAlert->failure }} · {{ $failedAlert->failed_at->setTimezone($timezone)->format('M j, g:i a') }}</p>
+                    @endif
+                </div>
+            </x-filament::section>
+        @endif
+
         <x-filament::section heading="Files">
             <ul style="display: flex; flex-direction: column; gap: 0.25rem;">
                 @foreach ($this->files() as $file)

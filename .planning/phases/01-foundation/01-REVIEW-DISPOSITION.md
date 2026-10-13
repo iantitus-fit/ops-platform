@@ -9,7 +9,7 @@ findings:
     title: "A contact-creation race returns 500 and drops the lead"
   - id: WR-02
     severity: warning
-    disposition: deferred
+    disposition: fixed
     title: "A dispatch failure after commit is never retried"
   - id: WR-03
     severity: warning
@@ -53,7 +53,7 @@ findings:
     title: "Sending an owner reply is not idempotent across failure and tabs"
   - id: WR-13
     severity: warning
-    disposition: deferred
+    disposition: fixed
     title: "The public form can steer outbound texts to someone else's number (before Phase 2)"
   - id: IN-01
     severity: info
@@ -89,7 +89,7 @@ recorded: 2026-10-11T17:13:27.789Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 01-REVIEW-FIX.md |
-| WR-02 | warning | deferred | Decide in Phase 2 discuss with ProcessInbound, leaning dispatched_at column |
+| WR-02 | warning | fixed | Phase 2, fixed 2026-10-11 (D-42): plan 02-08 added the `dispatched_at` claim and the retry path (a retried webhook whose message was recorded but never queued is queued then); plan 02-09 added the five-minute sweep for anything still undispatched |
 | WR-03 | warning | fixed | 01-REVIEW-FIX.md |
 | WR-04 | warning | fixed | 01-REVIEW-FIX.md |
 | WR-05 | warning | fixed | 01-REVIEW-FIX.md |
@@ -100,7 +100,7 @@ recorded: 2026-10-11T17:13:27.789Z
 | WR-10 | warning | fixed | 01-REVIEW-FIX.md |
 | WR-11 | warning | deferred | First deploy, with T-01-36 and T-01-37 |
 | WR-12 | warning | fixed | 01-REVIEW-FIX.md |
-| WR-13 | warning | deferred | Phase 2 discuss, sending authority and SMS consent |
+| WR-13 | warning | fixed | Phase 2, fixed 2026-10-11 (D-41, D-43): plan 02-09 keeps form leads away from the front desk and records `meta.matched_by` on each form message; plan 02-18 lets a form name only fill a contact the form created. Texting form leads first needs an SMS-consent step, which stays a deferred idea |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |

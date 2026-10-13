@@ -2,22 +2,15 @@
 
 namespace App\Actions;
 
-use App\Channels\TextChannel;
-use App\Enums\ActivityType;
-use App\Enums\ConversationStatus;
+use App\Enums\DraftResolution;
 use App\Enums\MessageAuthor;
-use App\Enums\MessageChannel;
-use App\Enums\MessageDirection;
-use App\Enums\MessageStatus;
-use App\Events\CustomerRecordChanged;
-use App\Models\Contact;
+use App\Enums\PausedReason;
+use App\Enums\SendOrigin;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
 use DomainException;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class SendOwnerReply
 {
@@ -26,39 +19,31 @@ class SendOwnerReply
      */
     public const int MAX_LENGTH = 1600;
 
-    public function __construct(private readonly TextChannel $textChannel) {}
+    private const string TOO_LONG = 'Keep replies to 1,600 characters or fewer.';
+
+    public function __construct(
+        private readonly OutboundSender $outboundSender,
+        private readonly PauseConversation $pauseConversation,
+        private readonly ComposeAutomatedText $composeAutomatedText,
+    ) {}
 
     /**
      * Send the owner's reply to the customer by text and record it.
      *
-     * Refusals are validation errors on the body, raised before anything is stored. The message
-     * is stored as queued first and becomes sent only once the text channel has returned its id,
-     * so a reply is never recorded as sent unless the channel accepted it. A channel failure
-     * leaves the message stored as failed and is raised as a DomainException for the owner.
+     * Refusals are validation errors on the body, raised before anything is stored. The sending itself is
+     * OutboundSender's job, the one path every text to a customer takes: it holds the lock that lets only one
+     * reply per conversation go out at a time, stores the message as queued first and as sent only once the text
+     * channel has returned its id. A channel failure leaves the message stored as failed and is raised as a
+     * DomainException for the owner, and so is a second reply sent while one is in flight.
      *
-     * Only one reply per conversation is sent at a time, so two tabs cannot both send. Once the
-     * channel has accepted the text, a failure while recording it is reported to the log and
-     * never raised: the customer has the text, and an error would invite the owner to send it again.
+     * Once the reply has gone out the assistant steps back from the conversation (D-25), so it does not talk over
+     * the owner. The pause happens only after a successful send, and it leaves a conversation that is already paused
+     * exactly as it is, so a take over keeps its reason. `$by` is the signed-in owner, recorded as who paused.
      *
      * @throws ValidationException when the reply cannot or should not go out
      * @throws DomainException when the text channel failed to send, or another reply is being sent
      */
-    public function handle(Conversation $conversation, string $body): Message
-    {
-        $lock = Cache::lock("reply:{$conversation->id}", 30);
-
-        if (! $lock->get()) {
-            throw new DomainException('Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.');
-        }
-
-        try {
-            return $this->send($conversation, $body);
-        } finally {
-            $lock->release();
-        }
-    }
-
-    private function send(Conversation $conversation, string $body): Message
+    public function handle(Conversation $conversation, string $body, ?User $by = null): Message
     {
         $conversation->refresh();
         $body = trim($body);
@@ -69,70 +54,52 @@ class SendOwnerReply
             throw ValidationException::withMessages(['body' => $refusal]);
         }
 
-        $contact = $conversation->contact;
+        $message = $this->outboundSender->send($conversation, $body, MessageAuthor::Owner, SendOrigin::Owner);
 
-        $message = DB::transaction(fn (): Message => $conversation->messages()->create([
-            'channel' => MessageChannel::Sms,
-            'direction' => MessageDirection::Out,
-            'author' => MessageAuthor::Owner,
-            'body' => $body,
-            'status' => MessageStatus::Queued,
-            'provider' => $this->textChannel->name(),
-        ]));
-
-        try {
-            $providerMessageId = $this->textChannel->send($contact->phone_e164, $body);
-        } catch (Throwable $exception) {
-            $this->recordFailure($contact, $message, $exception);
-
-            throw new DomainException("The reply was not sent: {$exception->getMessage()}", previous: $exception);
-        }
-
-        try {
-            DB::transaction(function () use ($conversation, $contact, $message, $providerMessageId): void {
-                $sentAt = now();
-
-                $message->update([
-                    'status' => MessageStatus::Sent,
-                    'provider_message_id' => $providerMessageId,
-                ]);
-
-                $contact->activities()->create([
-                    'type' => ActivityType::ReplySent,
-                    'summary' => 'Reply sent by owner',
-                    'subject_type' => $message->getMorphClass(),
-                    'subject_id' => $message->id,
-                    'occurred_at' => $sentAt,
-                ]);
-
-                $conversation->update(['last_message_at' => $sentAt]);
-                $contact->update(['last_activity_at' => $sentAt]);
-            });
-        } catch (Throwable $exception) {
-            report($exception);
-
-            $this->markSentAfterRecordingFailed($message, $providerMessageId);
-        }
-
-        CustomerRecordChanged::dispatch($contact->id);
+        $this->pauseConversation->handle($conversation, PausedReason::OwnerReplied, $by);
 
         return $message;
     }
 
     /**
-     * The text has gone out but its record failed. Save the least that keeps the thread honest:
-     * the message as sent with the provider's id. If even that fails, the failure is logged.
+     * Send a held draft with the owner's say-so: as the agent wrote it, or with the owner's own words (D-27).
+     *
+     * The words go out exactly as typed, trimmed, with the sign-off added, and the AI note too if no automated text
+     * has reached the customer yet (D-50). The length limit is checked on that composed text, because that is what the
+     * customer receives. The draft row itself becomes the sent message, keeping who decided and, when the owner changed
+     * the words, the agent's original (D-54).
+     *
+     * Unlike handle(), this never pauses the assistant: the owner approved the agent's reply, they did not take the
+     * conversation over (D-25).
+     *
+     * @throws ValidationException when the reply cannot or should not go out
+     * @throws DomainException when the draft is gone, the text channel failed, or another reply is being sent
      */
-    private function markSentAfterRecordingFailed(Message $message, string $providerMessageId): void
+    public function sendDraft(Message $draft, string $body, User $by, bool $edited): Message
     {
-        try {
-            $message->refresh()->update([
-                'status' => MessageStatus::Sent,
-                'provider_message_id' => $providerMessageId,
-            ]);
-        } catch (Throwable $exception) {
-            report($exception);
+        $conversation = $draft->conversation;
+        $conversation->refresh();
+        $words = trim($body);
+
+        $refusal = $this->whyCannotReply($conversation) ?? ($words === '' ? 'Type a message first.' : null);
+
+        if ($refusal !== null) {
+            throw ValidationException::withMessages(['body' => $refusal]);
         }
+
+        $composed = $this->composeAutomatedText->forReply($conversation, $words);
+
+        if (mb_strlen($composed) > self::MAX_LENGTH) {
+            throw ValidationException::withMessages(['body' => self::TOO_LONG]);
+        }
+
+        return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, [
+            'resolution' => $edited ? DraftResolution::Edited : DraftResolution::Approved,
+            'resolved_by' => $by->id,
+            'resolved_at' => now(),
+            'original_body' => $edited ? $draft->body : null,
+            'activity_summary' => $edited ? 'Draft edited by owner and sent' : 'Draft approved by owner and sent',
+        ]);
     }
 
     /**
@@ -141,19 +108,7 @@ class SendOwnerReply
      */
     public function whyCannotReply(Conversation $conversation): ?string
     {
-        if ($conversation->status === ConversationStatus::Closed) {
-            return 'This conversation is closed. Reopen it to reply.';
-        }
-
-        $contact = $conversation->contact;
-
-        if (blank($contact->phone_e164)) {
-            return filled($contact->email)
-                ? "No phone number on file. Reply by email: {$contact->email}"
-                : 'No phone number or email on file.';
-        }
-
-        return null;
+        return $this->outboundSender->whyBlocked($conversation, SendOrigin::Owner);
     }
 
     private function whyBodyIsRefused(string $body): ?string
@@ -163,32 +118,9 @@ class SendOwnerReply
         }
 
         if (mb_strlen($body) > self::MAX_LENGTH) {
-            return 'Keep replies to 1,600 characters or fewer.';
+            return self::TOO_LONG;
         }
 
         return null;
-    }
-
-    /**
-     * Keep the failed attempt on the record: the message as failed with the error, and a note.
-     */
-    private function recordFailure(Contact $contact, Message $message, Throwable $exception): void
-    {
-        DB::transaction(function () use ($contact, $message, $exception): void {
-            $message->update([
-                'status' => MessageStatus::Failed,
-                'meta' => ['error' => $exception->getMessage()],
-            ]);
-
-            $contact->activities()->create([
-                'type' => ActivityType::Note,
-                'summary' => "Reply not sent: {$exception->getMessage()}",
-                'subject_type' => $message->getMorphClass(),
-                'subject_id' => $message->id,
-                'occurred_at' => now(),
-            ]);
-        });
-
-        CustomerRecordChanged::dispatch($contact->id);
     }
 }

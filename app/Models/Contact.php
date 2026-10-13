@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'lead_source_key',
     'acquisition_cost_cents',
     'last_activity_at',
+    'sms_opted_out_at',
 ])]
 class Contact extends Model
 {
@@ -36,7 +37,16 @@ class Contact extends Model
             'status' => ContactStatus::class,
             'acquisition_cost_cents' => 'integer',
             'last_activity_at' => 'datetime',
+            'sms_opted_out_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether this customer texted STOP and so must not be texted by anyone (D-40).
+     */
+    public function isOptedOut(): bool
+    {
+        return $this->sms_opted_out_at !== null;
     }
 
     /**

@@ -15,6 +15,8 @@ class ConversationInfolist
     {
         return $schema
             ->components([
+                Livewire::make(ConversationThread::class, fn (Conversation $record): array => ['conversation' => $record])
+                    ->columnSpanFull(),
                 Section::make('Customer')
                     ->schema([
                         TextEntry::make('contact.name')
@@ -30,8 +32,8 @@ class ConversationInfolist
                             ->badge(),
                     ])
                     ->columns(4)
-                    ->columnSpanFull(),
-                Livewire::make(ConversationThread::class, fn (Conversation $record): array => ['conversation' => $record])
+                    ->collapsible()
+                    ->collapsed()
                     ->columnSpanFull(),
             ]);
     }

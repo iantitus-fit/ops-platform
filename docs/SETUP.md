@@ -72,6 +72,17 @@ them, and `q` stops everything.
 php artisan test
 ```
 
+That runs the suite on SQLite. To run it on PostgreSQL 17 as well (needs Docker):
+
+```sh
+docker run --rm -d --name ops-pg-test -p 55432:5432 -e POSTGRES_PASSWORD=probe -e POSTGRES_DB=ops_test postgres:17
+DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=55432 DB_DATABASE=ops_test DB_USERNAME=postgres DB_PASSWORD=probe php artisan test
+docker rm -f ops-pg-test
+```
+
+Give the container a few seconds to start before the second command. GitHub
+Actions runs both databases on every push (`.github/workflows/tests.yml`).
+
 ## 6. First commit
 
 ```sh
@@ -152,3 +163,19 @@ through the GitHub CLI (`gh`, already installed via Homebrew; `gh auth status`
 confirms it's logged in). `/gsd-progress` tells you where you are; `/gsd-help`
 lists everything. Skip `/gsd-autonomous` and yolo mode for now: the point of
 this build is that you see each step.
+
+## 11. Texting through Twilio (after A2P)
+
+The app texts through the fake channel until Twilio's A2P registration is
+approved, and nothing in the build waits for it. When it is approved, follow
+"Going live on Twilio" in `docs/sprints/sprint-1.md` (Notes for testing), then
+set these five keys in `.env` and `TEXT_CHANNEL=twilio`:
+
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_MESSAGING_SERVICE_SID`
+- `TWILIO_WEBHOOK_URL` (ends `/webhooks/text/twilio`)
+- `TWILIO_STATUS_CALLBACK_URL` (ends `/webhooks/text/twilio/status`)
+
+The two URLs must match what is typed into the Twilio Console exactly, or every
+webhook is refused. `.env.example` has the same keys with a note.

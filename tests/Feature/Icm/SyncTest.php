@@ -6,17 +6,18 @@ use App\Models\IcmVersion;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
-it('activates the example folder as v1 with eight files', function () {
-    $this->artisan('icm:sync')
-        ->expectsOutputToContain('Live as v1 (8 files)')
-        ->assertExitCode(0);
+it('activates the example folder as v1', function () {
+    expect(Artisan::call('icm:sync'))->toBe(0);
 
     expect(IcmVersion::count())->toBe(1);
 
     $version = IcmVersion::first();
 
-    expect($version->status)->toBe(VersionStatus::Active)
-        ->and($version->file_count)->toBe(8)
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain("Live as {$version->label()} ({$files} files)")
+        ->and($version->status)->toBe(VersionStatus::Active)
+        ->and($version->file_count)->toBe(exampleFolderFileCount())
         ->and($version->fingerprint)->toHaveLength(64)
         ->and($version->activated_at)->not->toBeNull();
 });
@@ -26,10 +27,11 @@ it('shows the active version, its file count and its Chicago go-live time', func
     $this->artisan('icm:sync')->assertExitCode(0);
 
     $liveSince = now()->setTimezone('America/Chicago')->format('Y-m-d H:i');
+    $label = IcmVersion::sole()->label();
 
     $this->artisan('icm:status')
-        ->expectsOutputToContain('Active version: v1')
-        ->expectsOutputToContain('Files: 8')
+        ->expectsOutputToContain("Active version: {$label}")
+        ->expectsOutputToContain('Files: '.exampleFolderFileCount())
         ->expectsOutputToContain("Live since: {$liveSince} (America/Chicago)")
         ->assertExitCode(0);
 });
@@ -47,32 +49,34 @@ it('does not count README, CONTEXT or START-HERE files', function () {
     writeIcmFile('business/extras/CONTEXT.md', 'Points at other files.');
     writeIcmFile('agents/START-HERE.md', 'Start here.');
 
-    expect(activateExampleFolder()->file_count)->toBe(8);
+    expect(activateExampleFolder()->file_count)->toBe(exampleFolderFileCount());
 });
 
 it('skips later-sprint file types with a notice and still activates', function () {
-    $notice = 'agents/front-desk.md: type agent is not supported yet, so this file was skipped';
-    writeIcmFile('agents/front-desk.md', "---\ntype: agent\nname: Front desk\n---\nAnswers texts.");
+    $notice = 'automations/follow-up.md: type automation is not supported yet, so this file was skipped';
+    writeIcmFile('automations/follow-up.md', "---\ntype: automation\nname: Follow-up\n---\nChecks in after a quote.");
 
-    $this->artisan('icm:sync')
-        ->expectsOutputToContain($notice)
-        ->expectsOutputToContain('Live as v1 (8 files)')
-        ->assertExitCode(0);
+    expect(Artisan::call('icm:sync'))->toBe(0);
 
     $version = IcmVersion::first();
 
-    expect($version->notices)->toContain($notice)
-        ->and($version->compiled['files'])->not->toHaveKey('agents/front-desk.md');
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain($notice)->toContain("Live as {$version->label()} ({$files} files)")
+        ->and($version->notices)->toContain($notice)
+        ->and($version->compiled['files'])->not->toHaveKey('automations/follow-up.md');
 });
 
 it('treats a second sync with no changes as a no-op', function () {
     $this->freezeSecond();
     $this->artisan('icm:sync')->assertExitCode(0);
 
+    $label = IcmVersion::sole()->label();
+
     $this->travel(5)->minutes();
 
     $this->artisan('icm:sync')
-        ->expectsOutputToContain('Already active: v1, no changes')
+        ->expectsOutputToContain("Already active: {$label}, no changes")
         ->assertExitCode(0);
 
     $version = IcmVersion::first();
@@ -88,23 +92,27 @@ it('goes live as v2 when a router file changes and supersedes v1', function () {
 
     breakFile('CLAUDE.md', fn (string $text) => $text."\nAlso read faq.md.\n");
 
-    $this->artisan('icm:sync')
-        ->expectsOutputToContain('Live as v2 (8 files)')
-        ->assertExitCode(0);
+    expect(Artisan::call('icm:sync'))->toBe(0);
 
-    expect($first->fresh()->status)->toBe(VersionStatus::Superseded)
+    $second = IcmVersion::query()->latest('id')->first();
+
+    $files = exampleFolderFileCount();
+
+    expect(Artisan::output())->toContain("Live as {$second->label()} ({$files} files)")
+        ->and($second->id)->not->toBe($first->id)
+        ->and($first->fresh()->status)->toBe(VersionStatus::Superseded)
         ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(1);
 });
 
 it('does not mint a version when only a README or a records file changes', function () {
-    activateExampleFolder();
+    $first = activateExampleFolder();
 
     breakFile('agents/README.md', fn (string $text) => $text."\nMore words.\n");
     writeIcmFile('records/customers/dana-whitfield-1.md', '# Dana Whitfield');
     writeIcmFile('changelog.md', '## Nothing yet');
 
     $this->artisan('icm:sync')
-        ->expectsOutputToContain('Already active: v1, no changes')
+        ->expectsOutputToContain("Already active: {$first->label()}, no changes")
         ->assertExitCode(0);
 
     expect(IcmVersion::count())->toBe(1);
@@ -140,7 +148,7 @@ it('rejects a broken service file, keeps the old version live and records why in
     breakFile('business/services/ac-repair.md', fn (string $text) => str_replace('price_policy: starting_at', 'price_policy: maybe', $text));
 
     $this->artisan('icm:sync')
-        ->expectsOutputToContain('Rejected. v1 stays live.')
+        ->expectsOutputToContain("Rejected. {$first->label()} stays live.")
         ->expectsOutputToContain($line)
         ->assertExitCode(1);
 

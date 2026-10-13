@@ -50,7 +50,7 @@ it('returns a service with its price as an integer and its intake questions', fu
     expect($acRepair['price_cents'])->toBe(8900)
         ->and(array_column($acRepair['intake'], 'key'))->toBe(['symptom', 'system_age'])
         ->and($config->service('nope'))->toBeNull()
-        ->and($config->services())->toHaveCount(2);
+        ->and($config->services())->toHaveCount(3);
 });
 
 it('reads hours, voice and sending rules', function () {
@@ -67,7 +67,7 @@ it('lists the typed files with their types and the router files without one', fu
     activateExampleFolder();
     $files = collect(app(ActiveConfig::class)->files());
 
-    expect($files->whereNotNull('type')->pluck('path')->all())->toHaveCount(8)
+    expect($files->whereNotNull('type')->pluck('path')->all())->toHaveCount(exampleFolderFileCount())
         ->and($files->firstWhere('path', 'business/profile.md')['type'])->toBe('business')
         ->and($files->whereNull('type')->pluck('path')->sort()->values()->all())->toBe([
             'CLAUDE.md',

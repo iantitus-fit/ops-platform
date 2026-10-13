@@ -7,18 +7,6 @@ use App\Icm\FolderSync;
 use App\Models\IcmVersion;
 use Illuminate\Support\Facades\File;
 
-/**
- * The lines the sync rejected the folder with, read back from the stored rejected version.
- *
- * @return list<string>
- */
-function rejectedErrors(): array
-{
-    $rejected = IcmVersion::query()->where('status', VersionStatus::Rejected->value)->latest('id')->firstOrFail();
-
-    return $rejected->errors;
-}
-
 /*
 | Each row: file to change, text to find, text to put in its place, and the exact line the owner must see.
 */
@@ -41,7 +29,7 @@ dataset('broken fields', [
     'service: slug with capitals and a space' => ['business/services/ac-repair.md', 'slug: ac-repair', 'slug: AC Repair', 'business/services/ac-repair.md: slug must use only lowercase letters, numbers, dashes or underscores (you wrote AC Repair)'],
     'service: the same intake key twice' => ['business/services/ac-repair.md', 'key: system_age', 'key: symptom', 'business/services/ac-repair.md: intake has more than one question with key symptom'],
     'voice: never_say deleted' => ['voice/how-we-talk.md', "never_say: [guaranteed, cheapest, no problem]\n", '', 'voice/how-we-talk.md: never_say is missing, and it is required'],
-    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert: Text the owner when a draft is waiting or a customer asks for a person\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
+    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap]\n  after_hours: next_opening\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
 ]);
 
 it('rejects a broken field with a sentence that names the file, the field and what was written', function (string $file, string $search, string $replace, string $line) {
@@ -76,7 +64,7 @@ it('rejects a file whose type or front matter cannot be understood', function (s
 
     expect(rejectedErrors())->toBe([$line]);
 })->with([
-    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules (you wrote recipe)'],
+    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage (you wrote recipe)'],
     'front matter without a type' => ['notes/x.md', "---\nname: Notes\n---\nBody", 'notes/x.md: type is missing, and it is required'],
     'no front matter at all' => ['notes/y.md', 'Just some words.', 'notes/y.md: the file must start with front matter (a --- line, then type: and its fields, then another --- line)'],
     'empty front matter' => ['notes/z.md', "---\n---\nBody", 'notes/z.md: the front matter is empty; add type: and the fields for that type'],
@@ -103,19 +91,26 @@ it('requires each of the five single-instance types to exist exactly once', func
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe([
+        'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/profile-old.md: type business is already used by business/profile.md; the folder needs exactly one',
     ]);
 });
 
 it('names every missing single-instance type when the folder has no typed files', function () {
-    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-tune-up.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
+    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-repair.md', 'business/services/furnace-tune-up.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
         File::delete(icmPath($file));
     }
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe([
+        'agents/front-desk.md: loads item 1: business/profile.md matches no file in the folder',
+        'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
+        'agents/front-desk.md: loads item 3: business/faq.md matches no file in the folder',
+        'agents/front-desk.md: loads item 4: business/services/ matches no file in the folder',
+        'agents/front-desk.md: loads item 5: voice/how-we-talk.md matches no file in the folder',
+        'agents/front-desk.md: loads item 6: rules/sending.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/lead-sources.md: no file has type: lead_sources, and the folder needs exactly one',
         'business/profile.md: no file has type: business, and the folder needs exactly one',
@@ -153,7 +148,7 @@ it('accepts empty lists where a list is allowed to be empty', function () {
     $version = activateExampleFolder();
     $config = app(ActiveConfig::class);
 
-    expect($version->file_count)->toBe(8)
+    expect($version->file_count)->toBe(exampleFolderFileCount())
         ->and($config->voice()['never_say'])->toBe([])
         ->and($config->hours()['closures'])->toBe([]);
 });
@@ -170,7 +165,7 @@ it('treats a file saved with Windows line endings and a byte-order mark the same
     $result = app(FolderSync::class)->run();
 
     expect($result->outcome)->toBe(SyncOutcome::Activated)
-        ->and($result->fileCount)->toBe(8);
+        ->and($result->fileCount)->toBe(exampleFolderFileCount());
 
     $frontMatter = fn (IcmVersion $version) => collect($version->compiled['files'])->map(fn (array $file) => $file['front_matter'])->all();
 

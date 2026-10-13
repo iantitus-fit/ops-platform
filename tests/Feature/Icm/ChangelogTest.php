@@ -40,18 +40,24 @@ it('creates changelog.md with a header and records the first sync as live', func
 
     $this->artisan('icm:sync')->assertExitCode(0);
 
+    $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
+
     expect(File::lines(icmPath('changelog.md'))->first())->toBe('# Changelog')
-        ->and(changelogHeadings())->toBe(['## 2026-10-10 14:32 · Live as v1 (8 files)']);
+        ->and(changelogHeadings())->toBe(["## 2026-10-10 14:32 · Live as {$label} ({$files} files)"]);
 });
 
 it('records an unchanged sync above the live entry', function () {
     $this->artisan('icm:sync')->assertExitCode(0);
     $this->artisan('icm:sync')->assertExitCode(0);
 
+    $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
+
     expect(changelogHeadings())->toBe([
         '## 2026-10-10 14:32 · No changes',
-        '## 2026-10-10 14:32 · Live as v1 (8 files)',
-    ])->and(changelogText())->toContain("· No changes\n- Already active: v1\n");
+        "## 2026-10-10 14:32 · Live as {$label} ({$files} files)",
+    ])->and(changelogText())->toContain("· No changes\n- Already active: {$label}\n");
 });
 
 it('puts a rejected sync on top and keeps one header', function () {
@@ -61,19 +67,25 @@ it('puts a rejected sync on top and keeps one header', function () {
     breakFile('business/profile.md', fn (string $text) => str_replace("timezone: America/Chicago\n", '', $text));
     $this->artisan('icm:sync')->assertExitCode(1);
 
+    $label = IcmVersion::where('status', VersionStatus::Active->value)->sole()->label();
+    $files = exampleFolderFileCount();
+
     expect(changelogHeadings())->toBe([
         '## 2026-10-10 14:32 · Rejected',
         '## 2026-10-10 14:32 · No changes',
-        '## 2026-10-10 14:32 · Live as v1 (8 files)',
+        "## 2026-10-10 14:32 · Live as {$label} ({$files} files)",
     ])->and(substr_count(changelogText(), '# Changelog'))->toBe(1);
 });
 
 it('lists a later-sprint file as not supported yet on the live entry', function () {
-    writeIcmFile('agents/front-desk.md', "---\ntype: agent\nname: Front desk\n---\nAnswers texts.");
+    writeIcmFile('automations/follow-up.md', "---\ntype: automation\nname: Follow-up\n---\nChecks in after a quote.");
 
     $this->artisan('icm:sync')->assertExitCode(0);
 
-    expect(changelogText())->toContain("· Live as v1 (8 files)\n- Not supported yet: agents/front-desk.md (type agent)\n");
+    $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
+
+    expect(changelogText())->toContain("· Live as {$label} ({$files} files)\n- Not supported yet: automations/follow-up.md (type automation)\n");
 });
 
 it('writes in the time zone of the new profile when the sync goes live', function () {
@@ -82,7 +94,10 @@ it('writes in the time zone of the new profile when the sync goes live', functio
     breakFile('business/profile.md', fn (string $text) => str_replace('timezone: America/Chicago', 'timezone: America/New_York', $text));
     $this->artisan('icm:sync')->assertExitCode(0);
 
-    expect(changelogHeadings()[0])->toBe('## 2026-10-10 15:32 · Live as v2 (8 files)');
+    $label = IcmVersion::query()->latest('id')->first()->label();
+    $files = exampleFolderFileCount();
+
+    expect(changelogHeadings()[0])->toBe("## 2026-10-10 15:32 · Live as {$label} ({$files} files)");
 });
 
 it('writes a rejection in the live version time zone when profile.md is the broken file', function () {
@@ -125,8 +140,11 @@ it('keeps text the owner wrote above the entries', function () {
 
     $this->artisan('icm:sync')->assertExitCode(0);
 
+    $label = IcmVersion::sole()->label();
+    $files = exampleFolderFileCount();
+
     expect(changelogText())->toStartWith("# Changelog\n\nMy own note: ask Dana before changing prices.\n")
-        ->and(changelogHeadings())->toBe(['## 2026-10-10 14:32 · Live as v1 (8 files)'])
+        ->and(changelogHeadings())->toBe(["## 2026-10-10 14:32 · Live as {$label} ({$files} files)"])
         ->and(substr_count(changelogText(), '# Changelog'))->toBe(1);
 });
 

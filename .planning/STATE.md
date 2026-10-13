@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 2
-current_phase_name: Text Front Desk
+current_phase: "02.1"
+current_phase_name: Owner Loop
 status: planning
-stopped_at: Phase 01 complete, ready to plan Phase 2
-last_updated: "2026-10-11T18:27:36.198Z"
-last_activity: 2026-10-11
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: d79bd625107ba5bfef0628dca4b5d29ec9d73e67
+stopped_at: Phase 02 complete, ready to plan Phase 02.1
+last_updated: "2026-10-13T20:22:49.822Z"
+last_activity: 2026-10-13
+last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
+state_head: 0d460dd081f90b718c7ddd85640edcbab11a4f07
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
-  percent: 33
+  total_phases: 4
+  completed_phases: 2
+  total_plans: 48
+  completed_plans: 48
+  percent: 67
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-11)
+See: .planning/PROJECT.md (updated 2026-10-13)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 2 — Text Front Desk
+**Current focus:** Phase 02.1 — Owner Loop
 
 ## Current Position
 
-Phase: 2 — Text Front Desk
+Phase: 02.1 — Owner Loop
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-11 — Phase 01 complete, transitioned to Phase 2
+Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 48
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -46,6 +46,7 @@ Progress: [███░░░░░░░] 33%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7 | - | - |
+| 02 | 41 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -63,6 +64,47 @@ Progress: [███░░░░░░░] 33%
 | Phase 01 P05 | 12 min | 3 tasks | 15 files |
 | Phase 01 P06 | 8 min | 3 tasks | 22 files |
 | Phase 01 P07 | 10 min | 3 tasks | 17 files |
+| Phase 02 P01 | 4 min | 2 tasks | 12 files |
+| Phase 02 P02 | 5 min | 2 tasks | 16 files |
+| Phase 02 P08 | 6 min | 1 tasks | 10 files |
+| Phase 02 P03 | 14 min | 1 tasks | 12 files |
+| Phase 02 P09 | 14 min | 1 tasks | 9 files |
+| Phase 02 P04 | 15 min | 1 tasks | 12 files |
+| Phase 02 P05 | 12 min | 1 tasks | 6 files |
+| Phase 02 P06 | 25 min | 1 tasks | 15 files |
+| Phase 02 P10 | 3 min | 1 tasks | 12 files |
+| Phase 02 P07 | 6 min | 2 tasks | 12 files |
+| Phase 02 P11 | 15 min | 1 tasks | 8 files |
+| Phase 02 P12 | 25 min | 1 tasks | 8 files |
+| Phase 02 P13 | 6 min | 3 tasks | 13 files |
+| Phase 02 P14 | 6 min | 1 tasks | 14 files |
+| Phase 02 P15 | 10 min | 2 tasks | 13 files |
+| Phase 02 P16 | 14 min | 1 tasks | 7 files |
+| Phase 02 P18 | 6 min | 2 tasks | 15 files |
+| Phase 02 P17 | 14 min | 2 tasks | 14 files |
+| Phase 02 P19 | 12 min | 1 tasks | 13 files |
+| Phase 02 P20 | 25 min | 2 tasks | 13 files |
+| Phase 02 P21 | 30 min | 2 tasks | 10 files |
+| Phase 02 P22 | 40 min | 1 tasks | 10 files |
+| Phase 02 P23 | 25 min | 2 tasks | 12 files |
+| Phase 02 P24 | 20 min | 1 tasks | 12 files |
+| Phase 02 P25 | 7 min | 2 tasks | 13 files |
+| Phase 02 P26 | 3 min | 1 tasks | 13 files |
+| Phase 02 P27 | 13 min | 2 tasks | 8 files |
+| Phase 02 P28 | 10 min | 2 tasks | 4 files |
+| Phase 02 P29 | 30min | 3 tasks | 11 files |
+| Phase 02 P30 | 20 min | 2 tasks | 4 files |
+| Phase 02 P31 | 20 min | 3 tasks | 7 files |
+| Phase 02 P32 | 6 min | 3 tasks | 9 files |
+| Phase 02 P33 | 20 min | 3 tasks | 9 files |
+| Phase 02 P34 | 3 min | 3 tasks | 8 files |
+| Phase 02 P35 | 2 sessions | 2 tasks | 6 files |
+| Phase 02 P36 | 6 min | 2 tasks | 9 files |
+| Phase 02 P37 | 3 min | 3 tasks | 7 files |
+| Phase 02 P38 | 8 min | 2 tasks | 5 files |
+| Phase 02 P39 | 4 min | 3 tasks | 10 files |
+| Phase 02 P40 | 4 min | 2 tasks | 5 files |
+| Phase 02 P41 | 30 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -97,6 +139,63 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 01]: [01-07] The money guard skips only Laravel's job_batches table (total_jobs is a job count); every other table and column is checked
 - [Phase 01]: [01-07] phpunit.xml sets memory_limit 512M because the suite outgrew PHP's 128M CLI default at about 260 tests
 - [Phase 01]: [01-07] Seeded Dana Whitfield shares +12025550123 with the /dev/chat default From, so a dev-chat text joins her thread; Pest arch rules over a list of function names check nothing, use one arch() per function
+- [Phase 02]: 02-01: Postgres failures fixed test-side only; version labels read from IcmVersion::label(), long-name fixture 250 characters, no column widened
+- [Phase 02]: 02-01: CI actions pinned to full commit SHAs (checkout v7.0.1, setup-php 2.40.0); later-sprint fixtures moved to automations/follow-up.md; exampleFolderFileCount() in tests/Pest.php is the one example-folder file count (8)
+- [Phase 02]: Agent provider names must match config/ai.php keys exactly; Ai::textProvider() then decides whether the provider can write text (the SDK accepts any case)
+- [Phase 02]: Agent loads uses present|array|min:1 so an empty list reads 'must have at least 1 item(s)'; unreadable-but-present files count as present for loads
+- [Phase 02]: 02-08: DispatchInbound is the only place ProcessInbound is queued (conditional update on dispatched_at); ProcessInbound is debounced by conversation and claims the burst by handled_at; the debounce is an optimisation, the database claim is the guarantee
+- [Phase 02]: CodeChecks reports the earliest match as written; plain numbers within three words of a price word count as prices, phone numbers, dates and times never do
+- [Phase 02]: Fixed replies (set_replies) are checked at sync with the voice file's never_say from the same candidate folder; fill-ins limited to owner_name, business_name, next_open
+- [Phase 02]: ProcessInbound::handle() returns bool (true = reaches front desk) so the D-41 form-lead stop is testable; sweep queues form messages too and ProcessInbound is the single place that stops them
+- [Phase 02]: 02-04: send_on_own entries are checked in code (not Rule::in) so price, promise, discount and complaint get the hard-floor sentence; ReplyLabel::neverOnItsOwn() is the single source for the floor
+- [Phase 02]: 02-05: {next_open} reads 'today' when moment + 60-minute margin <= closing time (boundary inclusive); closure date closes the whole local day; nextOpening scans 14 days then renders 'when we reopen'
+- [Phase 02]: 02-06: a Jev model string containing 'latest' is refused by JevClassifier before any request; request body is exactly model, state{customer_message,draft_reply}, questions
+- [Phase 02]: 02-10: OwnerAlertText::clean swaps schemed links, emails, www, domain-with-path and bare domains with common endings, then digit runs of 7+; RaiseOwnerAlert is the one door for alerts and SendOwnerAlert never throws, storing failed_at and failure on the alert row
+- [Phase 02]: 02-07: JevClassifier accepts only JSON numbers from 0 to 1 and a choice among the options sent; any gap, HTTP error, timeout, blank key or latest model throws ClassifierFailed (no retry); a missing yes/no counts as a certain yes in TriageReading
+- [Phase 02]: 02-11: A delayed alert is stale only when its subject message is outbound and no longer a draft; skipped alerts also get an owner_alerted timeline entry; opening times are converted to the app time zone before storing.
+- [Phase 02]: 02-12: phone field uses inputMode('tel') not ->tel(), because tel() adds a regex rule whose 'format is invalid' message sits beside the plain-words sentence
+- [Phase 02]: No tools on FrontDeskAgent: the model only proposes words and a label, sending stays in code
+- [Phase 02]: History adds a '(No reply was sent.)' assistant turn when the thread ends on an unanswered customer text, so turns alternate
+- [Phase 02]: RunFrontDeskAgent throws InvalidArgumentException for an empty burst; plan 02-14 must return early on an empty ClaimInboundBurst
+- [Phase 02]: AgentReply does not check reply length; the 1,600 character limit belongs to the send rule in plan 02-14
+- [Phase 02]: 02-14: every cheap send-rule check (label, length, code) is recorded on the verdict even after an earlier one fails; Jev runs only when all three pass and can only hold
+- [Phase 02]: 02-14: any classifier exception holds the reply as classifier_failed; OutboundSender also refuses blank and over-1,600-character bodies
+- [Phase 02]: 02-15: A channel failure keeps the failed message and alerts the owner (front_desk_failed); only a refusal such as the owner holding the reply lock becomes a send_refused draft
+- [Phase 02]: 02-15: OutboundSender::whyBlocked() words its reasons for whoever is sending; SendOwnerReply::whyCannotReply() delegates to it
+- [Phase 02]: 02-16: a send_refused hold goes through the same storeDraft path, so it also lands on the timeline and alerts the owner as draft_waiting
+- [Phase 02]: 02-18: Intake answers are rows (latest id per conversation, service and question is current); unknown keys dropped, unknown options stored null with raw words
+- [Phase 02]: 02-18: A web form names a contact only when it created it; matched contacts get a 'form gave the name' note. The agent's customer_name fills only an empty name via an atomic conditional update
+- [Phase 02]: 02-17: A replacement draft alerts only when urgency rises or no alert in its draft chain was actually sent; the chain is kept in the new draft's meta.replaces so three texts in a row give one alert
+- [Phase 02]: 02-17: One live draft per conversation is a partial unique index (messages_one_live_draft_per_conversation); a replaced draft is withdrawn with resolution replaced and kept; a holding reply is sent once per waiting draft and approved, edited or discarded resolutions end the wait
+- [Phase 02]: 02-19: Pause is checked in OutboundSender::whyBlocked() for Automated origin only, re-checked inside the send lock; RunFrontDesk alerts paused_message per burst and never asks the agent while paused
+- [Phase 02]: 02-19: Adding a foreign key column to a SQLite table rebuilds it and turns a partial unique index into a plain one; migrations that add FK columns to conversations or messages must drop and recreate the partial index afterwards
+- [Phase 02]: 02-20: RunFrontDesk order is paused check, reply cap, phrase handoff, agent, wants_person, verdict asksForPerson — Cap and phrase checks cost no model call; handoff alerts, texts, then pauses because OutboundSender refuses automated sends while paused
+- [Phase 02]: 02-20: CodeChecks::phrasePattern made public so AsksForPerson reuses the veto matching — Avoids a drifting copy of the normalisation and word-boundary rules
+- [Phase 02]: 02-21: A safety line that failed to send does not count as answering the text, so RunFrontDesk's second chance retries it; alerts stay single because RaiseOwnerAlert dedupes by message and reason
+- [Phase 02]: 02-21: With no live business folder the safety line still goes out without disclosure or gas company number; Jev's life_safety reading sends the line instead of the asks_for_person handoff
+- [Phase 02]: 02-22: Approved drafts go out through OutboundSender::sendExisting, not SendOwnerReply::handle, so approving a draft never pauses the assistant (D-25); a taken-over conversation keeps its pause.
+- [Phase 02]: 02-22: The replaced/already-sent race is decided by a status check under lockForUpdate when sendExisting claims the draft row; ConversationThread::draftId is #[Locked] and looked up inside the conversation (T-02-44).
+- [Phase 02]: 02-23: the not-alerted rule (alerts exist and every one failed) lives once on Message::alertFailure(), used by the thread flag and the DraftsWaiting row
+- [Phase 02]: 02-23: home screen widgets set $isLazy = false so they render with the page
+- [Phase 02]: 02-24: STOP is stored already dispatched and handled inside the record transaction; a repeat STOP keeps the first opt-out date
+- [Phase 02]: 02-25: The opted-out alert in RunFrontDesk runs after the life-safety second chance and does not dedupe against the safety alert, so the owner of an opted-out customer who texts about danger gets both the urgent safety alert and the call-them alert; a carrier refusal (21610) is told apart from other send failures by the exception's previous being RecipientOptedOut
+- [Phase 02]: 02-26: Twilio webhook routes (webhooks/text/twilio*) skip trimStrings and convertEmptyStringsToNull so the signature is checked over the form exactly as Twilio sent it
+- [Phase 02]: 02-26: the real Twilio channel trusts OptOutType only; keyword matching in code stays in RecordInbound as the fallback
+- [Phase 02]: 02-27: Twilio send errors carry only the HTTP status and Twilio code; a 2xx with no sid is a failed send
+- [Phase 02]: 02-27: A 21610 status callback marks the contact opted out even if the message was already failed; callbacks touch only outbound rows in queued/sent/delivered/failed
+- [Phase 02]: 02-28: gate:export decided_at is created_at in UTC; final_text is null when nothing was sent; resolved_by is the user id; --without-text also strips quoted findings and error messages
+- [Phase 02]: Ian approved the new top-level map/ folder (map-root, 2026-10-12); the cartographer map covers the text front desk, with escalate_to, intake_answers.icm_version_id and intake_answers.message_id parked, and no owner-alert card until Phase 2.1
+- [Phase 02]: 02-30: phpunit.xml pairs forced env lines with server lines because Laravel env() reads $_SERVER before $_ENV and PHPUnit 13 never sets $_SERVER for env
+- [Phase 02]: 02-31: an owner_alert RaiseOwnerAlert cannot read (Phase 1 sentence or no live version) is urgent and due now; the Business Folder page counts a non-array owner_alert as the text channel; a failed ProcessInbound push releases dispatched_at and rethrows
+- [Phase 02]: 02-32: ProcessInbound catches any Throwable after NoActiveVersion, reports through ReportFrontDeskFailure in fixed words, and keeps the burst claimed so a crash can never lead to a second reply
+- [Phase 02]: 02-32: job timeout 300 > chain budget 150 + Jev 8 + 120; queue retry_after 360 above the timeout; first provider always runs, only fallbacks are budgeted
+- [Phase 02]: 02-33: safety line is sent or the owner is told; every failure branch (Throwable, lock timeout, job failed) pauses and alerts; holding reply never follows a danger
+- [Phase 02]: 02-33: dangerous web forms alert the owner from ProcessInbound with no text to the lead (D-41); RecordInbound stays SMS-only
+- [Phase 02]: D-56 (amends D-45): per-question yes/no bars; promise and complaint 0.15, price and discount 0.075
+- [Phase 02]: 02-36: messages.sent_at is the send time; threads sort by coalesce(sent_at, created_at) then id and label by Message::happenedAt(); a held draft keeps its row and created_at (D-54)
+- [Phase 02]: 02-39: history() skips the burst's own texts and newer customer texts instead of stopping at the burst, so replies sent while the burst waited stay in the history at their send time
+- [Phase 02]: 02-40: the Needs you card finds the customer's last message by id like OwnerAlertText, shows it squished and cut to 160 characters, escaped; the thread box is untouched
+- [Phase 02]: 02-41: map/CLAUDE.md left unedited; no catalog line changed. Shorthand :N citations name their file wherever they would continue the wrong one.
 
 ### Pending Todos
 
@@ -109,7 +208,12 @@ None yet.
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
+- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.1 scope.
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
+
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: Owner Loop: owner-input additions split out of Phase 2 during discuss (02-CONTEXT.md)
 
 ## Deferred Items
 
@@ -124,6 +228,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-11T18:30:00Z
-Stopped at: Phase 01 complete, ready to plan Phase 2
+Last session: 2026-10-13T20:23:31Z
+Stopped at: Phase 02 complete, ready to plan Phase 02.1
 Resume file: None

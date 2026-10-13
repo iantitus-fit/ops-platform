@@ -36,7 +36,11 @@ readonly class InboundData
             name: null,
             provider: $text->provider,
             providerMessageId: $text->providerMessageId,
-            meta: ['to' => $text->to, 'num_media' => $text->numMedia],
+            meta: [
+                'to' => $text->to,
+                'num_media' => $text->numMedia,
+                ...($text->optOutType === null ? [] : ['opt_out_type' => $text->optOutType]),
+            ],
         );
     }
 

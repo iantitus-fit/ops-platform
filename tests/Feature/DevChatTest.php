@@ -1,15 +1,58 @@
 <?php
 
+use App\Actions\ResolveDraft;
 use App\Enums\ActivityType;
 use App\Enums\ConversationStatus;
+use App\Enums\DraftResolution;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
+use App\Enums\MessageStatus;
 use App\Livewire\DevChat;
 use App\Models\Activity;
 use App\Models\Contact;
+use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
+
+const DEV_CHAT_DRAFT_WORDS = 'Mike will text you a price for a new unit.';
+
+/**
+ * Tuesday 2026-10-13 at 4:30 pm in the business zone, and Dana's price question answered by a sent holding reply and
+ * a held draft. Returns the owner who can send the draft.
+ */
+function devChatPriceQuestionHeld(): User
+{
+    app()['env'] = 'local';
+    test()->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+
+    $owner = User::factory()->withPhone('+12025550199')->create();
+
+    frontDeskCustomerTexts('How much for a new unit?');
+    scriptFrontDeskReplies(['reply' => DEV_CHAT_DRAFT_WORDS, 'label' => 'price']);
+    runQueuedFrontDeskJobs();
+
+    return $owner;
+}
+
+/**
+ * The held draft Dana's price question left.
+ */
+function devChatTheDraft(): Message
+{
+    return Message::query()->where('kind', MessageKind::AgentReply->value)->orderBy('id')->firstOrFail();
+}
+
+/**
+ * The holding reply that went out beside the held draft.
+ */
+function devChatTheHoldingReply(): Message
+{
+    return Message::query()->where('kind', MessageKind::HoldingReply->value)->firstOrFail();
+}
 
 it('returns 404 for the dev chat page outside the local environment', function () {
     $this->get('/dev/chat')->assertNotFound();
@@ -140,4 +183,91 @@ it('shows nothing in the thread for a number that has not texted yet', function 
     Livewire::test(DevChat::class)->assertSee('No messages yet.');
 
     expect(Activity::query()->count())->toBe(0);
+});
+
+it('opts the contact out when STOP is sent from the dev chat, the way Twilio would report it (D-39)', function () {
+    $this->app['env'] = 'local';
+
+    Livewire::test(DevChat::class)
+        ->set('from', '+12025550123')
+        ->set('body', 'stop')
+        ->call('send')
+        ->assertHasNoErrors();
+
+    $contact = Contact::query()->where('phone_e164', '+12025550123')->sole();
+    $message = Message::query()->sole();
+
+    expect($contact->isOptedOut())->toBeTrue()
+        ->and($message->meta['opt_out_type'])->toBe('STOP')
+        ->and($message->handled_at)->not->toBeNull();
+});
+
+it('leaves a held draft off the dev chat page (G-02-2.3)', function () {
+    devChatPriceQuestionHeld();
+    $draft = devChatTheDraft();
+    $holdingReply = devChatTheHoldingReply();
+    $customerText = Message::query()->where('author', 'customer')->sole();
+
+    $chat = Livewire::test(DevChat::class)->set('from', '+12025550123');
+
+    expect($draft->status)->toBe(MessageStatus::Draft)
+        ->and($chat->instance()->thread->pluck('id')->all())->toContain($customerText->id, $holdingReply->id)
+        ->and($chat->instance()->thread->pluck('id')->all())->not->toContain($draft->id);
+
+    $chat->assertSee('How much for a new unit?')->assertDontSee(DEV_CHAT_DRAFT_WORDS);
+});
+
+it('leaves withdrawn, queued and failed texts off the page', function () {
+    $this->app['env'] = 'local';
+
+    $contact = Contact::factory()->create(['phone_e164' => '+12025550123']);
+    $conversation = Conversation::factory()->for($contact)->create();
+
+    $discarded = Message::factory()->for($conversation)->withdrawn()->create([
+        'body' => 'Discarded draft words',
+        'resolution' => DraftResolution::Discarded,
+    ]);
+    $replaced = Message::factory()->for($conversation)->withdrawn()->create(['body' => 'Replaced draft words']);
+    $queued = Message::factory()->for($conversation)->outbound()->create(['body' => 'Queued text words', 'status' => MessageStatus::Queued]);
+    $failed = Message::factory()->for($conversation)->outbound()->create(['body' => 'Failed text words', 'status' => MessageStatus::Failed]);
+
+    $chat = Livewire::test(DevChat::class)->set('from', '+12025550123');
+    $ids = $chat->instance()->thread->pluck('id')->all();
+
+    foreach ([$discarded, $replaced, $queued, $failed] as $message) {
+        expect($ids)->not->toContain($message->id);
+        $chat->assertDontSee($message->body);
+    }
+});
+
+it("shows the customer's texts and every text that reached them", function () {
+    $this->app['env'] = 'local';
+
+    $contact = Contact::factory()->create(['phone_e164' => '+12025550123']);
+    $conversation = Conversation::factory()->for($contact)->create();
+
+    $received = Message::factory()->for($conversation)->create();
+    $sent = Message::factory()->for($conversation)->outbound()->create();
+    $delivered = Message::factory()->for($conversation)->outbound()->create(['status' => MessageStatus::Delivered]);
+    $fromOwner = Message::factory()->for($conversation)->fromOwner()->create();
+
+    $ids = Livewire::test(DevChat::class)->set('from', '+12025550123')->instance()->thread->pluck('id')->all();
+
+    expect($ids)->toContain($received->id, $sent->id, $delivered->id, $fromOwner->id);
+});
+
+it('shows a held draft once the owner sends it', function () {
+    $owner = devChatPriceQuestionHeld();
+    $draft = devChatTheDraft();
+
+    app(ResolveDraft::class)->approve($draft, $owner);
+
+    $chat = Livewire::test(DevChat::class)->set('from', '+12025550123');
+
+    expect($chat->instance()->thread->pluck('id')->all())->toContain($draft->id);
+    $chat->assertSee(DEV_CHAT_DRAFT_WORDS);
+});
+
+it('names the statuses a customer has on their phone', function () {
+    expect(MessageStatus::onTheCustomersPhone())->toBe([MessageStatus::Received, MessageStatus::Sent, MessageStatus::Delivered]);
 });

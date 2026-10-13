@@ -14,7 +14,8 @@ Ops Platform is a client-owned operating system where the business runs from a f
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
-- [ ] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1)
+- [x] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1) (completed 2026-10-13)
+- [ ] **Phase 02.1: Owner Loop** (INSERTED) - Staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
 ## Phase Details
@@ -78,7 +79,112 @@ Plans:
   4. Changing an agent's provider, model or fallback list is an edit to its `agents/*.md` file that goes live through the normal sync, a broken agent file is rejected with a plain-words message, and when the primary provider fails the agent falls through to its fallback.
   5. The Twilio text driver sits behind the same `TextChannel` interface and is selected by config alone, verified against Twilio-shaped payloads (going live on Ian's test number follows A2P approval and does not gate this phase), and the full Pest suite passes on Postgres in CI as well as on SQLite locally.
 
-**Plans**: TBD
+**Plans**: 41/41 plans complete; 35 executed, 6 UAT gap-closure plans (02-36 to 02-41) to run (one plan per wave, run in order: one working tree per DEC-01, each plan runs the full suite, and most share the front-desk files or the sprint-1.md walk-through log; re-sliced from 17 on 2026-10-11 so each plan fits its context budget)
+
+Plans:
+**Wave 1**
+- [x] 02-01-PLAN.md — Wave 0: the suite passes on Postgres and SQLite, CI runs both, stray network calls fail every test, the example folder's file count in one test helper, `docs/sprints/sprint-1.md` opened (INFRA-01)
+
+**Wave 2**
+- [x] 02-02-PLAN.md — Agent files validated and compiled by channel, provider chain, Business Folder shows the front desk (AGNT-01, AGNT-04)
+
+**Wave 3**
+- [x] 02-03-PLAN.md — Code checks (the hard veto) and `rules/replies.md` checked at sync (GATE-01, GATE-02)
+
+**Wave 4**
+- [x] 02-04-PLAN.md — Fixed send vocabulary with its floor, structured `owner_alert`, code-checked voice texts, "Always held for you" (GATE-01, GATE-02)
+
+**Wave 5**
+- [x] 02-05-PLAN.md — Business clock and `{next_open}`: fixed replies promise a true time (GATE-01, GATE-02)
+
+**Wave 6**
+- [x] 02-06-PLAN.md — `rules/triage.md` and the Jev request behind `Classifier` (GATE-01)
+
+**Wave 7**
+- [x] 02-07-PLAN.md — Jev fails closed, triage files checked, the fake in every test, thresholds D-45 to D-47 (GATE-01)
+
+**Wave 8**
+- [x] 02-08-PLAN.md — `dispatched_at` claim, debounced `ProcessInbound`, burst claim, backfill (AGNT-02)
+
+**Wave 9**
+- [x] 02-09-PLAN.md — Sweep on the scheduler; form leads never reach the front desk (AGNT-02)
+
+**Wave 10**
+- [x] 02-10-PLAN.md — Owner alerts by text: phone on the user, code-built alert, never silent (GATE-01)
+
+**Wave 11**
+- [x] 02-11-PLAN.md — After-hours alerts wait for opening time; every alert on the timeline (GATE-01)
+
+**Wave 12**
+- [x] 02-12-PLAN.md — Profile phone, remembered login, alert link lands on the conversation, alert warnings (GATE-01)
+
+**Wave 13**
+- [x] 02-13-PLAN.md — The front-desk agent: whole routed files plus the fresh card, structured reply, provider fallback (AGNT-02, AGNT-04)
+
+**Wave 14**
+- [x] 02-14-PLAN.md — Text in, reply out or draft: the three-check send rule on one outbound chokepoint (AGNT-02, GATE-01)
+
+**Wave 15**
+- [x] 02-15-PLAN.md — Disclosure and sign-off, never_say veto, full verdict record, owner replies on the chokepoint, front desk failures reach the owner (GATE-01, GATE-02, AGNT-04)
+
+**Wave 16**
+- [x] 02-16-PLAN.md — Held drafts alert the owner and show on the timeline (GATE-01)
+
+**Wave 17**
+- [x] 02-17-PLAN.md — One live draft, the GATE-01 decision table, the holding reply (GATE-01, GATE-04)
+
+**Wave 18**
+- [x] 02-18-PLAN.md — Intake answers stored and shown on the card; safe name filling (AGNT-03)
+
+**Wave 19**
+- [x] 02-19-PLAN.md — Take over and hand back on one paused state (GATE-03)
+
+**Wave 20**
+- [x] 02-20-PLAN.md — Owner reply pauses, request for a person, reply cap (GATE-03, GATE-02)
+
+**Wave 21**
+- [x] 02-21-PLAN.md — Life-safety line: immediate, code-fixed, through a pause, then the owner (GATE-02, GATE-01)
+
+**Wave 22**
+- [x] 02-22-PLAN.md — Approve, edit or discard a draft (GATE-04)
+
+**Wave 23**
+- [x] 02-23-PLAN.md — Phone-friendly conversation view and home screen widgets (GATE-04)
+
+**Wave 24**
+- [x] 02-24-PLAN.md — STOP recorded and every text to that number blocked (TXT-01)
+
+**Wave 25**
+- [x] 02-25-PLAN.md — START, YES and HELP, simulated Advanced Opt-Out, every outbound path proven blocked (TXT-01)
+
+**Wave 26**
+- [x] 02-26-PLAN.md — Twilio driver, receiving: signed inbound webhook selected by config (TXT-01)
+
+**Wave 27**
+- [x] 02-27-PLAN.md — Twilio driver, sending: Messaging Service, 21610, status callbacks, go-live steps (TXT-01)
+
+**Wave 28**
+- [x] 02-28-PLAN.md — Labeled data export (`gate:export`) and the phase gate on both databases (GATE-01, INFRA-01)
+
+**Wave 29** *(has a decision checkpoint)*
+- [x] 02-29-PLAN.md — Cartographer map: inventory, Ian's ruling, catalog and cards (AGNT-02, GATE-01)
+
+**Gap closure** (Ian's ruling 2026-10-12: eight review findings fixed before UAT; one plan per wave, run in order)
+- [x] 02-30-PLAN.md — Wave 1: the suite never reads `TEXT_CHANNEL`, `TWILIO_*` or `JEV_*` from `.env`; a guard proves it against a hostile environment (WR-16; INFRA-01)
+- [x] 02-31-PLAN.md — Wave 2: Business Folder and Sync Now load with a Phase 1 version live, `owner_alert` read safely, a failed queue push stays sweepable (CR-02, WR-02; GATE-01, AGNT-02)
+- [x] 02-32-PLAN.md — Wave 3: a claimed burst always reaches the owner: catch-all, `failed()`, job timeout, chain budget, `retry_after`, no-agent alert (CR-01, WR-01; AGNT-04, AGNT-02)
+- [x] 02-33-PLAN.md — Wave 4: life-safety failures are loud, no holding reply after a danger, phrase lists fixed, a dangerous web form alerts the owner (WR-05, WR-06, WR-07; GATE-02, GATE-01)
+- [x] 02-34-PLAN.md — Wave 5: map re-check, once, after the code fixes: every card citation 02-31 to 02-33 moved re-pointed, and the cards describe the new failure, no-agent and safety paths (AGNT-02, AGNT-04, GATE-01, GATE-02)
+
+**Gap closure, UAT** (02-UAT.md, six gaps diagnosed 2026-10-12; Ian decided G-02-1.1, G-02-2.1 and G-02-2.4; one plan per wave, run in order)
+- [x] 02-35-PLAN.md — Wave 1: a yes/no bar per Jev question (price and discount 0.075, promise and complaint 0.15), Ian's triage wording committed, D-56 amends D-45 (G-02-2.1; GATE-01)
+- [x] 02-36-PLAN.md — Wave 2: `messages.sent_at` written on send and backfilled, threads ordered and labelled by when each message happened, a sent draft listed after the holding reply (G-02-1.2; GATE-04, AGNT-02)
+- [x] 02-37-PLAN.md — Wave 3: the newest holding reply decides the next one, the reply cap and open-leads.md read the send time (G-02-1.2; GATE-01, GATE-02)
+- [x] 02-38-PLAN.md — Wave 4: /dev/chat shows only what is on the customer's phone, one status list shared with the model's history (G-02-2.3; DASH-02, GATE-04)
+- [x] 02-39-PLAN.md — Wave 5: the prompt carries the time now and each earlier text's send time, RULES on reading dates and on visits never being set, a furnace-repair service in the example folder (G-02-2.2, G-02-2.4; AGNT-02, AGNT-03)
+- [x] 02-40-PLAN.md — Wave 6: the Needs you card shows the customer's last message above the draft and Send; the carried item leaves Phase 02.1's scope (G-02-1.1; GATE-04)
+- [x] 02-41-PLAN.md — Wave 7: map re-check, once, after the UAT fixes (AGNT-02, GATE-01, GATE-04)
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
@@ -88,6 +194,39 @@ Plans:
 - The agent reads the customer's card rendered fresh from the database (DEC-03), not the file on disk.
 - Production deploy is not in this phase; DEPL-01 stays in v2. CI on Postgres is.
 - Per the SPEC, a cartographer map starts in this sprint.
+
+### Phase 02.1: Owner Loop (INSERTED)
+
+**Goal:** The owner and the people they trust can act on the front desk from wherever they are: more than one person can approve drafts, a draft can be approved by replying to the alert text, the office hears by email, nothing waits unseen, and the agent steps back without going silent when a person joins the conversation.
+**Depends on:** Phase 2
+**Requirements**: TBD (define new IDs in REQUIREMENTS.md during `/gsd-discuss-phase 02.1`)
+**Scope** (split out of Phase 2 on 2026-10-11; see `.planning/phases/02-text-front-desk/02-CONTEXT.md` § Deferred Ideas and `docs/phase-2-owner-input.md`):
+- Staff users invited by the owner, each with a phone, an email, alert choices and a "can approve drafts" switch; user management and Sync Now stay owner-only (the first role split); sign out everywhere and remove a user.
+- Approve by replying to the alert with a short code (K7 sends the draft as written, K7 plus words sends those words); only a registered phone can approve; a code for a replaced draft is refused with "The customer wrote again".
+- Email alerts; the "handled" follow-up on the other channel names who acted and how.
+- A draft nobody acts on: re-alert after a set time, a backup recipient, and an update to the customer if the wait runs past the holding reply's promise.
+- Assist mode: an owner reply stops the agent sending on its own but it keeps drafting suggestions; it returns after a per-business quiet period (replaces Phase 2's owner-reply takeover).
+- The after-hours on-call switch per business (urgent service requests such as plain flooding).
+- `escalate_to` may name a staff user.
+- The LLM fallback classifier driver on a ZDR route.
+- A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
+- Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW-DISPOSITION.md` WR-03, WR-04; 2.1 rebuilds alerts).
+- Carried from the Phase 2 review fix (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-22): a front-desk run that claims texts newer than the one that queued it can still alert the owner twice when it fails. Fix with a claim token stored on the claimed rows, so `ProcessInbound::failed()` reports exactly the burst its run claimed; not with a time window in `ReportFrontDeskFailure`.
+- Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-09): `gate:export` reports failed and queued sends as what went out, and `original_text` differs by path; fix before the export feeds threshold tuning.
+- Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-17 to WR-19), test hardening: the reply-cap "does not count" test cannot detect most of what it claims (WR-17); `toContain('fi-collapsed')` is always true, so the collapsed customer details are not tested (WR-18); "throws NoActiveVersion from every accessor" omits the accessors Phase 2 added (WR-19).
+- Carried from the Phase 2 UI review (`02-UI-REVIEW.md`): a held draft's Send and Discard buttons show a loading state and are disabled while running, and Discard asks for confirmation.
+
+**Success Criteria** (what must be TRUE):
+  1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
+  2. Replying to an alert text with its code sends the draft (or the replacement words) through the same path as a dashboard approval, recorded on the timeline; a reply with no valid code, or from an unregistered phone, sends nothing and gets a short help text.
+  3. When a draft is handled on one channel, the other channel gets a follow-up naming who handled it and how; a draft left untouched past the set time re-alerts and reaches the backup recipient.
+  4. After a person replies in a conversation the agent only drafts there until the quiet period passes, then resumes on its own; Take over still stops it fully until handed back.
+  5. With the on-call switch on, an after-hours urgent request alerts the on-call person right away; with it off, it waits for opening time.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
 
 ### Phase 3: Booking and the Gate
 
@@ -118,7 +257,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
-| 2. Text Front Desk | 0/TBD | Not started | - |
+| 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog

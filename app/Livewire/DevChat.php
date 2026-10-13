@@ -5,6 +5,8 @@ namespace App\Livewire;
 use App\Actions\InboundData;
 use App\Actions\RecordInbound;
 use App\Channels\InboundText;
+use App\Channels\TextKeywords;
+use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Contact;
@@ -65,6 +67,7 @@ class DevChat extends Component
             to: $this->businessPhone($activeConfig),
             body: $this->body,
             numMedia: 0,
+            optOutType: TextKeywords::twilioOptOutType($this->body),
         );
 
         $recordInbound->handle(InboundData::fromText($inboundText));
@@ -76,6 +79,9 @@ class DevChat extends Component
      * The messages of the sender's open conversation, or of the latest one when none is open.
      * Empty when the number has never texted.
      *
+     * The page is a stand-in for the customer's phone, so it lists only what is on it; a held draft appears once the
+     * owner sends it, at its send time.
+     *
      * @return Collection<int, Message>
      */
     #[Computed]
@@ -85,7 +91,7 @@ class DevChat extends Component
         $contact = $from === null ? null : Contact::query()->where('phone_e164', $from)->first();
         $conversation = $contact?->openConversation ?? $contact?->conversations()->latest('id')->first();
 
-        return $conversation === null ? new Collection : $conversation->messages()->get();
+        return $conversation === null ? new Collection : $conversation->messages()->whereIn('status', MessageStatus::onTheCustomersPhone())->get();
     }
 
     public function render(ActiveConfig $activeConfig): View
