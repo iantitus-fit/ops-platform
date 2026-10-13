@@ -7,6 +7,8 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 const CONVERSATION_VIEW_DRAFT_WORDS = 'Mike will text you a price for a new unit.';
@@ -150,4 +152,84 @@ it('shows no flag when the alert for the draft was sent (D-19)', function () {
         ->assertDontSee('Not alerted');
 
     expect($thread->instance()->draftNotAlerted)->toBeNull();
+});
+
+/**
+ * The HTML of the Needs you card: from its heading to the Discard button.
+ */
+function conversationViewNeedsYouCard(string $html): string
+{
+    $start = strpos($html, 'Needs you');
+    $end = strpos($html, 'wire:click="discardDraft"');
+
+    return substr($html, $start, $end - $start);
+}
+
+it("shows the customer's last message in the Needs you card, above the draft and Send (G-02-1.1)", function () {
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+    $conversation = conversationViewWithLiveDraft();
+    Message::factory()->for($conversation)->create([
+        'body' => 'Hi, my AC is acting up',
+        'created_at' => now()->subMinutes(20),
+    ]);
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSeeInOrder([
+            'Needs you',
+            'Held: asks about price',
+            'Customer wrote',
+            'Oct 13, 4:20 pm',
+            CONVERSATION_VIEW_FIRST_TEXT,
+            'wire:model="draftBody"',
+            'wire:click="discardDraft"',
+        ], escape: false);
+
+    expect(conversationViewNeedsYouCard($response->getContent()))->not->toContain('Hi, my AC is acting up');
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation]);
+
+    expect($thread->instance()->lastCustomerMessage->body)->toBe(CONVERSATION_VIEW_FIRST_TEXT);
+});
+
+it('cuts a long last message in the card and shows it whole in the thread (G-02-1.1)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    $longText = collect(range(1, 40))->map(fn (int $number) => "word{$number} here")->implode("\n");
+    expect(strlen($longText))->toBeGreaterThan(300);
+    $longText .= "\n".str_repeat('tail ', 120).'TheVeryEnd';
+    expect(strlen($longText))->toBeGreaterThan(600);
+    Message::factory()->for($conversation)->create(['body' => $longText, 'created_at' => now()->subMinute()]);
+
+    $html = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent();
+    $card = conversationViewNeedsYouCard($html);
+    $cut = Str::limit(Str::squish($longText), 160);
+
+    expect($cut)->toEndWith('...')
+        ->and($card)->toContain(e($cut))
+        ->and($card)->not->toContain('TheVeryEnd')
+        ->and(substr($html, strpos($html, 'wire:click="discardDraft"')))->toContain('TheVeryEnd');
+});
+
+it("escapes the customer's words in the card (T-02-45)", function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::factory()->for($conversation)->create([
+        'body' => '<script>alert(3)</script> help',
+        'created_at' => now()->subMinute(),
+    ]);
+
+    $html = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent();
+
+    expect(conversationViewNeedsYouCard($html))->toContain('&lt;script&gt;alert(3)&lt;/script&gt; help')
+        ->and($html)->not->toContain('<script>alert(3)');
+});
+
+it('shows no Customer wrote line without a held draft (G-02-1.1)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->delete();
+
+    $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSee(CONVERSATION_VIEW_FIRST_TEXT)
+        ->assertDontSee('Customer wrote');
 });
