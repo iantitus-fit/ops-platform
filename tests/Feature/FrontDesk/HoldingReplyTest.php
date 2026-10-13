@@ -144,6 +144,21 @@ it('sends a new holding reply after a real answer went out (D-14)', function () 
         ->and(holdingReplyTextsToDana())->toHaveCount(2);
 });
 
+it('sends no third holding reply while the newest one is still unanswered (D-14)', function () {
+    holdingReplyPriceQuestionHeld();
+
+    Message::factory()->for(Conversation::query()->sole())->fromOwner()->create(['body' => 'It is $9,000 installed.']);
+
+    test()->travel(5)->minutes();
+    holdingReplyCustomerTextsAgain();
+
+    test()->travel(5)->minutes();
+    holdingReplyCustomerTextsAgain();
+
+    expect(holdingReplyMessages())->toHaveCount(2)
+        ->and(holdingReplyTextsToDana())->toHaveCount(2);
+});
+
 it('sends a new holding reply after the owner discarded the waiting draft (D-14)', function () {
     holdingReplyPriceQuestionHeld();
 
