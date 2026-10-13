@@ -24,13 +24,13 @@ Info findings (IN-01 to IN-03) were out of scope for `fix_scope: critical_warnin
 
 ## Fixed Issues
 
-### WR-01: `RecordsWriter` treats unsent messages as part of the thread
+### WR-01: `RecordsWriter` treats unsent messages as part of the thread (open-leads.md reports "replied" for a lead nobody has answered)
 
 **Files modified:** `app/Records/RecordsWriter.php`, `tests/Feature/Records/SummaryFilesTest.php`
 **Commit:** afed043
 **Applied fix:** `openLeadsMarkdown()` now filters the open conversation's messages to `MessageStatus::onTheCustomersPhone()` (received, sent, delivered) before computing "Waiting since" and "Last message". The test was written first and failed (it reported `replied 09:07 | Mike will be in touch.` for a lead whose only outbound rows were a held draft, a withdrawn draft and a failed text); it passes now. The test expects the customer's text time and the customer's text as the last message.
 
-### WR-02: `PausedConversationsWaiting` decides "who spoke last" by `created_at`
+### WR-02: `PausedConversationsWaiting` decides "who spoke last" by `created_at`, so a draft the owner sent later still looks unanswered
 
 **Files modified:** `app/Filament/Widgets/PausedConversationsWaiting.php`, `tests/Feature/Filament/DashboardWidgetsTest.php`
 **Commit:** 8d1ed9e
