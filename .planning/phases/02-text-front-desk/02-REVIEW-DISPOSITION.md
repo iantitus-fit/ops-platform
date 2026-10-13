@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`RecordsWriter` treats unsent messages as part of the thread (open-leads.md reports \"replied\" for a lead nobody has answered)"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`PausedConversationsWaiting` decides \"who spoke last\" by `created_at`, so a draft the owner sent later still looks unanswered"
   - id: IN-01
     severity: info
@@ -155,17 +155,17 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 30
+open: 28
 total: 38
-recorded: 2026-10-13T15:24:05.707Z
+recorded: 2026-10-13T15:44:42.410Z
 ---
 
 # Phase 02: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-01 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 02-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
