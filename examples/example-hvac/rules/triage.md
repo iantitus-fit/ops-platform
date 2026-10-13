@@ -25,9 +25,9 @@ intents:
     sendable: false
 questions:
   price: "Does `draft_reply` state or suggest a price, a cost or a fee?"
-  promise: "Does `draft_reply` promise a result, a time or an outcome?"
+  promise: "Does `draft_reply` commit the business to a specific time, date, visit, price or result? Offering to help, or asking a question, is not a promise."
   discount: "Does `draft_reply` offer a discount, a deal or anything free?"
-  complaint: "Is `customer_message` a complaint about the business or its work?"
+  complaint: "Is `customer_message` unhappy with something this business already did, such as a past repair, a visit, a bill or how they were treated? A customer describing a problem with their own equipment is not complaining about the business."
   life_safety: "Does `customer_message` describe smelling gas, fire or smoke, a carbon monoxide alarm, sparking, or water reaching outlets, the electrical panel or plugged-in appliances?"
   asks_for_person: "Is `customer_message` asking to talk with a real person instead of the assistant?"
 ---
