@@ -3,18 +3,30 @@ phase: 02
 review: 02-REVIEW.md
 titles: json
 findings:
+  - id: WR-01
+    severity: warning
+    disposition: open
+    title: "`RecordsWriter` treats unsent messages as part of the thread (open-leads.md reports \"replied\" for a lead nobody has answered)"
+  - id: WR-02
+    severity: warning
+    disposition: open
+    title: "`PausedConversationsWaiting` decides \"who spoke last\" by `created_at`, so a draft the owner sent later still looks unanswered"
+  - id: IN-01
+    severity: info
+    disposition: open
+    title: "`TriageReading::read` reads four new threshold keys with no guard"
+  - id: IN-02
+    severity: info
+    disposition: open
+    title: "Two gate dials for `promise` and `complaint` were loosened together on one live reading"
+  - id: IN-03
+    severity: info
+    disposition: open
+    title: "Small inconsistencies in `ConversationThread` and the Needs you card"
   - id: CR-01
     severity: critical
     disposition: fixed
     title: "A retry after the safety line was sent finds it \"already answered\" and skips the pause and the owner alert"
-  - id: WR-01
-    severity: warning
-    disposition: fixed
-    title: "The keyword net misses common ways of describing the same dangers (verified)"
-  - id: WR-02
-    severity: warning
-    disposition: fixed
-    title: "A utility phone the sync accepts is silently dropped from the gas sentence (verified)"
   - id: WR-03
     severity: warning
     disposition: deferred
@@ -31,18 +43,6 @@ findings:
     severity: warning
     disposition: fixed
     title: "`LifeSafety` fails open when a regex errors (verified)"
-  - id: IN-01
-    severity: info
-    disposition: open
-    title: "Exception classification by message prefix"
-  - id: IN-02
-    severity: info
-    disposition: open
-    title: "Raw provider exception text is persisted on every message verdict"
-  - id: IN-03
-    severity: info
-    disposition: open
-    title: "Owner-alert settings are parsed in two places, and `alertWarning()` has no type guard"
   - id: IN-04
     severity: info
     disposition: open
@@ -155,27 +155,27 @@ findings:
     severity: info
     disposition: open
     title: "triage.md tells the owner a position that the code makes irrelevant [slice C, was IN-C08]"
-open: 28
+open: 30
 total: 38
-recorded: 2026-10-12T19:36:03.510Z
+recorded: 2026-10-13T15:24:05.707Z
 ---
 
 # Phase 02: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | fixed | 02-REVIEW-FIX.md |
-| WR-01 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-02 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-03 | warning | deferred | partly fixed (bfc52cf); remaining duplicate-alert path deferred to Phase 02.1 with the owner-alert de-dup work; preferred fix is a claim token on the claimed rows, not a time window |
-| WR-04 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-05 | warning | fixed | 02-REVIEW-FIX.md |
-| WR-06 | warning | fixed | 02-REVIEW-FIX.md |
+| WR-01 | warning | open | - |
+| WR-02 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
+| CR-01 | critical | fixed | 02-REVIEW-FIX.md (not in the current review) |
+| WR-03 | warning | deferred | partly fixed (bfc52cf); remaining duplicate-alert path deferred to Phase 02.1 with the owner-alert de-dup work; preferred fix is a claim token on the claimed rows, not a time window (not in the current review) |
+| WR-04 | warning | fixed | 02-REVIEW-FIX.md (not in the current review) |
+| WR-05 | warning | fixed | 02-REVIEW-FIX.md (not in the current review) |
+| WR-06 | warning | fixed | 02-REVIEW-FIX.md (not in the current review) |
+| IN-04 | info | open | - (not in the current review) |
+| IN-05 | info | open | - (not in the current review) |
 | CR-02 | critical | open | - (not in the current review) |
 | WR-07 | warning | open | - (not in the current review) |
 | WR-08 | warning | deferred | before first client (not in the current review) |
