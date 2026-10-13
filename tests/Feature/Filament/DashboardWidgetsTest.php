@@ -101,6 +101,23 @@ it('lists paused conversations where the customer spoke last, oldest waiting fir
         ->assertSee('Ray Ortega');
 });
 
+it('treats a draft the owner approved after the customer texted again as the owner having spoken last', function () {
+    $conversation = Conversation::factory()
+        ->for(Contact::factory()->create(['name' => 'Dana Whitfield']))
+        ->paused(PausedReason::TakenOver)
+        ->create(['last_message_at' => now()->subMinutes(5)]);
+
+    // The draft was written first, the customer texted again, then the owner approved the draft.
+    Message::factory()->for($conversation)->outbound()->create([
+        'created_at' => now()->subMinutes(30),
+        'sent_at' => now()->subMinutes(5),
+    ]);
+    Message::factory()->for($conversation)->create(['created_at' => now()->subMinutes(20)]);
+
+    Livewire::test(PausedConversationsWaiting::class)
+        ->assertCanNotSeeTableRecords([$conversation]);
+});
+
 it('lists contacts who became leads in the last 7 days, newest first, with the cost per lead in dollars', function () {
     $recent = Contact::factory()->fromSource('google', 4250)->create(['name' => 'Dana Whitfield', 'created_at' => now()->subDays(1)]);
     $newest = Contact::factory()->create(['name' => 'Ray Ortega', 'created_at' => now()->subHour()]);

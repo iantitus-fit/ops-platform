@@ -30,7 +30,7 @@ class PausedConversationsWaiting extends TableWidget
             ->select('author')
             ->whereColumn('messages.conversation_id', 'conversations.id')
             ->whereNotIn('status', [MessageStatus::Draft, MessageStatus::Withdrawn])
-            ->orderByDesc('created_at')
+            ->orderByRaw('coalesce(sent_at, created_at) desc')
             ->orderByDesc('id')
             ->limit(1);
 
