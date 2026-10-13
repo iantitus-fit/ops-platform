@@ -213,7 +213,6 @@ Plans:
 - Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW.md` WR-03, WR-04; 2.1 rebuilds alerts).
 - Carried from the Phase 2 review fix (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-03): a front-desk run that claims texts newer than the one that queued it can still alert the owner twice when it fails. Fix with a claim token stored on the claimed rows, so `ProcessInbound::failed()` reports exactly the burst its run claimed; not with a time window in `ReportFrontDeskFailure`.
 - Carried from the Phase 2 UI review (`02-UI-REVIEW.md`): a held draft's Send and Discard buttons show a loading state and are disabled while running, and Discard asks for confirmation.
-- Carried from Phase 2 UAT (2026-10-12, `02-UAT.md` Test 1): show the customer's last message in the Needs you card, so the owner sees what they're answering without scrolling.
 
 **Success Criteria** (what must be TRUE):
   1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
