@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Text Front Desk
 status: executing
-stopped_at: Completed 02-39-PLAN.md
-last_updated: "2026-10-13T14:59:34.518Z"
+stopped_at: Completed 02-40-PLAN.md
+last_updated: "2026-10-13T15:04:36.634Z"
 last_activity: 2026-10-13
 last_activity_desc: Phase 02 execution resumed (wave continue)
-state_head: ad179212be9f2c6c08a6b98f5f9eb93e002c3d28
+state_head: d63d51ab67a85c26b242c4800d6e9cfa249e7826
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 48
-  completed_plans: 46
+  completed_plans: 47
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-11)
 ## Current Position
 
 Phase: 02 (Text Front Desk) — EXECUTING
-Plan: 40 of 41 (02-35 complete)
+Plan: 41 of 41 (02-35 complete)
 Status: Ready to execute
 Last activity: 2026-10-13 — Phase 02 execution resumed (wave continue)
 
@@ -102,6 +102,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 02 P37 | 3 min | 3 tasks | 7 files |
 | Phase 02 P38 | 8 min | 2 tasks | 5 files |
 | Phase 02 P39 | 4 min | 3 tasks | 10 files |
+| Phase 02 P40 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -191,6 +192,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: D-56 (amends D-45): per-question yes/no bars; promise and complaint 0.15, price and discount 0.075
 - [Phase 02]: 02-36: messages.sent_at is the send time; threads sort by coalesce(sent_at, created_at) then id and label by Message::happenedAt(); a held draft keeps its row and created_at (D-54)
 - [Phase 02]: 02-39: history() skips the burst's own texts and newer customer texts instead of stopping at the burst, so replies sent while the burst waited stay in the history at their send time
+- [Phase 02]: 02-40: the Needs you card finds the customer's last message by id like OwnerAlertText, shows it squished and cut to 160 characters, escaped; the thread box is untouched
 
 ### Pending Todos
 
@@ -222,6 +224,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-13T14:59:34.444Z
-Stopped at: Completed 02-39-PLAN.md
+Last session: 2026-10-13T15:04:36.561Z
+Stopped at: Completed 02-40-PLAN.md
 Resume file: None
