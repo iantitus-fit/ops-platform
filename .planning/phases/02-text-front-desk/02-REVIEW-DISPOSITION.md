@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-28
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Widget still counts queued and failed texts as \"the owner spoke last\" [review 4, was WR-01]"
   - id: WR-29
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The map note and the enum docblock are stale after the open-leads change [review 4, was WR-02]"
   - id: IN-26
     severity: info
@@ -243,7 +243,7 @@ findings:
     severity: info
     disposition: open
     title: "Small inconsistencies in `ConversationThread` and the Needs you card [review 3, was IN-03]"
-open: 38
+open: 36
 total: 60
 recorded: 2026-10-13T20:55:05.278Z
 ---
@@ -252,8 +252,8 @@ recorded: 2026-10-13T20:55:05.278Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-28 | warning | open | - |
-| WR-29 | warning | open | - |
+| WR-28 | warning | fixed | abe9d57 (test f6764c9) |
+| WR-29 | warning | fixed | a468e3f |
 | IN-26 | info | open | - |
 | IN-27 | info | open | - |
 | IN-28 | info | open | - |
