@@ -2,6 +2,7 @@
 
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\AlertReason;
+use App\Enums\DraftResolution;
 use App\Enums\MessageKind;
 use App\Enums\PausedReason;
 use App\Models\Conversation;
@@ -116,6 +117,40 @@ it('still answers with nineteen agent texts in 24 hours', function () {
 
     expect(replyCapTextsToDana())->toHaveCount(1)
         ->and($conversation->fresh()->isPaused())->toBeFalse();
+});
+
+it('counts a draft the owner sent within the hour, though it was written earlier (D-52)', function () {
+    $conversation = replyCapDanaTexts();
+    replyCapAgentTextsSent($conversation, [5, 10, 15, 20, 25]);
+    Message::factory()->for($conversation)->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'resolution' => DraftResolution::Approved,
+        'body' => 'Mike can come Tuesday.',
+        'created_at' => now()->subHours(3),
+        'sent_at' => now()->subMinutes(30),
+    ]);
+    scriptFrontDeskReplies(['reply' => 'Yes, he is on the way.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    replyCapAssertStopped($conversation, 6);
+});
+
+it('counts a draft sent within the day by its send time (D-52)', function () {
+    $conversation = replyCapDanaTexts();
+    replyCapAgentTextsSent($conversation, array_map(fn (int $i): int => 90 + $i * 60, range(0, 18)));
+    Message::factory()->for($conversation)->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'resolution' => DraftResolution::Approved,
+        'body' => 'Mike can come Tuesday.',
+        'created_at' => now()->subHours(30),
+        'sent_at' => now()->subMinutes(45),
+    ]);
+    scriptFrontDeskReplies(['reply' => 'Yes, he is on the way.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    replyCapAssertStopped($conversation, 20);
 });
 
 it('does not count texts older than 24 hours, drafts, failed sends or the safety line (D-52)', function () {
