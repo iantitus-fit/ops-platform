@@ -194,8 +194,8 @@ it('never throws on a malformed new field, it falls back instead (T-02.1-11)', f
     'easy_label as a number' => ['easy_label', 7, 'easyLabel', null],
 ]);
 
-it('still throws on a blank reply while the new fields are well formed', function () {
-    expect(fn () => AgentReply::fromStructured(frontDeskAgentTestAnswer(['reply' => '  ', 'price_services' => ['ac-repair']])))
+it('still throws on a blank reply while the new fields are well formed and no price ask is flagged', function () {
+    expect(fn () => AgentReply::fromStructured(frontDeskAgentTestAnswer(['reply' => '  ', 'price_services' => []])))
         ->toThrow(UnexpectedValueException::class);
 });
 

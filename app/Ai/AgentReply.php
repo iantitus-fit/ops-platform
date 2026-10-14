@@ -37,6 +37,10 @@ readonly class AgentReply
      *
      * The reply's length is not checked here: the hard limit belongs to the send rule.
      *
+     * A blank reply is accepted only when the model also names a service whose price the customer asked about: a pure
+     * price ask has no other words, and asking Jev about filler words would hold them on the customer's price question.
+     * Anything else with a blank reply is still malformed.
+     *
      * @param  array<string, mixed>  $data
      *
      * @throws UnexpectedValueException
@@ -44,8 +48,9 @@ readonly class AgentReply
     public static function fromStructured(array $data): self
     {
         $reply = $data['reply'] ?? null;
+        $priceServices = self::priceServices($data['price_services'] ?? null);
 
-        if (! is_string($reply) || trim($reply) === '') {
+        if (! is_string($reply) || (trim($reply) === '' && $priceServices === [])) {
             throw new UnexpectedValueException('The answer has no reply text.');
         }
 
@@ -66,7 +71,7 @@ readonly class AgentReply
             serviceSlug: self::optionalText($data, 'service_slug'),
             intakeAnswers: self::intakeAnswers($data['intake_answers'] ?? []),
             customerName: self::optionalText($data, 'customer_name'),
-            priceServices: self::priceServices($data['price_services'] ?? null),
+            priceServices: $priceServices,
             asksDiscount: ($data['asks_discount'] ?? null) === true,
             touchesWaiting: is_bool($data['touches_waiting'] ?? null) ? $data['touches_waiting'] : null,
             waitingNote: in_array($data['waiting_note'] ?? null, self::WAITING_NOTES, true) ? $data['waiting_note'] : null,

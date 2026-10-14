@@ -28,6 +28,9 @@ use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\LifeSafety;
+use App\SendRule\PricePick;
+use App\SendRule\PriceSentencePicker;
+use App\SendRule\ReplyParts;
 use App\SendRule\Verdict;
 use DomainException;
 use Illuminate\Support\Collection;
@@ -74,6 +77,8 @@ class RunFrontDesk
         private readonly PauseConversation $pauseConversation,
         private readonly SendLifeSafetyLine $sendLifeSafetyLine,
         private readonly ReportFrontDeskFailure $reportFrontDeskFailure,
+        private readonly PriceSentencePicker $priceSentencePicker,
+        private readonly SendCombinedReply $sendCombinedReply,
     ) {}
 
     /**
@@ -138,6 +143,15 @@ class RunFrontDesk
         $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
         $this->fillEmptyName($conversation, $run->reply->customerName, $burst->last());
 
+        $picks = $this->pickPrices($conversation, $run->reply->priceServices);
+        $sentences = array_map(fn (PricePick $pick): string => (string) $pick->sentence, array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
+
+        if ($run->reply->reply === '' && $picks !== [] && count($sentences) === count($picks)) {
+            $this->sendCodeAnswer($conversation, $burst, $picks, $sentences);
+
+            return;
+        }
+
         $words = $run->reply->reply;
         $composed = $this->composeAutomatedText->forReply($conversation, $words);
         $verdict = $this->decideSendOrDraft->decide($run, $this->prompt->promptText($burst), $composed);
@@ -168,16 +182,7 @@ class RunFrontDesk
 
                 return;
             } catch (DomainException $exception) {
-                if (str_starts_with($exception->getMessage(), OutboundSender::NOT_SENT)) {
-                    $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The reply could not be sent');
-
-                    return;
-                }
-
-                if ($exception->getPrevious() instanceof RecipientOptedOut) {
-                    // The carrier knew the customer had opted out before we did; the contact is marked now.
-                    $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The customer opted out of texts, so call them');
-
+                if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
                     return;
                 }
 
@@ -186,6 +191,78 @@ class RunFrontDesk
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes);
+    }
+
+    /**
+     * The price sentence of each service the customer asked about, in the order asked, each service once. The model only
+     * names the service; the picker reads the owner's sentence from the live version (D-04).
+     *
+     * @param  list<string>  $slugs
+     * @return list<PricePick>
+     */
+    private function pickPrices(Conversation $conversation, array $slugs): array
+    {
+        return array_map(fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug), array_values(array_unique($slugs)));
+    }
+
+    /**
+     * The `price_sentences` meta of a text: which sentence of which service went out, and the amounts it named.
+     *
+     * @param  list<PricePick>  $picks
+     * @return list<array{slug: string, key: ?string, amounts_cents: list<int>}>
+     */
+    private function priceSentencesMeta(array $picks): array
+    {
+        return array_map(
+            fn (PricePick $pick): array => ['slug' => $pick->slug, 'key' => $pick->sentenceKey, 'amounts_cents' => $pick->amountsCents],
+            array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())),
+        );
+    }
+
+    /**
+     * Send the owner's sentences alone, the customer's whole answer to a price question. Code wrote them, so Jev is not
+     * asked (D-04). A send that failed alerts the owner exactly as a reply that failed does; any other refusal is
+     * reported to the log.
+     *
+     * @param  Collection<int, Message>  $burst
+     * @param  list<PricePick>  $picks
+     * @param  list<string>  $sentences
+     */
+    private function sendCodeAnswer(Conversation $conversation, Collection $burst, array $picks, array $sentences): void
+    {
+        try {
+            $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
+                'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_sentences' => $this->priceSentencesMeta($picks)],
+            ]);
+        } catch (DomainException $exception) {
+            if (! $this->alertAboutFailedSend($exception, $conversation, $burst)) {
+                report($exception);
+            }
+        }
+    }
+
+    /**
+     * Alert the owner when a send failed in the channel or the carrier knew the customer had opted out. Returns false
+     * for any other refusal, which the caller handles.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutFailedSend(DomainException $exception, Conversation $conversation, Collection $burst): bool
+    {
+        if (str_starts_with($exception->getMessage(), OutboundSender::NOT_SENT)) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The reply could not be sent');
+
+            return true;
+        }
+
+        if ($exception->getPrevious() instanceof RecipientOptedOut) {
+            // The carrier knew the customer had opted out before we did; the contact is marked now.
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $burst->last(), 'The customer opted out of texts, so call them');
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
