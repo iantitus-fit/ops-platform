@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\PauseConversation;
+use App\Actions\ResolveDraft;
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
@@ -228,6 +229,37 @@ it('refuses to discard a replaced draft and leaves the new one waiting (D-28)', 
         ->assertNotified(Notification::make()->title(e("The customer wrote again, here's the new draft"))->danger());
 
     expect(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1)
+        ->and(Message::query()->where('resolution', DraftResolution::Discarded->value)->exists())->toBeFalse();
+});
+
+it('refuses to send a draft that was closed as answered and sends nothing (D-21)', function () {
+    draftReviewPriceQuestionHeld();
+
+    $thread = draftReviewThread();
+    $draft = draftReviewTheDraft();
+
+    app(ResolveDraft::class)->closeAsAnswered($draft, Message::factory()->for($draft->conversation)->outbound()->create(['body' => 'A new unit is $9,000 installed.']));
+    $textsBefore = count(textsSentToCustomers());
+
+    $thread->call('approveDraft')
+        ->assertNotified(Notification::make()->title('Already answered')->danger());
+
+    expect(count(textsSentToCustomers()))->toBe($textsBefore)
+        ->and($draft->refresh()->resolution)->toBe(DraftResolution::Answered);
+});
+
+it('refuses to discard a draft that was closed as answered and leaves it as answered (D-21)', function () {
+    draftReviewPriceQuestionHeld();
+
+    $thread = draftReviewThread();
+    $draft = draftReviewTheDraft();
+
+    app(ResolveDraft::class)->closeAsAnswered($draft, Message::factory()->for($draft->conversation)->outbound()->create(['body' => 'A new unit is $9,000 installed.']));
+
+    $thread->call('discardDraft')
+        ->assertNotified(Notification::make()->title('Already answered')->danger());
+
+    expect($draft->refresh()->resolution)->toBe(DraftResolution::Answered)
         ->and(Message::query()->where('resolution', DraftResolution::Discarded->value)->exists())->toBeFalse();
 });
 
