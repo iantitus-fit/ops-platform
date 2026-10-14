@@ -44,13 +44,15 @@ readonly class Verdict
     }
 
     /**
-     * A reply kept for the owner, with the first reason it was held.
+     * A reply kept for the owner, with the first reason it was held. When the check can say more than its code does,
+     * such as which services have no price on file, it passes owner-facing words that replace the code's own sentence;
+     * the reason code stays the same either way (D-40).
      *
      * @param  array<string, mixed>  $details
      */
-    public static function hold(string $reasonCode, array $details, bool $lifeSafety = false, bool $asksForPerson = false): self
+    public static function hold(string $reasonCode, array $details, bool $lifeSafety = false, bool $asksForPerson = false, ?string $plainReason = null): self
     {
-        $plain = self::plainReasonFor($reasonCode);
+        $plain = $plainReason ?? self::plainReasonFor($reasonCode);
 
         return new self(
             GateOutcome::Hold,
@@ -63,11 +65,12 @@ readonly class Verdict
     }
 
     /**
-     * The same verdict turned into a hold for a reason found after the checks, such as a sender that refused.
+     * The same verdict turned into a hold for a reason found after the checks, such as a sender that refused. The
+     * optional words replace the code's own sentence and leave the reason code alone (D-40).
      */
-    public function heldFor(string $reasonCode): self
+    public function heldFor(string $reasonCode, ?string $plainReason = null): self
     {
-        return self::hold($reasonCode, $this->details, $this->lifeSafety, $this->asksForPerson);
+        return self::hold($reasonCode, $this->details, $this->lifeSafety, $this->asksForPerson, $plainReason);
     }
 
     /**
@@ -117,6 +120,16 @@ readonly class Verdict
                 'asks_for_person' => 'Held: may want to talk to a person',
                 default => 'Held: the safety check was not sure',
             },
+            'price' => match ($detail) {
+                'no_sentence' => 'Held: no price on file for this question',
+                default => 'Held: asks about price',
+            },
+            'discount' => match ($detail) {
+                'no_live_offer' => 'Held: no offer running today',
+                default => 'Held: mentions a discount',
+            },
+            'touches_waiting' => 'Held: adds to a question you already have',
+            'waiting_guard' => 'Held: waits behind a question you already have',
             'too_long' => 'Held: too long for one text',
             'classifier_failed' => 'Held: the safety check did not answer',
             'send_refused' => 'Held: could not send right now',
