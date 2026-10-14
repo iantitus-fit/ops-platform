@@ -307,3 +307,35 @@ it('sends at once and does not throw when no folder version is live', function (
         ->and($alert->sent_at)->not->toBeNull()
         ->and(timingTestSentTexts())->toHaveCount(1);
 });
+
+it('puts a check-in on the right-away list in the example folder', function () {
+    activateExampleFolder();
+
+    expect(freshRaiseOwnerAlert()->isUrgent(AlertReason::CheckIn))->toBeTrue();
+});
+
+it('lets the owner move a check-in off right_away so an after-hours check-in waits for opening', function () {
+    [$conversation, $draft] = timingTestConversation('2026-10-13 18:00');
+    User::factory()->withPhone()->create();
+
+    breakFile('rules/sending.md', fn (string $text) => str_replace(', check_in]', ']', $text));
+    activateExampleFolder();
+
+    $raise = freshRaiseOwnerAlert();
+
+    expect($raise->isUrgent(AlertReason::CheckIn))->toBeFalse();
+
+    $raise->handle($conversation, AlertReason::CheckIn, $draft);
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->urgent)->toBeFalse()
+        ->and($alert->due_at->setTimezone('America/Chicago')->format('Y-m-d H:i'))->toBe('2026-10-14 08:00')
+        ->and($alert->sent_at)->toBeNull()
+        ->and(timingTestSentTexts())->toBeEmpty();
+});
+
+it('names a check-in alert in plain words', function () {
+    expect(AlertReason::CheckIn->plainWords())->toBe('Customer checked in')
+        ->and(AlertReason::values())->toContain('check_in');
+});
