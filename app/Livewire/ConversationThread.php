@@ -149,6 +149,30 @@ class ConversationThread extends Component
     }
 
     /**
+     * Whether the customer has written since the held draft was written, so the owner reads the newer text before Send
+     * (D-22). It is true when an inbound message of this conversation has an id above the newest text the draft
+     * answered, which the front desk records in the draft's `meta['in_reply_to']`.
+     *
+     * It does not compare with the draft's own id or created_at: a text that arrives while the run is in flight has a
+     * lower id than the draft but is not in the burst the draft answered, and it still counts. A draft that does not
+     * record what it answered (written before that was kept) shows no flag.
+     */
+    #[Computed]
+    public function customerWroteAgain(): bool
+    {
+        $inReplyTo = array_filter((array) ($this->liveDraft?->meta['in_reply_to'] ?? []), is_int(...));
+
+        if ($inReplyTo === []) {
+            return false;
+        }
+
+        return $this->conversation->messages()
+            ->where('direction', MessageDirection::In->value)
+            ->where('id', '>', max($inReplyTo))
+            ->exists();
+    }
+
+    /**
      * The flag shown on a held draft nobody was told about, or null (D-19). It appears only when the draft has alerts
      * and every one of them failed: an alert still waiting to go, sent, or skipped on purpose is not a gap.
      */
@@ -213,7 +237,7 @@ class ConversationThread extends Component
         // The message can carry provider text, and Filament renders a title as HTML.
         Notification::make()->title(e($exception->getMessage()))->danger()->send();
 
-        unset($this->liveDraft, $this->draftNotAlerted);
+        unset($this->liveDraft, $this->draftNotAlerted, $this->customerWroteAgain);
 
         if ($keepWords && $this->liveDraft === null && trim($this->draftBody) !== '') {
             $this->body = trim($this->draftBody);
@@ -222,7 +246,7 @@ class ConversationThread extends Component
 
     private function draftResolved(string $title): void
     {
-        unset($this->liveDraft, $this->messages, $this->draftNotAlerted);
+        unset($this->liveDraft, $this->messages, $this->draftNotAlerted, $this->customerWroteAgain);
 
         $this->reset('draftId', 'draftBody');
 

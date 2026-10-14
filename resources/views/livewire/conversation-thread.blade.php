@@ -14,6 +14,9 @@
                         <span>{{ Str::limit(Str::squish($this->lastCustomerMessage->body), 160) ?: '(no words)' }}</span>
                     </p>
                 @endif
+                @if ($this->customerWroteAgain)
+                    <p><x-filament::badge color="warning">The customer wrote again since this draft</x-filament::badge></p>
+                @endif
                 @if (trim($draftBody) !== trim($this->liveDraft->body))
                     <p style="font-size: 0.875rem;">
                         <strong>The assistant wrote:</strong>
