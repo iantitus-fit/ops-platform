@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Phase 02.1 (Faster Answers) context gathered
-last_updated: "2026-10-14T19:40:27.118Z"
+stopped_at: Completed 02.1-01-PLAN.md
+last_updated: "2026-10-14T19:49:17.256Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: 22d5228fb9b1bb17418da9273b0804722e135894
+state_head: 7badeb15e72fb945358617e2da9c18ab44e39aa7
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 48
+  completed_plans: 49
   percent: 40
 ---
 
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 1 of 16
-Status: Executing Phase 02.1
+Plan: 2 of 16
+Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
 Progress: [████░░░░░░] 40%
@@ -105,6 +105,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02 P39 | 4 min | 3 tasks | 10 files |
 | Phase 02 P40 | 4 min | 2 tasks | 5 files |
 | Phase 02 P41 | 30 min | 3 tasks | 7 files |
+| Phase 02.1 P01 | 5 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-39: history() skips the burst's own texts and newer customer texts instead of stopping at the burst, so replies sent while the burst waited stay in the history at their send time
 - [Phase 02]: 02-40: the Needs you card finds the customer's last message by id like OwnerAlertText, shows it squished and cut to 160 characters, escaped; the thread box is untouched
 - [Phase 02]: 02-41: map/CLAUDE.md left unedited; no catalog line changed. Shorthand :N citations name their file wherever they would continue the wrong one.
+- [Phase 02.1]: A wait ends only on an owner text or a draft the owner approved, edited, discarded, or code closed as answered; automated texts never end it
+- [Phase 02.1]: closeAsAnswered returns false for a gone draft instead of throwing (code calls it, not the owner)
 
 ### Pending Todos
 
@@ -229,6 +232,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T15:09:25.473Z
-Stopped at: Phase 02.1 (Faster Answers) context gathered
-Resume file: .planning/phases/02.1-faster-answers/02.1-CONTEXT.md
+Last session: 2026-10-14T19:49:17.182Z
+Stopped at: Completed 02.1-01-PLAN.md
+Resume file: None
