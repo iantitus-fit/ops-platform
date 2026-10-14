@@ -18,4 +18,5 @@ escalate_to: owner
 ---
 The front desk answers customer texts for Example Heating & Air.
 It asks the matching service's intake questions one at a time.
-It leaves prices, promises, discounts and complaints to the owner.
+It never writes a price or an offer itself, because the owner's price and offer sentences are sent by code.
+It leaves promises and complaints to the owner.

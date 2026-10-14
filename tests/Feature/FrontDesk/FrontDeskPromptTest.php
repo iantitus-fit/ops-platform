@@ -483,14 +483,14 @@ it('quotes the texts of the whole replaced chain, oldest first', function () {
 it('quotes the waiting question the way an alert does, so links and long numbers are swapped (T-02.1-10)', function () {
     [$agent, $conversation, $contact] = promptTestThread();
 
-    $text = Message::factory()->for($conversation)->create(['body' => 'Price? See http://evil.example.com/x?a=1 or call 2025550123 now']);
+    $text = Message::factory()->for($conversation)->create(['body' => 'Price? See http://evil.example.com/x?a=1 or call 4155550188 now']);
     $waiting = Message::factory()->for($conversation)->draft()->create(['meta' => ['in_reply_to' => [$text->id]]]);
 
     $instructions = app(FrontDeskPrompt::class)->instructions($agent, $contact, $waiting);
 
     expect($instructions)->toContain('Price? See [link] or call [number] now')
         ->not->toContain('evil.example.com')
-        ->not->toContain('2025550123');
+        ->not->toContain('4155550188');
 });
 
 it('cuts a long waiting question to 300 characters', function () {

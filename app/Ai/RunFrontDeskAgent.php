@@ -29,17 +29,18 @@ class RunFrontDeskAgent
      * Answer the customer's burst of texts with the first provider in the chain that gives a valid reply.
      *
      * @param  Collection<int, Message>  $burst
+     * @param  Message|null  $waitingDraft  The conversation's live draft, when a question is already with the owner.
      *
      * @throws InvalidArgumentException when the burst is empty, since there is nothing to answer
      * @throws FrontDeskUnavailable when every provider failed
      */
-    public function handle(AgentFile $agent, Conversation $conversation, Collection $burst): AgentRun
+    public function handle(AgentFile $agent, Conversation $conversation, Collection $burst, ?Message $waitingDraft = null): AgentRun
     {
         if ($burst->isEmpty()) {
             throw new InvalidArgumentException('There is no customer text to answer.');
         }
 
-        $instructions = $this->prompt->instructions($agent, $conversation->contact);
+        $instructions = $this->prompt->instructions($agent, $conversation->contact, $waitingDraft);
         $history = $this->prompt->history($conversation, $burst);
         $promptText = $this->prompt->promptText($burst);
 

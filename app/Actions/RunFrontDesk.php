@@ -117,7 +117,12 @@ class RunFrontDesk
         }
 
         try {
-            $run = $this->runFrontDeskAgent->handle($agent, $conversation, $burst);
+            $run = $this->runFrontDeskAgent->handle(
+                $agent,
+                $conversation,
+                $burst,
+                waitingDraft: $conversation->messages()->where('status', MessageStatus::Draft)->first(),
+            );
         } catch (FrontDeskUnavailable) {
             $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'every model failed', 'Front desk could not answer');
 
