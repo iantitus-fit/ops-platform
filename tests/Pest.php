@@ -138,6 +138,12 @@ function scriptFrontDeskReplies(array ...$replies): void
         'service_slug' => null,
         'intake_answers' => [],
         'customer_name' => null,
+        'price_services' => [],
+        'asks_discount' => false,
+        'touches_waiting' => null,
+        'waiting_note' => null,
+        'easy_reply' => null,
+        'easy_label' => null,
     ];
 
     FrontDeskAgent::fake(array_map(fn (array $reply) => [...$defaults, ...$reply], $replies))->preventStrayPrompts();
