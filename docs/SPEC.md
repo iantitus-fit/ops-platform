@@ -43,7 +43,10 @@ Not for:
 6. **Sending authority is per action and enforced in code**, not only in the
    prompt. Agents send intake questions, scheduling and FAQ answers on their own.
    Anything with a price, a promise, a discount or a complaint goes to the owner
-   as a draft.
+   as a draft. The exception is the owner's own words: price sentences on a
+   service and conditional offer sentences, checked at sync against their
+   amounts, are sent by code without the owner; a price, promise, discount or
+   complaint the model writes still goes to the owner (Phase 02.1).
 7. **Money is integer cents. Payments decide invoice status.** Carried over from
    Legacy.
 8. **Integrate, don't build:** telephony, voice models, payments, accounting.

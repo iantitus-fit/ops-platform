@@ -52,6 +52,18 @@ price sentence closed).
 
 - The check-in alert follows `rules/sending.md` `right_away`: it reaches your phone at once only if `right_away` lists it, otherwise it waits for opening time like any other alert.
 
+## Notes for Phase 02.2
+
+What `gate:export` (WR-09) and the Owner Loop must handle, because Phase 2.1 changed the data they read. `app/Console/Commands/GateExport.php` still exports only `agent_reply` messages with a stored verdict, and `DraftResolution` has no idea yet that a draft can close without the owner. No threshold is tuned before a real client's data exists (D-02, D-03), so it can wait, but it must not be forgotten.
+
+- New message kinds. `partial_holding`, `complaint_holding`, `discount_holding`, `check_in_reply`, `added_info_reply` and `code_answer` are fixed texts written by code from the owner's own lines. None is a front desk decision to label, and `gate:export` must say which of them it leaves out and which it keeps. `code_answer` (a price or offer sentence sent by code, Jev skipped) is the one the export most likely needs as its own row, because it is the new way a price leaves without the owner.
+- A new draft resolution. `answered` means a price draft was closed because a price sentence for the service it waited on went out. The export has to read it as neither approved nor discarded: the owner never acted.
+- `agent_reply` texts that carry owner sentences. An `agent_reply` can now begin or end with the owner's price sentences or offer sentences, and its `meta['parts']` lists what the text was made of (the code sentences, the model's words, one fixed line), with `meta['price_sentences']` (slug, key and amounts in cents) and `meta['offers']` (offer slugs) naming the sentences. Any measure of what the model wrote must count only the model's part, or the export credits the model with the owner's words.
+- Drafts with an empty body. A price or discount question code could not answer (`price_policy: none`, a service not in the folder, a sentence that could not be sent) is stored as a draft with no words, held as `price:no_sentence` or `send_refused`. The owner writes the answer. The export has to keep the owner's text, not read the empty draft body as "the model wrote nothing".
+- Drafts replaced under a chain. `meta['replaces']` lists the earlier drafts a fresh draft covers, and `meta['first_reply']` keeps the first model reply a whole-thread draft replaced (plan 02.1-14), so the labeled data has both sides of that case.
+- A new stop reason in the verdict. A hold now names why in plain words (D-40), including the hold reasons added by this phase, so the export's reason column has values it has not seen.
+- Carried items from CONTEXT for the Owner Loop itself: a reply code for a draft with newer customer messages must not send blindly (the "customer wrote again since this draft" line is only a warning on the screen today); the "handled" follow-up must cover drafts auto-closed as `answered`; the customer update past the holding reply's promise ships together with the owner re-alert; and the fallback classifier question (an alternate driver chosen per business, or a runtime fallback when Jev fails, which changes what "fail closed" means and must also get message text only).
+
 ## Walk-through log
 
 One line per concept, added the first time it shows up in this sprint.
