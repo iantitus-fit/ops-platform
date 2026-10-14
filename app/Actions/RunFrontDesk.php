@@ -24,6 +24,7 @@ use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
+use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
@@ -143,15 +144,13 @@ class RunFrontDesk
             return;
         }
 
-        $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
+        $newAnswers = $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
         $this->fillEmptyName($conversation, $run->reply->customerName, $burst->last());
 
-        $picks = $this->pickPrices($conversation, $run->reply->priceServices);
+        $askedSlugs = array_values(array_unique([...$run->reply->priceServices, ...$this->pendingPriceSlugs($conversation)]));
+        $picks = $this->pickPrices($conversation, $askedSlugs, $newAnswers);
         $sentences = array_map(fn (PricePick $pick): string => (string) $pick->sentence, array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
-        $unanswered = array_values(array_map(
-            fn (PricePick $pick): string => $pick->slug,
-            array_filter($picks, fn (PricePick $pick): bool => $pick->outcome === PricePick::HOLD),
-        ));
+        $unanswered = $this->slugsWith($picks, PricePick::HOLD);
 
         $words = $run->reply->reply;
         $customerText = $this->prompt->promptText($burst);
@@ -164,7 +163,7 @@ class RunFrontDesk
 
         if ($words === '') {
             $composed = '';
-            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason($unanswered));
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
         } else {
             $composed = $this->composeAutomatedText->forReply($conversation, $words);
             $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed);
@@ -187,7 +186,7 @@ class RunFrontDesk
 
         $attributes = [
             'kind' => MessageKind::AgentReply,
-            'meta' => ['in_reply_to' => $burst->pluck('id')->all()],
+            'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_pending' => $this->slugsWith($picks, PricePick::NEEDS_ANSWERS)],
         ];
 
         $parts = new ReplyParts(codeSentences: $sentences, modelWords: $words);
@@ -257,15 +256,54 @@ class RunFrontDesk
     }
 
     /**
-     * The price sentence of each service the customer asked about, in the order asked, each service once. The model only
-     * names the service; the picker reads the owner's sentence from the live version (D-04).
+     * The price outcome of each service the customer asked about, in the order asked, each service once. The model only
+     * names the service; the picker reads the owner's sentence from the live version (D-04). A service with nothing to
+     * send and nothing to hold is left out.
      *
-     * @param  list<string>  $slugs
+     * @param  list<string>  $slugs  Services asked about in this run or still pending from an earlier one.
+     * @param  Collection<int, IntakeAnswer>  $newAnswers  The intake answers stored in this run.
      * @return list<PricePick>
      */
-    private function pickPrices(Conversation $conversation, array $slugs): array
+    private function pickPrices(Conversation $conversation, array $slugs, Collection $newAnswers): array
     {
-        return array_map(fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug), array_values(array_unique($slugs)));
+        $picks = array_map(
+            fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug, true, $newAnswers),
+            array_values(array_unique($slugs)),
+        );
+
+        return array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->outcome !== PricePick::NOTHING));
+    }
+
+    /**
+     * The services whose price is still waiting on the customer's answers, as the previous run left them in the meta
+     * of the message it wrote. Holding and handoff replies carry no `in_reply_to`, so they are skipped.
+     *
+     * @return list<string>
+     */
+    private function pendingPriceSlugs(Conversation $conversation): array
+    {
+        $previous = $conversation->messages()
+            ->where('direction', MessageDirection::Out)
+            ->lazyByIdDesc()
+            ->first(fn (Message $message): bool => isset($message->meta['in_reply_to']));
+
+        $pending = $previous?->meta['price_pending'] ?? [];
+
+        return array_values(array_filter(is_array($pending) ? $pending : [], is_string(...)));
+    }
+
+    /**
+     * The services whose pick has the given outcome, in the order picked.
+     *
+     * @param  list<PricePick>  $picks
+     * @return list<string>
+     */
+    private function slugsWith(array $picks, string $outcome): array
+    {
+        return array_values(array_map(
+            fn (PricePick $pick): string => $pick->slug,
+            array_filter($picks, fn (PricePick $pick): bool => $pick->outcome === $outcome),
+        ));
     }
 
     /**
@@ -297,7 +335,7 @@ class RunFrontDesk
 
         try {
             $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
-                'meta' => ['in_reply_to' => $inReplyTo, 'price_sentences' => $this->priceSentencesMeta($picks)],
+                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], 'price_sentences' => $this->priceSentencesMeta($picks)],
             ]);
         } catch (DomainException $exception) {
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
@@ -310,7 +348,7 @@ class RunFrontDesk
 
             $this->storeDraft($conversation, '', $verdict, $run->reply->label, [
                 'kind' => MessageKind::AgentReply,
-                'meta' => ['in_reply_to' => $inReplyTo],
+                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => []],
             ]);
         }
     }

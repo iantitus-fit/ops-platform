@@ -84,6 +84,22 @@ class RecordIntakeAnswers
     }
 
     /**
+     * The customer's current answer to each of a service's intake questions: the newest row per question, keyed by
+     * question_key. A correction is a new row, so the later row wins and the earlier ones stay as history (Phase 2
+     * D-34). Rows are read in id order, the same rule the customer card uses.
+     *
+     * @return Collection<string, IntakeAnswer>
+     */
+    public function currentFor(Conversation $conversation, string $slug): Collection
+    {
+        return $conversation->intakeAnswers()
+            ->where('service_slug', $slug)
+            ->orderBy('id')
+            ->get()
+            ->keyBy('question_key');
+    }
+
+    /**
      * The service's intake questions by key.
      *
      * @param  array<string, mixed>  $service
