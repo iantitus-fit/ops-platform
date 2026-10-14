@@ -218,6 +218,7 @@ class Validator
                 'utility_phone' => 'bail|nullable|string',
                 'holding_reply' => 'bail|required|string',
                 'handoff_reply' => 'bail|required|string',
+                'check_in_hours' => 'bail|sometimes|integer:strict|min:1|max:12',
             ],
             'triage' => [
                 'intent_question' => 'bail|required|string',
@@ -698,7 +699,8 @@ class Validator
     }
 
     /**
-     * What is wrong with the fixed replies: a fill-in this app does not know, a price, discount, promise or
+     * What is wrong with the fixed replies: a fill-in this app does not know, a check-in time while the owner's
+     * check_in_hours setting is off (it is off by default, D-26), a price, discount, promise or
      * never_say phrase in a text that goes out without the owner (D-12), and a utility phone nobody can dial.
      * The never_say list comes from the voice file in the same folder, never from ActiveConfig, because the
      * folder is not live yet. A folder with no readable voice file has no never_say list, and the other checks still run.
@@ -728,6 +730,10 @@ class Validator
 
                 if ($unknownFillIn !== null) {
                     $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are '.$this->fillInList());
+                }
+
+                if (str_contains($text, '{check_in_time}') && ($file->frontMatter['check_in_hours'] ?? null) === null) {
+                    $errors[] = $this->error($file->path, $field, $field.' uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out');
                 }
 
                 $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply');
