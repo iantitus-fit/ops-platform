@@ -13,6 +13,8 @@ intake:
   - key: fuel
     ask: Is it gas or electric?
     options: [Gas, Electric, Not sure]
+price_sentences:
+  - sentence: "Furnace repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit."
 ---
 We repair gas and electric furnaces of all major brands.
 The $89 diagnostic fee is waived if the customer approves the repair the same visit.

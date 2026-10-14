@@ -7,6 +7,16 @@ use Illuminate\Support\Facades\File;
 
 const HOLDING_REPLY_ENDING = "this to {owner_name} and you're on his list. He'll get back to you {today_or_next_open}.\"";
 
+/**
+ * Take the price sentences out of every service file, so a test about price_leads starts from a folder where no service has any.
+ */
+function repliesValidationStripPriceSentences(): void
+{
+    foreach (File::files(icmPath('business/services')) as $file) {
+        breakFile('business/services/'.$file->getFilename(), fn (string $text) => preg_replace('/^price_sentences:\n(  .*\n)+/m', '', $text));
+    }
+}
+
 /*
 | Each row: text to find in rules/replies.md, text to put in its place, and the exact line the owner must see.
 */
@@ -132,6 +142,7 @@ it('lets the discount reply name a discount, the one reply that may', function (
 });
 
 it('requires the price leads once a service has price sentences, and names the service', function () {
+    repliesValidationStripPriceSentences();
     breakFile('business/services/ac-repair.md', fn (string $text) => str_replace(
         'price_cents: 8900',
         "price_cents: 8900\nprice_sentences:\n  - sentence: \"AC repair starts with an \$89 diagnostic visit.\"",
@@ -145,6 +156,7 @@ it('requires the price leads once a service has price sentences, and names the s
 });
 
 it('syncs without price leads while no service has price sentences', function () {
+    repliesValidationStripPriceSentences();
     breakFile('rules/replies.md', fn (string $text) => preg_replace('/^price_leads:\n(  .*\n){4}/m', '', $text));
 
     activateExampleFolder();

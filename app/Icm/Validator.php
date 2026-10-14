@@ -10,6 +10,7 @@ use App\Support\PhoneNumber;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as LaravelValidator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Laravel\Ai\Ai;
@@ -116,7 +117,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -194,6 +195,12 @@ class Validator
                 'intake.*.ask' => 'bail|required|string',
                 'intake.*.options' => 'bail|sometimes|array',
                 'intake.*.options.*' => 'bail|string',
+                'price_sentences' => 'bail|sometimes|array|min:1',
+                'price_sentences.*.sentence' => 'bail|required|string',
+                'price_sentences.*.amounts_cents' => 'bail|sometimes|array|min:1',
+                'price_sentences.*.amounts_cents.*' => 'bail|integer:strict|min:0|max:'.self::MAX_CENTS,
+                'price_default' => 'bail|sometimes|array',
+                'price_default.amounts_cents.*' => 'bail|integer:strict|min:0|max:'.self::MAX_CENTS,
             ],
             'voice' => [
                 'ai_disclosure' => 'bail|required|string',
@@ -787,6 +794,121 @@ class Validator
         }
 
         return $errors;
+    }
+
+    /**
+     * What is wrong with the price sentences on a service file. A price sentence is sent by code with no
+     * model and no Jev behind it, so this sync is the only check it ever gets: every amount in the
+     * sentence must be one the file declares, and the sentence must name its service so a wrong pick
+     * shows to the customer (D-08, D-10). The never_say list comes from the voice file in the same folder,
+     * never from ActiveConfig, exactly as repliesErrors() does.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function priceSentenceErrors(Collection $files): array
+    {
+        $errors = [];
+
+        foreach ($files as $file) {
+            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'service') {
+                continue;
+            }
+
+            $items = $file->frontMatter['price_sentences'] ?? null;
+
+            if (! is_array($items)) {
+                continue;
+            }
+
+            foreach (array_values($items) as $index => $item) {
+                $sentence = is_array($item) ? ($item['sentence'] ?? null) : null;
+
+                if (! is_string($sentence)) {
+                    continue;
+                }
+
+                $error = $this->priceSentenceError($file, 'price_sentences item '.($index + 1), "price_sentences.{$index}.sentence", $sentence, $this->declaredAmounts($file, $item));
+
+                if ($error !== null) {
+                    $errors[] = $error;
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first thing wrong with one price sentence, or null when the sentence is fine. `$declared` is the
+     * amounts the file backs it with, and `$source` names where they come from for the owner.
+     *
+     * @param  array{source: string, cents: list<int>}|null  $declared
+     * @return array{file: string, field: ?string, message: string}|null
+     */
+    private function priceSentenceError(IcmFile $file, string $label, string $field, string $sentence, ?array $declared): ?array
+    {
+        $found = CodeChecks::dollarAmountsInCents($sentence);
+
+        if ($declared !== null && $found !== $declared['cents']) {
+            return $this->error($file->path, $field, "{$label}: the sentence's amounts (".$this->dollarList($found).") do not match {$declared['source']} (".$this->dollarList($declared['cents']).')');
+        }
+
+        $name = $file->frontMatter['name'] ?? null;
+
+        if (is_string($name) && $name !== '' && ! str_contains(mb_strtolower(Str::squish($sentence)), mb_strtolower(Str::squish($name)))) {
+            return $this->error($file->path, $field, "{$label}: the sentence must name the service ({$name}) so a wrong pick shows");
+        }
+
+        return null;
+    }
+
+    /**
+     * The amounts a price sentence is backed by: its amounts_cents (unique, ascending), or for a sentence keyed to
+     * nothing that leaves them out, the file's price_cents. Null when the file declares nothing to compare with.
+     *
+     * @param  array<array-key, mixed>  $item
+     * @return array{source: string, cents: list<int>}|null
+     */
+    private function declaredAmounts(IcmFile $file, array $item): ?array
+    {
+        $amounts = $item['amounts_cents'] ?? null;
+
+        if (is_array($amounts) && $amounts !== [] && array_filter($amounts, is_int(...)) === $amounts) {
+            $cents = array_values(array_unique($amounts));
+            sort($cents);
+
+            return ['source' => 'amounts_cents', 'cents' => $cents];
+        }
+
+        $price = $file->frontMatter['price_cents'] ?? null;
+
+        if ($amounts === null && ! isset($item['answers']) && is_int($price)) {
+            return ['source' => 'price_cents', 'cents' => [$price]];
+        }
+
+        return null;
+    }
+
+    /**
+     * Amounts in cents as the owner writes them: "$2,000, $89.50". Whole numbers only, no floats.
+     *
+     * @param  list<int>  $cents
+     */
+    private function dollarList(array $cents): string
+    {
+        return implode(', ', array_map($this->dollars(...), $cents));
+    }
+
+    /**
+     * One amount in cents as dollars: $2,000 for whole dollars, $89.50 otherwise.
+     */
+    private function dollars(int $cents): string
+    {
+        $whole = number_format(intdiv($cents, 100));
+        $rest = $cents % 100;
+
+        return $rest === 0 ? "\${$whole}" : sprintf('$%s.%02d', $whole, $rest);
     }
 
     /**
