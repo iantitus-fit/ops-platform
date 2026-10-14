@@ -256,7 +256,7 @@ class RunFrontDesk
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
         if ($stillWaiting !== null) {
-            $this->answerWhileDraftWaits($run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn, $easyAnswer);
+            $this->answerWhileDraftWaits($agent, $run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn, $easyAnswer);
 
             return;
         }
@@ -392,6 +392,10 @@ class RunFrontDesk
      * with the label guard. If it passed, its words ride in the same text as the owner's sentences, in front of whichever
      * line is chosen; the touching reply is stored as the fresh draft as usual. If it was held, nothing of it is sent.
      *
+     * When the model marked its words as not touching W but they are held anyway, they would replace W with words that
+     * leave the waiting question out. So the agent is asked once more, for one draft that covers both questions, and that
+     * draft replaces W (D-35). See coverBothDraft().
+     *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
      * @param  array{meta: array<string, mixed>}  $sentMeta
@@ -399,7 +403,7 @@ class RunFrontDesk
      * @param  list<string>  $offerSlugs
      * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  The split-off easy answer that passed every check, with the verdict it is stored under.
      */
-    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn, ?array $easy = null): void
+    private function answerWhileDraftWaits(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn, ?array $easy = null): void
     {
         if ($verdict?->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
             $verdict = $checkIn ? null : $verdict->heldFor('touches_waiting');
@@ -438,15 +442,22 @@ class RunFrontDesk
         }
 
         $keepsWaitingBody = $parts->modelWords === '' || $checkIn;
+        $draftWords = $keepsWaitingBody ? $waiting->body : (string) $parts->modelWords;
+        $draftLabel = $keepsWaitingBody ? $waiting->label ?? $run->reply->label : $run->reply->label;
+        $alertReason = null;
 
-        $this->storeDraft(
-            $conversation,
-            $keepsWaitingBody ? $waiting->body : (string) $parts->modelWords,
-            $verdict,
-            $keepsWaitingBody ? $waiting->label ?? $run->reply->label : $run->reply->label,
-            $attributes,
-            sendHolding: false,
-        );
+        if (! $keepsWaitingBody && $run->reply->touchesWaiting === false && ! $verdict->lifeSafety) {
+            $covered = $this->coverBothDraft($agent, $run, $conversation, $burst, $waiting, $verdict, $parts);
+
+            if ($covered === null) {
+                return;
+            }
+
+            ['words' => $draftWords, 'label' => $draftLabel, 'verdict' => $verdict, 'alertReason' => $alertReason] = $covered;
+            $attributes['meta'] = [...$attributes['meta'], 'first_reply' => ['reply' => (string) $parts->modelWords, 'gate_reason' => $covered['firstReason']]];
+        }
+
+        $this->storeDraft($conversation, $draftWords, $verdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason);
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
@@ -461,6 +472,81 @@ class RunFrontDesk
         } else {
             $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
         }
+    }
+
+    /**
+     * The draft that replaces the waiting draft W when the model's words, marked as not touching W, were held anyway
+     * (D-35). The agent is asked once more, told W's question and the new one and that its reply goes to the owner first,
+     * and the second reply goes through the same checks, with the same label guard, for the record. The hold reason stays
+     * the first reply's, so the owner reads why the new text held: a second reply that would send is held for it, and
+     * one held for a reason of its own keeps that reason's checks but is stored under the first reason. A danger or a
+     * request for a person in the second reply acts as it does for a first one.
+     *
+     * The second call shares the first call's time budget. When it cannot answer, or answers with no words, the draft
+     * is W's words, a blank line and the first reply's words, so neither question is dropped. Nothing more is told to
+     * the owner: the draft itself shows both questions.
+     *
+     * The alert reason is a complaint when either reply was held as one, so a complaint still leads (D-34).
+     *
+     * @param  Collection<int, Message>  $burst
+     * @return ?array{words: string, label: ReplyLabel, verdict: Verdict, alertReason: AlertReason, firstReason: ?string} Null when the customer was handed to the owner and the run is over.
+     */
+    private function coverBothDraft(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, Verdict $firstVerdict, ReplyParts $parts): ?array
+    {
+        $firstWords = (string) $parts->modelWords;
+        $firstIsComplaint = in_array($firstVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
+
+        $joined = [
+            'words' => trim($waiting->body) === '' ? trim($firstWords) : trim($waiting->body)."\n\n".trim($firstWords),
+            'label' => $waiting->label ?? $run->reply->label,
+            'verdict' => $firstVerdict,
+            'alertReason' => $firstIsComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting,
+            'firstReason' => $firstVerdict->reasonCode,
+        ];
+
+        try {
+            $second = $this->runFrontDeskAgent->handle($agent, $conversation, $burst, waitingDraft: $waiting, coverBoth: true, budgetFrom: $run->startedAt);
+        } catch (FrontDeskUnavailable) {
+            return $joined;
+        }
+
+        if ($second->reply->wantsPerson) {
+            $this->handOffToOwner($conversation, $burst);
+
+            return null;
+        }
+
+        if ($second->reply->reply === '') {
+            return $joined;
+        }
+
+        $secondVerdict = $this->decideSendOrDraft->decide(
+            $second,
+            $this->prompt->promptText($burst),
+            $this->composeAutomatedText->forReply($conversation, $second->reply->reply),
+            $this->labelGuardFor($waiting),
+        );
+
+        if ($secondVerdict->lifeSafety) {
+            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+            $stored = $secondVerdict->outcome === GateOutcome::Send ? $secondVerdict->heldFor('classifier:life_safety') : $secondVerdict;
+        } elseif ($secondVerdict->asksForPerson) {
+            $this->handOffToOwner($conversation, $burst);
+
+            return null;
+        } else {
+            $stored = $secondVerdict->heldFor((string) $firstVerdict->reasonCode, $firstVerdict->plainReason);
+        }
+
+        $secondIsComplaint = in_array($secondVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
+
+        return [
+            'words' => $second->reply->reply,
+            'label' => $second->reply->label,
+            'verdict' => $stored,
+            'alertReason' => $firstIsComplaint || $secondIsComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting,
+            'firstReason' => $firstVerdict->reasonCode,
+        ];
     }
 
     /**
@@ -916,14 +1002,16 @@ class RunFrontDesk
      * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
      * tell someone describing a fire or a gas leak.
      *
-     * A caller that sends its own text beside the draft, such as the partial holding line, passes `$sendHolding` false.
+     * A caller that sends its own text beside the draft, such as the partial holding line, passes `$sendHolding` false. A caller
+     * that knows better than the verdict alone why the owner should hear, such as a whole-thread draft one of whose two
+     * replies was a complaint, passes `$alertReason`.
      *
      * @param  array<string, mixed>  $attributes
      */
-    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true): void
+    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null): void
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
-        $alertReason = $this->alertReasonFor($verdict);
+        $alertReason ??= $this->alertReasonFor($verdict);
 
         [$draft, $replacedChain] = DB::transaction(function () use ($conversation, $words, $verdict, $label, $attributes, $plainReason): array {
             $replaced = $conversation->messages()

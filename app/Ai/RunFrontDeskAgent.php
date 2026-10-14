@@ -30,22 +30,25 @@ class RunFrontDeskAgent
      *
      * @param  Collection<int, Message>  $burst
      * @param  Message|null  $waitingDraft  The conversation's live draft, when a question is already with the owner.
+     * @param  bool  $coverBoth  Ask for one reply that covers the waiting question and the new one, because it goes to the owner first (D-35).
+     * @param  CarbonInterface|null  $budgetFrom  When an earlier call of the same run began. The time budget then counts from it and every
+     *                                            provider, the first included, must fit; without it only the fallbacks are budgeted.
      *
      * @throws InvalidArgumentException when the burst is empty, since there is nothing to answer
      * @throws FrontDeskUnavailable when every provider failed
      */
-    public function handle(AgentFile $agent, Conversation $conversation, Collection $burst, ?Message $waitingDraft = null): AgentRun
+    public function handle(AgentFile $agent, Conversation $conversation, Collection $burst, ?Message $waitingDraft = null, bool $coverBoth = false, ?CarbonInterface $budgetFrom = null): AgentRun
     {
         if ($burst->isEmpty()) {
             throw new InvalidArgumentException('There is no customer text to answer.');
         }
 
-        $instructions = $this->prompt->instructions($agent, $conversation->contact, $waitingDraft);
+        $instructions = $this->prompt->instructions($agent, $conversation->contact, $waitingDraft, $coverBoth);
         $history = $this->prompt->history($conversation, $burst);
         $promptText = $this->prompt->promptText($burst);
 
         $failedAttempts = [];
-        $startedAt = now();
+        $startedAt = ($budgetFrom ?? now())->toImmutable();
 
         foreach ($agent->providerChain() as ['provider' => $provider, 'model' => $model]) {
             if ($failedAttempts !== [] && $this->outOfTime($startedAt)) {
@@ -65,7 +68,7 @@ class RunFrontDeskAgent
                     timeout: config('gate.agent.timeout_seconds'),
                 );
 
-                return new AgentRun(AgentReply::fromStructured($response->toArray()), $provider, $model, $failedAttempts);
+                return new AgentRun(AgentReply::fromStructured($response->toArray()), $provider, $model, $failedAttempts, $startedAt);
             } catch (Throwable $exception) {
                 report($exception);
 
