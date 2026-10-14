@@ -14,6 +14,7 @@ use App\Models\OwnerAlert;
 use App\Models\User;
 use App\SendRule\CodeChecks;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -143,6 +144,44 @@ class BusinessFolder extends Page
         }
 
         return 'Alerts are set to go by text, but no one has a phone number on their profile. Add yours on your profile page so held drafts reach you.';
+    }
+
+    /**
+     * One warning for each live offer with no end date that started more than 90 days ago, so a promotion left running
+     * is not forgotten (D-16). Day 90 does not warn and day 91 does, counted in whole days in the business time zone.
+     * Empty when no version is live. It only reminds: nothing about a send or a sync reads it.
+     *
+     * @return list<string>
+     */
+    public function staleOfferWarnings(): array
+    {
+        try {
+            $activeConfig = app(ActiveConfig::class);
+            $offers = $activeConfig->offers();
+            $today = CarbonImmutable::now($activeConfig->timezone())->startOfDay();
+        } catch (NoActiveVersion) {
+            return [];
+        }
+
+        $warnings = [];
+
+        foreach ($offers as $offer) {
+            $endDate = $offer['end_date'] ?? null;
+
+            if ($endDate !== null && $endDate !== '') {
+                continue;
+            }
+
+            $startDate = (string) ($offer['start_date'] ?? '');
+
+            if ($startDate === '' || CarbonImmutable::parse($startDate, $today->getTimezone())->startOfDay()->addDays(90)->greaterThanOrEqualTo($today)) {
+                continue;
+            }
+
+            $warnings[] = "{$offer['name']} has run since {$startDate} with no end date. Add an end date, or check it is still meant to run.";
+        }
+
+        return $warnings;
     }
 
     /**
