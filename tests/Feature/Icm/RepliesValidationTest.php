@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\File;
 const HOLDING_REPLY_ENDING = "this to {owner_name} and you're on his list. He'll get back to you {today_or_next_open}.\"";
 
 /**
- * Take the price sentences out of every service file, so a test about price_leads starts from a folder where no service has any.
+ * Take the price sentences and the default out of every service file, so a test about price_leads starts from a folder where no service has any.
  */
 function repliesValidationStripPriceSentences(): void
 {
     foreach (File::files(icmPath('business/services')) as $file) {
-        breakFile('business/services/'.$file->getFilename(), fn (string $text) => preg_replace('/^price_sentences:\n(  .*\n)+/m', '', $text));
+        breakFile('business/services/'.$file->getFilename(), fn (string $text) => preg_replace('/^(price_sentences|price_default):\n(  .*\n)+/m', '', $text));
     }
 }
 

@@ -387,6 +387,7 @@ it('expands a folder entry to every typed file under it and keeps the others as 
         'business/services/ac-repair.md',
         'business/services/furnace-repair.md',
         'business/services/furnace-tune-up.md',
+        'business/services/system-replacement.md',
         'voice/how-we-talk.md',
         'rules/sending.md',
     ]);

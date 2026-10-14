@@ -98,7 +98,7 @@ it('requires each of the five single-instance types to exist exactly once', func
 });
 
 it('names every missing single-instance type when the folder has no typed files', function () {
-    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-repair.md', 'business/services/furnace-tune-up.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
+    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-repair.md', 'business/services/furnace-tune-up.md', 'business/services/system-replacement.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
         File::delete(icmPath($file));
     }
 
