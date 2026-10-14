@@ -60,6 +60,10 @@ use Illuminate\Support\Str;
  * and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words are then
  * not stored or sent.
  *
+ * A customer who asks about a discount gets the sentence of every offer live today, written by the owner and sent by
+ * code with the price sentences (D-13). With no offer live the question is held as discount:no_live_offer, handled like
+ * a price with no sentence on file, so the owner hears about it (D-14).
+ *
  * A front desk that cannot answer (every model failed, no agent for texts) or cannot send alerts the owner and
  * returns, because the customer's burst is already claimed (AGNT-04). Anything else that goes wrong, such as a
  * database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
@@ -158,14 +162,19 @@ class RunFrontDesk
 
         $words = $run->reply->reply;
         $customerText = $this->prompt->promptText($burst);
+        $priceHeld = count($priceSentences) !== count($picks);
+        $noLiveOffer = $run->reply->asksDiscount && $offers === [];
 
-        if ($words === '' && $sentences !== [] && count($priceSentences) === count($picks)) {
+        if ($words === '' && $sentences !== [] && ! $priceHeld && ! $noLiveOffer) {
             $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'));
 
             return;
         }
 
-        if ($words === '') {
+        if ($words === '' && $noLiveOffer && ! $priceHeld) {
+            $composed = '';
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'discount:no_live_offer');
+        } elseif ($words === '') {
             $composed = '';
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
         } else {
@@ -187,6 +196,8 @@ class RunFrontDesk
 
         if ($unanswered !== [] && $verdict->outcome === GateOutcome::Send) {
             $verdict = $verdict->heldFor('price:no_sentence', $this->noPriceReason($unanswered));
+        } elseif ($noLiveOffer && $verdict->outcome === GateOutcome::Send) {
+            $verdict = $verdict->heldFor('discount:no_live_offer');
         }
 
         $attributes = [

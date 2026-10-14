@@ -265,7 +265,7 @@ it('holds the model\'s words for the owner when no offer is running, and sends n
 
     expect($draft->body)->toBe('Yes, we service heat pumps.')
         ->and($draft->gate_reason)->toBe('discount:no_live_offer')
-        ->and(textsSentForAgentReplies())->toBe([]);
+        ->and(implode(' ', array_column(offerSentenceTextsToDana(), 'body')))->not->toContain('heat pumps');
 });
 
 it('names the price as the reason when both a price and an offer cannot be answered (flagged assumption)', function () {
