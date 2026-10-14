@@ -10,6 +10,7 @@ use App\Models\OwnerAlert;
 use App\Models\User;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
@@ -271,4 +272,90 @@ it('warns about a missing phone while a Phase 1 version is live, and not once a 
 
     Livewire::test(BusinessFolder::class)
         ->assertDontSee('no one has a phone number on their profile');
+});
+
+const BUSINESS_FOLDER_OFFER_PATH = 'business/offers/first-visit-promotion.md';
+
+const BUSINESS_FOLDER_STALE_OFFER_WARNING = 'First visit promotion has run since 2026-10-01 with no end date. Add an end date, or check it is still meant to run.';
+
+/**
+ * The example offer with its end date taken out, so it runs until someone removes it.
+ */
+function businessFolderOfferWithoutEndDate(): void
+{
+    breakFile(BUSINESS_FOLDER_OFFER_PATH, fn (string $text) => str_replace("end_date: 2026-12-31\n", '', $text));
+}
+
+it('does not warn about an offer with no end date on day 90 (D-16)', function () {
+    businessFolderOfferWithoutEndDate();
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-12-30 12:00', 'America/Chicago'));
+
+    $page = Livewire::test(BusinessFolder::class)->assertDontSee('with no end date');
+
+    expect($page->instance()->staleOfferWarnings())->toBe([]);
+});
+
+it('warns about an offer with no end date on day 91, in the business time zone (D-16)', function () {
+    businessFolderOfferWithoutEndDate();
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-12-31 12:00', 'America/Chicago'));
+
+    $page = Livewire::test(BusinessFolder::class)->assertSee(BUSINESS_FOLDER_STALE_OFFER_WARNING);
+
+    expect($page->instance()->staleOfferWarnings())->toBe([BUSINESS_FOLDER_STALE_OFFER_WARNING]);
+});
+
+it('counts the day in the business time zone, not UTC (D-16)', function () {
+    businessFolderOfferWithoutEndDate();
+    activateExampleFolder();
+    // 9 pm on day 90 in Chicago is already the 31st in UTC.
+    $this->travelTo(Carbon::parse('2026-12-30 21:00', 'America/Chicago'));
+
+    expect(Livewire::test(BusinessFolder::class)->instance()->staleOfferWarnings())->toBe([]);
+});
+
+it('does not warn about an offer that has an end date, however late (D-16)', function () {
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2027-06-01 12:00', 'America/Chicago'));
+
+    $page = Livewire::test(BusinessFolder::class)->assertDontSee('with no end date');
+
+    expect($page->instance()->staleOfferWarnings())->toBe([]);
+});
+
+it('does not warn about an offer that has not started yet (D-16)', function () {
+    businessFolderOfferWithoutEndDate();
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-09-01 12:00', 'America/Chicago'));
+
+    expect(Livewire::test(BusinessFolder::class)->instance()->staleOfferWarnings())->toBe([]);
+});
+
+it('warns about no offers and breaks nothing while no version is live (D-16)', function () {
+    $page = Livewire::test(BusinessFolder::class)->assertOk();
+
+    expect($page->instance()->staleOfferWarnings())->toBe([]);
+});
+
+it('escapes an offer name in the forgotten-offer warning (T-02.1-23)', function () {
+    breakFile(BUSINESS_FOLDER_OFFER_PATH, fn (string $text) => str_replace(["end_date: 2026-12-31\n", 'name: First visit promotion'], ['', 'name: "<b>loud</b> deal"'], $text));
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-12-31 12:00', 'America/Chicago'));
+
+    Livewire::test(BusinessFolder::class)
+        ->assertSee('&lt;b&gt;loud&lt;/b&gt; deal has run since', false)
+        ->assertDontSeeHtml('<b>loud</b>');
+});
+
+it('still lets the folder go live while the forgotten-offer warning shows (D-16)', function () {
+    businessFolderOfferWithoutEndDate();
+    $this->travelTo(Carbon::parse('2026-12-31 12:00', 'America/Chicago'));
+
+    $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
+
+    $label = IcmVersion::sole()->label();
+
+    $page->assertNotified("Live as {$label} (".exampleFolderFileCount().' files)')
+        ->assertSee(BUSINESS_FOLDER_STALE_OFFER_WARNING);
 });
