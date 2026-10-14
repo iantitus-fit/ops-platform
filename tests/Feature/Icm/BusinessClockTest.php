@@ -116,3 +116,38 @@ it('says when we reopen in the today-or-next-open words when every day is closed
 
     expect(app(BusinessClock::class)->todayOrNextOpenPhrase(chicago('2026-10-13 10:00')))->toBe('when we reopen');
 });
+
+it('gives the next opening alone', function (string $moment, string $phrase) {
+    activateExampleFolder();
+
+    expect(app(BusinessClock::class)->nextOpeningPhrase(chicago($moment)))->toBe($phrase);
+})->with([
+    'after close on a Tuesday' => ['2026-10-13 16:30', '8 am tomorrow'],
+    'after close on a Friday, Saturday opens later' => ['2026-10-16 18:00', '9 am tomorrow'],
+    'Saturday afternoon, Sunday closed' => ['2026-10-17 14:00', '8 am Monday'],
+    'before opening' => ['2026-10-13 07:00', '8 am today'],
+    'while open' => ['2026-10-13 10:00', '8 am tomorrow'],
+    'Thanksgiving closure is skipped' => ['2026-11-25 18:00', '8 am Friday'],
+]);
+
+it('says the next time we open when no day is open', function () {
+    breakFile('business/hours.md', fn (string $hours) => preg_replace('/\{open: "[\d:]+", close: "[\d:]+"\}/', 'closed', $hours));
+    activateExampleFolder();
+    $clock = app(BusinessClock::class);
+
+    expect($clock->nextOpeningPhrase(chicago('2026-10-13 10:00')))->toBe('the next time we open')
+        ->and($clock->checkInPhrase(chicago('2026-10-13 10:00'), 2))->toBe('the next time we open');
+});
+
+it('checks in a set number of hours after the next opening, never later than closing', function (string $moment, int $hours, string $phrase) {
+    activateExampleFolder();
+
+    expect(app(BusinessClock::class)->checkInPhrase(chicago($moment), $hours))->toBe($phrase);
+})->with([
+    'a hold after close' => ['2026-10-13 16:30', 2, '10 am tomorrow'],
+    'a hold mid-morning moves to the next opening, not today' => ['2026-10-13 09:00', 2, '10 am tomorrow'],
+    'Saturday afternoon, Sunday closed' => ['2026-10-17 14:00', 2, '10 am Monday'],
+    'Thanksgiving closure is skipped' => ['2026-11-25 18:00', 2, '10 am Friday'],
+    'past closing becomes closing' => ['2026-10-16 18:00', 6, '1 pm tomorrow'],
+    'exactly closing stays closing' => ['2026-10-16 18:00', 4, '1 pm tomorrow'],
+]);

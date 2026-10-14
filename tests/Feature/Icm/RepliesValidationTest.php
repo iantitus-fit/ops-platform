@@ -16,6 +16,10 @@ dataset('broken replies', [
     'a fill-in nobody knows' => ['Thanks! {owner_name}', 'Thanks {customer_name}! {owner_name}', 'rules/replies.md: holding_reply uses {customer_name}; the only fill-ins are {owner_name}, {business_name}, {next_open}, {today_or_next_open}, {next_opening} and {check_in_time}'],
     'a missing handoff reply' => ["handoff_reply: \"Of course. I've let {owner_name} know you'd like to talk with a person, and he'll reach out {next_open}.\"\n", '', 'rules/replies.md: handoff_reply is missing, and it is required'],
     'a missing owner name' => ["owner_name: Mike\n", '', 'rules/replies.md: owner_name is missing, and it is required'],
+    'check_in_hours of zero' => ["owner_name: Mike\n", "owner_name: Mike\ncheck_in_hours: 0\n", 'rules/replies.md: check_in_hours must be 1 or more (you wrote 0)'],
+    'check_in_hours of thirteen' => ["owner_name: Mike\n", "owner_name: Mike\ncheck_in_hours: 13\n", 'rules/replies.md: check_in_hours must be 12 or less (you wrote 13)'],
+    'check_in_hours in words' => ["owner_name: Mike\n", "owner_name: Mike\ncheck_in_hours: two\n", 'rules/replies.md: check_in_hours must be a whole number (you wrote two)'],
+    'a check-in time while check_in_hours is off' => ['he\'ll get back to you {next_open}."', 'he\'ll get back to you by {check_in_time}."', 'rules/replies.md: holding_reply uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out'],
     'a utility phone that is not a number' => ['utility_phone: "+13125550188"', 'utility_phone: "call the gas company"', 'rules/replies.md: utility_phone must be a phone number such as +13125550188 (you wrote call the gas company)'],
 ]);
 
@@ -72,4 +76,22 @@ it('still runs the other code checks when the never_say list is empty', function
     $this->artisan('icm:sync')
         ->expectsOutputToContain('rules/replies.md: handoff_reply mentions a price ($20)')
         ->assertExitCode(1);
+});
+
+it('lets a reply use the check-in time once check_in_hours is set', function () {
+    breakFile('rules/replies.md', fn (string $text) => str_replace(
+        ["owner_name: Mike\n", 'he\'ll get back to you {next_open}."'],
+        ["owner_name: Mike\ncheck_in_hours: 2\n", 'he\'ll get back to you by {check_in_time}."'],
+        $text,
+    ));
+
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->replies())->toHaveKey('check_in_hours', 2);
+});
+
+it('treats check_in_hours as off when the owner leaves it out', function () {
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->replies())->not->toHaveKey('check_in_hours');
 });
