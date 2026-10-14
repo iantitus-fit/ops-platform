@@ -161,6 +161,7 @@ class CustomerCard
             ActivityType::OwnerAlerted => ['Owner alert', 'System note:', $activity->summary],
             ActivityType::DraftHeld => $this->heldDraftParts($activity, $subject),
             ActivityType::DraftDiscarded => ['Draft discarded', 'System note:', $activity->summary],
+            ActivityType::DraftAnswered => ['Draft answered', 'System note:', $activity->summary],
             ActivityType::IntakeAnswered => $this->intakeAnswerParts($activity),
             ActivityType::AgentPaused => ['Assistant paused', 'System note:', $activity->summary],
             ActivityType::AgentResumed => ['Assistant resumed', 'System note:', $activity->summary],
