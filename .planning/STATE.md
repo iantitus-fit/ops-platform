@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-13-PLAN.md
-last_updated: "2026-10-14T21:42:07.776Z"
+stopped_at: Completed 02.1-14-PLAN.md
+last_updated: "2026-10-14T21:51:07.420Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: 6ce7cd5250ae915d81449f340b0c21b3d10fdd92
+state_head: c2d63008a333e0e5cc2fbf90019edab37aa11e65
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 61
+  completed_plans: 62
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 14 of 16
+Plan: 15 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -118,6 +118,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P11 | 6 min | 3 tasks | 7 files |
 | Phase 02.1 P12 | 8 min | 3 tasks | 7 files |
 | Phase 02.1 P13 | 16 min | 3 tasks | 7 files |
+| Phase 02.1 P14 | 6 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -231,6 +232,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: A price draft whose run named no service closes only when touches_waiting is exactly true; on false or null it stays live and the thread warns the owner
 - [Phase 02.1]: A closing run is handled as a run with no waiting draft: send first, close only after a text went out, then store held words as a first draft with no holding reply, no alert
 - [Phase 02.1]: A split needs touches_waiting true, easy_reply, a valid easy_label and non-blank touching words; the faq/intake guard and all three checks always run on the easy part; easy words that overflow one text are dropped
+- [Phase 02.1]: 02.1-14: whole-thread draft (D-35) is always stored under the first reply's hold reason; alert is complaint when either reply held as a complaint; the cover-both override of the never-mention rule lives in its own prompt section, RULES untouched
 
 ### Pending Todos
 
@@ -264,6 +266,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T21:42:07.692Z
-Stopped at: Completed 02.1-13-PLAN.md
+Last session: 2026-10-14T21:51:07.341Z
+Stopped at: Completed 02.1-14-PLAN.md
 Resume file: None
