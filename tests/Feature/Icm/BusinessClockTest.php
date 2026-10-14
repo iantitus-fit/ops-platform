@@ -97,3 +97,22 @@ it('reads the margin from config', function () {
     expect(app(BusinessClock::class)->nextOpenPhrase(chicago('2026-10-13 15:30')))
         ->toBe('when we open at 8 am tomorrow');
 });
+
+it('says today if possible only while the shop is open with at least an hour left', function (string $moment, string $phrase) {
+    activateExampleFolder();
+
+    expect(app(BusinessClock::class)->todayOrNextOpenPhrase(chicago($moment)))->toBe($phrase);
+})->with([
+    'mid-morning' => ['2026-10-13 10:00', 'today if possible, or after we open at 8 am tomorrow'],
+    'exactly 60 minutes before close' => ['2026-10-13 16:00', 'today if possible, or after we open at 8 am tomorrow'],
+    '59 minutes before close' => ['2026-10-13 16:01', 'after we open at 8 am tomorrow'],
+    'before opening' => ['2026-10-13 07:00', 'after we open at 8 am today'],
+    'Saturday afternoon, Sunday closed' => ['2026-10-17 14:00', 'after we open at 8 am Monday'],
+]);
+
+it('says when we reopen in the today-or-next-open words when every day is closed', function () {
+    breakFile('business/hours.md', fn (string $hours) => preg_replace('/\{open: "[\d:]+", close: "[\d:]+"\}/', 'closed', $hours));
+    activateExampleFolder();
+
+    expect(app(BusinessClock::class)->todayOrNextOpenPhrase(chicago('2026-10-13 10:00')))->toBe('when we reopen');
+});

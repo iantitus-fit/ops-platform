@@ -46,3 +46,18 @@ it('says the time the shop reopens in the holding reply after hours', function (
     expect(app(FixedReplies::class)->holdingReply($moment))
         ->toEndWith('get back to you when we open at 8 am Monday.');
 });
+
+it('fills the today-or-next-open words in a holding reply', function () {
+    breakFile('rules/replies.md', fn (string $replies) => str_replace(
+        "he'll get back to you {next_open}.",
+        "he'll get back to you {today_or_next_open}.",
+        $replies,
+    ));
+    activateExampleFolder();
+
+    $moment = CarbonImmutable::parse('2026-10-13 16:30', 'America/Chicago');
+
+    expect(app(FixedReplies::class)->holdingReply($moment))
+        ->toEndWith("he'll get back to you after we open at 8 am tomorrow.")
+        ->not->toContain('{');
+});
