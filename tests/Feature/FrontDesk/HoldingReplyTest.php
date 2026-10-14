@@ -77,7 +77,7 @@ function holdingReplyMessages(): array
 it('texts the customer a holding reply that says when the owner will answer, with the disclosure and sign-off (D-12, D-13, D-50)', function () {
     holdingReplyPriceQuestionHeld('2026-10-13 16:30');
 
-    $words = "Thanks! Mike answers questions like this himself. I've sent him your message, and he'll get back to you when we open at 8 am tomorrow.";
+    $words = "Thanks. I've passed this to Mike and you're on his list. He'll get back to you after we open at 8 am tomorrow.";
     $voice = app(ActiveConfig::class)->voice();
     $holding = holdingReplyMessages();
 
@@ -113,7 +113,7 @@ it('says today while the shop is open and leaves the disclosure out when an agen
     $body = $texts[1]['body'] ?? '';
 
     expect($texts)->toHaveCount(2)
-        ->and($body)->toEndWith("he'll get back to you today.\n".$voice['sign_off'])
+        ->and($body)->toEndWith("He'll get back to you today if possible, or after we open at 8 am tomorrow.\n".$voice['sign_off'])
         ->and($body)->not->toContain($voice['ai_disclosure']);
 });
 
