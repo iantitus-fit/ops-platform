@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-03-PLAN.md
-last_updated: "2026-10-14T19:59:15.747Z"
+stopped_at: Completed 02.1-04-PLAN.md
+last_updated: "2026-10-14T20:09:18.303Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: ac645d76d08747f7246ef5da79a74a24eac59942
+state_head: 29afe799f5b65eb4f1d1936f70dc3bb9d6abd84c
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 51
+  completed_plans: 52
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 4 of 16
+Plan: 5 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -108,6 +108,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P01 | 5 min | 3 tasks | 13 files |
 | Phase 02.1 P02 | 10 min | 2 tasks | 2 files |
 | Phase 02.1 P03 | 25 min | 2 tasks | 8 files |
+| Phase 02.1 P04 | 7 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -203,6 +204,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: closeAsAnswered returns false for a gone draft instead of throwing (code calls it, not the owner)
 - [Phase 02.1]: Plan 02: "$5k" reads as 500 cents (the "$5" it starts with), so shorthand amounts fail closed against any declared amount; percents compare as digits written
 - [Phase 02.1]: 02.1-03: {check_in_time} falls back to the next-opening words when the live version has no check_in_hours, so braces never reach a customer
+- [Phase 02.1]: 02.1-04: Only discount_reply skips the discount code check; check_in is a plain owner_alert reason that follows the folder's right_away list (RaiseOwnerAlert unchanged, D-38)
 
 ### Pending Todos
 
@@ -236,6 +238,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T19:59:15.669Z
-Stopped at: Completed 02.1-03-PLAN.md
+Last session: 2026-10-14T20:09:18.231Z
+Stopped at: Completed 02.1-04-PLAN.md
 Resume file: None
