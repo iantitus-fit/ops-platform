@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-10-PLAN.md
-last_updated: "2026-10-14T21:02:22.461Z"
+stopped_at: Completed 02.1-11-PLAN.md
+last_updated: "2026-10-14T21:11:42.039Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: 9e2a231abbf37bf58008614efba6212a48f3e5e7
+state_head: 47c5f8c647a517e79998d6efd6eefe51450ad733
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 58
+  completed_plans: 59
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 11 of 16
+Plan: 12 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -115,6 +115,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P08 | 35 min | 3 tasks | 10 files |
 | Phase 02.1 P09 | 8 min | 3 tasks | 6 files |
 | Phase 02.1 P10 | 15 min | 2 tasks | 8 files |
+| Phase 02.1 P11 | 6 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-09: identical amount sets read as same even when the sentence key differs; ranges that only touch are higher or lower (D-39)
 - [Phase 02.1]: 02.1-09: price_pending rides on each run's own message meta; newest-first lookups on Conversation::messages() must reorder()
 - [Phase 02.1]: 02.1-10: customerWroteAgain compares inbound ids with max(meta.in_reply_to), never the draft's id or time; staleOfferWarnings warns when start_date + 90 days is before today (business time zone), so day 91 warns and day 90 does not
+- [Phase 02.1]: 02.1-11: offers are date-checked only, in the business zone, end date inclusive; code never judges eligibility
+- [Phase 02.1]: 02.1-11: when a price and an offer both cannot be answered the hold reason is price:no_sentence; a missing discount_reply sends the holding words as kind discount_holding
 
 ### Pending Todos
 
@@ -254,6 +257,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T21:02:22.385Z
-Stopped at: Completed 02.1-10-PLAN.md
+Last session: 2026-10-14T21:11:41.956Z
+Stopped at: Completed 02.1-11-PLAN.md
 Resume file: None

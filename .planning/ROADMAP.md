@@ -215,7 +215,7 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 10/16 plans executed
+**Plans:** 11/16 plans executed
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
@@ -228,7 +228,7 @@ Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans s
 - [x] 02.1-08-PLAN.md — Wave 8: The owner's price sentence sent by code; mixed questions; what still holds (ANSR-01)
 - [x] 02.1-09-PLAN.md — Wave 9: Intake first, the keyed sentence or the default, re-ask once, and the change leads (ANSR-01)
 - [x] 02.1-10-PLAN.md — Wave 10: "The customer wrote again since this draft" and the forgotten-offer warning (ANSR-02, ANSR-03)
-- [ ] 02.1-11-PLAN.md — Wave 11: Live offers answer a discount question; the discount and complaint holding replies (ANSR-02, ANSR-04)
+- [x] 02.1-11-PLAN.md — Wave 11: Live offers answer a discount question; the discount and complaint holding replies (ANSR-02, ANSR-04)
 - [ ] 02.1-12-PLAN.md — Wave 12: While a draft waits: answer what does not touch it, the label guard, and one owner-written line every time (ANSR-03, ANSR-04)
 - [ ] 02.1-13-PLAN.md — Wave 13: A price sentence closes the price draft it answers; split the easy part off (ANSR-03, ANSR-01)
 - [ ] 02.1-14-PLAN.md — Wave 14: A held unrelated reply becomes one whole-thread draft, inside the time budget (ANSR-03)
@@ -301,7 +301,7 @@ Phases execute in numeric order: 1 → 2 → 02.1 → 02.2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
-| 02.1. Faster Answers | 10/16 | In Progress | - |
+| 02.1. Faster Answers | 11/16 | In Progress | - |
 | 02.2. Owner Loop | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
