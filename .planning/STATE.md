@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-07-PLAN.md
-last_updated: "2026-10-14T20:34:48.416Z"
+stopped_at: Completed 02.1-08-PLAN.md
+last_updated: "2026-10-14T20:45:14.598Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: c9d7add0ae19cdd7ac0c5dc93e17f58a83c613bf
+state_head: a94a9805a2f59bb5d6e30b883072a968e95bd65b
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 55
+  completed_plans: 56
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 8 of 16
+Plan: 9 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -112,6 +112,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P05 | 12 min | 2 tasks | 10 files |
 | Phase 02.1 P06 | 7 min | 2 tasks | 15 files |
 | Phase 02.1 P07 | 6 min | 2 tasks | 13 files |
+| Phase 02.1 P08 | 35 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -212,6 +213,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-05: reply stays required and non-blank; new AgentReply fields are tolerant and fall back (touches null = touches, waiting_note null = added-info, bad easy_label = no split)
 - [Phase 02.1]: Price sentence sync: first failing check per sentence in fixed order; price_policy none gives one line; default never falls back to price_cents
 - [Phase 02.1]: Offer sentences are compared with amount_cents or percent only when exactly one is named and it passed its own rule; duplicate slugs are checked per type
+- [Phase 02.1]: 02.1-08: code checks run on the model's words alone, never the owner's sentence; combined length measured separately
+- [Phase 02.1]: 02.1-08: a refused code-only send becomes an empty send_refused draft, never silence
 
 ### Pending Todos
 
@@ -245,6 +248,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T20:34:48.344Z
-Stopped at: Completed 02.1-07-PLAN.md
+Last session: 2026-10-14T20:45:14.529Z
+Stopped at: Completed 02.1-08-PLAN.md
 Resume file: None
