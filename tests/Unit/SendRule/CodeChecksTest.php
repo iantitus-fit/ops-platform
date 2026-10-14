@@ -84,3 +84,42 @@ it('reads every dollar amount in a sentence as integer cents, unique and sorted'
     'no dollar sign' => ['We open at 8 tomorrow', []],
     'dollars spelled out are not an amount' => ['That is 120 dollars', []],
 ]);
+
+it('finds percentages as the digits written, in order', function (string $text, array $expected) {
+    expect(CodeChecks::percentsIn($text))->toBe($expected);
+})->with([
+    'a percent sign' => ['takes 15% off', ['15']],
+    'the word percent' => ['15 percent off', ['15']],
+    'a decimal percent keeps its digits' => ['12.5% off', ['12.5']],
+    'two percents in order' => ['10% and 20%', ['10', '20']],
+    'no percent' => ['no percent here', []],
+]);
+
+it('finds the earliest money word or k shorthand as written', function (string $text, ?string $expected) {
+    expect(CodeChecks::moneyWordIn($text))->toBe($expected);
+})->with([
+    'thousand' => ['runs 5 thousand', 'thousand'],
+    'grand' => ['about 5 grand', 'grand'],
+    'case is kept' => ['Five Hundred', 'Hundred'],
+    'k shorthand' => ['costs 5k', '5k'],
+    'k shorthand with a dollar sign' => ['$5k installed', '$5k'],
+    'k shorthand with a space and a capital' => ['about 5 K', '5 K'],
+    'dollars spelled out' => ['120 dollars', 'dollars'],
+    'a buck' => ['a buck', 'buck'],
+    'grandfather is not grand' => ['grandfather', null],
+    'dollar amounts written with a dollar sign are fine' => ['$2,000 to $5,000', null],
+    'tons are not money' => ['3 tons', null],
+]);
+
+it('finds a plain number near a price word through the same rule the veto uses', function (string $text, ?string $expected) {
+    expect(CodeChecks::plainNumberNearPriceWord($text))->toBe($expected);
+})->with([
+    'costs and a number' => ['It costs 4000', '4000'],
+    'a fee and a number' => ['The fee is 89', '89'],
+    'a dollar amount is not a plain number' => ['$89 diagnostic fee', null],
+    'a size far from any price word' => ['under 3 tons, a replacement system typically runs $2,000', null],
+]);
+
+it('lists the money words in code', function () {
+    expect(CodeChecks::MONEY_WORDS)->toBe(['hundred', 'thousand', 'million', 'grand', 'dollar', 'dollars', 'buck', 'bucks']);
+});
