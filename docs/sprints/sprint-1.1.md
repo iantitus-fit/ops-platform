@@ -40,7 +40,7 @@ what the opening hours can keep.
 5. Holding replies use only fill-ins computed from `hours.md`. The check-in time
    is off by default. Every new reply the folder needs is required at sync, and
    the example folder passes with all of them.
-   Delivered by plans 02.1-03 (the time fill-ins and the check-in time, off by default), 02.1-04 (every new reply required at sync, the example folder rewritten) (tests: tests/Feature/Icm/BusinessClockTest.php, tests/Feature/Icm/RepliesValidationTest.php, tests/Feature/SendRule/FixedRepliesTest.php).
+   Delivered by plans 02.1-03 (the time fill-ins and the check-in time, off by default), 02.1-04 (every new reply required at sync, the example folder rewritten) (tests: tests/Feature/Icm/BusinessClockTest.php, tests/Feature/Icm/RepliesValidationTest.php, tests/Feature/SendRule/FixedRepliesTest.php) and 02.1-16 (the whole suite, 1455 tests, passed on SQLite and 1455 tests on PostgreSQL 17).
 
 Still open for UAT, because only a person with a phone or a live account can
 check them: the live-model check (does a real model set `price_services`,
