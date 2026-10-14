@@ -32,6 +32,15 @@ class CodeChecks
     public const PROMISE_PHRASES = ['guarantee', 'guaranteed', 'promise', 'promised', 'for sure', 'definitely', '100%', 'no matter what', 'warranty covers'];
 
     /**
+     * Words that spell money without "$" and digits (D-37). A price or offer sentence that uses one is
+     * refused at sync, because the sync can only compare an amount written as "$" and digits. Listed in
+     * code, like the veto lists.
+     *
+     * @var list<string>
+     */
+    public const MONEY_WORDS = ['hundred', 'thousand', 'million', 'grand', 'dollar', 'dollars', 'buck', 'bucks'];
+
+    /**
      * A money amount taken off the price, such as "$50 off" or "50 dollars off", which no phrase above can
      * spell because the number changes.
      *
@@ -134,6 +143,41 @@ class CodeChecks
         sort($cents);
 
         return $cents;
+    }
+
+    /**
+     * Every percentage in the text as the digits written, in order of appearance, for "15%" and
+     * "15 percent" alike. "12.5%" gives "12.5", so it can never match a percent field of 12.
+     *
+     * @return list<string>
+     */
+    public static function percentsIn(string $text): array
+    {
+        preg_match_all('/(\d+(?:\.\d+)?)(?:\s?%|\s+percent(?![\p{L}\p{N}_]))/iu', $text, $found);
+
+        return $found[1];
+    }
+
+    /**
+     * The earliest money word or k shorthand as written ("thousand", "Grand", "5k", "$5k", "5 K"), or null.
+     * Words match whole words only, so "grandfather" is not "grand". A "$" amount in digits is not a money
+     * word. The sync refuses a price or offer sentence that has one (D-37).
+     */
+    public static function moneyWordIn(string $text): ?string
+    {
+        return self::earliest($text, [
+            ...array_map(self::phrasePattern(...), self::MONEY_WORDS),
+            '/(?<![\p{L}\p{N}_])\$?\d+(?:\.\d+)?\s?[kK](?![\p{L}\p{N}_])/u',
+        ]);
+    }
+
+    /**
+     * A plain number within three words of a price word, such as "the fee is 89", through the veto's own
+     * rule. The sync uses it to refuse an amount written without a "$" sign.
+     */
+    public static function plainNumberNearPriceWord(string $text): ?string
+    {
+        return self::numberNearPriceWord($text);
     }
 
     /**
