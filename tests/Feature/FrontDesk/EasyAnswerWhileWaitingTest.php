@@ -4,6 +4,7 @@ use App\Enums\DraftResolution;
 use App\Enums\GateOutcome;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Enums\ReplyLabel;
 use App\Icm\ActiveConfig;
 use App\Models\Message;
 use App\Models\OwnerAlert;
@@ -15,6 +16,12 @@ const EASY_ANSWER_OWNER_PHONE = '+12025550199';
 const EASY_ANSWER_CUSTOMER_PHONE = '+12025550123';
 
 const EASY_ANSWER_ADDED_INFO_LINE = "Got it, I've passed that along to Mike with your question.";
+
+const EASY_ANSWER_PARTIAL_LINE = "I've passed your other question to Mike, and he'll follow up on it.";
+
+const EASY_ANSWER_CHECK_IN_LINE = "Thanks for checking in. Mike still has your question and you're on his list. He'll get back to you today if possible, or after we open at 8 am tomorrow.";
+
+const EASY_ANSWER_AC_SENTENCE = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
 
 /**
  * Tuesday 2026-10-13 at 10:00 in the shop's zone, the owner with a phone, and Dana's price question held as a draft
@@ -223,4 +230,152 @@ it('records no guard when no draft waits (D-20)', function () {
     expect($sent->status)->toBe(MessageStatus::Sent)
         ->and($sent->gate['checks']['label']['guard'])->toBeNull()
         ->and($sent->gate['checks']['label']['guard_passed'])->toBeNull();
+});
+
+/**
+ * The model's script for a text that touches the waiting question and also asks something easy.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function easyAnswerSplitScript(array $overrides = []): array
+{
+    return [
+        'reply' => 'Mike will text you about Friday and the price.',
+        'label' => 'price',
+        'touches_waiting' => true,
+        'easy_reply' => 'Yes, we service heat pumps.',
+        'easy_label' => 'faq_answer',
+        ...$overrides,
+    ];
+}
+
+it('answers the easy part now with the partial holding line and keeps the touching part as the fresh draft (D-19, D-20)', function () {
+    easyAnswerPriceQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerCustomerTexts('Do you do heat pumps? Also Friday might work better', easyAnswerSplitScript(['label' => 'scheduling']));
+
+    $sent = Message::query()->where('kind', MessageKind::PartialHolding->value)->sole();
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater('Yes, we service heat pumps. '.EASY_ANSWER_PARTIAL_LINE))
+        ->and($sent->meta['parts'])->toBe(['model_words', 'partial_holding_line'])
+        ->and($sent->gate_outcome)->toBe(GateOutcome::Send)
+        ->and($sent->label)->toBe(ReplyLabel::FaqAnswer)
+        ->and($sent->gate['checks']['label']['guard'])->toBe(['faq_answer', 'intake_question'])
+        ->and($sent->gate['checks']['label']['guard_passed'])->toBeTrue()
+        ->and($sent->gate['inputs']['agent_reply'])->toBe('Yes, we service heat pumps.')
+        ->and($live->id)->not->toBe($waiting->id)
+        ->and($live->body)->toBe('Mike will text you about Friday and the price.')
+        ->and($live->gate_reason)->toBe('touches_waiting')
+        ->and($waiting->fresh()->resolution)->toBe(DraftResolution::Replaced)
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you about Friday and the price.', 'Yes, we service heat pumps.'])
+        ->and(Message::query()->where('body', 'like', '%Friday%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('sends no easy words when Jev holds the easy part, and still tells the customer it was passed along (D-20)', function () {
+    easyAnswerPriceQuestionHeld();
+    fakeClassifier()->answer('faq', 0.95, ['promise' => 0.9]);
+
+    easyAnswerCustomerTexts('Do you do heat pumps? Also Friday might work better', easyAnswerSplitScript());
+
+    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Yes, we service heat pumps.'])
+        ->and(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('body', 'like', '%heat pumps%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('label:price');
+});
+
+it('holds a scheduling easy part with the guard and never asks Jev about it (D-20)', function () {
+    easyAnswerPriceQuestionHeld();
+
+    easyAnswerCustomerTexts('Is Friday open? Also, do you do heat pumps?', easyAnswerSplitScript([
+        'easy_reply' => 'We have 9 am Friday open. Does that work?',
+        'easy_label' => 'scheduling',
+    ]));
+
+    expect(fakeClassifier()->calls())->toBe([])
+        ->and(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
+        ->and(Message::query()->where('body', 'like', '%9 am Friday%')->where('status', MessageStatus::Sent->value)->count())->toBe(0);
+});
+
+it('does not split without a clear easy part on a clear touch (ANSR-03)', function (?bool $touches, string $easyReply, ?string $easyLabel) {
+    easyAnswerPriceQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerCustomerTexts('Do you do heat pumps? Also Friday might work better', easyAnswerSplitScript([
+        'touches_waiting' => $touches,
+        'easy_reply' => $easyReply,
+        'easy_label' => $easyLabel,
+    ]));
+
+    expect(fakeClassifier()->calls())->toBe([])
+        ->and(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
+        ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->id)->not->toBe($waiting->id);
+})->with([
+    'a blank easy reply' => [true, '', 'faq_answer'],
+    'no easy label' => [true, 'Yes, we service heat pumps.', null],
+    'an easy label outside the vocabulary' => [true, 'Yes, we service heat pumps.', 'banana'],
+    'touches_waiting missing' => [null, 'Yes, we service heat pumps.', 'faq_answer'],
+]);
+
+it('puts the price sentence, the easy words and the partial holding line in one text (D-19, D-36)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerCustomerTexts('How much is an AC repair? Also, do you do heat pumps?', easyAnswerSplitScript([
+        'reply' => 'Mike will text you about Thursday.',
+        'label' => 'scheduling',
+        'price_services' => ['ac-repair'],
+    ]));
+
+    $sent = Message::query()->where('kind', MessageKind::PartialHolding->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_AC_SENTENCE.' Yes, we service heat pumps. '.EASY_ANSWER_PARTIAL_LINE))
+        ->and($sent->meta['parts'])->toBe(['code_sentences', 'model_words', 'partial_holding_line'])
+        ->and($sent->meta['price_sentences'][0]['slug'])->toBe('ac-repair')
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->id)->not->toBe($waiting->id)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('waiting_guard:scheduling');
+});
+
+it('lets a check-in line lead the text that carries the easy words (D-28, D-36)', function () {
+    easyAnswerPriceQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerCustomerTexts('Any news? Also, do you do heat pumps?', easyAnswerSplitScript([
+        'reply' => 'Mike still has your question.',
+        'waiting_note' => 'check_in',
+    ]));
+
+    $sent = Message::query()->where('kind', MessageKind::CheckInReply->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater('Yes, we service heat pumps. '.EASY_ANSWER_CHECK_IN_LINE))
+        ->and($sent->meta['parts'])->toBe(['model_words', 'check_in_line'])
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->id)->toBe($waiting->id)
+        ->and(OwnerAlert::query()->count())->toBe(2);
+});
+
+it('sends only the safety line when Jev reads a danger in the easy part (D-19)', function () {
+    easyAnswerPriceQuestionHeld();
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.9]);
+
+    easyAnswerCustomerTexts('Do you do heat pumps? Also my basement is flooding', easyAnswerSplitScript());
+
+    expect(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
+        ->and(Message::query()->where('body', 'like', '%heat pumps%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('classifier:life_safety');
 });
