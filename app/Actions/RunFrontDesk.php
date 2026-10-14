@@ -72,6 +72,9 @@ use Illuminate\Support\Str;
  */
 class RunFrontDesk
 {
+    /** The waiting_note value for a customer asking whether anyone has seen their question. */
+    private const string CHECK_IN = 'check_in';
+
     public function __construct(
         private readonly ActiveConfig $activeConfig,
         private readonly RunFrontDeskAgent $runFrontDeskAgent,
@@ -162,7 +165,8 @@ class RunFrontDesk
         $priceHeld = count($priceSentences) !== count($picks);
         $noLiveOffer = $run->reply->asksDiscount && $offers === [];
 
-        $codeOnly = $words === '' && $sentences !== [] && ! $priceHeld && ! $noLiveOffer;
+        $checkIn = $waiting !== null && $run->reply->waitingNote === self::CHECK_IN;
+        $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer;
 
         if ($codeOnly && $waiting === null) {
             $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'));
@@ -211,7 +215,7 @@ class RunFrontDesk
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
         if ($waiting !== null) {
-            $this->answerWhileDraftWaits($run, $conversation, $burst, $waiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'));
+            $this->answerWhileDraftWaits($run, $conversation, $burst, $waiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn);
 
             return;
         }
@@ -221,11 +225,13 @@ class RunFrontDesk
         }
 
         if ($verdict->outcome === GateOutcome::Send) {
-            $verdict = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
+            $sent = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
 
-            if ($verdict === null) {
+            if (! $sent instanceof Verdict) {
                 return;
             }
+
+            $verdict = $sent;
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === []);
@@ -250,29 +256,27 @@ class RunFrontDesk
 
     /**
      * Send the model's words that passed the send rule, with any owner sentences and fixed line that ride with them, as
-     * one text. Returns null when the text went out or its failure was raised to the owner. Returns the verdict held
-     * for `send_refused` when the sender only refused it, so the caller keeps the words as a draft.
+     * one text. Returns the message that went out, or null when its failure was raised to the owner. Returns the verdict
+     * held for `send_refused` when the sender only refused it, so the caller keeps the words as a draft.
      *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
      * @param  array{meta: array<string, mixed>}  $sentMeta
      */
-    private function sendPassingReply(AgentRun $run, Conversation $conversation, Collection $burst, Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta): ?Verdict
+    private function sendPassingReply(AgentRun $run, Conversation $conversation, Collection $burst, Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta): Message|Verdict|null
     {
         try {
             if ($parts->codeSentences === [] && $parts->line === null) {
-                $this->outboundSender->send(
+                return $this->outboundSender->send(
                     $conversation,
                     $composed,
                     MessageAuthor::Agent,
                     SendOrigin::Automated,
                     [...$attributes, ...$verdict->toAttributes($run->reply->label)],
                 );
-            } else {
-                $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
             }
 
-            return null;
+            return $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
         } catch (DomainException $exception) {
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
                 return null;
@@ -283,14 +287,22 @@ class RunFrontDesk
     }
 
     /**
-     * The run for a customer who writes while a draft waits for the owner (D-18, D-22, D-29). The waiting draft W is
-     * the live draft when the run started; the model's words are R and the owner's price and offer sentences are S.
+     * The run for a customer who writes while a draft waits for the owner (D-18, D-22, D-28, D-29). The waiting draft W
+     * is the live draft when the run started; the model's words are R and the owner's price and offer sentences are S.
      *
      * Only a reply the model marks as not touching W (`touches_waiting` exactly false) may send while W stays live: it
      * goes out beside W with no new alert. A reply that touches W, or says nothing about it, never sends, because a
      * stale "Thursday" draft beside a "Friday" answer would send the wrong day; it becomes the one fresh draft that
-     * replaces W. A customer is never left with no reply: a held run ends with one owner-written line, either the
-     * added-info reply or, when the owner's own text already ended the wait, a new holding reply.
+     * replaces W.
+     *
+     * A check-in adds nothing for the owner to answer, so its words never replace W and never send beside it: when they
+     * would send but touch W, are held only by the label guard, or are blank, W stays as it is, the words are dropped,
+     * and the owner-written check-in reply goes with any sentences. A check-in whose words are held for a reason of their
+     * own still replaces W, but the fresh draft keeps W's body, so the owner can never send a reassurance as the answer.
+     *
+     * A customer is never left with no reply: a run sends one owner-written line, chosen in order: the complaint reply,
+     * the check-in reply, the partial holding line when an answer rides, the added-info reply, or, when the owner's own
+     * text already ended the wait, a new holding reply (D-34, D-36). Only a check-in alerts the owner (D-29).
      *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
@@ -298,45 +310,114 @@ class RunFrontDesk
      * @param  list<PricePick>  $picks
      * @param  list<string>  $offerSlugs
      */
-    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs): void
+    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn): void
     {
+        if ($verdict?->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
+            $verdict = $checkIn ? null : $verdict->heldFor('touches_waiting');
+        } elseif ($checkIn && $this->holdsOnlyBecauseWordsAreNotAnAnswer($verdict)) {
+            $verdict = null;
+        }
+
         if ($verdict === null) {
-            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs);
+            if ($checkIn) {
+                $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta);
+            } else {
+                $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs);
+            }
 
             return;
         }
 
-        if ($verdict->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
-            $verdict = $verdict->heldFor('touches_waiting');
-        }
+        $withLine = $checkIn ? new ReplyParts(codeSentences: $parts->codeSentences, modelWords: $parts->modelWords, lineKind: MessageKind::CheckInReply, line: $this->fixedReplies->checkInReply(now())) : $parts;
 
-        if ($verdict->outcome === GateOutcome::Send && $parts->codeSentences !== [] && $this->sendCombinedReply->composedLength($conversation, $parts) > SendOwnerReply::MAX_LENGTH) {
+        if ($verdict->outcome === GateOutcome::Send && ($withLine->codeSentences !== [] || $withLine->line !== null) && $this->sendCombinedReply->composedLength($conversation, $withLine) > SendOwnerReply::MAX_LENGTH) {
             $verdict = $verdict->heldFor('too_long');
         }
 
         if ($verdict->outcome === GateOutcome::Send) {
-            $verdict = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
+            $sent = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $withLine, $attributes, $sentMeta);
 
-            if ($verdict === null) {
+            if (! $sent instanceof Verdict) {
+                if ($sent !== null && $checkIn) {
+                    $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+                }
+
                 return;
             }
+
+            $verdict = $sent;
         }
 
-        $words = (string) $parts->modelWords;
+        $keepsWaitingBody = $parts->modelWords === '' || $checkIn;
 
-        $this->storeDraft($conversation, $words === '' ? $waiting->body : $words, $verdict, $run->reply->label, $attributes, sendHolding: false);
+        $this->storeDraft(
+            $conversation,
+            $keepsWaitingBody ? $waiting->body : (string) $parts->modelWords,
+            $verdict,
+            $keepsWaitingBody ? $waiting->label ?? $run->reply->label : $run->reply->label,
+            $attributes,
+            sendHolding: false,
+        );
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
         }
 
-        if ($parts->codeSentences !== []) {
+        if (in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true) || ($parts->codeSentences !== [] && ! $checkIn)) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+        } elseif ($checkIn) {
+            $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta);
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
             $this->sendAddedInfoReply($conversation, $sentMeta);
         } else {
             $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
         }
+    }
+
+    /**
+     * Whether a check-in's words were held only because they are not an answer to send: the label guard of a waiting
+     * scheduling draft, or a label such as other that the owner did not put on the send_on_own list. A hold for a reason
+     * of the words' own, such as a price, a promise, a complaint or a code check, is not this.
+     */
+    private function holdsOnlyBecauseWordsAreNotAnAnswer(?Verdict $verdict): bool
+    {
+        $reason = (string) $verdict?->reasonCode;
+
+        if (str_starts_with($reason, 'waiting_guard:')) {
+            return true;
+        }
+
+        $label = str_starts_with($reason, 'label:') ? ReplyLabel::tryFrom(substr($reason, strlen('label:'))) : null;
+
+        return $label !== null && ! in_array($label, ReplyLabel::neverOnItsOwn(), true);
+    }
+
+    /**
+     * Tell a customer who checked in on a waiting question that the owner still has it, with any owner sentences in front
+     * of the line, and alert the owner that the customer checked in (D-28). The alert follows only a text that went out,
+     * and its timing is the owner's: RaiseOwnerAlert follows the right_away list (D-38). A text that cannot go out is
+     * reported to the log; the draft and its own alert already exist.
+     *
+     * @param  Collection<int, Message>  $burst
+     * @param  array{meta: array<string, mixed>}  $attributes
+     */
+    private function sendCheckInReply(Conversation $conversation, Collection $burst, ReplyParts $parts, array $attributes): void
+    {
+        try {
+            $this->sendCombinedReply->handle($conversation, new ReplyParts(
+                codeSentences: $parts->codeSentences,
+                lineKind: MessageKind::CheckInReply,
+                line: $this->fixedReplies->checkInReply(now()),
+            ), $attributes);
+        } catch (DomainException $exception) {
+            if (! $this->alertAboutFailedSend($exception, $conversation, $burst)) {
+                report($exception);
+            }
+
+            return;
+        }
+
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
     }
 
     /**

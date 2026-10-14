@@ -195,7 +195,7 @@ it('sends the answer and then the check-in reply as one text when a check-in rid
         'waiting_note' => 'check_in',
     ], 'Any news? Also, do you service heat pumps?');
 
-    $sent = Message::query()->where('kind', MessageKind::AgentReply->value)->sole();
+    $sent = Message::query()->where('kind', MessageKind::AgentReply->value)->where('status', MessageStatus::Sent->value)->sole();
 
     expect(waitingRepliesTextsToDana())->toHaveCount(2)
         ->and(waitingRepliesTextsToDana()[1]['body'])->toBe(waitingRepliesLater('Yes, we service heat pumps. '.WAITING_REPLIES_CHECK_IN_LINE))
