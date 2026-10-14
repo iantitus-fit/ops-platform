@@ -2,13 +2,13 @@
 type: object
 cluster: conversations
 status: live
-verified: 2026-10-13 @ 2bac8cb (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-14 @ c48491d (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Models/Conversation.php
 ---
 
 # Conversation and its paused state
 
-**Type:** object · **Mark:** live · **Checked:** 2026-10-13 @ 2bac8cb · **Where:** `app/Models/Conversation.php:15`
+**Type:** object · **Mark:** live · **Checked:** 2026-10-14 @ c48491d · **Where:** `app/Models/Conversation.php:15`
 
 **One sentence.** A `conversations` row is one thread per contact, at most one open at a time; its paused state (`paused_at`, `paused_reason`, `paused_by`) says the assistant has stepped back, why, and who did it.
 
@@ -17,9 +17,9 @@ entity: app/Models/Conversation.php
 ## Shape
 - Table: `database/migrations/2026_10_11_131451_create_conversations_table.php:18`. Pause columns: `database/migrations/2026_10_12_000008_add_pause_columns_to_conversations_table.php:23-25`. That migration drops and recreates the one-open index (`:44-48`) because SQLite's table rebuild loses its `where` clause.
 - Open conversation is found or made in `RecordInbound.php:369` (`:379` creates). `ConversationStatus` is `open` or `closed` (`app/Enums/ConversationStatus.php`); closed refuses every send (`OutboundSender.php:128`).
-- Pause reasons: taken over, asked for a person, owner replied, life safety, reply cap (`app/Enums/PausedReason.php:9-15`). All five go through `PauseConversation::handle` (`PauseConversation.php:34`), from eight call sites: take over `ViewConversation.php:29`, reply cap `RunFrontDesk.php:100`, asked for a person `RunFrontDesk.php:260`, owner reply `SendOwnerReply.php:59`, and the safety line in four places: after its send or a failed send (`SendLifeSafetyLine.php:113`, and `:138` when a retry finishes a pause an earlier run missed), when the wait for its send lock runs out (`SendLifeSafetyLine.php:67`), and when `RespondToLifeSafety` fails for good (`failed()`, `RespondToLifeSafety.php:86`). Hand back: `HandBackConversation.php:31`. Both re-read the row under a lock and do nothing if it is already in the state asked for.
-- Reply cap: at most 6 agent texts an hour and 20 a day per conversation (`config/gate.php:124-127`, counted in `replyCapReached`, `RunFrontDesk.php:237-247`); each text counts at the time it went out (`sent_at`, or `created_at` while it is still queued), so a draft the owner sends counts when it was sent; the safety line is not counted. At the cap the conversation pauses and the owner is alerted (D-52).
-- Take over and Hand back are the owner's two controls (`ViewConversation.php:24` and `:33`); the banner is `ConversationThread::pausedBanner` (`ConversationThread.php:188`).
+- Pause reasons: taken over, asked for a person, owner replied, life safety, reply cap (`app/Enums/PausedReason.php:9-15`). All five go through `PauseConversation::handle` (`PauseConversation.php:34`), from eight call sites: take over `ViewConversation.php:29`, reply cap `RunFrontDesk.php:133`, asked for a person `RunFrontDesk.php:946`, owner reply `SendOwnerReply.php:59`, and the safety line in four places: after its send or a failed send (`SendLifeSafetyLine.php:113`, and `:138` when a retry finishes a pause an earlier run missed), when the wait for its send lock runs out (`SendLifeSafetyLine.php:67`), and when `RespondToLifeSafety` fails for good (`failed()`, `RespondToLifeSafety.php:86`). Hand back: `HandBackConversation.php:31`. Both re-read the row under a lock and do nothing if it is already in the state asked for.
+- Reply cap: at most 6 agent texts an hour and 20 a day per conversation (`config/gate.php:124-127`, counted in `replyCapReached`, `RunFrontDesk.php:923-933`); each text counts at the time it went out (`sent_at`, or `created_at` while it is still queued), so a draft the owner sends counts when it was sent. It counts every text the assistant authored that was queued, sent or delivered (`RunFrontDesk.php:925-928`), so the holding, partial holding, complaint, discount, check-in and added-info lines and the code answers added in Phase 02.1 all count: they are Agent-authored (`MessageAuthor::Agent`), only the safety line is left out (`:929`). At the cap the conversation pauses and the owner is alerted (D-52).
+- Take over and Hand back are the owner's two controls (`ViewConversation.php:24` and `:33`); the banner is `ConversationThread::pausedBanner` (`ConversationThread.php:212`).
 
 ## Words on this card
 "Paused" is per conversation and blocks automated texts only; the owner's own reply and the safety line still pass (`OutboundSender.php:132`). "Opted out" is per contact and blocks every text (see [contact-opt-out](../contacts/contact-opt-out.md)). "Conversation" here is our table, never the SDK's `agent_conversations`.
@@ -28,11 +28,11 @@ entity: app/Models/Conversation.php
 Belongs to a contact (`Conversation.php:41`); has many messages, in the order they happened (`:73`), and intake answers (`:83`); `paused_by` is a user (`:51`). Looks like it but is not: the SDK's `agent_conversations` table (leftover, nothing reads or writes it).
 
 ## If you change this
-**Hits:** the send path (`OutboundSender::whyBlocked`, `OutboundSender.php:117`), the front desk's early exits (`RunFrontDesk.php:92`), the owner's controls and banner, the timeline (`agent_paused` and `agent_resumed` activities), and [answer-inbound](../../processes/answer-inbound.md) at its pause and alert steps. A new pause reason needs a case in `PausedReason` with its banner lead and timeline line.
+**Hits:** the send path (`OutboundSender::whyBlocked`, `OutboundSender.php:117`), the front desk's early exits (`RunFrontDesk.php:125`), the owner's controls and banner, the timeline (`agent_paused` and `agent_resumed` activities), and [answer-inbound](../../processes/answer-inbound.md) at its pause and alert steps (2, 6 and 11 to 14). The reply cap counts every automated kind, so a new kind needs no change here but one that must not count would need an exception in `replyCapReached`. A new pause reason needs a case in `PausedReason` with its banner lead and timeline line.
 **Does not hit:** the contact's opt-out (a different column on `contacts`); the message verdict (a held draft does not pause anything, and approving one does not pause either, D-25); the agent file.
 
 ## Surfaces
-Writers: the eight pause call sites above (the safety line's four included), `HandBackConversation`, `CloseConversation`, `ReopenConversation`, `RecordInbound.php:379`. Readers: `OutboundSender.php:132`, `RunFrontDesk.php:92`, `ViewConversation.php`, `ConversationThread.php`. Humans: the owner. External consumers: none.
+Writers: the eight pause call sites above (the safety line's four included), `HandBackConversation`, `CloseConversation`, `ReopenConversation`, `RecordInbound.php:379`. Readers: `OutboundSender.php:132`, `RunFrontDesk.php:125`, `ViewConversation.php`, `ConversationThread.php`. Humans: the owner. External consumers: none.
 
 ## See
 `app/Models/Conversation.php`, `app/Actions/PauseConversation.php`; decisions D-23, D-24, D-52 in `.planning/phases/02-text-front-desk/02-CONTEXT.md`.

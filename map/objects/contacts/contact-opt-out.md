@@ -2,13 +2,13 @@
 type: object
 cluster: contacts
 status: live
-verified: 2026-10-13 @ 2bac8cb (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-14 @ c48491d (working tree, source inspection; owner ruling 2026-10-12)
 entity: app/Models/Contact.php
 ---
 
 # Contact opt-out
 
-**Type:** object · **Mark:** live · **Checked:** 2026-10-13 @ 2bac8cb · **Where:** `contacts.sms_opted_out_at`, `app/Models/Contact.php:47`
+**Type:** object · **Mark:** live · **Checked:** 2026-10-14 @ c48491d · **Where:** `contacts.sms_opted_out_at`, `app/Models/Contact.php:47`
 
 **One sentence.** `contacts.sms_opted_out_at` is set when the customer texted STOP (or the carrier said the number opted out); while it is set, nobody may text them.
 
@@ -18,7 +18,7 @@ entity: app/Models/Contact.php
 - Column: `database/migrations/2026_10_12_000009_add_sms_opt_out_to_contacts_table.php:17`; cast and `Contact::isOptedOut()` at `Contact.php:40-50`.
 - Set on STOP: `RecordInbound.php:197`; cleared on START: `RecordInbound.php:218` (only for a contact who is opted out). Set when the carrier refuses a send, Twilio error 21610: `OutboundSender.php:363`. Set when a status callback reports it: `TwilioStatusCallbackController.php:97`. The first date is kept (`RecordInbound.php:193`).
 - What a keyword is: the provider's own word first, then the same words matched in code (`app/Channels/TextKeywords.php:59`). YES opts back in only for a contact who is opted out, so a plain "yes" to an intake question is never swallowed. A keyword text is stored already dispatched and handled (`RecordInbound.php:140`), so the queue, the sweep and the front desk skip it. Twilio sends its own confirmation; the app records the effect and says nothing (`RecordInbound.php:90-93`, D-39).
-- Enforced in `OutboundSender::whyBlocked`, first, for every origin: agent, owner, approved draft and the safety line (`OutboundSender.php:122`). The front desk also checks before asking the agent, and alerts the owner to call (`RunFrontDesk.php:86`, `:212`).
+- Enforced in `OutboundSender::whyBlocked`, first, for every origin: agent, owner, approved draft and the safety line (`OutboundSender.php:122`). The front desk also checks before asking the agent, and alerts the owner to call (`RunFrontDesk.php:119`, `:898`). Every text added in Phase 02.1, the holding, check-in and added-info lines and the code answers, goes through the same sender (`SendFixedReply.php:69`, `SendCombinedReply.php:56`), so an opted-out customer gets none of them.
 
 ## Words on this card
 "Opted out" is per contact and blocks every text. "Paused" is per conversation and blocks automated texts only ([conversation-and-pause](../conversations/conversation-and-pause.md)). A customer who is opted out can still text the business; the message is recorded and the owner is alerted.
@@ -27,8 +27,8 @@ entity: app/Models/Contact.php
 Belongs to the contact record (Phase 1); timeline entries `opted_out` and `opted_in` (`RecordInbound.php:199,220`). Looks like it but is not: `conversations.paused_at`, and the contact's `status` column (`app/Enums/ContactStatus.php`).
 
 ## If you change this
-**Hits:** `OutboundSender::whyBlocked` (every outbound text), `RunFrontDesk` early exit and its owner alert, `RecordInbound` keyword handling, `TwilioStatusCallbackController`, `TextKeywords`. [answer-inbound](../../processes/answer-inbound.md) steps 1, 6 and 10 touch it. Moving the column or adding a channel needs the same check on the new send path.
-**Does not hit:** the conversation's paused state; the message verdict (an opted-out burst never reaches the agent, so no verdict is made); the customer card (it prints the `opted_out` and `opted_in` timeline entries, `CustomerCard.php:167-168`, and never reads the column).
+**Hits:** `OutboundSender::whyBlocked` (every outbound text), `RunFrontDesk` early exit and its owner alert, `RecordInbound` keyword handling, `TwilioStatusCallbackController`, `TextKeywords`. [answer-inbound](../../processes/answer-inbound.md) steps 1, 6 and 11 touch it. Moving the column or adding a channel needs the same check on the new send path.
+**Does not hit:** the conversation's paused state; the message verdict (an opted-out burst never reaches the agent, so no verdict is made); the customer card (it prints the `opted_out` and `opted_in` timeline entries, `CustomerCard.php:168-169`, and never reads the column).
 
 ## Surfaces
 Writers: `RecordInbound`, `OutboundSender`, `TwilioStatusCallbackController`. Readers: `OutboundSender`, `RunFrontDesk`, `RecordInbound`, `TwilioStatusCallbackController`. Humans: the customer, by text; the owner, by the alert. External: Twilio calls `webhooks/text/twilio` and `webhooks/text/twilio/status` (`routes/web.php:22,26`) once the number is live; intended, not live, since the text channel is still the fake one (Ian, 2026-10-12).
