@@ -214,3 +214,37 @@ it('keeps the file order and tries every entry that fits inside the time budget'
 
     FrontDeskAgent::assertPromptedTimes(2);
 });
+
+it('prompts no provider when the first call of the run already used the time budget (D-35)', function () {
+    [$agent, $conversation, $burst] = fallbackTestRun();
+
+    config(['gate.agent.timeout_seconds' => 40, 'gate.agent.chain_budget_seconds' => 150]);
+    scriptFrontDeskReplies(['reply' => 'Never asked.']);
+
+    try {
+        app(RunFrontDeskAgent::class)->handle($agent, $conversation, $burst, budgetFrom: now()->subSeconds(120));
+        $this->fail('Expected FrontDeskUnavailable.');
+    } catch (FrontDeskUnavailable $unavailable) {
+        expect($unavailable->attempts)->toHaveCount(2)
+            ->and(array_column($unavailable->attempts, 'error'))->toBe(['skipped: not enough time left in this run', 'skipped: not enough time left in this run'])
+            ->and(array_column($unavailable->attempts, 'provider'))->toBe(['anthropic', 'openai']);
+    }
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('runs the first provider when the first call of the run left room for one timeout (D-35)', function () {
+    $this->freezeTime();
+
+    [$agent, $conversation, $burst] = fallbackTestRun();
+
+    config(['gate.agent.timeout_seconds' => 40, 'gate.agent.chain_budget_seconds' => 150]);
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+
+    $run = app(RunFrontDeskAgent::class)->handle($agent, $conversation, $burst, budgetFrom: now()->subSeconds(100));
+
+    expect($run->provider)->toBe('anthropic')
+        ->and($run->startedAt->equalTo(now()->subSeconds(100)))->toBeTrue();
+
+    FrontDeskAgent::assertPromptedTimes(1);
+});
