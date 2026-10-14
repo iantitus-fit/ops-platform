@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-12-PLAN.md
-last_updated: "2026-10-14T21:25:27.940Z"
+stopped_at: Completed 02.1-13-PLAN.md
+last_updated: "2026-10-14T21:42:07.776Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: 150d8893b7ca287968492a11a5971d0fcbdcdb6d
+state_head: 6ce7cd5250ae915d81449f340b0c21b3d10fdd92
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 60
+  completed_plans: 61
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 13 of 16
+Plan: 14 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -117,6 +117,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P10 | 15 min | 2 tasks | 8 files |
 | Phase 02.1 P11 | 6 min | 3 tasks | 7 files |
 | Phase 02.1 P12 | 8 min | 3 tasks | 7 files |
+| Phase 02.1 P13 | 16 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -226,6 +227,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-11: offers are date-checked only, in the business zone, end date inclusive; code never judges eligibility
 - [Phase 02.1]: 02.1-11: when a price and an offer both cannot be answered the hold reason is price:no_sentence; a missing discount_reply sends the holding words as kind discount_holding
 - [Phase 02.1]: 02.1-12: a check-in held only by the scheduling guard or an unlisted label (other) is dropped and the waiting draft stays live; a fresh draft that keeps the waiting body keeps its label too
+- [Phase 02.1]: The close keys on price_open (services code recorded), so a sentence for a draft's own service closes it whatever touches_waiting says and a sentence for another service never does
+- [Phase 02.1]: A price draft whose run named no service closes only when touches_waiting is exactly true; on false or null it stays live and the thread warns the owner
+- [Phase 02.1]: A closing run is handled as a run with no waiting draft: send first, close only after a text went out, then store held words as a first draft with no holding reply, no alert
+- [Phase 02.1]: A split needs touches_waiting true, easy_reply, a valid easy_label and non-blank touching words; the faq/intake guard and all three checks always run on the easy part; easy words that overflow one text are dropped
 
 ### Pending Todos
 
@@ -259,6 +264,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T21:25:27.865Z
-Stopped at: Completed 02.1-12-PLAN.md
+Last session: 2026-10-14T21:42:07.692Z
+Stopped at: Completed 02.1-13-PLAN.md
 Resume file: None
