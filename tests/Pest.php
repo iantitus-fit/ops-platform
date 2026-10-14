@@ -196,31 +196,53 @@ function composedFirstReply(string $words): string
 }
 
 /**
+ * Whether the message is a fixed line or a text code put together without the model's own words: a holding reply, the
+ * safety line, or a code-assembled kind whose meta.parts does not list model_words. The meta is read in PHP, not with
+ * a JSON path in SQL, because the suite runs on SQLite and PostgreSQL.
+ */
+function carriesNoModelWords(Message $message): bool
+{
+    if (in_array($message->kind, [MessageKind::HoldingReply, MessageKind::LifeSafety], true)) {
+        return true;
+    }
+
+    return in_array($message->kind, MessageKind::assembledByCode(), true)
+        && ! in_array('model_words', $message->meta['parts'] ?? [], true);
+}
+
+/**
  * The texts the fake channel sent that carry the agent's own words, leaving out the holding reply that goes out
- * beside a held draft (D-12) and the safety line, which is fixed in code (D-16). A test that says "nothing the agent
- * wrote reached the customer" reads this.
+ * beside a held draft (D-12), the safety line, which is fixed in code (D-16), and the texts code assembled from owner
+ * sentences and fixed lines without any model words inside (D-30). A test that says "nothing the agent wrote reached
+ * the customer" reads this.
  *
  * @return list<array{to: string, body: string, provider_message_id: string}>
  */
 function textsSentForAgentReplies(): array
 {
-    $holdingBodies = Message::query()->whereIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value])->pluck('body')->all();
+    $fixedBodies = Message::query()
+        ->whereNotNull('kind')
+        ->get()
+        ->filter(fn (Message $message): bool => carriesNoModelWords($message))
+        ->pluck('body')
+        ->all();
 
     return array_values(array_filter(
         textsSentToCustomers(),
-        fn (array $text): bool => ! in_array($text['body'], $holdingBodies, true),
+        fn (array $text): bool => ! in_array($text['body'], $fixedBodies, true),
     ));
 }
 
 /**
  * The one message the front desk wrote, whether it was sent or kept as a draft. A holding reply sent beside a held
- * draft and a safety line are different messages and are left out.
+ * draft, a safety line and a text code assembled without model words are different messages and are left out.
  */
 function theAgentMessage(): Message
 {
     return Message::query()
         ->where('direction', MessageDirection::Out)
-        ->where(fn ($query) => $query->whereNull('kind')->orWhereNotIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value]))
+        ->get()
+        ->reject(fn (Message $message): bool => carriesNoModelWords($message))
         ->sole();
 }
 

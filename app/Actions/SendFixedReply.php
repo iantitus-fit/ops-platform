@@ -82,19 +82,21 @@ class SendFixedReply
     }
 
     /**
-     * Whether the customer has already been told the owner will answer, and nothing has answered since (D-14).
+     * Whether the customer has already been told the owner will answer, and nothing has answered since (D-14, D-30).
      *
-     * A holding reply stays current until a real answer goes out or the owner deals with a draft. A real answer is
-     * an outbound text that is sent or delivered and is not itself a holding reply, sent after the holding reply.
-     * A draft the owner approved, edited or discarded after the holding reply also ends the wait: a draft is written
-     * before its holding reply, so its id is lower, and the owner's decision comes later, so resolved_at says whether
-     * it ended the wait. The newest holding reply is the one that counts, found with reorder() because the relation
-     * already sorts oldest first.
+     * The newest message of a kind that starts a wait (MessageKind::startsWait()) is the one that counts, found with
+     * reorder() because the relation already sorts oldest first. It stays current until the owner answers: a text the
+     * owner sent after it, or a draft the owner approved, edited or discarded, or code closed as answered, since it
+     * went out. A draft is written before its holding reply, so its id is lower, and the decision comes later, so
+     * resolved_at says whether it ended the wait.
+     *
+     * Automated texts never end the wait. While a draft waits the assistant may send answers, check-in lines and
+     * added-info lines, and none of them answers the question the owner still has.
      */
     public function holdingAlreadySent(Conversation $conversation): bool
     {
         $latest = $conversation->messages()
-            ->where('kind', MessageKind::HoldingReply)
+            ->whereIn('kind', MessageKind::startsWait())
             ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
             ->reorder('id', 'desc')
             ->first();
@@ -108,12 +110,12 @@ class SendFixedReply
                 $query
                     ->where(function ($sent) use ($latest): void {
                         $sent->where('direction', MessageDirection::Out)
+                            ->where('author', MessageAuthor::Owner)
                             ->whereIn('status', [MessageStatus::Sent, MessageStatus::Delivered])
-                            ->where(fn ($kind) => $kind->whereNull('kind')->orWhere('kind', '!=', MessageKind::HoldingReply))
                             ->where('id', '>', $latest->id);
                     })
                     ->orWhere(function ($resolved) use ($latest): void {
-                        $resolved->whereIn('resolution', [DraftResolution::Approved, DraftResolution::Edited, DraftResolution::Discarded])
+                        $resolved->whereIn('resolution', [DraftResolution::Approved, DraftResolution::Edited, DraftResolution::Discarded, DraftResolution::Answered])
                             ->where('resolved_at', '>=', $latest->created_at);
                     });
             })
