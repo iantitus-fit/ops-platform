@@ -170,9 +170,12 @@ index is rebuilt from the files on sync, never edited directly.
 │   ├── hours.md         type: hours
 │   ├── lead-sources.md  type: lead_sources
 │   ├── faq.md           type: knowledge
-│   └── services/
-│       ├── CONTEXT.md
-│       └── <service>.md type: service (one file per service)
+│   ├── services/
+│   │   ├── CONTEXT.md
+│   │   └── <service>.md type: service (one file per service)
+│   └── offers/
+│       ├── README.md
+│       └── <offer>.md   type: offer (one file per offer)
 ├── voice/
 │   └── how-we-talk.md   type: voice
 ├── rules/
@@ -203,6 +206,7 @@ One fact, one file. If the hours change, `hours.md` changes and nothing else.
 | voice | voice/how-we-talk.md | ai_disclosure, sign_off, never_say (list) | Tone and disclosure for every outbound message |
 | sending_rules | rules/sending.md | send_on_own (intake_question, scheduling, faq_answer only), draft_for_owner (price, promise, discount, complaint, other), owner_alert (channels, right_away, after_hours) | The send-or-draft gate, enforced in code |
 | set_replies | rules/replies.md | owner_name, utility_phone (optional), holding_reply, partial_holding_reply, check_in_reply, added_info_reply, complaint_reply, handoff_reply, discount_reply (optional; the holding reply goes when absent), price_leads (same, higher, lower, changed; required once any service has price sentences, and the sync names the service), check_in_hours (optional, 1 to 12; off when absent) | Fixed texts sent without the owner; the sync runs the code checks on every reply and every lead (no price, discount, promise or never_say phrase), and only discount_reply may name a discount. A version live before a reply existed sends the holding reply in its place. The six fill-ins are {owner_name}, {business_name}, {next_open}, {today_or_next_open}, {next_opening} and {check_in_time}; each time is computed from hours.md when the text is sent, and the sync refuses {check_in_time} while check_in_hours is absent |
+| offer | business/offers/*.md | name, slug, sentence, amount_cents or percent (exactly one; percent a whole number 1 to 100), start_date (Y-m-d), end_date (optional Y-m-d, on or after start_date) | One offer per file, every file kept and indexed by slug. Sent by code, never by the model: every live offer's sentence goes out in one text when a customer asks for a discount. Live by date in the business time zone, end date inclusive. The sync checks the sentence against its own field: the $ amounts must equal amount_cents and the percentages must equal percent, both ways, money is written as $ and digits, and the promise and never_say checks stay. The business confirms eligibility at the visit |
 | agent | agents/*.md | name, channel, provider, model, fallback (list), loads (list of folder paths), escalate_to | Builds the agent at runtime |
 | automation | automations/*.md | trigger, wait, send, stop_when (list) | Scheduled sequences |
 | connector | connectors/*.md | system, direction (in, out, both), objects, schedule | What syncs and which way. No secrets: credentials live encrypted in the engine |

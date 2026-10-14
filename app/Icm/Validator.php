@@ -241,6 +241,15 @@ class Validator
                 'price_leads' => 'bail|sometimes|array',
                 'check_in_hours' => 'bail|sometimes|integer:strict|min:1|max:12',
             ],
+            'offer' => [
+                'name' => 'bail|required|string',
+                'slug' => ['bail', 'required', 'string', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/'],
+                'sentence' => 'bail|required|string',
+                'amount_cents' => 'bail|sometimes|integer:strict|min:1|max:'.self::MAX_CENTS,
+                'percent' => 'bail|sometimes|integer:strict|min:1|max:100',
+                'start_date' => 'bail|required|date_format:Y-m-d',
+                'end_date' => 'bail|sometimes|date_format:Y-m-d',
+            ],
             'triage' => [
                 'intent_question' => 'bail|required|string',
                 'intents' => 'bail|required|array|min:2|max:255',
