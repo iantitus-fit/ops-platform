@@ -64,3 +64,23 @@ it('keeps the word lists in code as lists of strings', function () {
         ->and(CodeChecks::DISCOUNT_PHRASES)->toContain('discount', '% off', 'free of charge')
         ->and(CodeChecks::PROMISE_PHRASES)->toContain('guarantee', 'promise', 'definitely');
 });
+
+it('reads every dollar amount in a sentence as integer cents, unique and sorted', function (string $text, array $expected) {
+    $cents = CodeChecks::dollarAmountsInCents($text);
+
+    expect($cents)->toBe($expected);
+
+    foreach ($cents as $amount) {
+        expect($amount)->toBeInt();
+    }
+})->with([
+    'the same amount twice' => ['AC repair starts with an $89 diagnostic visit, and we take the $89 off', [8900]],
+    'ranges sorted ascending and unique' => ['$2,000 to $5,000 installed for a smaller unit and $5,000 to $10,000 for a larger one', [200000, 500000, 1000000]],
+    'dollars and cents' => ['The visit is $89.50', [8950]],
+    'one decimal digit is tens of cents' => ['The visit is $89.5', [8950]],
+    'a space after the dollar sign' => ['The visit is $ 120', [12000]],
+    'an amount at the end of a sentence' => ['A new unit runs $2,000.', [200000]],
+    'k shorthand reads as the digits before it, which never equals a real amount' => ['A new unit runs $5k', [500]],
+    'no dollar sign' => ['We open at 8 tomorrow', []],
+    'dollars spelled out are not an amount' => ['That is 120 dollars', []],
+]);
