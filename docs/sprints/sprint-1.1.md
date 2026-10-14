@@ -20,22 +20,33 @@ what the opening hours can keep.
    re-sends with the owner's same, higher, lower or changed lead. A price the
    model writes, or a service with `price_policy: none`, still holds. A price
    sentence whose amounts do not match its file fails the sync in plain words.
+   Delivered by plans 02.1-02 (dollar amounts read as integer cents), 02.1-06 (price sentences checked at sync), 02.1-08 (the sentence sent by code, holds for a model price), 02.1-09 (intake answers pick the sentence, corrections and leads) (tests: tests/Feature/Icm/PriceSentenceValidationTest.php, tests/Unit/SendRule/CodeChecksTest.php, tests/Feature/FrontDesk/PriceSentenceTest.php, tests/Feature/FrontDesk/KeyedPriceSentenceTest.php, tests/Feature/FrontDesk/PriceLeadTest.php).
 2. A discount question gets every live offer's conditional sentence (dates in
    the business time zone, end date inclusive) or, with none live, the owner's
    discount reply and an owner alert. The Business Folder page warns about an
    offer live over 90 days with no end date.
+   Delivered by plans 02.1-07 (offer files checked at sync), 02.1-10 (the 90-day warning), 02.1-11 (live offers sent by code, the discount reply when none is live) (tests: tests/Feature/Icm/OfferValidationTest.php, tests/Feature/FrontDesk/OfferSentenceTest.php, tests/Feature/Filament/BusinessFolderPageTest.php).
 3. While a draft waits, an easy answer that does not touch it sends on its own
    and the draft stays live with "The customer wrote again since this draft". A
    message that touches it replaces the draft, with any split-off FAQ or intake
    answer sent alongside the partial holding line. Scheduling never sends while
    a scheduling draft waits.
+   Delivered by plans 02.1-05 (the touches flag and the prompt that never mentions a waiting question), 02.1-10 (the wrote-again line), 02.1-12 (easy answers send while a draft waits, the label guard), 02.1-13 (the split, a price draft closed as answered), 02.1-14 (a held unrelated reply becomes one whole-thread draft) (tests: tests/Feature/FrontDesk/EasyAnswerWhileWaitingTest.php, tests/Feature/FrontDesk/CoverBothDraftTest.php, tests/Feature/FrontDesk/FrontDeskPromptTest.php, tests/Feature/Filament/ConversationViewTest.php).
 4. A customer who writes while a draft waits always gets a reply: the check-in
    reply (which alerts the owner) or the added-info reply. A price draft
    answered by a price sentence closes as `answered` and refuses Send with
    "Already answered".
+   Delivered by plans 02.1-01 (the answered resolution, the holding reply counting for every wait-starting kind), 02.1-12 (the check-in reply and the added-info reply, the check-in alert), 02.1-13 (a price draft answered by a sentence closes as answered) (tests: tests/Feature/FrontDesk/WaitingCustomerRepliesTest.php, tests/Feature/FrontDesk/AnsweredDraftTest.php, tests/Feature/Filament/DraftReviewTest.php).
 5. Holding replies use only fill-ins computed from `hours.md`. The check-in time
    is off by default. Every new reply the folder needs is required at sync, and
    the example folder passes with all of them.
+   Delivered by plans 02.1-03 (the time fill-ins and the check-in time, off by default), 02.1-04 (every new reply required at sync, the example folder rewritten) (tests: tests/Feature/Icm/BusinessClockTest.php, tests/Feature/Icm/RepliesValidationTest.php, tests/Feature/SendRule/FixedRepliesTest.php).
+
+Still open for UAT, because only a person with a phone or a live account can
+check them: the live-model check (does a real model set `price_services`,
+`asks_discount`, `touches_waiting` and `waiting_note` sensibly) and the owner
+phone walk (the wrote-again line above Send, and "Already answered" on a draft a
+price sentence closed).
 
 ## Notes for testing
 
