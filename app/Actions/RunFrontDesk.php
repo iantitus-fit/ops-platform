@@ -27,6 +27,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
+use App\SendRule\FixedReplies;
 use App\SendRule\LifeSafety;
 use App\SendRule\PricePick;
 use App\SendRule\PriceSentencePicker;
@@ -79,6 +80,7 @@ class RunFrontDesk
         private readonly ReportFrontDeskFailure $reportFrontDeskFailure,
         private readonly PriceSentencePicker $priceSentencePicker,
         private readonly SendCombinedReply $sendCombinedReply,
+        private readonly FixedReplies $fixedReplies,
     ) {}
 
     /**
@@ -159,6 +161,8 @@ class RunFrontDesk
         if ($verdict->lifeSafety) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
             $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+            $picks = [];
+            $sentences = [];
         } elseif ($verdict->asksForPerson) {
             $this->handOffToOwner($conversation, $burst);
 
@@ -170,15 +174,26 @@ class RunFrontDesk
             'meta' => ['in_reply_to' => $burst->pluck('id')->all()],
         ];
 
+        $parts = new ReplyParts(codeSentences: $sentences, modelWords: $words);
+        $sentMeta = ['meta' => [...$attributes['meta'], 'price_sentences' => $this->priceSentencesMeta($picks)]];
+
+        if ($verdict->outcome === GateOutcome::Send && $sentences !== [] && $this->sendCombinedReply->composedLength($conversation, $parts) > SendOwnerReply::MAX_LENGTH) {
+            $verdict = $verdict->heldFor('too_long');
+        }
+
         if ($verdict->outcome === GateOutcome::Send) {
             try {
-                $this->outboundSender->send(
-                    $conversation,
-                    $composed,
-                    MessageAuthor::Agent,
-                    SendOrigin::Automated,
-                    [...$attributes, ...$verdict->toAttributes($run->reply->label)],
-                );
+                if ($sentences === []) {
+                    $this->outboundSender->send(
+                        $conversation,
+                        $composed,
+                        MessageAuthor::Agent,
+                        SendOrigin::Automated,
+                        [...$attributes, ...$verdict->toAttributes($run->reply->label)],
+                    );
+                } else {
+                    $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
+                }
 
                 return;
             } catch (DomainException $exception) {
@@ -190,7 +205,39 @@ class RunFrontDesk
             }
         }
 
-        $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes);
+        $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === []);
+
+        if ($sentences !== []) {
+            $this->sendPartialHolding($conversation, $parts, $sentMeta);
+        }
+    }
+
+    /**
+     * Tell the customer the owner's sentence and that the rest of their question is with the owner, in one text. The
+     * draft and the owner's alert already exist, so a text that cannot go out falls back to the full holding reply and
+     * is otherwise reported to the log, never raised (D-30).
+     *
+     * @param  array{meta: array<string, mixed>}  $attributes
+     */
+    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes): void
+    {
+        if ($conversation->refresh()->isPaused()) {
+            return;
+        }
+
+        $partial = new ReplyParts(
+            codeSentences: $parts->codeSentences,
+            lineKind: MessageKind::PartialHolding,
+            line: $this->fixedReplies->partialHoldingReply(now()),
+        );
+
+        try {
+            $this->sendCombinedReply->handle($conversation, $partial, $attributes);
+        } catch (DomainException $exception) {
+            report($exception);
+
+            $this->sendFixedReply->holding($conversation);
+        }
     }
 
     /**
@@ -398,9 +445,11 @@ class RunFrontDesk
      * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
      * tell someone describing a fire or a gas leak.
      *
+     * A caller that sends its own text beside the draft, such as the partial holding line, passes `$sendHolding` false.
+     *
      * @param  array<string, mixed>  $attributes
      */
-    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes): void
+    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true): void
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
         $alertReason = $this->alertReasonFor($verdict);
@@ -452,7 +501,7 @@ class RunFrontDesk
             $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
         }
 
-        if (! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
+        if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
             $this->sendFixedReply->holding($conversation);
         }
     }
