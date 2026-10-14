@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\SendFixedReply;
 use App\Enums\DraftResolution;
 use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
@@ -195,4 +196,49 @@ it('still sends the holding reply when the draft is held because the safety chec
 
     expect(holdingReplyMessages())->toHaveCount(1)
         ->and(Message::query()->where('gate_reason', 'classifier_unsure:intent')->sole()->status)->toBe(MessageStatus::Draft);
+});
+
+it('counts every kind of line that starts a wait as the holding reply, and an owner text ends that wait (D-30)', function (MessageKind $kind) {
+    holdingReplyPriceQuestionHeld();
+
+    $conversation = Conversation::query()->sole();
+    holdingReplyMessages()[0]->update(['kind' => $kind]);
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeTrue();
+
+    Message::factory()->for($conversation)->fromOwner()->create(['body' => 'It is $9,000 installed.']);
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeFalse();
+})->with(fn (): array => array_combine(
+    array_map(fn (MessageKind $kind): string => $kind->value, MessageKind::startsWait()),
+    array_map(fn (MessageKind $kind): array => [$kind], MessageKind::startsWait()),
+));
+
+it('keeps the wait going when an automated text goes out while the draft waits (D-30)', function (string $kind) {
+    holdingReplyPriceQuestionHeld();
+
+    $conversation = Conversation::query()->sole();
+
+    Message::factory()->for($conversation)->outbound()->create([
+        'kind' => MessageKind::from($kind),
+        'body' => 'An automated line that does not answer the waiting question.',
+    ]);
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeTrue();
+})->with(['check_in_reply', 'added_info_reply', 'code_answer', 'agent_reply']);
+
+it('ends the wait when the waiting draft is closed as answered (D-21, D-30)', function () {
+    holdingReplyPriceQuestionHeld();
+
+    $conversation = Conversation::query()->sole();
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeTrue();
+
+    Message::query()->where('status', MessageStatus::Draft->value)->sole()->update([
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'resolved_at' => now(),
+    ]);
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeFalse();
 });
