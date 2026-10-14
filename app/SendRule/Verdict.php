@@ -74,6 +74,14 @@ readonly class Verdict
     }
 
     /**
+     * The same verdict with the safety flag raised, for a danger found in another part of the same text.
+     */
+    public function flaggedLifeSafety(): self
+    {
+        return new self($this->outcome, $this->reasonCode, $this->plainReason, $this->details, true, $this->asksForPerson);
+    }
+
+    /**
      * The message columns this verdict fills: label, gate_outcome, gate_reason and the gate JSON.
      *
      * @return array{label: ?ReplyLabel, gate_outcome: GateOutcome, gate_reason: ?string, gate: array<string, mixed>}

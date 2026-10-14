@@ -82,6 +82,29 @@ readonly class AgentReply
     }
 
     /**
+     * The easy part of a text that also touches the question waiting with the owner (D-19): a copy that carries only the
+     * easy answer and its label, so it can be checked by the send rule like any reply of its own. Null unless the model
+     * says the text touches the waiting question (exactly true), gives easy words, and gives an easy label from the
+     * vocabulary. The model's wants_person and every other field are left out on purpose: the split part never asks for
+     * a person, names a service or records an answer.
+     */
+    public function easyPart(): ?self
+    {
+        if ($this->touchesWaiting !== true || $this->easyReply === null || $this->easyLabel === null) {
+            return null;
+        }
+
+        return new self(
+            reply: $this->easyReply,
+            label: $this->easyLabel,
+            wantsPerson: false,
+            serviceSlug: null,
+            intakeAnswers: [],
+            customerName: null,
+        );
+    }
+
+    /**
      * @return array{reply: string, label: string, wants_person: bool, service_slug: ?string, intake_answers: list<array{question_key: string, option: ?string, raw_text: string}>, customer_name: ?string, price_services: list<string>, asks_discount: bool, touches_waiting: ?bool, waiting_note: ?string, easy_reply: ?string, easy_label: ?string}
      */
     public function toArray(): array

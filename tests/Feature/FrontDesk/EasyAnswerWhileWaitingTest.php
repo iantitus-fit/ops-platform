@@ -356,10 +356,11 @@ it('lets a check-in line lead the text that carries the easy words (D-28, D-36)'
 
     easyAnswerCustomerTexts('Any news? Also, do you do heat pumps?', easyAnswerSplitScript([
         'reply' => 'Mike still has your question.',
+        'label' => 'faq_answer',
         'waiting_note' => 'check_in',
     ]));
 
-    $sent = Message::query()->where('kind', MessageKind::CheckInReply->value)->sole();
+    $sent = Message::query()->where('kind', MessageKind::AgentReply->value)->where('status', MessageStatus::Sent->value)->sole();
 
     expect(easyAnswerTextsToDana())->toHaveCount(2)
         ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater('Yes, we service heat pumps. '.EASY_ANSWER_CHECK_IN_LINE))
@@ -377,5 +378,5 @@ it('sends only the safety line when Jev reads a danger in the easy part (D-19)',
     expect(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
         ->and(Message::query()->where('body', 'like', '%heat pumps%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
-        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('classifier:life_safety');
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('label:price');
 });

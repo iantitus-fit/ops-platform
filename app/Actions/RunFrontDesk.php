@@ -65,6 +65,11 @@ use Illuminate\Support\Str;
  * code with the price sentences (D-13). With no offer live the question is held as discount:no_live_offer, handled like
  * a price with no sentence on file, so the owner hears about it (D-14).
  *
+ * A customer who writes while a draft waits is handled by answerWhileDraftWaits(). Two things can finish work there
+ * without the owner: the owner's price sentence for the service a price-only draft waits on goes out and closes that
+ * draft as answered (D-21), and an easy question asked in the same text as one that touches the waiting question is
+ * answered now, with the partial holding line, while the rest becomes the fresh draft (D-19, D-20).
+ *
  * A front desk that cannot answer (every model failed, no agent for texts) or cannot send alerts the owner and
  * returns, because the customer's burst is already claimed (AGNT-04). Anything else that goes wrong, such as a
  * database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
@@ -75,6 +80,14 @@ class RunFrontDesk
 {
     /** The waiting_note value for a customer asking whether anyone has seen their question. */
     private const string CHECK_IN = 'check_in';
+
+    /**
+     * The only labels a split-off easy part may carry (D-20): it never commits to a day or time while a question is with
+     * the owner.
+     *
+     * @var list<ReplyLabel>
+     */
+    private const array SPLIT_LABELS = [ReplyLabel::FaqAnswer, ReplyLabel::IntakeQuestion];
 
     public function __construct(
         private readonly ActiveConfig $activeConfig,
@@ -212,6 +225,28 @@ class RunFrontDesk
             $verdict = $verdict->heldFor('discount:no_live_offer');
         }
 
+        $easyAnswer = null;
+
+        if ($stillWaiting !== null && $words !== '' && $verdict !== null && ! $verdict->lifeSafety && ($easyPart = $run->reply->easyPart()) !== null) {
+            $easyVerdict = $this->decideSendOrDraft->decide(
+                new AgentRun($easyPart, $run->provider, $run->model, $run->failedAttempts),
+                $customerText,
+                $this->composeAutomatedText->forReply($conversation, $easyPart->reply),
+                self::SPLIT_LABELS,
+            );
+
+            if ($easyVerdict->lifeSafety) {
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+                $verdict = $verdict->flaggedLifeSafety();
+                $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+                $picks = [];
+                $offers = [];
+                $sentences = [];
+            } elseif ($easyVerdict->outcome === GateOutcome::Send) {
+                $easyAnswer = ['words' => $easyPart->reply, 'attributes' => $easyVerdict->toAttributes($easyPart->label)];
+            }
+        }
+
         $attributes = [
             'kind' => MessageKind::AgentReply,
             'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_pending' => $this->slugsWith($picks, PricePick::NEEDS_ANSWERS), ...$lookups],
@@ -221,7 +256,7 @@ class RunFrontDesk
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
         if ($stillWaiting !== null) {
-            $this->answerWhileDraftWaits($run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn);
+            $this->answerWhileDraftWaits($run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn, $easyAnswer);
 
             return;
         }
@@ -353,13 +388,18 @@ class RunFrontDesk
      * the check-in reply, the partial holding line when an answer rides, the added-info reply, or, when the owner's own
      * text already ended the wait, a new holding reply (D-34, D-36). Only a check-in alerts the owner (D-29).
      *
+     * When the text touches W and also asks something easy (D-19), the easy part has already been checked on its own
+     * with the label guard. If it passed, its words ride in the same text as the owner's sentences, in front of whichever
+     * line is chosen; the touching reply is stored as the fresh draft as usual. If it was held, nothing of it is sent.
+     *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
      * @param  array{meta: array<string, mixed>}  $sentMeta
      * @param  list<PricePick>  $picks
      * @param  list<string>  $offerSlugs
+     * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  The split-off easy answer that passed every check, with the verdict it is stored under.
      */
-    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn): void
+    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn, ?array $easy = null): void
     {
         if ($verdict?->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
             $verdict = $checkIn ? null : $verdict->heldFor('touches_waiting');
@@ -369,7 +409,7 @@ class RunFrontDesk
 
         if ($verdict === null) {
             if ($checkIn) {
-                $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta);
+                $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
             } else {
                 $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs, array_intersect_key($attributes['meta'] ?? [], ['price_slugs' => true, 'price_open' => true]));
             }
@@ -412,10 +452,10 @@ class RunFrontDesk
             return;
         }
 
-        if (in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true) || ($parts->codeSentences !== [] && ! $checkIn)) {
-            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+        if (in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true) || (($parts->codeSentences !== [] || $easy !== null) && ! $checkIn)) {
+            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode, $easy);
         } elseif ($checkIn) {
-            $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta);
+            $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
             $this->sendAddedInfoReply($conversation, $sentMeta);
         } else {
@@ -449,15 +489,18 @@ class RunFrontDesk
      *
      * @param  Collection<int, Message>  $burst
      * @param  array{meta: array<string, mixed>}  $attributes
+     * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  Split-off easy words that passed every check; they follow the sentences.
      */
-    private function sendCheckInReply(Conversation $conversation, Collection $burst, ReplyParts $parts, array $attributes): void
+    private function sendCheckInReply(Conversation $conversation, Collection $burst, ReplyParts $parts, array $attributes, ?array $easy = null): void
     {
+        [$text, $attributes] = $this->withEasyWords($conversation, new ReplyParts(
+            codeSentences: $parts->codeSentences,
+            lineKind: MessageKind::CheckInReply,
+            line: $this->fixedReplies->checkInReply(now()),
+        ), $easy, $attributes);
+
         try {
-            $this->sendCombinedReply->handle($conversation, new ReplyParts(
-                codeSentences: $parts->codeSentences,
-                lineKind: MessageKind::CheckInReply,
-                line: $this->fixedReplies->checkInReply(now()),
-            ), $attributes);
+            $this->sendCombinedReply->handle($conversation, $text, $attributes);
         } catch (DomainException $exception) {
             if (! $this->alertAboutFailedSend($exception, $conversation, $burst)) {
                 report($exception);
@@ -467,6 +510,36 @@ class RunFrontDesk
         }
 
         $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+    }
+
+    /**
+     * Put split-off easy words into a text that is about to go out, behind its sentences and in front of its fixed line,
+     * with the verdict they passed under (D-19). Words that would push the whole text past one message are left out, so
+     * the customer still gets the sentences and the line.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  ?array{words: string, attributes: array<string, mixed>}  $easy
+     * @return array{0: ReplyParts, 1: array<string, mixed>}
+     */
+    private function withEasyWords(Conversation $conversation, ReplyParts $parts, ?array $easy, array $attributes): array
+    {
+        if ($easy === null) {
+            return [$parts, $attributes];
+        }
+
+        $withEasy = new ReplyParts(
+            complaintLine: $parts->complaintLine,
+            codeSentences: $parts->codeSentences,
+            modelWords: $easy['words'],
+            lineKind: $parts->lineKind,
+            line: $parts->line,
+        );
+
+        if ($this->sendCombinedReply->composedLength($conversation, $withEasy) > SendOwnerReply::MAX_LENGTH) {
+            return [$parts, $attributes];
+        }
+
+        return [$withEasy, [...$attributes, ...$easy['attributes']]];
     }
 
     /**
@@ -496,9 +569,10 @@ class RunFrontDesk
      *
      * @param  array{meta: array<string, mixed>}  $attributes
      * @param  ?string  $reasonCode  Why the words were held.
+     * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  Split-off easy words that passed every check; they follow the sentences and the verdict they passed under is stored on the text.
      * @return ?Message The text that went out with the sentences, or null when it could not be sent or the assistant is paused.
      */
-    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes, ?string $reasonCode): ?Message
+    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes, ?string $reasonCode, ?array $easy = null): ?Message
     {
         if ($conversation->refresh()->isPaused()) {
             return null;
@@ -511,6 +585,8 @@ class RunFrontDesk
                 lineKind: MessageKind::PartialHolding,
                 line: $this->fixedReplies->partialHoldingReply(now()),
             );
+
+        [$partial, $attributes] = $this->withEasyWords($conversation, $partial, $easy, $attributes);
 
         try {
             return $this->sendCombinedReply->handle($conversation, $partial, $attributes);
