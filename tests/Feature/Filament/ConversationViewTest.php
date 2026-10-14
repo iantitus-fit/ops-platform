@@ -239,3 +239,89 @@ it('shows no Customer wrote line without a held draft (G-02-1.1)', function () {
         ->assertSee(CONVERSATION_VIEW_FIRST_TEXT)
         ->assertDontSee('Customer wrote');
 });
+
+/**
+ * Dana's thread with the draft marked as the answer to her first text, the way the front desk records it. Returns the
+ * conversation.
+ */
+function conversationViewWithDraftAnsweringFirstText(): Conversation
+{
+    $conversation = conversationViewWithLiveDraft();
+    $firstText = Message::query()->where('conversation_id', $conversation->id)->where('direction', 'in')->sole();
+
+    Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->sole()
+        ->update(['meta' => ['in_reply_to' => [$firstText->id]]]);
+
+    return $conversation;
+}
+
+it('says the customer wrote again since the draft, above Send (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => 'Also, it is leaking', 'created_at' => now()->subMinute()]);
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSeeInOrder([
+            'Needs you',
+            'Customer wrote',
+            'The customer wrote again since this draft',
+            'wire:model="draftBody"',
+            'Send',
+        ], escape: false);
+
+    expect(conversationViewNeedsYouCard($response->getContent()))->toContain('The customer wrote again since this draft');
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation]);
+
+    expect($thread->instance()->customerWroteAgain)->toBeTrue();
+});
+
+it('shows no wrote-again line when the customer has said nothing since the draft (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('Needs you')
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+it('counts a text that arrived while the run was in flight, with an id below the draft (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    $draft = Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->sole();
+
+    // Made after the draft's burst was read but before the draft was saved: its id is between the two. Created first
+    // by id order, then the draft is pushed after it so the draft keeps the highest id.
+    $lateText = Message::factory()->for($conversation)->create(['body' => 'One more thing', 'created_at' => now()->subMinutes(6)]);
+    $newDraft = $draft->replicate();
+    $draft->delete();
+    $newDraft->save();
+
+    expect($lateText->id)->toBeLessThan($newDraft->id);
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeTrue();
+});
+
+it('shows no wrote-again line on a draft that does not record what it answered (D-22)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::factory()->for($conversation)->create(['body' => 'Hello again', 'created_at' => now()->subMinute()]);
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('Needs you')
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+it('shows no wrote-again line without a held draft (D-22)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->delete();
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
