@@ -56,7 +56,14 @@ class Validator
      *
      * @var list<string>
      */
-    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply', 'complaint_reply'];
+    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply', 'complaint_reply', 'partial_holding_reply', 'check_in_reply', 'added_info_reply', 'discount_reply'];
+
+    /**
+     * The four ways a re-sent price can differ from the one before it; each needs a lead in price_leads.
+     *
+     * @var list<string>
+     */
+    private const PRICE_LEAD_KEYS = ['same', 'higher', 'lower', 'changed'];
 
     /**
      * @var list<string>
@@ -219,6 +226,11 @@ class Validator
                 'holding_reply' => 'bail|required|string',
                 'handoff_reply' => 'bail|required|string',
                 'complaint_reply' => 'bail|required|string',
+                'partial_holding_reply' => 'bail|required|string',
+                'check_in_reply' => 'bail|required|string',
+                'added_info_reply' => 'bail|required|string',
+                'discount_reply' => 'bail|sometimes|string',
+                'price_leads' => 'bail|sometimes|array',
                 'check_in_hours' => 'bail|sometimes|integer:strict|min:1|max:12',
             ],
             'triage' => [
@@ -501,20 +513,26 @@ class Validator
 
     /**
      * The first code-check finding in a text that goes out without the owner, as a plain sentence, or null
-     * when the text is clean. `$kind` names the text in the sentence: "reply" or "text".
+     * when the text is clean. `$kind` names the text in the sentence: "reply" or "text". `$skipRules` lists
+     * code-check rules that do not apply to this text (only the discount reply skips "discount"), and
+     * `$label` is the name the owner reads when it differs from the field path.
      *
      * @param  array<array-key, mixed>  $neverSay
+     * @param  list<string>  $skipRules
      * @return array{file: string, field: ?string, message: string}|null
      */
-    private function fixedTextError(IcmFile $file, string $field, string $text, array $neverSay, string $kind): ?array
+    private function fixedTextError(IcmFile $file, string $field, string $text, array $neverSay, string $kind, array $skipRules = [], ?string $label = null): ?array
     {
-        $finding = CodeChecks::findings($text, $neverSay)[0] ?? null;
+        $finding = array_values(array_filter(
+            CodeChecks::findings($text, $neverSay),
+            fn (array $found) => ! in_array($found['rule'], $skipRules, true),
+        ))[0] ?? null;
 
         if ($finding === null) {
             return null;
         }
 
-        $sentence = "{$field} ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+        $sentence = ($label ?? $field).' '.CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
 
         return $this->error($file->path, $field, $finding['rule'] === 'never_say'
             ? $sentence
@@ -723,26 +741,12 @@ class Validator
             foreach (self::REPLY_FIELDS as $field) {
                 $text = $file->frontMatter[$field] ?? null;
 
-                if (! is_string($text)) {
-                    continue;
-                }
-
-                $unknownFillIn = $this->unknownFillIn($text);
-
-                if ($unknownFillIn !== null) {
-                    $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are '.$this->fillInList());
-                }
-
-                if (str_contains($text, '{check_in_time}') && ($file->frontMatter['check_in_hours'] ?? null) === null) {
-                    $errors[] = $this->error($file->path, $field, $field.' uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out');
-                }
-
-                $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply');
-
-                if ($error !== null) {
-                    $errors[] = $error;
+                if (is_string($text)) {
+                    array_push($errors, ...$this->replyTextErrors($file, $field, $field, $text, $neverSay, $field === 'discount_reply' ? ['discount'] : []));
                 }
             }
+
+            array_push($errors, ...$this->priceLeadErrors($file, $files, $neverSay));
 
             $phone = $file->frontMatter['utility_phone'] ?? null;
 
@@ -752,6 +756,92 @@ class Validator
         }
 
         return $errors;
+    }
+
+    /**
+     * What is wrong with one fixed text the owner wrote: a fill-in this app does not know, a check-in time
+     * while check_in_hours is off, and the first code-check finding. `$field` is the error's field path and
+     * `$label` the name the owner reads.
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @param  list<string>  $skipRules
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function replyTextErrors(IcmFile $file, string $field, string $label, string $text, array $neverSay, array $skipRules = []): array
+    {
+        $errors = [];
+        $unknownFillIn = $this->unknownFillIn($text);
+
+        if ($unknownFillIn !== null) {
+            $errors[] = $this->error($file->path, $field, $label.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are '.$this->fillInList());
+        }
+
+        if (str_contains($text, '{check_in_time}') && ($file->frontMatter['check_in_hours'] ?? null) === null) {
+            $errors[] = $this->error($file->path, $field, $label.' uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out');
+        }
+
+        $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply', $skipRules, $label);
+
+        if ($error !== null) {
+            $errors[] = $error;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * What is wrong with price_leads: missing while a service has price sentences (the first one in path
+     * order is named), a direction without a lead, and any lead that breaks the code checks every fixed reply
+     * must pass. Leads go in front of a re-sent price sentence, so they are held to the same rules.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function priceLeadErrors(IcmFile $file, Collection $files, array $neverSay): array
+    {
+        $leads = $file->frontMatter['price_leads'] ?? null;
+
+        if ($leads === null) {
+            $service = $files->first(fn (IcmFile $candidate) => $candidate->kind === IcmFileKind::Typed
+                && $candidate->type === 'service'
+                && (! empty($candidate->frontMatter['price_sentences']) || ! empty($candidate->frontMatter['price_default'])));
+
+            return $service === null
+                ? []
+                : [$this->error($file->path, 'price_leads', "price_leads is missing, and it is required because {$service->path} has price sentences")];
+        }
+
+        if (! is_array($leads)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach (self::PRICE_LEAD_KEYS as $key) {
+            $text = $leads[$key] ?? null;
+
+            if (! is_string($text) || trim($text) === '') {
+                $errors[] = $this->error($file->path, "price_leads.{$key}", 'price_leads needs '.$this->priceLeadKeyList()."; {$key} is missing");
+
+                continue;
+            }
+
+            array_push($errors, ...$this->replyTextErrors($file, "price_leads.{$key}", "price_leads {$key}", $text, $neverSay));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The four price lead keys for the owner to read: "same, higher, lower and changed".
+     */
+    private function priceLeadKeyList(): string
+    {
+        $keys = self::PRICE_LEAD_KEYS;
+        $last = array_pop($keys);
+
+        return implode(', ', $keys).' and '.$last;
     }
 
     /**
