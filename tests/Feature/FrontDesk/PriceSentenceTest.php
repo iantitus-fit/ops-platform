@@ -1,11 +1,17 @@
 <?php
 
 use App\Ai\AgentReply;
+use App\Ai\Agents\FrontDeskAgent;
+use App\Enums\ActivityType;
+use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Enums\PausedReason;
 use App\Icm\ActiveConfig;
+use App\Models\Contact;
+use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
@@ -310,4 +316,180 @@ it('stops the sentence for the run when Jev finds a danger in the model\'s words
         ->and(priceSentenceTextsToDana())->toHaveCount(1)
         ->and(priceSentenceTextsToDana()[0]['body'])->not->toContain('$89')
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
+});
+
+/**
+ * The line the owner reads on the held price draft: what the timeline and the Needs you list say about why it waits.
+ */
+function priceSentenceHeldReason(Message $draft): string
+{
+    return Contact::query()->sole()->activities()->where('type', ActivityType::DraftHeld->value)->where('subject_id', $draft->id)->sole()->summary;
+}
+
+it('holds a price_policy none service as a price draft with the holding reply and sends no sentence (D-04)', function () {
+    priceSentenceRun('How much is a furnace tune-up?', [
+        'reply' => 'Mike will text you the tune-up price.',
+        'label' => 'price',
+        'price_services' => ['furnace-tune-up'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('label:price')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(priceSentenceTextsToDana())->toHaveCount(1)
+        ->and(priceSentenceTextsToDana()[0]['body'])->not->toContain('$');
+});
+
+it('holds a passing reply that rides with a price question code cannot answer, naming the service (D-04, D-40)', function () {
+    priceSentenceRun('How much is a furnace tune-up?', [
+        'reply' => 'Is it gas or electric?',
+        'label' => 'intake_question',
+        'price_services' => ['furnace-tune-up'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('price:no_sentence')
+        ->and($draft->body)->toBe('Is it gas or electric?')
+        ->and($draft->gate['reason']['plain'])->toBe('Held: no price on file for Furnace tune-up')
+        ->and(priceSentenceHeldReason($draft))->toBe('Held: no price on file for Furnace tune-up')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('holds a slug the folder does not have as an empty price draft, never showing the slug to the owner (D-08, D-40)', function () {
+    priceSentenceRun('How much to fix my roof?', [
+        'reply' => '',
+        'label' => 'faq_answer',
+        'price_services' => ['roof-repair'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->body)->toBe('')
+        ->and($draft->gate_reason)->toBe('price:no_sentence')
+        ->and($draft->gate['checks']['classifier']['ran'])->toBeFalse()
+        ->and($draft->gate['reason']['plain'])->toBe('Held: no price on file for a service not in your folder')
+        ->and(priceSentenceHeldReason($draft))->not->toContain('roof-repair')
+        ->and(OwnerAlert::query()->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(fakeClassifier()->calls())->toBe([]);
+});
+
+it('names every service with no price on file, in the order asked (D-40)', function () {
+    priceSentenceRun('How much for a tune-up and a roof?', [
+        'reply' => '',
+        'price_services' => ['furnace-tune-up', 'roof-repair'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate['reason']['plain'])->toBe('Held: no price on file for Furnace tune-up and a service not in your folder');
+});
+
+it('holds a service whose sentences are keyed to answers until the keyed pick exists (D-04)', function () {
+    priceSentenceRun('How much for a new system?', [
+        'reply' => '',
+        'price_services' => ['system-replacement'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('price:no_sentence')
+        ->and($draft->gate['reason']['plain'])->toBe('Held: no price on file for Replacement system')
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
+});
+
+it('sends the sentence it has with the partial line and holds the service it has none for (D-08)', function () {
+    priceSentenceRun('How much for an AC visit and a roof?', [
+        'reply' => '',
+        'price_services' => ['ac-repair', 'roof-repair'],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->body)->toBe('')
+        ->and($draft->gate['reason']['plain'])->toBe('Held: no price on file for a service not in your folder')
+        ->and(priceSentenceTextsToDana())->toHaveCount(1)
+        ->and(priceSentenceTextsToDana()[0]['body'])->toBe(priceSentenceFirstText(PRICE_SENTENCE_AC.' '.PRICE_SENTENCE_PARTIAL_LINE))
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0);
+});
+
+it('still holds a price the model writes itself when no service is flagged (D-04)', function () {
+    priceSentenceRun('How much is the diagnostic?', [
+        'reply' => 'A diagnostic is $89.',
+        'label' => 'faq_answer',
+        'price_services' => [],
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('code:price')
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
+});
+
+it('sends nothing and never asks the agent in a paused conversation (D-11)', function () {
+    priceSentenceCustomerTexts('How much is the diagnostic?');
+    Conversation::query()->sole()->update(['paused_at' => now(), 'paused_reason' => PausedReason::TakenOver]);
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    runQueuedFrontDeskJobs();
+
+    FrontDeskAgent::assertNeverPrompted();
+
+    expect(priceSentenceTextsToDana())->toBe([])
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
+});
+
+it('sends nothing to a contact who opted out (D-11)', function () {
+    priceSentenceCustomerTexts('How much is the diagnostic?');
+    Contact::query()->sole()->update(['sms_opted_out_at' => now()]);
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    runQueuedFrontDeskJobs();
+
+    expect(priceSentenceTextsToDana())->toBe([])
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
+});
+
+it('pauses for the reply cap without sending a sentence when the hour is already full (D-11)', function () {
+    config(['gate.reply_cap.per_hour' => 1]);
+    priceSentenceCustomerTexts('How much is the diagnostic?');
+    Message::factory()->for(Conversation::query()->sole())->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'body' => 'Earlier automated text',
+        'created_at' => now()->subMinutes(5),
+    ]);
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    runQueuedFrontDeskJobs();
+
+    FrontDeskAgent::assertNeverPrompted();
+
+    expect(priceSentenceTextsToDana())->toBe([])
+        ->and(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::ReplyCap)
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::ReplyCap);
+});
+
+it('counts the code answer against the reply cap, so the following burst pauses (D-11)', function () {
+    config(['gate.reply_cap.per_hour' => 2]);
+    priceSentenceCustomerTexts('How much is the diagnostic?');
+    Message::factory()->for(Conversation::query()->sole())->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'body' => 'Earlier automated text',
+        'created_at' => now()->subMinutes(5),
+    ]);
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    runQueuedFrontDeskJobs();
+
+    expect(priceSentenceTextsToDana())->toHaveCount(1);
+
+    priceSentenceCustomerTextsAgain(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    expect(priceSentenceTextsToDana())->toHaveCount(1)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::ReplyCap->value)->count())->toBe(1)
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::ReplyCap);
 });
