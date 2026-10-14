@@ -7,7 +7,7 @@ use App\Icm\BusinessClock;
 use Carbon\CarbonInterface;
 
 /**
- * The owner's two fixed replies with their fill-ins completed by code: {owner_name}, {business_name},
+ * The owner's fixed replies, all filled in by code and sent without the classifier, with these fill-ins: {owner_name}, {business_name},
  * {next_open}, {today_or_next_open}, {next_opening} and {check_in_time}. Code writes these texts, so
  * every time they promise is computed from business/hours.md at the moment of sending and is always
  * true (D-13, D-25), and they skip the classifier when they send (D-12). The send path adds the
@@ -31,6 +31,17 @@ class FixedReplies
     public function handoffReply(CarbonInterface $moment): string
     {
         return $this->render($this->config->replies()['handoff_reply'], $moment);
+    }
+
+    /**
+     * The reply sent when a customer complains. A version that went live before this reply existed has no
+     * complaint_reply, so it falls back to the holding reply and keeps sending.
+     */
+    public function complaintReply(CarbonInterface $moment): string
+    {
+        $replies = $this->config->replies();
+
+        return $this->render($replies['complaint_reply'] ?? $replies['holding_reply'], $moment);
     }
 
     private function render(string $template, CarbonInterface $moment): string

@@ -56,7 +56,7 @@ class Validator
      *
      * @var list<string>
      */
-    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply'];
+    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply', 'complaint_reply'];
 
     /**
      * @var list<string>
@@ -218,6 +218,7 @@ class Validator
                 'utility_phone' => 'bail|nullable|string',
                 'holding_reply' => 'bail|required|string',
                 'handoff_reply' => 'bail|required|string',
+                'complaint_reply' => 'bail|required|string',
                 'check_in_hours' => 'bail|sometimes|integer:strict|min:1|max:12',
             ],
             'triage' => [
