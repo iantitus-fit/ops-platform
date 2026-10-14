@@ -20,6 +20,9 @@ dataset('broken replies', [
     'check_in_hours of thirteen' => ["owner_name: Mike\n", "owner_name: Mike\ncheck_in_hours: 13\n", 'rules/replies.md: check_in_hours must be 12 or less (you wrote 13)'],
     'check_in_hours in words' => ["owner_name: Mike\n", "owner_name: Mike\ncheck_in_hours: two\n", 'rules/replies.md: check_in_hours must be a whole number (you wrote two)'],
     'a check-in time while check_in_hours is off' => ['he\'ll get back to you {next_open}."', 'he\'ll get back to you by {check_in_time}."', 'rules/replies.md: holding_reply uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out'],
+    'a missing complaint reply' => ["complaint_reply: \"I'm sorry about this. I've passed your message straight to {owner_name}, and he'll get back to you {today_or_next_open}.\"\n", '', 'rules/replies.md: complaint_reply is missing, and it is required'],
+    'a promise in the complaint reply' => ["I'm sorry about this.", "I'm sorry about this. We promise to fix it.", 'rules/replies.md: complaint_reply makes a promise (promise); a fixed reply goes out without you, so it cannot mention a price, offer a discount or make a promise'],
+    'a never_say phrase in the complaint reply' => ["I'm sorry about this.", "I'm sorry about this. No problem.", 'rules/replies.md: complaint_reply uses a phrase the voice file says never to use (No problem)'],
     'a utility phone that is not a number' => ['utility_phone: "+13125550188"', 'utility_phone: "call the gas company"', 'rules/replies.md: utility_phone must be a phone number such as +13125550188 (you wrote call the gas company)'],
 ]);
 

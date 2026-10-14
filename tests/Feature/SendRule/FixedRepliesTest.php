@@ -1,6 +1,7 @@
 <?php
 
 use App\SendRule\FixedReplies;
+use App\Icm\ActiveConfig;
 use Carbon\CarbonImmutable;
 
 it('fills the holding reply with the owner name and the next opening', function () {
@@ -103,4 +104,27 @@ it('never lets a literal check-in time reach a customer when an old version has 
     expect(app(FixedReplies::class)->holdingReply($moment))
         ->toBe('We will check in by 8 am tomorrow.')
         ->not->toContain('{');
+});
+
+it('fills the complaint reply with the owner name and today or the next opening', function () {
+    activateExampleFolder();
+
+    $moment = CarbonImmutable::parse('2026-10-13 10:00', 'America/Chicago');
+
+    expect(app(FixedReplies::class)->complaintReply($moment))->toBe(
+        "I'm sorry about this. I've passed your message straight to Mike, and he'll get back to you today if possible, or after we open at 8 am tomorrow."
+    );
+});
+
+it('falls back to the holding reply when a live version has no complaint reply', function () {
+    $version = activateExampleFolder();
+    $compiled = $version->compiled;
+    unset($compiled['files']['rules/replies.md']['front_matter']['complaint_reply']);
+    $version->update(['compiled' => $compiled]);
+    app(ActiveConfig::class)->refresh();
+
+    $moment = CarbonImmutable::parse('2026-10-13 10:00', 'America/Chicago');
+
+    expect(app(FixedReplies::class)->complaintReply($moment))
+        ->toBe(app(FixedReplies::class)->holdingReply($moment));
 });
