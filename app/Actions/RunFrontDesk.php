@@ -31,6 +31,7 @@ use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\FixedReplies;
 use App\SendRule\LifeSafety;
+use App\SendRule\OfferSentences;
 use App\SendRule\PricePick;
 use App\SendRule\PriceSentencePicker;
 use App\SendRule\ReplyParts;
@@ -83,6 +84,7 @@ class RunFrontDesk
         private readonly PriceSentencePicker $priceSentencePicker,
         private readonly SendCombinedReply $sendCombinedReply,
         private readonly FixedReplies $fixedReplies,
+        private readonly OfferSentences $offerSentences,
     ) {}
 
     /**
@@ -149,14 +151,16 @@ class RunFrontDesk
 
         $askedSlugs = array_values(array_unique([...$run->reply->priceServices, ...$this->pendingPriceSlugs($conversation)]));
         $picks = $this->pickPrices($conversation, $askedSlugs, $newAnswers);
-        $sentences = array_map(fn (PricePick $pick): string => $this->sentenceText($pick), array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
+        $priceSentences = array_map(fn (PricePick $pick): string => $this->sentenceText($pick), array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
+        $offers = $run->reply->asksDiscount ? $this->offerSentences->liveToday() : [];
+        $sentences = [...$priceSentences, ...array_column($offers, 'sentence')];
         $unanswered = $this->slugsWith($picks, PricePick::HOLD);
 
         $words = $run->reply->reply;
         $customerText = $this->prompt->promptText($burst);
 
-        if ($words === '' && $picks !== [] && count($sentences) === count($picks)) {
-            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences);
+        if ($words === '' && $sentences !== [] && count($priceSentences) === count($picks)) {
+            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'));
 
             return;
         }
@@ -173,6 +177,7 @@ class RunFrontDesk
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
             $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
             $picks = [];
+            $offers = [];
             $sentences = [];
         } elseif ($verdict->asksForPerson) {
             $this->handOffToOwner($conversation, $burst);
@@ -190,7 +195,7 @@ class RunFrontDesk
         ];
 
         $parts = new ReplyParts(codeSentences: $sentences, modelWords: $words);
-        $sentMeta = ['meta' => [...$attributes['meta'], 'price_sentences' => $this->priceSentencesMeta($picks)]];
+        $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
         if ($verdict->outcome === GateOutcome::Send && $sentences !== [] && $this->sendCombinedReply->composedLength($conversation, $parts) > SendOwnerReply::MAX_LENGTH) {
             $verdict = $verdict->heldFor('too_long');
@@ -337,21 +342,38 @@ class RunFrontDesk
     }
 
     /**
-     * Send the owner's sentences alone, the customer's whole answer to a price question. Code wrote them, so Jev is not
+     * The meta of a text that carries owner sentences: the price sentences it carried, and, when it carried offers, which
+     * ones (D-12, D-13).
+     *
+     * @param  list<PricePick>  $picks
+     * @param  list<string>  $offerSlugs
+     * @return array<string, mixed>
+     */
+    private function codeSentencesMeta(array $picks, array $offerSlugs): array
+    {
+        return [
+            'price_sentences' => $this->priceSentencesMeta($picks),
+            ...($offerSlugs === [] ? [] : ['offers' => $offerSlugs]),
+        ];
+    }
+
+    /**
+     * Send the owner's sentences alone, the customer's whole answer to a price or discount question. Code wrote them, so Jev is not
      * asked (D-04). A send that failed alerts the owner exactly as a reply that failed does; any other refusal becomes
      * an empty price draft, so the question still reaches the owner, as a refused reply does.
      *
      * @param  Collection<int, Message>  $burst
      * @param  list<PricePick>  $picks
      * @param  list<string>  $sentences
+     * @param  list<string>  $offerSlugs  The offers whose sentences are among the sentences.
      */
-    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences): void
+    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences, array $offerSlugs): void
     {
         $inReplyTo = $burst->pluck('id')->all();
 
         try {
             $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
-                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], 'price_sentences' => $this->priceSentencesMeta($picks)],
+                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$this->codeSentencesMeta($picks, $offerSlugs)],
             ]);
         } catch (DomainException $exception) {
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {

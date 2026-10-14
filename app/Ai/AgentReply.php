@@ -37,9 +37,9 @@ readonly class AgentReply
      *
      * The reply's length is not checked here: the hard limit belongs to the send rule.
      *
-     * A blank reply is accepted only when the model also names a service whose price the customer asked about: a pure
-     * price ask has no other words, and asking Jev about filler words would hold them on the customer's price question.
-     * Anything else with a blank reply is still malformed.
+     * A blank reply is accepted only when the model also names a service whose price the customer asked about or flags
+     * a discount ask: a pure price or discount ask has no other words, and asking Jev about filler words would hold them
+     * on the customer's question. Anything else with a blank reply is still malformed.
      *
      * @param  array<string, mixed>  $data
      *
@@ -49,8 +49,9 @@ readonly class AgentReply
     {
         $reply = $data['reply'] ?? null;
         $priceServices = self::priceServices($data['price_services'] ?? null);
+        $asksDiscount = ($data['asks_discount'] ?? null) === true;
 
-        if (! is_string($reply) || (trim($reply) === '' && $priceServices === [])) {
+        if (! is_string($reply) || (trim($reply) === '' && $priceServices === [] && ! $asksDiscount)) {
             throw new UnexpectedValueException('The answer has no reply text.');
         }
 
@@ -72,7 +73,7 @@ readonly class AgentReply
             intakeAnswers: self::intakeAnswers($data['intake_answers'] ?? []),
             customerName: self::optionalText($data, 'customer_name'),
             priceServices: $priceServices,
-            asksDiscount: ($data['asks_discount'] ?? null) === true,
+            asksDiscount: $asksDiscount,
             touchesWaiting: is_bool($data['touches_waiting'] ?? null) ? $data['touches_waiting'] : null,
             waitingNote: in_array($data['waiting_note'] ?? null, self::WAITING_NOTES, true) ? $data['waiting_note'] : null,
             easyReply: self::tolerantText($data['easy_reply'] ?? null),
