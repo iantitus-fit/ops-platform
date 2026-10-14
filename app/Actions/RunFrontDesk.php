@@ -131,13 +131,10 @@ class RunFrontDesk
             return;
         }
 
+        $waiting = $conversation->messages()->where('status', MessageStatus::Draft)->first();
+
         try {
-            $run = $this->runFrontDeskAgent->handle(
-                $agent,
-                $conversation,
-                $burst,
-                waitingDraft: $conversation->messages()->where('status', MessageStatus::Draft)->first(),
-            );
+            $run = $this->runFrontDeskAgent->handle($agent, $conversation, $burst, waitingDraft: $waiting);
         } catch (FrontDeskUnavailable) {
             $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'every model failed', 'Front desk could not answer');
 
@@ -165,13 +162,18 @@ class RunFrontDesk
         $priceHeld = count($priceSentences) !== count($picks);
         $noLiveOffer = $run->reply->asksDiscount && $offers === [];
 
-        if ($words === '' && $sentences !== [] && ! $priceHeld && ! $noLiveOffer) {
+        $codeOnly = $words === '' && $sentences !== [] && ! $priceHeld && ! $noLiveOffer;
+
+        if ($codeOnly && $waiting === null) {
             $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'));
 
             return;
         }
 
-        if ($words === '' && $noLiveOffer && ! $priceHeld) {
+        if ($codeOnly) {
+            $composed = '';
+            $verdict = null;
+        } elseif ($words === '' && $noLiveOffer && ! $priceHeld) {
             $composed = '';
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'discount:no_live_offer');
         } elseif ($words === '') {
@@ -182,21 +184,21 @@ class RunFrontDesk
             $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed);
         }
 
-        if ($verdict->lifeSafety) {
+        if ($verdict?->lifeSafety) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
             $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
             $picks = [];
             $offers = [];
             $sentences = [];
-        } elseif ($verdict->asksForPerson) {
+        } elseif ($verdict?->asksForPerson) {
             $this->handOffToOwner($conversation, $burst);
 
             return;
         }
 
-        if ($unanswered !== [] && $verdict->outcome === GateOutcome::Send) {
+        if ($unanswered !== [] && $verdict?->outcome === GateOutcome::Send) {
             $verdict = $verdict->heldFor('price:no_sentence', $this->noPriceReason($unanswered));
-        } elseif ($noLiveOffer && $verdict->outcome === GateOutcome::Send) {
+        } elseif ($noLiveOffer && $verdict?->outcome === GateOutcome::Send) {
             $verdict = $verdict->heldFor('discount:no_live_offer');
         }
 
@@ -208,31 +210,21 @@ class RunFrontDesk
         $parts = new ReplyParts(codeSentences: $sentences, modelWords: $words);
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
+        if ($waiting !== null) {
+            $this->answerWhileDraftWaits($run, $conversation, $burst, $waiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'));
+
+            return;
+        }
+
         if ($verdict->outcome === GateOutcome::Send && $sentences !== [] && $this->sendCombinedReply->composedLength($conversation, $parts) > SendOwnerReply::MAX_LENGTH) {
             $verdict = $verdict->heldFor('too_long');
         }
 
         if ($verdict->outcome === GateOutcome::Send) {
-            try {
-                if ($sentences === []) {
-                    $this->outboundSender->send(
-                        $conversation,
-                        $composed,
-                        MessageAuthor::Agent,
-                        SendOrigin::Automated,
-                        [...$attributes, ...$verdict->toAttributes($run->reply->label)],
-                    );
-                } else {
-                    $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
-                }
+            $verdict = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
 
+            if ($verdict === null) {
                 return;
-            } catch (DomainException $exception) {
-                if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
-                    return;
-                }
-
-                $verdict = $verdict->heldFor('send_refused');
             }
         }
 
@@ -240,6 +232,115 @@ class RunFrontDesk
 
         if ($sentences !== []) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+        }
+    }
+
+    /**
+     * Send the model's words that passed the send rule, with any owner sentences and fixed line that ride with them, as
+     * one text. Returns null when the text went out or its failure was raised to the owner. Returns the verdict held
+     * for `send_refused` when the sender only refused it, so the caller keeps the words as a draft.
+     *
+     * @param  Collection<int, Message>  $burst
+     * @param  array<string, mixed>  $attributes
+     * @param  array{meta: array<string, mixed>}  $sentMeta
+     */
+    private function sendPassingReply(AgentRun $run, Conversation $conversation, Collection $burst, Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta): ?Verdict
+    {
+        try {
+            if ($parts->codeSentences === [] && $parts->line === null) {
+                $this->outboundSender->send(
+                    $conversation,
+                    $composed,
+                    MessageAuthor::Agent,
+                    SendOrigin::Automated,
+                    [...$attributes, ...$verdict->toAttributes($run->reply->label)],
+                );
+            } else {
+                $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
+            }
+
+            return null;
+        } catch (DomainException $exception) {
+            if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
+                return null;
+            }
+
+            return $verdict->heldFor('send_refused');
+        }
+    }
+
+    /**
+     * The run for a customer who writes while a draft waits for the owner (D-18, D-22, D-29). The waiting draft W is
+     * the live draft when the run started; the model's words are R and the owner's price and offer sentences are S.
+     *
+     * Only a reply the model marks as not touching W (`touches_waiting` exactly false) may send while W stays live: it
+     * goes out beside W with no new alert. A reply that touches W, or says nothing about it, never sends, because a
+     * stale "Thursday" draft beside a "Friday" answer would send the wrong day; it becomes the one fresh draft that
+     * replaces W. A customer is never left with no reply: a held run ends with one owner-written line, either the
+     * added-info reply or, when the owner's own text already ended the wait, a new holding reply.
+     *
+     * @param  Collection<int, Message>  $burst
+     * @param  array<string, mixed>  $attributes
+     * @param  array{meta: array<string, mixed>}  $sentMeta
+     * @param  list<PricePick>  $picks
+     * @param  list<string>  $offerSlugs
+     */
+    private function answerWhileDraftWaits(AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs): void
+    {
+        if ($verdict === null) {
+            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs);
+
+            return;
+        }
+
+        if ($verdict->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
+            $verdict = $verdict->heldFor('touches_waiting');
+        }
+
+        if ($verdict->outcome === GateOutcome::Send && $parts->codeSentences !== [] && $this->sendCombinedReply->composedLength($conversation, $parts) > SendOwnerReply::MAX_LENGTH) {
+            $verdict = $verdict->heldFor('too_long');
+        }
+
+        if ($verdict->outcome === GateOutcome::Send) {
+            $verdict = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
+
+            if ($verdict === null) {
+                return;
+            }
+        }
+
+        $words = (string) $parts->modelWords;
+
+        $this->storeDraft($conversation, $words === '' ? $waiting->body : $words, $verdict, $run->reply->label, $attributes, sendHolding: false);
+
+        if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
+            return;
+        }
+
+        if ($parts->codeSentences !== []) {
+            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+        } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
+            $this->sendAddedInfoReply($conversation, $sentMeta);
+        } else {
+            $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
+        }
+    }
+
+    /**
+     * Tell a customer who added to a question the owner already holds that it was passed along. A text that cannot go
+     * out is reported to the log and never raised: the draft and its alert already exist.
+     *
+     * @param  array{meta: array<string, mixed>}  $attributes
+     */
+    private function sendAddedInfoReply(Conversation $conversation, array $attributes): void
+    {
+        try {
+            $this->sendCombinedReply->handle($conversation, new ReplyParts(
+                lineKind: MessageKind::AddedInfoReply,
+                line: $this->fixedReplies->addedInfoReply(now()),
+            ), $attributes);
+        } catch (DomainException $exception) {
+            report($exception);
         }
     }
 

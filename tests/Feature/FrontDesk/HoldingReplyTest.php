@@ -140,7 +140,8 @@ it('sends no second holding reply when a newer text replaces the waiting draft (
     holdingReplyCustomerTextsAgain();
 
     expect(holdingReplyMessages())->toHaveCount(1)
-        ->and(holdingReplyTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(holdingReplyTextsToDana())->toHaveCount(2)
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
 });
 
@@ -167,7 +168,8 @@ it('sends no third holding reply while the newest one is still unanswered (D-14)
     holdingReplyCustomerTextsAgain();
 
     expect(holdingReplyMessages())->toHaveCount(2)
-        ->and(holdingReplyTextsToDana())->toHaveCount(2);
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(holdingReplyTextsToDana())->toHaveCount(3);
 });
 
 it('sends a new holding reply after the owner discarded the waiting draft (D-14)', function () {
@@ -315,7 +317,8 @@ it('sends no new holding reply for a later held draft after a complaint or disco
 
     expect(Message::query()->where('kind', $kind->value)->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0)
-        ->and(holdingReplyTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(holdingReplyTextsToDana())->toHaveCount(2)
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
 })->with([
     'a complaint' => ['The technician left a mess in my basement', 'complaint', 'We are sorry to hear that.', MessageKind::ComplaintHolding],

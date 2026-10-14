@@ -238,7 +238,8 @@ it('sends no full holding reply for a later held draft in the same wait (D-30)',
     priceSentenceCustomerTextsAgain(['reply' => 'Mike will text you the price.', 'label' => 'price']);
 
     expect(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0)
-        ->and(priceSentenceTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(priceSentenceTextsToDana())->toHaveCount(2)
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
 });
 
