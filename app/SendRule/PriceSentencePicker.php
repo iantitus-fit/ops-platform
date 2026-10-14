@@ -16,8 +16,9 @@ use Illuminate\Support\Collection;
  * owner. The model's slug is never trusted beyond ActiveConfig finding it.
  *
  * A service whose sentences are keyed to intake answers is priced from the customer's stored answers. A question with
- * no answer yet is asked first; an answer that matches an option picks that option's sentence; any other answer picks
- * the owner's default sentence, or holds when the file has none.
+ * no answer yet is asked first; an answer that matches an option picks that option's sentence. An answer that matches
+ * none is asked again once; after a second miss, and for any option the owner has no sentence for, the owner's default
+ * sentence goes out, or the price holds when the file has none.
  *
  * The pick reads only stored rows and the live version, never the clock, so running it again on the same rows picks
  * the same sentence key.
@@ -80,16 +81,23 @@ class PriceSentencePicker
         $keyingKeys = array_map('strval', array_keys($keyed[0]['answers']));
         $current = $this->recordIntakeAnswers->currentFor($conversation, $slug);
 
-        $missing = array_values(array_filter($keyingKeys, fn (string $key): bool => ! $current->has($key)));
+        $options = [];
+        $missing = [];
+
+        foreach ($keyingKeys as $key) {
+            $row = $current->get($key);
+
+            if ($row === null || ($row->option === null && $this->unmatchedCount($conversation, $slug, $key) === 1)) {
+                $missing[] = $key;
+
+                continue;
+            }
+
+            $options[$key] = $row->option;
+        }
 
         if ($missing !== []) {
             return PricePick::needsAnswers($slug, $missing);
-        }
-
-        $options = [];
-
-        foreach ($keyingKeys as $key) {
-            $options[$key] = $current[$key]->option;
         }
 
         ksort($options);
@@ -104,6 +112,20 @@ class PriceSentencePicker
         }
 
         return $this->pickDefault($slug, $service);
+    }
+
+    /**
+     * How many of the customer's answers to one question matched no option. One miss is asked again; a second is not
+     * (D-06). Earlier misses do not matter once the newest answer matches, because the caller only asks when the
+     * newest answer is itself a miss.
+     */
+    private function unmatchedCount(Conversation $conversation, string $slug, string $key): int
+    {
+        return $conversation->intakeAnswers()
+            ->where('service_slug', $slug)
+            ->where('question_key', $key)
+            ->whereNull('option')
+            ->count();
     }
 
     /**
