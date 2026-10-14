@@ -43,11 +43,13 @@ class Validator
     private const int MAX_CENTS = 100_000_000;
 
     /**
-     * The only fill-ins a fixed reply may use; the send path fills each one in.
+     * The only fill-ins a fixed reply may use; the send path fills each one in. Every time in them is
+     * computed from business/hours.md at the moment of sending. This one list builds the sync's
+     * "the only fill-ins are" sentence, so the message and the list cannot drift.
      *
      * @var list<string>
      */
-    private const REPLY_FILL_INS = ['owner_name', 'business_name', 'next_open'];
+    private const REPLY_FILL_INS = ['owner_name', 'business_name', 'next_open', 'today_or_next_open', 'next_opening', 'check_in_time'];
 
     /**
      * The reply fields that go out without the owner.
@@ -725,7 +727,7 @@ class Validator
                 $unknownFillIn = $this->unknownFillIn($text);
 
                 if ($unknownFillIn !== null) {
-                    $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are {owner_name}, {business_name} and {next_open}');
+                    $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are '.$this->fillInList());
                 }
 
                 $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply');
@@ -746,7 +748,18 @@ class Validator
     }
 
     /**
-     * The first {name} in a reply that is not one of the three fill-ins, or null when every fill-in is known.
+     * Every fill-in in braces for the owner to read: "{a}, {b} and {c}".
+     */
+    private function fillInList(): string
+    {
+        $names = array_map(fn (string $name) => '{'.$name.'}', self::REPLY_FILL_INS);
+        $last = array_pop($names);
+
+        return implode(', ', $names).' and '.$last;
+    }
+
+    /**
+     * The first {name} in a reply that is not one of the known fill-ins, or null when every fill-in is known.
      */
     private function unknownFillIn(string $text): ?string
     {

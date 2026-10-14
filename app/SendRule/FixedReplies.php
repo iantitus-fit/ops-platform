@@ -37,6 +37,7 @@ class FixedReplies
             '{owner_name}' => $this->config->replies()['owner_name'],
             '{business_name}' => $this->config->business()['name'],
             '{next_open}' => $this->clock->nextOpenPhrase($moment),
+            '{today_or_next_open}' => $this->clock->todayOrNextOpenPhrase($moment),
         ]);
     }
 }

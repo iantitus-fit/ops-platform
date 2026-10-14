@@ -72,6 +72,28 @@ class BusinessClock
         return 'when we open at '.$this->timeWords($opening).' '.$this->dayWords($local, $opening);
     }
 
+    /**
+     * The words that fill {today_or_next_open} in a fixed reply (D-25): "today if possible, or after we
+     * open at 8 am tomorrow" while the shop is open with the margin left, otherwise just "after we open
+     * at 8 am tomorrow", and "when we reopen" when the shop does not open within two weeks.
+     */
+    public function todayOrNextOpenPhrase(CarbonInterface $moment): string
+    {
+        $local = $this->inBusinessZone($moment);
+        $window = $this->windowOn($local);
+        $opening = $this->nextOpening($local);
+
+        $afterOpening = $opening === null
+            ? 'when we reopen'
+            : 'after we open at '.$this->timeWords($opening).' '.$this->dayWords($local, $opening);
+
+        if ($window !== null && $this->isOpenAt($local) && $this->hasMarginBeforeClose($local, $window['close'])) {
+            return 'today if possible, or '.$afterOpening;
+        }
+
+        return $afterOpening;
+    }
+
     private function inBusinessZone(CarbonInterface $moment): CarbonImmutable
     {
         return CarbonImmutable::instance($moment)->setTimezone($this->config->timezone());
