@@ -19,7 +19,13 @@ use Throwable;
  * every answer that fails AgentReply's checks, as a reason to try the next entry in the file's order.
  *
  * The whole chain has a time budget (gate.agent.chain_budget_seconds): a fallback starts only if the time already
- * spent plus one provider's timeout fits, so the budget only cuts the tail of the chain and never reorders it.
+ * spent plus one provider's timeout fits, so the budget only cuts the tail of the chain and never reorders it. The first
+ * call of a run always tries its first provider.
+ *
+ * The second call of a run (the whole-thread draft, D-35) shares the first call's budget: it passes the first call's
+ * start as `$budgetFrom`, and then every provider, the first included, must fit. That keeps one run inside
+ * ProcessInbound's 300-second timeout: 150 seconds for both agent calls together, about 8 for each of the two Jev
+ * calls, and the rest as margin.
  */
 class RunFrontDeskAgent
 {
@@ -51,7 +57,7 @@ class RunFrontDeskAgent
         $startedAt = ($budgetFrom ?? now())->toImmutable();
 
         foreach ($agent->providerChain() as ['provider' => $provider, 'model' => $model]) {
-            if ($failedAttempts !== [] && $this->outOfTime($startedAt)) {
+            if (($budgetFrom !== null || $failedAttempts !== []) && $this->outOfTime($startedAt)) {
                 $failedAttempts[] = [
                     'provider' => $provider,
                     'model' => $model,
