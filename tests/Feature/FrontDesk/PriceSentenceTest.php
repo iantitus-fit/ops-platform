@@ -16,6 +16,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 const PRICE_SENTENCE_OWNER_PHONE = '+12025550199';
 
@@ -492,4 +493,23 @@ it('counts the code answer against the reply cap, so the following burst pauses 
     expect(priceSentenceTextsToDana())->toHaveCount(1)
         ->and(OwnerAlert::query()->where('reason', AlertReason::ReplyCap->value)->count())->toBe(1)
         ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::ReplyCap);
+});
+
+it('keeps the price question for the owner as an empty draft when the sentence cannot be sent right now (D-04)', function () {
+    config(['gate.agent.lock_wait_seconds' => 0]);
+    priceSentenceCustomerTexts('How much is the diagnostic?');
+    $lock = Cache::lock('reply:'.Conversation::query()->sole()->id, 30);
+    $lock->get();
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['ac-repair']]);
+
+    runQueuedFrontDeskJobs();
+
+    $lock->release();
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->body)->toBe('')
+        ->and($draft->gate_reason)->toBe('send_refused')
+        ->and(OwnerAlert::query()->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
 });

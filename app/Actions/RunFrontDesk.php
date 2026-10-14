@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Ai\AgentFile;
+use App\Ai\AgentRun;
 use App\Ai\FrontDeskPrompt;
 use App\Ai\FrontDeskUnavailable;
 use App\Ai\RunFrontDeskAgent;
@@ -147,16 +148,27 @@ class RunFrontDesk
 
         $picks = $this->pickPrices($conversation, $run->reply->priceServices);
         $sentences = array_map(fn (PricePick $pick): string => (string) $pick->sentence, array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
+        $unanswered = array_values(array_map(
+            fn (PricePick $pick): string => $pick->slug,
+            array_filter($picks, fn (PricePick $pick): bool => $pick->outcome === PricePick::HOLD),
+        ));
 
-        if ($run->reply->reply === '' && $picks !== [] && count($sentences) === count($picks)) {
-            $this->sendCodeAnswer($conversation, $burst, $picks, $sentences);
+        $words = $run->reply->reply;
+        $customerText = $this->prompt->promptText($burst);
+
+        if ($words === '' && $picks !== [] && count($sentences) === count($picks)) {
+            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences);
 
             return;
         }
 
-        $words = $run->reply->reply;
-        $composed = $this->composeAutomatedText->forReply($conversation, $words);
-        $verdict = $this->decideSendOrDraft->decide($run, $this->prompt->promptText($burst), $composed);
+        if ($words === '') {
+            $composed = '';
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason($unanswered));
+        } else {
+            $composed = $this->composeAutomatedText->forReply($conversation, $words);
+            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed);
+        }
 
         if ($verdict->lifeSafety) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
@@ -167,6 +179,10 @@ class RunFrontDesk
             $this->handOffToOwner($conversation, $burst);
 
             return;
+        }
+
+        if ($unanswered !== [] && $verdict->outcome === GateOutcome::Send) {
+            $verdict = $verdict->heldFor('price:no_sentence', $this->noPriceReason($unanswered));
         }
 
         $attributes = [
@@ -268,24 +284,60 @@ class RunFrontDesk
 
     /**
      * Send the owner's sentences alone, the customer's whole answer to a price question. Code wrote them, so Jev is not
-     * asked (D-04). A send that failed alerts the owner exactly as a reply that failed does; any other refusal is
-     * reported to the log.
+     * asked (D-04). A send that failed alerts the owner exactly as a reply that failed does; any other refusal becomes
+     * an empty price draft, so the question still reaches the owner, as a refused reply does.
      *
      * @param  Collection<int, Message>  $burst
      * @param  list<PricePick>  $picks
      * @param  list<string>  $sentences
      */
-    private function sendCodeAnswer(Conversation $conversation, Collection $burst, array $picks, array $sentences): void
+    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences): void
     {
+        $inReplyTo = $burst->pluck('id')->all();
+
         try {
             $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
-                'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_sentences' => $this->priceSentencesMeta($picks)],
+                'meta' => ['in_reply_to' => $inReplyTo, 'price_sentences' => $this->priceSentencesMeta($picks)],
             ]);
         } catch (DomainException $exception) {
-            if (! $this->alertAboutFailedSend($exception, $conversation, $burst)) {
-                report($exception);
+            if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
+                return;
             }
+
+            report($exception);
+
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), 'send_refused');
+
+            $this->storeDraft($conversation, '', $verdict, $run->reply->label, [
+                'kind' => MessageKind::AgentReply,
+                'meta' => ['in_reply_to' => $inReplyTo],
+            ]);
         }
+    }
+
+    /**
+     * The sentence for the owner when a price question could not be answered by code: which services have no price on
+     * file, by the name in the service file. A slug the live folder does not have is never shown, because the model
+     * wrote it (D-40).
+     *
+     * @param  list<string>  $slugs
+     */
+    private function noPriceReason(array $slugs): string
+    {
+        $names = array_map(function (string $slug): string {
+            $name = $this->activeConfig->service($slug)['name'] ?? null;
+
+            return is_string($name) && trim($name) !== '' ? trim($name) : 'a service not in your folder';
+        }, array_values(array_unique($slugs)));
+
+        if ($names === []) {
+            return Verdict::plainReasonFor('price:no_sentence');
+        }
+
+        $last = array_pop($names);
+        $listed = $names === [] ? $last : implode(', ', $names).' and '.$last;
+
+        return "Held: no price on file for {$listed}";
     }
 
     /**

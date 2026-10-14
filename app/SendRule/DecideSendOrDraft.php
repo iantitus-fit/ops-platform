@@ -76,6 +76,34 @@ class DecideSendOrDraft
     }
 
     /**
+     * A hold for a reply that has no model words, such as a price question code cannot answer. The draft still records
+     * what was and was not checked, so the owner and later tuning read the same shape as any other held reply: the
+     * label, length and code checks did not run (passed is null), and Jev was not asked (Phase 2 D-07).
+     */
+    public function holdWithoutWords(AgentRun $run, string $customerText, string $reasonCode, ?string $plainReason = null): Verdict
+    {
+        $reply = $run->reply;
+
+        $details = [
+            'version' => 1,
+            'label' => $reply->label->value,
+            'wants_person' => $reply->wantsPerson,
+            'inputs' => ['customer_text' => $customerText, 'agent_reply' => ''],
+            'checks' => [
+                'label' => ['passed' => null, 'label' => $reply->label->value],
+                'length' => ['passed' => null, 'characters' => 0, 'limit' => SendOwnerReply::MAX_LENGTH],
+                'code' => ['passed' => null, 'findings' => []],
+                'classifier' => ['ran' => false, 'model' => null, 'answers' => null, 'error' => null, 'reading' => null],
+            ],
+            'thresholds' => config('gate.classifier'),
+            'reply_model' => ['provider' => $run->provider, 'model' => $run->model],
+            'failed_attempts' => $run->failedAttempts,
+        ];
+
+        return Verdict::hold($reasonCode, $details, plainReason: $plainReason);
+    }
+
+    /**
      * Ask Jev the owner's questions about the customer's text and the agent's words, and read the answers.
      *
      * @param  array<string, mixed>  $details
