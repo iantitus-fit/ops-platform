@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-08-PLAN.md
-last_updated: "2026-10-14T20:45:14.598Z"
+stopped_at: Completed 02.1-09-PLAN.md
+last_updated: "2026-10-14T20:56:41.007Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: a94a9805a2f59bb5d6e30b883072a968e95bd65b
+state_head: 653056cbb3c72b0d90f365c595feb84247eccf05
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 56
+  completed_plans: 57
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 9 of 16
+Plan: 10 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -113,6 +113,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P06 | 7 min | 2 tasks | 15 files |
 | Phase 02.1 P07 | 6 min | 2 tasks | 13 files |
 | Phase 02.1 P08 | 35 min | 3 tasks | 10 files |
+| Phase 02.1 P09 | 8 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -215,6 +216,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: Offer sentences are compared with amount_cents or percent only when exactly one is named and it passed its own rule; duplicate slugs are checked per type
 - [Phase 02.1]: 02.1-08: code checks run on the model's words alone, never the owner's sentence; combined length measured separately
 - [Phase 02.1]: 02.1-08: a refused code-only send becomes an empty send_refused draft, never silence
+- [Phase 02.1]: 02.1-09: a pick that still needs answers, with no model words to ask them, is held like a price with no sentence naming the service
+- [Phase 02.1]: 02.1-09: identical amount sets read as same even when the sentence key differs; ranges that only touch are higher or lower (D-39)
+- [Phase 02.1]: 02.1-09: price_pending rides on each run's own message meta; newest-first lookups on Conversation::messages() must reorder()
 
 ### Pending Todos
 
@@ -248,6 +252,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T20:45:14.529Z
-Stopped at: Completed 02.1-08-PLAN.md
+Last session: 2026-10-14T20:56:40.929Z
+Stopped at: Completed 02.1-09-PLAN.md
 Resume file: None
