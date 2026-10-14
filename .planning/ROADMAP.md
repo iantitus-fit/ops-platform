@@ -215,11 +215,11 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 1/16 plans executed
+**Plans:** 2/16 plans executed
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
-- [ ] 02.1-02-PLAN.md — Wave 2: Amounts as integer cents, percentages, money words and bare numbers in owner sentences (ANSR-01, ANSR-02)
+- [x] 02.1-02-PLAN.md — Wave 2: Amounts as integer cents, percentages, money words and bare numbers in owner sentences (ANSR-01, ANSR-02)
 - [ ] 02.1-03-PLAN.md — Wave 3: Time fill-ins from hours.md and the optional check-in time (ANSR-04)
 - [ ] 02.1-04-PLAN.md — Wave 4: New owner replies at sync (partial holding, check-in, added-info, complaint, discount, price leads), the example replies rewritten customer-first, check-in as an alert reason (ANSR-04, ANSR-02)
 - [ ] 02.1-05-PLAN.md — Wave 5: The model hears about the question already with the owner; six new structured fields (ANSR-01 to ANSR-04)
@@ -301,7 +301,7 @@ Phases execute in numeric order: 1 → 2 → 02.1 → 02.2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
-| 02.1. Faster Answers | 1/16 | In Progress | - |
+| 02.1. Faster Answers | 2/16 | In Progress | - |
 | 02.2. Owner Loop | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 

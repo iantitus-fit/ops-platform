@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-01-PLAN.md
-last_updated: "2026-10-14T19:49:17.256Z"
+stopped_at: Completed 02.1-02-PLAN.md
+last_updated: "2026-10-14T19:52:59.889Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 02.1 execution started
-state_head: 7badeb15e72fb945358617e2da9c18ab44e39aa7
+state_head: b5da43ed9714b25442b30053bb7987ee7cc7d845
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 64
-  completed_plans: 49
+  completed_plans: 50
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 2 of 16
+Plan: 3 of 16
 Status: Ready to execute
 Last activity: 2026-10-14 — Phase 02.1 execution started
 
@@ -106,6 +106,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02 P40 | 4 min | 2 tasks | 5 files |
 | Phase 02 P41 | 30 min | 3 tasks | 7 files |
 | Phase 02.1 P01 | 5 min | 3 tasks | 13 files |
+| Phase 02.1 P02 | 10 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -199,6 +200,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-41: map/CLAUDE.md left unedited; no catalog line changed. Shorthand :N citations name their file wherever they would continue the wrong one.
 - [Phase 02.1]: A wait ends only on an owner text or a draft the owner approved, edited, discarded, or code closed as answered; automated texts never end it
 - [Phase 02.1]: closeAsAnswered returns false for a gone draft instead of throwing (code calls it, not the owner)
+- [Phase 02.1]: Plan 02: "$5k" reads as 500 cents (the "$5" it starts with), so shorthand amounts fail closed against any declared amount; percents compare as digits written
 
 ### Pending Todos
 
@@ -232,6 +234,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T19:49:17.182Z
-Stopped at: Completed 02.1-01-PLAN.md
+Last session: 2026-10-14T19:52:59.806Z
+Stopped at: Completed 02.1-02-PLAN.md
 Resume file: None
