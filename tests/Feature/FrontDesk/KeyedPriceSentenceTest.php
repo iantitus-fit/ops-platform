@@ -5,15 +5,24 @@ use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
+use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\User;
+use App\SendRule\PriceSentencePicker;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 const KEYED_PRICE_OWNER_PHONE = '+12025550199';
 
 const KEYED_PRICE_ASK_SIZE = 'About what size is your current system?';
 
 const KEYED_PRICE_ASK_RUNNING = 'Is your current system still running?';
+
+const KEYED_PRICE_REASK = 'About what size is it? Small (under 3 tons), Large (3 tons and up), or Not sure?';
+
+const KEYED_PRICE_SMALL = 'For a smaller system, under 3 tons, a replacement system typically runs $2,000 to $5,000 installed.';
+
+const KEYED_PRICE_DEFAULT = "That's fine if you're not sure what you have. A replacement system typically runs $2,000 to $5,000 installed for a smaller unit and $5,000 to $10,000 for a larger one. We'll lock in an accurate quote once we see your setup.";
 
 const KEYED_PRICE_LARGE = 'For a larger system, 3 tons and up, a replacement system typically runs $5,000 to $10,000 installed.';
 
@@ -147,4 +156,93 @@ it('reads the newest intake answer per question as the current one (D-05)', func
 
     expect($current->keys()->all())->toBe(['unit_size'])
         ->and($current['unit_size']->option)->toBe('Large (3 tons and up)');
+});
+
+/**
+ * The newest message the front desk wrote and sent, the one that carries the price sentences of the last run.
+ */
+function keyedPriceLastReply(): Message
+{
+    return Message::query()->where('kind', MessageKind::AgentReply->value)->orderByDesc('id')->firstOrFail();
+}
+
+it('sends the default sentence when the answer is Not sure (D-05)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('Not sure what I have', keyedPriceAnswerSize(['option' => 'Not sure', 'raw_text' => 'Not sure what I have']));
+
+    expect(keyedPriceTextsToDana()[1])->toBe(keyedPriceLaterText(KEYED_PRICE_DEFAULT.' '.KEYED_PRICE_ASK_RUNNING))
+        ->and(keyedPriceLastReply()->meta['price_sentences'])->toBe([[
+            'slug' => 'system-replacement',
+            'key' => 'default',
+            'amounts_cents' => [200000, 500000, 1000000],
+        ]])
+        ->and(keyedPriceLastReply()->meta['price_pending'])->toBe([]);
+});
+
+it('re-asks once when the answer matches no option, and sends the default sentence on the second miss (D-06)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('the biggish one', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'the biggish one'], KEYED_PRICE_REASK));
+
+    expect(keyedPriceTextsToDana()[1])->toBe(keyedPriceLaterText(KEYED_PRICE_REASK))
+        ->and(keyedPriceLastReply()->meta['price_pending'])->toBe(['system-replacement'])
+        ->and(keyedPriceLastReply()->meta['price_sentences'] ?? [])->toBe([]);
+
+    keyedPriceNextRun('the one in the garage', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'the one in the garage']));
+
+    expect(keyedPriceTextsToDana()[2])->toBe(keyedPriceLaterText(KEYED_PRICE_DEFAULT.' '.KEYED_PRICE_ASK_RUNNING))
+        ->and(keyedPriceLastReply()->meta['price_sentences'][0]['key'])->toBe('default')
+        ->and(keyedPriceLastReply()->meta['price_pending'])->toBe([]);
+});
+
+it('sends the matching sentence when the answer matches after one miss (D-06)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('the biggish one', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'the biggish one'], KEYED_PRICE_REASK));
+    keyedPriceNextRun('Small, 2 tons', keyedPriceAnswerSize(['option' => 'Small (under 3 tons)', 'raw_text' => 'Small, 2 tons']));
+
+    expect(keyedPriceTextsToDana()[2])->toBe(keyedPriceLaterText(KEYED_PRICE_SMALL.' '.KEYED_PRICE_ASK_RUNNING))
+        ->and(keyedPriceLastReply()->meta['price_sentences'][0]['key'])->toBe('unit_size=Small (under 3 tons)');
+});
+
+it('holds the price for the owner when no option fits and the file has no default sentence (D-05)', function () {
+    breakFile('business/services/system-replacement.md', fn (string $text) => preg_replace('/^price_default:\n(?:  .*\n)+/m', '', $text));
+
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('Not sure what I have', keyedPriceAnswerSize(['option' => 'Not sure', 'raw_text' => 'Not sure what I have']));
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($draft->gate_reason)->toBe('price:no_sentence')
+        ->and($draft->gate['reason']['plain'])->toBe('Held: no price on file for Replacement system')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(collect(keyedPriceTextsToDana())->contains(fn (string $text): bool => str_contains($text, '$')))->toBeFalse();
+});
+
+it('never lets a non-keying question block the sentence (D-05)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('Large, and I do not know about the rest', [
+        ...keyedPriceAnswerSize(['option' => 'Large (3 tons and up)', 'raw_text' => 'Large']),
+        'intake_answers' => [
+            ['question_key' => 'unit_size', 'option' => 'Large (3 tons and up)', 'raw_text' => 'Large'],
+            ['question_key' => 'condition', 'option' => null, 'raw_text' => 'it sort of works'],
+        ],
+    ]);
+
+    expect(keyedPriceTextsToDana()[1])->toBe(keyedPriceLaterText(KEYED_PRICE_LARGE.' '.KEYED_PRICE_ASK_RUNNING))
+        ->and(IntakeAnswer::query()->where('question_key', 'condition')->count())->toBe(1);
+});
+
+it('picks the same sentence key every time it runs on the same rows (T-02.1-20)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('Small, 2 tons', keyedPriceAnswerSize(['option' => 'Small (under 3 tons)', 'raw_text' => 'Small, 2 tons']));
+
+    $conversation = Conversation::query()->sole();
+    $picker = app(PriceSentencePicker::class);
+
+    $first = $picker->pick($conversation, 'system-replacement', true, new Collection);
+    $second = $picker->pick($conversation, 'system-replacement', true, new Collection);
+
+    expect($first->sentenceKey)->toBe('unit_size=Small (under 3 tons)')
+        ->and($second->sentenceKey)->toBe($first->sentenceKey)
+        ->and($second->sentence)->toBe($first->sentence);
 });
