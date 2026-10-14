@@ -3,6 +3,8 @@
 namespace App\SendRule;
 
 use App\Actions\RecordIntakeAnswers;
+use App\Enums\MessageDirection;
+use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Conversation;
 use App\Models\IntakeAnswer;
@@ -20,8 +22,12 @@ use Illuminate\Support\Collection;
  * none is asked again once; after a second miss, and for any option the owner has no sentence for, the owner's default
  * sentence goes out, or the price holds when the file has none.
  *
- * The pick reads only stored rows and the live version, never the clock, so running it again on the same rows picks
- * the same sentence key.
+ * A sentence the customer was already told is not sent again unless they ask again, and then it goes with the owner's
+ * "same" lead. When a changed answer picks a different sentence, it goes right away with the lead for the way the price
+ * moved (D-09). A sentence the owner has no lead for goes alone.
+ *
+ * The pick reads only stored rows, the live version and the last sentence sent, never the clock, so running it again on
+ * the same rows picks the same sentence key.
  */
 class PriceSentencePicker
 {
@@ -39,17 +45,120 @@ class PriceSentencePicker
         $service = $this->activeConfig->service($slug);
 
         if ($service === null || ($service['price_policy'] ?? null) === 'none') {
-            return PricePick::hold($slug);
+            return $askedNow ? PricePick::hold($slug) : PricePick::nothing($slug);
         }
 
         $sentences = array_values($service['price_sentences'] ?? []);
         $keyed = array_values(array_filter($sentences, fn (array $sentence): bool => ! empty($sentence['answers'])));
 
-        if ($keyed === []) {
-            return $this->pickUnkeyed($slug, $service, $sentences);
+        if (! $askedNow && ! $this->isCorrected($slug, $keyed, $newAnswers)) {
+            return PricePick::nothing($slug);
         }
 
-        return $this->pickKeyed($conversation, $slug, $service, $keyed);
+        $candidate = $keyed === []
+            ? $this->pickUnkeyed($slug, $service, $sentences)
+            : $this->pickKeyed($conversation, $slug, $service, $keyed);
+
+        if (! $candidate->isSend()) {
+            return $askedNow ? $candidate : PricePick::nothing($slug);
+        }
+
+        return $this->withLead($conversation, $candidate, $askedNow);
+    }
+
+    /**
+     * The last price sentence of a service that reached, or is on its way to, the customer: its key and the amounts it
+     * named, read from the newest queued, sent or delivered text whose meta names the service.
+     *
+     * @return array{key: string, amounts_cents: list<int>}|null
+     */
+    public function lastSent(Conversation $conversation, string $slug): ?array
+    {
+        $messages = $conversation->messages()
+            ->where('direction', MessageDirection::Out)
+            ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
+            ->reorder()
+            ->orderByRaw('coalesce(sent_at, created_at) desc')
+            ->orderByDesc('id')
+            ->lazy();
+
+        foreach ($messages as $message) {
+            foreach ($message->meta['price_sentences'] ?? [] as $entry) {
+                if (($entry['slug'] ?? null) === $slug && is_string($entry['key'] ?? null)) {
+                    return ['key' => $entry['key'], 'amounts_cents' => $this->amounts($entry['amounts_cents'] ?? [])];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * How a new price compares with the one the customer was last told, by integer cents (D-09, D-39). The same amounts
+     * are `same`. A new range that starts at or above where the old one ended is `higher`, and one that ends at or below
+     * where the old one started is `lower`, so ranges that only touch still say which way the price went. Ranges that
+     * overlap are `changed`.
+     *
+     * @param  list<int>  $oldCents
+     * @param  list<int>  $newCents
+     */
+    public function direction(array $oldCents, array $newCents): string
+    {
+        $old = $this->amounts($oldCents);
+        $new = $this->amounts($newCents);
+
+        if ($old === [] || $new === []) {
+            return 'changed';
+        }
+
+        return match (true) {
+            $old === $new => 'same',
+            $new[0] >= $old[count($old) - 1] => 'higher',
+            $new[count($new) - 1] <= $old[0] => 'lower',
+            default => 'changed',
+        };
+    }
+
+    /**
+     * Whether this run stored an answer to one of the service's keying questions, which can change the price.
+     *
+     * @param  list<array<string, mixed>>  $keyed
+     * @param  Collection<int, IntakeAnswer>  $newAnswers
+     */
+    private function isCorrected(string $slug, array $keyed, Collection $newAnswers): bool
+    {
+        if ($keyed === []) {
+            return false;
+        }
+
+        $keyingKeys = array_map('strval', array_keys($keyed[0]['answers']));
+
+        return $newAnswers->contains(fn (IntakeAnswer $answer): bool => $answer->service_slug === $slug && in_array($answer->question_key, $keyingKeys, true));
+    }
+
+    /**
+     * The sentence to send given what the customer was last told: nothing when it is the same sentence and was not
+     * asked for again, the same lead when it is asked for again, and the lead for the way the price moved when a
+     * different sentence replaces it. A customer who was never told a price gets the sentence only if they asked.
+     */
+    private function withLead(Conversation $conversation, PricePick $candidate, bool $askedNow): PricePick
+    {
+        $last = $this->lastSent($conversation, $candidate->slug);
+
+        if ($last === null) {
+            return $askedNow ? $candidate : PricePick::nothing($candidate->slug);
+        }
+
+        if ($last['key'] === $candidate->sentenceKey) {
+            return $askedNow ? $this->leadWith($candidate, 'same') : PricePick::nothing($candidate->slug);
+        }
+
+        return $this->leadWith($candidate, $this->direction($last['amounts_cents'], $candidate->amountsCents));
+    }
+
+    private function leadWith(PricePick $pick, string $direction): PricePick
+    {
+        return PricePick::send($pick->slug, (string) $pick->sentenceKey, (string) $pick->sentence, $pick->amountsCents, $direction);
     }
 
     /**

@@ -149,7 +149,7 @@ class RunFrontDesk
 
         $askedSlugs = array_values(array_unique([...$run->reply->priceServices, ...$this->pendingPriceSlugs($conversation)]));
         $picks = $this->pickPrices($conversation, $askedSlugs, $newAnswers);
-        $sentences = array_map(fn (PricePick $pick): string => (string) $pick->sentence, array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
+        $sentences = array_map(fn (PricePick $pick): string => $this->sentenceText($pick), array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
         $unanswered = $this->slugsWith($picks, PricePick::HOLD);
 
         $words = $run->reply->reply;
@@ -256,22 +256,35 @@ class RunFrontDesk
     }
 
     /**
-     * The price outcome of each service the customer asked about, in the order asked, each service once. The model only
-     * names the service; the picker reads the owner's sentence from the live version (D-04). A service with nothing to
-     * send and nothing to hold is left out.
+     * The price outcome of each service the customer asked about, in the order asked, each service once, then each service
+     * whose price their new intake answers may have changed. The model only names the service; the picker reads the
+     * owner's sentence from the live version (D-04). A service with nothing to send and nothing to hold is left out.
      *
-     * @param  list<string>  $slugs  Services asked about in this run or still pending from an earlier one.
+     * @param  list<string>  $askedSlugs  Services asked about in this run or still pending from an earlier one.
      * @param  Collection<int, IntakeAnswer>  $newAnswers  The intake answers stored in this run.
      * @return list<PricePick>
      */
-    private function pickPrices(Conversation $conversation, array $slugs, Collection $newAnswers): array
+    private function pickPrices(Conversation $conversation, array $askedSlugs, Collection $newAnswers): array
     {
-        $picks = array_map(
-            fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug, true, $newAnswers),
-            array_values(array_unique($slugs)),
-        );
+        $correctedSlugs = array_values(array_diff($newAnswers->pluck('service_slug')->unique()->all(), $askedSlugs));
+
+        $picks = [
+            ...array_map(fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug, true, $newAnswers), $askedSlugs),
+            ...array_map(fn (string $slug): PricePick => $this->priceSentencePicker->pick($conversation, $slug, false, $newAnswers), $correctedSlugs),
+        ];
 
         return array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->outcome !== PricePick::NOTHING));
+    }
+
+    /**
+     * The text a sent pick puts in the message: the owner's sentence, behind the owner's lead when it is a second
+     * telling. A folder with no such lead sends the sentence alone.
+     */
+    private function sentenceText(PricePick $pick): string
+    {
+        $lead = $pick->lead === null ? null : $this->fixedReplies->priceLead($pick->lead, now());
+
+        return $lead === null || trim($lead) === '' ? (string) $pick->sentence : trim($lead).' '.$pick->sentence;
     }
 
     /**
@@ -284,7 +297,10 @@ class RunFrontDesk
     {
         $previous = $conversation->messages()
             ->where('direction', MessageDirection::Out)
-            ->lazyByIdDesc()
+            ->reorder()
+            ->orderByRaw('coalesce(sent_at, created_at) desc')
+            ->orderByDesc('id')
+            ->lazy()
             ->first(fn (Message $message): bool => isset($message->meta['in_reply_to']));
 
         $pending = $previous?->meta['price_pending'] ?? [];

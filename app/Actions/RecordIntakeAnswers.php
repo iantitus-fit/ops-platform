@@ -94,7 +94,7 @@ class RecordIntakeAnswers
     {
         return $conversation->intakeAnswers()
             ->where('service_slug', $slug)
-            ->orderBy('id')
+            ->reorder('id')
             ->get()
             ->keyBy('question_key');
     }
