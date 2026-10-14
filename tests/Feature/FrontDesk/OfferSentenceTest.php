@@ -21,6 +21,8 @@ const OFFER_SENTENCE_SENIOR = "If you're 65 or older, we take 10% off any repair
 
 const OFFER_SENTENCE_AC = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
 
+const OFFER_SENTENCE_DISCOUNT_LINE = "We like to take care of our customers. I'll make sure Mike knows you asked about a discount and he'll pick up the thread.";
+
 const OFFER_SENTENCE_PARTIAL_LINE = "I've passed your other question to Mike, and he'll follow up on it.";
 
 const OFFER_SENTENCE_FIRST_VISIT = "If you're a first-time customer, we're running a promotion that takes \$50 off your first visit.";
@@ -173,7 +175,11 @@ it('holds a discount question for the owner when no offer is running, with the r
         ->and(offerSentenceHeldReason($draft))->toBe('Held: no offer running today')
         ->and(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::DraftWaiting)
         ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(fakeClassifier()->calls())->toBe([])
+        ->and(offerSentenceTextsToDana())->toHaveCount(1)
+        ->and(offerSentenceTextsToDana()[0]['body'])->toBe(composedFirstReply(OFFER_SENTENCE_DISCOUNT_LINE))
+        ->and(Message::query()->where('kind', MessageKind::DiscountHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0);
 });
 
 it('still sends the holding reply when the folder has no discount reply (D-14)', function () {
@@ -265,7 +271,8 @@ it('holds the model\'s words for the owner when no offer is running, and sends n
 
     expect($draft->body)->toBe('Yes, we service heat pumps.')
         ->and($draft->gate_reason)->toBe('discount:no_live_offer')
-        ->and(implode(' ', array_column(offerSentenceTextsToDana(), 'body')))->not->toContain('heat pumps');
+        ->and(implode(' ', array_column(offerSentenceTextsToDana(), 'body')))->not->toContain('heat pumps')
+        ->and(Message::query()->where('kind', MessageKind::DiscountHolding->value)->count())->toBe(1);
 });
 
 it('names the price as the reason when both a price and an offer cannot be answered (flagged assumption)', function () {
