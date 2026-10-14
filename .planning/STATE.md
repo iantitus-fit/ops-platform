@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "02.1"
-current_phase_name: Owner Loop
+current_phase_name: Faster Answers
 status: planning
-stopped_at: Phase 02 complete, ready to plan Phase 02.1
-last_updated: "2026-10-13T20:22:49.822Z"
+stopped_at: Phase 02.1 (Faster Answers) context gathered
+last_updated: "2026-10-14T15:09:25.566Z"
 last_activity: 2026-10-13
 last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
-state_head: 0d460dd081f90b718c7ddd85640edcbab11a4f07
+state_head: 7d0641f61ad9841f47954abde2ded62857fc3e41
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 2
   total_plans: 48
   completed_plans: 48
-  percent: 67
+  percent: 40
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-13)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 02.1 — Owner Loop
+**Current focus:** Phase 02.1 — Faster Answers
 
 ## Current Position
 
-Phase: 02.1 — Owner Loop
+Phase: 02.1 — Faster Answers
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
 
-Progress: [███████░░░] 67%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -208,12 +208,13 @@ None yet.
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
-- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.1 scope.
+- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.2 (Owner Loop) scope.
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 
 ### Roadmap Evolution
 
 - Phase 02.1 inserted after Phase 2: Owner Loop: owner-input additions split out of Phase 2 during discuss (02-CONTEXT.md)
+- 2026-10-14, Phase 02.1 discuss (Ian): 02.1 becomes Faster Answers (price and offer sentences, easy answers not waiting behind a hard one, a waiting customer always hears back; ANSR-01 to ANSR-04); the Owner Loop moves unchanged to Phase 02.2 with its own discuss, plus carry notes and WR-09. Phase folder renamed to `02.1-faster-answers`. Phase 3 walk-test example now means a price not in the folder.
 
 ## Deferred Items
 
@@ -228,6 +229,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-13T20:23:31Z
-Stopped at: Phase 02 complete, ready to plan Phase 02.1
-Resume file: None
+Last session: 2026-10-14T15:09:25.473Z
+Stopped at: Phase 02.1 (Faster Answers) context gathered
+Resume file: .planning/phases/02.1-faster-answers/02.1-CONTEXT.md
