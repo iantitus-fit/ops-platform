@@ -181,7 +181,7 @@ class RunFrontDesk
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
         } else {
             $composed = $this->composeAutomatedText->forReply($conversation, $words);
-            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed);
+            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->labelGuardFor($waiting));
         }
 
         if ($verdict?->lifeSafety) {
@@ -233,6 +233,19 @@ class RunFrontDesk
         if ($sentences !== []) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
         }
+    }
+
+    /**
+     * The labels that may still send while a draft waits (D-20). A booking answer must not go out while a booking
+     * question is with the owner, because the model could commit to a day the owner is about to settle, so a waiting
+     * scheduling draft limits the reply to a faq answer or an intake question. Any other waiting draft, and no waiting
+     * draft, limits nothing. The label is read from the stored draft.
+     *
+     * @return ?list<ReplyLabel>
+     */
+    private function labelGuardFor(?Message $waiting): ?array
+    {
+        return $waiting?->label === ReplyLabel::Scheduling ? [ReplyLabel::FaqAnswer, ReplyLabel::IntakeQuestion] : null;
     }
 
     /**

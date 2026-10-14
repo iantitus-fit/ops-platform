@@ -20,6 +20,10 @@ use Throwable;
  *
  * Jev is asked once, and only when the first two checks pass, so a veto never costs a call and a Jev answer can
  * only hold a reply, never rescue one (D-02). Anything that goes wrong in the call also holds it.
+ *
+ * While a draft waits for the owner the caller may pass a guard, a short list of labels that may still send. A reply
+ * whose label is not on it is held as waiting_guard:<label>, after the label check and before the length check, so
+ * Jev is not asked about it (D-20).
  */
 class DecideSendOrDraft
 {
@@ -31,14 +35,17 @@ class DecideSendOrDraft
     /**
      * @param  string  $customerText  What the customer wrote, the whole burst, exactly as Jev should read it.
      * @param  string  $composedText  The text as it would reach the customer, with disclosure and sign-off.
+     * @param  ?list<ReplyLabel>  $onlyLabels  The only labels that may send while a draft waits; null when no guard applies.
      */
-    public function decide(AgentRun $run, string $customerText, string $composedText): Verdict
+    public function decide(AgentRun $run, string $customerText, string $composedText, ?array $onlyLabels = null): Verdict
     {
         $reply = $run->reply;
         $label = $reply->label;
 
         $labelPassed = ! in_array($label, ReplyLabel::neverOnItsOwn(), true)
             && in_array($label->value, $this->activeConfig->sendingRules()['send_on_own'] ?? [], true);
+
+        $guardPassed = $onlyLabels === null ? null : in_array($label, $onlyLabels, true);
 
         $characters = mb_strlen($composedText);
         $lengthPassed = $characters <= SendOwnerReply::MAX_LENGTH;
@@ -51,7 +58,12 @@ class DecideSendOrDraft
             'wants_person' => $reply->wantsPerson,
             'inputs' => ['customer_text' => $customerText, 'agent_reply' => $reply->reply],
             'checks' => [
-                'label' => ['passed' => $labelPassed, 'label' => $label->value],
+                'label' => [
+                    'passed' => $labelPassed,
+                    'label' => $label->value,
+                    'guard' => $onlyLabels === null ? null : array_map(fn (ReplyLabel $guarded): string => $guarded->value, $onlyLabels),
+                    'guard_passed' => $guardPassed,
+                ],
                 'length' => ['passed' => $lengthPassed, 'characters' => $characters, 'limit' => SendOwnerReply::MAX_LENGTH],
                 'code' => ['passed' => $findings === [], 'findings' => $findings],
                 'classifier' => ['ran' => false, 'model' => null, 'answers' => null, 'error' => null, 'reading' => null],
@@ -63,6 +75,7 @@ class DecideSendOrDraft
 
         $veto = match (true) {
             ! $labelPassed => "label:{$label->value}",
+            $guardPassed === false => "waiting_guard:{$label->value}",
             ! $lengthPassed => 'too_long',
             $findings !== [] => "code:{$findings[0]['rule']}",
             default => null,
@@ -90,7 +103,7 @@ class DecideSendOrDraft
             'wants_person' => $reply->wantsPerson,
             'inputs' => ['customer_text' => $customerText, 'agent_reply' => ''],
             'checks' => [
-                'label' => ['passed' => null, 'label' => $reply->label->value],
+                'label' => ['passed' => null, 'label' => $reply->label->value, 'guard' => null, 'guard_passed' => null],
                 'length' => ['passed' => null, 'characters' => 0, 'limit' => SendOwnerReply::MAX_LENGTH],
                 'code' => ['passed' => null, 'findings' => []],
                 'classifier' => ['ran' => false, 'model' => null, 'answers' => null, 'error' => null, 'reading' => null],
