@@ -187,8 +187,10 @@ it('still sends the holding reply when the folder has no discount reply (D-14)',
 
     offerSentenceRun('Do you have any discounts?', ['reply' => '', 'asks_discount' => true], '2027-02-01 10:00');
 
-    expect(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
-        ->and(offerSentenceTextsToDana())->toHaveCount(1);
+    expect(offerSentenceTextsToDana())->toHaveCount(1)
+        ->and(offerSentenceTextsToDana()[0]['body'])->toContain("Thanks. I've passed this to Mike and you're on his list.")
+        ->and(offerSentenceTextsToDana()[0]['body'])->not->toContain('discount')
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('discount:no_live_offer');
 });
 
 it('sends the offer sentence and then the model\'s words that passed, in one text (D-07, D-13)', function () {

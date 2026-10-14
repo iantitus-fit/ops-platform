@@ -23,6 +23,20 @@ use DomainException;
  */
 class SendFixedReply
 {
+    /**
+     * The reason codes of a held complaint, from the label, the code check or Jev's intent (D-31).
+     *
+     * @var list<string>
+     */
+    public const array COMPLAINT_CODES = ['label:complaint', 'classifier:complaint', 'classifier_intent:complaint'];
+
+    /**
+     * The reason codes of a held discount question: the label, the code check, Jev, or no offer running today (D-14, D-31).
+     *
+     * @var list<string>
+     */
+    public const array DISCOUNT_CODES = ['label:discount', 'code:discount', 'classifier:discount', 'discount:no_live_offer'];
+
     public function __construct(
         private readonly FixedReplies $fixedReplies,
         private readonly ComposeAutomatedText $composeAutomatedText,
@@ -30,22 +44,30 @@ class SendFixedReply
     ) {}
 
     /**
-     * Tell the customer that the owner has their question and when the owner will answer. Returns null when this
-     * customer already has a holding reply for the question that is still waiting (D-14), or when the text could
-     * not go out. The draft and the owner's alert already exist by now, so a refusal or a channel failure is
-     * reported to the log and never raised.
+     * Tell the customer that the owner has their question and when the owner will answer, in the owner's words for
+     * why it was held: the complaint reply for a complaint, the discount reply for a discount question, and the
+     * general holding reply for everything else (D-31). A folder with no discount reply sends the holding reply's
+     * words. Returns null when this customer already has a holding reply for the question that is still waiting
+     * (D-14), or when the text could not go out. The draft and the owner's alert already exist by now, so a refusal
+     * or a channel failure is reported to the log and never raised.
      */
-    public function holding(Conversation $conversation): ?Message
+    public function holding(Conversation $conversation, ?string $reasonCode = null): ?Message
     {
         if ($this->holdingAlreadySent($conversation)) {
             return null;
         }
 
-        $body = $this->composeAutomatedText->forReply($conversation, $this->fixedReplies->holdingReply(now()));
+        [$words, $kind] = match (true) {
+            in_array($reasonCode, self::COMPLAINT_CODES, true) => [$this->fixedReplies->complaintReply(now()), MessageKind::ComplaintHolding],
+            in_array($reasonCode, self::DISCOUNT_CODES, true) => [$this->fixedReplies->discountReply(now()), MessageKind::DiscountHolding],
+            default => [$this->fixedReplies->holdingReply(now()), MessageKind::HoldingReply],
+        };
+
+        $body = $this->composeAutomatedText->forReply($conversation, $words);
 
         try {
             return $this->outboundSender->send($conversation, $body, MessageAuthor::Agent, SendOrigin::Automated, [
-                'kind' => MessageKind::HoldingReply,
+                'kind' => $kind,
                 'gate_outcome' => GateOutcome::Send,
                 'gate_reason' => 'fixed_reply',
                 'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null]],

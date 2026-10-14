@@ -239,35 +239,40 @@ class RunFrontDesk
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === []);
 
         if ($sentences !== []) {
-            $this->sendPartialHolding($conversation, $parts, $sentMeta);
+            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
         }
     }
 
     /**
      * Tell the customer the owner's sentence and that the rest of their question is with the owner, in one text. The
      * draft and the owner's alert already exist, so a text that cannot go out falls back to the full holding reply and
-     * is otherwise reported to the log, never raised (D-30).
+     * is otherwise reported to the log, never raised (D-30). When the words were held as a complaint, the owner's
+     * complaint reply leads the text instead of the partial line, so an upset customer is acknowledged before anything
+     * else (D-36).
      *
      * @param  array{meta: array<string, mixed>}  $attributes
+     * @param  ?string  $reasonCode  Why the words were held.
      */
-    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes): void
+    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes, ?string $reasonCode): void
     {
         if ($conversation->refresh()->isPaused()) {
             return;
         }
 
-        $partial = new ReplyParts(
-            codeSentences: $parts->codeSentences,
-            lineKind: MessageKind::PartialHolding,
-            line: $this->fixedReplies->partialHoldingReply(now()),
-        );
+        $partial = in_array($reasonCode, SendFixedReply::COMPLAINT_CODES, true)
+            ? new ReplyParts(complaintLine: $this->fixedReplies->complaintReply(now()), codeSentences: $parts->codeSentences)
+            : new ReplyParts(
+                codeSentences: $parts->codeSentences,
+                lineKind: MessageKind::PartialHolding,
+                line: $this->fixedReplies->partialHoldingReply(now()),
+            );
 
         try {
             $this->sendCombinedReply->handle($conversation, $partial, $attributes);
         } catch (DomainException $exception) {
             report($exception);
 
-            $this->sendFixedReply->holding($conversation);
+            $this->sendFixedReply->holding($conversation, $reasonCode);
         }
     }
 
@@ -641,7 +646,7 @@ class RunFrontDesk
         }
 
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
-            $this->sendFixedReply->holding($conversation);
+            $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
         }
     }
 
@@ -681,7 +686,7 @@ class RunFrontDesk
      */
     private function alertReasonFor(Verdict $verdict): AlertReason
     {
-        $isComplaint = in_array($verdict->reasonCode, ['label:complaint', 'classifier:complaint', 'classifier_intent:complaint'], true);
+        $isComplaint = in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
 
         return $isComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting;
     }
