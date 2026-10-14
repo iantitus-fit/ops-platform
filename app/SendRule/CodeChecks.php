@@ -109,6 +109,34 @@ class CodeChecks
     }
 
     /**
+     * Every "$" amount in the text as integer cents, unique and in ascending order. Only "$" and digits
+     * count as a written amount (D-37), so "120 dollars" gives nothing. The conversion never touches a
+     * float: "$89" is 8900, "$89.50" is 8950, "$89.5" is 8950, "$2,000" is 200000. "$5k" reads as the
+     * "$5" it starts with, 500 cents, which can never equal a real declared amount, so a shorthand
+     * amount fails closed.
+     *
+     * @return list<int>
+     */
+    public static function dollarAmountsInCents(string $text): array
+    {
+        preg_match_all('/\$\s?(\d+(?:,\d{3})*)(?:\.(\d{1,2}))?/u', $text, $found, PREG_SET_ORDER);
+
+        $cents = [];
+
+        foreach ($found as $amount) {
+            $dollars = (int) str_replace(',', '', $amount[1]);
+            $hundredths = (int) str_pad($amount[2] ?? '', 2, '0');
+
+            $cents[] = $dollars * 100 + $hundredths;
+        }
+
+        $cents = array_values(array_unique($cents));
+        sort($cents);
+
+        return $cents;
+    }
+
+    /**
      * The earliest match in the text of any of the patterns, as written in the text.
      *
      * @param  list<string>  $patterns
