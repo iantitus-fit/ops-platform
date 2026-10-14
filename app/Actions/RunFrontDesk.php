@@ -30,6 +30,7 @@ use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\FixedReplies;
+use App\SendRule\HeldReasons;
 use App\SendRule\LifeSafety;
 use App\SendRule\OfferSentences;
 use App\SendRule\PricePick;
@@ -92,6 +93,7 @@ class RunFrontDesk
         private readonly SendCombinedReply $sendCombinedReply,
         private readonly FixedReplies $fixedReplies,
         private readonly OfferSentences $offerSentences,
+        private readonly ResolveDraft $resolveDraft,
     ) {}
 
     /**
@@ -155,6 +157,7 @@ class RunFrontDesk
 
         $askedSlugs = array_values(array_unique([...$run->reply->priceServices, ...$this->pendingPriceSlugs($conversation)]));
         $picks = $this->pickPrices($conversation, $askedSlugs, $newAnswers);
+        $lookups = $this->priceLookups($askedSlugs, $picks);
         $priceSentences = array_map(fn (PricePick $pick): string => $this->sentenceText($pick), array_values(array_filter($picks, fn (PricePick $pick): bool => $pick->isSend())));
         $offers = $run->reply->asksDiscount ? $this->offerSentences->liveToday() : [];
         $sentences = [...$priceSentences, ...array_column($offers, 'sentence')];
@@ -165,11 +168,14 @@ class RunFrontDesk
         $priceHeld = count($priceSentences) !== count($picks);
         $noLiveOffer = $run->reply->asksDiscount && $offers === [];
 
-        $checkIn = $waiting !== null && $run->reply->waitingNote === self::CHECK_IN;
+        $answersWaiting = $waiting !== null && HeldReasons::answeredBy($waiting, $this->slugsWith($picks, PricePick::SEND), $run->reply->touchesWaiting);
+        $stillWaiting = $answersWaiting ? null : $waiting;
+
+        $checkIn = $stillWaiting !== null && $run->reply->waitingNote === self::CHECK_IN;
         $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer;
 
-        if ($codeOnly && $waiting === null) {
-            $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'));
+        if ($codeOnly && $stillWaiting === null) {
+            $this->closeAsAnswered($answersWaiting ? $waiting : null, $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'), $lookups));
 
             return;
         }
@@ -185,7 +191,7 @@ class RunFrontDesk
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
         } else {
             $composed = $this->composeAutomatedText->forReply($conversation, $words);
-            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->labelGuardFor($waiting));
+            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->labelGuardFor($stillWaiting));
         }
 
         if ($verdict?->lifeSafety) {
@@ -208,14 +214,14 @@ class RunFrontDesk
 
         $attributes = [
             'kind' => MessageKind::AgentReply,
-            'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_pending' => $this->slugsWith($picks, PricePick::NEEDS_ANSWERS)],
+            'meta' => ['in_reply_to' => $burst->pluck('id')->all(), 'price_pending' => $this->slugsWith($picks, PricePick::NEEDS_ANSWERS), ...$lookups],
         ];
 
         $parts = new ReplyParts(codeSentences: $sentences, modelWords: $words);
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
-        if ($waiting !== null) {
-            $this->answerWhileDraftWaits($run, $conversation, $burst, $waiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn);
+        if ($stillWaiting !== null) {
+            $this->answerWhileDraftWaits($run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn);
 
             return;
         }
@@ -228,10 +234,19 @@ class RunFrontDesk
             $sent = $this->sendPassingReply($run, $conversation, $burst, $verdict, $composed, $parts, $attributes, $sentMeta);
 
             if (! $sent instanceof Verdict) {
+                $this->closeAsAnswered($answersWaiting && $sentences !== [] ? $waiting : null, $sent);
+
                 return;
             }
 
             $verdict = $sent;
+        }
+
+        if ($answersWaiting && $sentences !== []) {
+            $this->closeAsAnswered($waiting, $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode));
+            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false);
+
+            return;
         }
 
         $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === []);
@@ -239,6 +254,40 @@ class RunFrontDesk
         if ($sentences !== []) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
         }
+    }
+
+    /**
+     * Close the waiting draft as answered because the text with the price sentence for it went out (D-21). The text must
+     * have been sent: a draft is never closed on a send that failed, so it stays with the owner. A draft the owner or a
+     * newer text already dealt with is left alone, and nothing more is done about it. No alert follows a close.
+     */
+    private function closeAsAnswered(?Message $waiting, ?Message $answer): void
+    {
+        if ($waiting === null || $answer === null) {
+            return;
+        }
+
+        $this->resolveDraft->closeAsAnswered($waiting, $answer);
+    }
+
+    /**
+     * What a draft stored by this run still waits on, written by code from its own price picks (D-21). `price_slugs`
+     * are the services the run looked a price sentence up for, the customer's asks then the ones still pending, each
+     * once; `price_open` are those that got no sentence in this run because the customer still owes an answer or the
+     * owner has to quote it. Read later, only on a draft, to tell which sentence would answer it.
+     *
+     * @param  list<string>  $askedSlugs
+     * @param  list<PricePick>  $picks
+     * @return array{price_slugs: list<string>, price_open: list<string>}
+     */
+    private function priceLookups(array $askedSlugs, array $picks): array
+    {
+        $unsent = [...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS), ...$this->slugsWith($picks, PricePick::HOLD)];
+
+        return [
+            'price_slugs' => $askedSlugs,
+            'price_open' => array_values(array_filter($askedSlugs, fn (string $slug): bool => in_array($slug, $unsent, true))),
+        ];
     }
 
     /**
@@ -322,7 +371,7 @@ class RunFrontDesk
             if ($checkIn) {
                 $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta);
             } else {
-                $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs);
+                $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs, array_intersect_key($attributes['meta'] ?? [], ['price_slugs' => true, 'price_open' => true]));
             }
 
             return;
@@ -447,11 +496,12 @@ class RunFrontDesk
      *
      * @param  array{meta: array<string, mixed>}  $attributes
      * @param  ?string  $reasonCode  Why the words were held.
+     * @return ?Message The text that went out with the sentences, or null when it could not be sent or the assistant is paused.
      */
-    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes, ?string $reasonCode): void
+    private function sendPartialHolding(Conversation $conversation, ReplyParts $parts, array $attributes, ?string $reasonCode): ?Message
     {
         if ($conversation->refresh()->isPaused()) {
-            return;
+            return null;
         }
 
         $partial = in_array($reasonCode, SendFixedReply::COMPLAINT_CODES, true)
@@ -463,11 +513,13 @@ class RunFrontDesk
             );
 
         try {
-            $this->sendCombinedReply->handle($conversation, $partial, $attributes);
+            return $this->sendCombinedReply->handle($conversation, $partial, $attributes);
         } catch (DomainException $exception) {
             report($exception);
 
             $this->sendFixedReply->holding($conversation, $reasonCode);
+
+            return null;
         }
     }
 
@@ -577,18 +629,20 @@ class RunFrontDesk
      * @param  list<PricePick>  $picks
      * @param  list<string>  $sentences
      * @param  list<string>  $offerSlugs  The offers whose sentences are among the sentences.
+     * @param  array<string, list<string>>  $lookups  The price_slugs and price_open of the draft stored when the send is refused.
+     * @return ?Message The text that went out, or null when it did not.
      */
-    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences, array $offerSlugs): void
+    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences, array $offerSlugs, array $lookups = []): ?Message
     {
         $inReplyTo = $burst->pluck('id')->all();
 
         try {
-            $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
+            return $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
                 'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$this->codeSentencesMeta($picks, $offerSlugs)],
             ]);
         } catch (DomainException $exception) {
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
-                return;
+                return null;
             }
 
             report($exception);
@@ -597,8 +651,10 @@ class RunFrontDesk
 
             $this->storeDraft($conversation, '', $verdict, $run->reply->label, [
                 'kind' => MessageKind::AgentReply,
-                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => []],
+                'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$lookups],
             ]);
+
+            return null;
         }
     }
 
