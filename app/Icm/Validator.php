@@ -7,6 +7,7 @@ use App\Enums\IcmFileKind;
 use App\Enums\ReplyLabel;
 use App\SendRule\CodeChecks;
 use App\Support\PhoneNumber;
+use DateTimeImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as LaravelValidator;
@@ -117,7 +118,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -806,6 +807,167 @@ class Validator
     }
 
     /**
+     * What is wrong with the offer files. An offer sentence goes out in one text when a customer asks for a
+     * discount, sent by code with no model and no Jev behind it, so this sync is the only check it ever gets:
+     * the sentence's $ amounts must equal the offer's amount_cents and its percentages must equal its percent,
+     * in both directions (D-15); money is written as $ and digits so the amounts can be compared at all
+     * (D-37); and the promise and never_say checks stay, because an offer sentence must not become a binding
+     * promise. The discount-phrase check is skipped on purpose, since "$50 off" is the whole point of an offer.
+     * The never_say list comes from the voice file in the same folder, never from ActiveConfig.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function offerErrors(Collection $files): array
+    {
+        $neverSay = $this->neverSayList($files);
+        $errors = [];
+
+        foreach ($files as $file) {
+            if ($file->kind === IcmFileKind::Typed && $file->type === 'offer') {
+                array_push($errors, ...$this->offerFileErrors($file, $neverSay));
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The problems of one offer file: both or neither of amount_cents and percent, then the sentence, then the
+     * dates. The sentence is compared with its field only when the file names exactly one and that one is a
+     * usable number, because the other cases are already reported.
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function offerFileErrors(IcmFile $file, array $neverSay): array
+    {
+        $errors = [];
+        $hasAmount = array_key_exists('amount_cents', $file->frontMatter);
+        $hasPercent = array_key_exists('percent', $file->frontMatter);
+
+        if ($hasAmount && $hasPercent) {
+            $errors[] = $this->error($file->path, null, 'write either amount_cents or percent, not both');
+        } elseif (! $hasAmount && ! $hasPercent) {
+            $errors[] = $this->error($file->path, null, 'amount_cents or percent is missing, and the offer needs one');
+        }
+
+        $sentence = $file->frontMatter['sentence'] ?? null;
+
+        if (is_string($sentence)) {
+            $amount = $file->frontMatter['amount_cents'] ?? null;
+            $percent = $file->frontMatter['percent'] ?? null;
+            $fieldIsUsable = $hasAmount ? (is_int($amount) && $amount >= 1) : (is_int($percent) && $percent >= 1 && $percent <= 100);
+            $declared = $hasAmount === $hasPercent || ! $fieldIsUsable ? null : [
+                'cents' => is_int($amount) ? [$amount] : [],
+                'percents' => is_int($percent) ? [(string) $percent] : [],
+            ];
+
+            $error = $this->offerSentenceError($file, $sentence, $declared, $neverSay);
+
+            if ($error !== null) {
+                $errors[] = $error;
+            }
+        }
+
+        $start = $file->frontMatter['start_date'] ?? null;
+        $end = $file->frontMatter['end_date'] ?? null;
+
+        if ($this->isCalendarDate($start) && $this->isCalendarDate($end) && $end < $start) {
+            $errors[] = $this->error($file->path, 'end_date', "end_date ({$end}) is before start_date ({$start})");
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first thing wrong with an offer sentence, or null when it is fine, checked in the order the owner
+     * would fix them: fill-ins, money written in words, a bare number, no amount or percentage at all, amounts
+     * that do not match the offer, percentages that do not match the offer, then the promise and never_say
+     * checks. `$declared` is what the offer's one field backs the sentence with (null when there is nothing to
+     * compare, because that is reported elsewhere).
+     *
+     * @param  array{cents: list<int>, percents: list<string>}|null  $declared
+     * @param  array<array-key, mixed>  $neverSay
+     * @return array{file: string, field: ?string, message: string}|null
+     */
+    private function offerSentenceError(IcmFile $file, string $sentence, ?array $declared, array $neverSay): ?array
+    {
+        preg_match_all('/\{[^{}]*\}/u', $sentence, $fillIns);
+
+        if ($fillIns[0] !== []) {
+            return $this->error($file->path, 'sentence', 'sentence: an offer sentence cannot use fill-ins ('.PlainWords::oneLine(implode(', ', array_unique($fillIns[0]))).')');
+        }
+
+        $moneyWord = CodeChecks::moneyWordIn($sentence);
+
+        if ($moneyWord !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount as $ and digits, such as $5,000, not '.PlainWords::oneLine($moneyWord));
+        }
+
+        $bareNumber = CodeChecks::plainNumberNearPriceWord($sentence);
+
+        if ($bareNumber !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount with a $ sign ('.PlainWords::oneLine($bareNumber).')');
+        }
+
+        $amounts = CodeChecks::dollarAmountsInCents($sentence);
+        $percents = array_values(array_unique(CodeChecks::percentsIn($sentence)));
+
+        if ($amounts === [] && $percents === []) {
+            return $this->error($file->path, 'sentence', 'sentence: the sentence needs at least one amount written as $ and digits, or a percentage');
+        }
+
+        if ($declared !== null && $amounts !== $declared['cents']) {
+            return $this->error($file->path, 'sentence', "sentence: the sentence's amounts (".$this->dollarList($amounts).') do not match amount_cents ('.($declared['cents'] === [] ? 'none' : $this->dollarList($declared['cents'])).')');
+        }
+
+        if ($declared !== null && $percents !== $declared['percents']) {
+            return $this->error($file->path, 'sentence', "sentence: the sentence's percentages (".$this->percentList($percents).') do not match percent ('.($declared['percents'] === [] ? 'none' : $this->percentList($declared['percents'])).')');
+        }
+
+        $finding = array_values(array_filter(
+            CodeChecks::findings($sentence, $neverSay),
+            fn (array $found) => in_array($found['rule'], ['promise', 'never_say'], true),
+        ))[0] ?? null;
+
+        if ($finding === null) {
+            return null;
+        }
+
+        $message = 'sentence: '.CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+
+        return $this->error($file->path, 'sentence', $finding['rule'] === 'promise'
+            ? "{$message}; an offer sentence goes out without you, so it cannot make a promise"
+            : $message);
+    }
+
+    /**
+     * Percentages as the owner writes them: "10%, 15%".
+     *
+     * @param  list<string>  $percents
+     */
+    private function percentList(array $percents): string
+    {
+        return implode(', ', array_map(fn (string $percent) => $percent.'%', $percents));
+    }
+
+    /**
+     * Whether a front matter value is a date written as Y-m-d that names a real day. Dates in that form
+     * compare in date order as plain text.
+     */
+    private function isCalendarDate(mixed $value): bool
+    {
+        if (! is_string($value)) {
+            return false;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date !== false && $date->format('Y-m-d') === $value;
+    }
+
+    /**
      * What is wrong with the price sentences on a service file. A price sentence is sent by code with no
      * model and no Jev behind it, so this sync is the only check it ever gets (D-04): every amount in the
      * sentence must be one the file declares, in both directions (D-10); the sentence must name its service so
@@ -1236,7 +1398,8 @@ class Validator
     }
 
     /**
-     * Two service files may not share a slug; the file later in path order gets the error.
+     * Two files of the same slugged type (services, offers) may not share a slug; the file later in path order
+     * gets the error. Each type keeps its own slugs, so an offer and a service may use the same one.
      *
      * @param  Collection<int, IcmFile>  $files  Sorted by path.
      * @return list<array{file: string, field: ?string, message: string}>
@@ -1249,14 +1412,14 @@ class Validator
         foreach ($files as $file) {
             $slug = $file->frontMatter['slug'] ?? null;
 
-            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'service' || ! is_string($slug) || $slug === '') {
+            if ($file->kind !== IcmFileKind::Typed || ! in_array($file->type, ['service', 'offer'], true) || ! is_string($slug) || $slug === '') {
                 continue;
             }
 
-            if (isset($owners[$slug])) {
-                $errors[] = $this->error($file->path, 'slug', 'slug '.PlainWords::oneLine($slug)." is already used by {$owners[$slug]}");
+            if (isset($owners[$file->type][$slug])) {
+                $errors[] = $this->error($file->path, 'slug', 'slug '.PlainWords::oneLine($slug)." is already used by {$owners[$file->type][$slug]}");
             } else {
-                $owners[$slug] = $file->path;
+                $owners[$file->type][$slug] = $file->path;
             }
         }
 
