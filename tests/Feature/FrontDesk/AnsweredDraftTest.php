@@ -15,6 +15,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use App\Records\CustomerCard;
+use App\SendRule\HeldReasons;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -416,3 +417,145 @@ it('leaves the draft live when the sentence could not be sent (D-21)', function 
         ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->sole()->status)->toBe(MessageStatus::Failed)
         ->and(Conversation::query()->sole()->contact->activities()->where('type', ActivityType::DraftAnswered)->count())->toBe(0);
 });
+
+/**
+ * A stored verdict as the send rule leaves it: the reason code and, under checks, whatever the row names. The checks a
+ * row leaves out are absent, which the read treats as not failed.
+ *
+ * @param  array<string, mixed>  $checks
+ * @return array<string, mixed>
+ */
+function answeredDraftGate(string $code, array $checks = []): array
+{
+    return [
+        'version' => 1,
+        'reason' => ['code' => $code, 'plain' => 'Held'],
+        'checks' => $checks,
+    ];
+}
+
+/**
+ * Jev's stored reading with the reasons the row gives.
+ *
+ * @param  list<string>  $reasons
+ * @return array<string, mixed>
+ */
+function answeredDraftReading(array $reasons, bool $lifeSafety = false, bool $asksForPerson = false): array
+{
+    return [
+        'classifier' => [
+            'ran' => true,
+            'reading' => [
+                'sendable' => false,
+                'reason_code' => $reasons[0] ?? null,
+                'reasons' => $reasons,
+                'life_safety' => $lifeSafety,
+                'asks_for_person' => $asksForPerson,
+            ],
+        ],
+    ];
+}
+
+/**
+ * A live draft with the given verdict, in a conversation of its own.
+ *
+ * @param  ?array<string, mixed>  $gate
+ * @param  array<string, mixed>  $meta
+ */
+function answeredDraftWithGate(?array $gate, array $meta = []): Message
+{
+    return Message::factory()->draft()->create([
+        'gate' => $gate,
+        'gate_reason' => $gate['reason']['code'] ?? null,
+        'meta' => $meta,
+    ]);
+}
+
+/**
+ * A draft held the way the kind says, with the services its run looked up and the ones left without a sentence. A null
+ * list leaves the key out of the meta, as on a draft stored before the keys existed. A draft that replaced others lists
+ * them in meta.replaces.
+ *
+ * @param  ?list<string>  $slugs
+ * @param  ?list<string>  $open
+ * @param  list<int>  $replaces
+ */
+function answeredDraftHeldAs(string $kind, ?array $slugs, ?array $open, array $replaces = []): Message
+{
+    $gate = match ($kind) {
+        'complaint' => answeredDraftGate('label:complaint', ['label' => ['passed' => false, 'label' => 'complaint']]),
+        'price and complaint' => answeredDraftGate('classifier:price', [
+            'label' => ['passed' => true, 'label' => 'faq_answer'],
+            ...answeredDraftReading(['classifier:price', 'classifier:complaint']),
+        ]),
+        default => answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']]),
+    };
+
+    $meta = [
+        ...($slugs === null ? [] : ['price_slugs' => $slugs]),
+        ...($open === null ? [] : ['price_open' => $open]),
+        ...($replaces === [] ? [] : ['replaces' => $replaces]),
+    ];
+
+    return answeredDraftWithGate($gate, $meta);
+}
+
+it('reads a draft as held on price alone only when every recorded check agrees (D-21)', function (?array $gate, bool $expected) {
+    expect(HeldReasons::priceAlone(answeredDraftWithGate($gate)))->toBe($expected);
+})->with([
+    'label check failed with label price' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']]), true],
+    'one code finding, the price rule' => [answeredDraftGate('code:price', [
+        'label' => ['passed' => true, 'label' => 'faq_answer'],
+        'code' => ['passed' => false, 'findings' => [['rule' => 'price', 'match' => '$89']]],
+    ]), true],
+    'Jev read classifier:price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price'])), true],
+    'Jev read the price question intent' => [answeredDraftGate('classifier_intent:price_question', answeredDraftReading(['classifier_intent:price_question'])), true],
+    'no sentence on file, checks never ran' => [answeredDraftGate('price:no_sentence', [
+        'label' => ['passed' => null, 'label' => 'faq_answer'],
+        'length' => ['passed' => null],
+        'code' => ['passed' => null, 'findings' => []],
+        'classifier' => ['ran' => false, 'reading' => null],
+    ]), true],
+    'Jev read price and a complaint' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price', 'classifier:complaint'])), false],
+    'code findings price and promise' => [answeredDraftGate('code:price', [
+        'code' => ['passed' => false, 'findings' => [['rule' => 'price', 'match' => '$89'], ['rule' => 'promise', 'match' => 'guarantee']]],
+    ]), false],
+    'the label was a complaint' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'complaint']]), false],
+    'held because it touches the waiting draft' => [answeredDraftGate('touches_waiting', ['label' => ['passed' => true, 'label' => 'price']]), false],
+    'the sender refused it' => [answeredDraftGate('send_refused'), false],
+    'Jev did not answer' => [answeredDraftGate('classifier_failed', ['classifier' => ['ran' => true, 'error' => 'timeout', 'reading' => null]]), false],
+    'too long for one text' => [answeredDraftGate('too_long', ['length' => ['passed' => false, 'characters' => 1700, 'limit' => 1600]]), false],
+    'Jev unsure of the intent beside price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price', 'classifier_unsure:intent'])), false],
+    'Jev read a danger beside price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price'], lifeSafety: true)), false],
+    'Jev read a request for a person beside price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price'], asksForPerson: true)), false],
+    'no verdict at all' => [null, false],
+]);
+
+it('closes a draft only for a sentence about the service it still waits on (D-21)', function (string $heldAs, ?array $slugs, ?array $open, ?array $replacedSpec, array $sent, ?bool $touches, bool $expected) {
+    $replaces = $replacedSpec === null ? [] : [answeredDraftHeldAs(...$replacedSpec)->id];
+
+    $draft = answeredDraftHeldAs($heldAs, $slugs, $open, $replaces);
+
+    expect(HeldReasons::answeredBy($draft, $sent, $touches))->toBe($expected);
+})->with([
+    'its own service, touches true' => ['price', ['system-replacement'], ['system-replacement'], null, ['system-replacement'], true, true],
+    'its own service, touches false' => ['price', ['system-replacement'], ['system-replacement'], null, ['system-replacement'], false, true],
+    'its own service, touches missing' => ['price', ['system-replacement'], ['system-replacement'], null, ['system-replacement'], null, true],
+    'another service, touches true' => ['price', ['system-replacement'], ['system-replacement'], null, ['ac-repair'], true, false],
+    'no sentence sent' => ['price', ['system-replacement'], ['system-replacement'], null, [], true, false],
+    'two services open, one sentence' => ['price', ['ac-repair', 'furnace-repair'], ['ac-repair', 'furnace-repair'], null, ['ac-repair'], true, false],
+    'two services open, both sentences' => ['price', ['ac-repair', 'furnace-repair'], ['ac-repair', 'furnace-repair'], null, ['furnace-repair', 'ac-repair'], true, true],
+    'its own run already sent every sentence' => ['price', ['ac-repair'], [], null, ['ac-repair'], true, false],
+    'no service named, touches true' => ['price', [], [], null, ['ac-repair'], true, true],
+    'no service named, touches false' => ['price', [], [], null, ['ac-repair'], false, false],
+    'no service named, touches missing' => ['price', [], [], null, ['ac-repair'], null, false],
+    'no price keys in the meta, touches true' => ['price', null, null, null, ['ac-repair'], true, true],
+    'no price keys in the meta, touches missing' => ['price', null, null, null, ['ac-repair'], null, false],
+    'held on price and a complaint' => ['price and complaint', ['ac-repair'], ['ac-repair'], null, ['ac-repair'], true, false],
+    'a complaint draft' => ['complaint', ['ac-repair'], ['ac-repair'], null, ['ac-repair'], true, false],
+    'chain: another service open in the replaced draft, one sentence' => ['price', ['ac-repair'], ['ac-repair'], ['price', ['system-replacement'], ['system-replacement']], ['ac-repair'], true, false],
+    'chain: both services get a sentence' => ['price', ['ac-repair'], ['ac-repair'], ['price', ['system-replacement'], ['system-replacement']], ['ac-repair', 'system-replacement'], true, true],
+    'chain: the replaced draft was a complaint' => ['price', ['ac-repair'], ['ac-repair'], ['complaint', ['ac-repair'], ['ac-repair']], ['ac-repair'], true, false],
+    'chain: the replaced draft named no service, touches missing' => ['price', ['ac-repair'], ['ac-repair'], ['price', [], []], ['ac-repair'], null, false],
+    'chain: the replaced draft named no service, touches true' => ['price', ['ac-repair'], ['ac-repair'], ['price', [], []], ['ac-repair'], true, true],
+]);
