@@ -215,7 +215,7 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 16/16 plans executed
+**Plans:** 16/28 plans executed; 12 gap-closure plans (02.1-17 to 02.1-28) to run
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
@@ -234,6 +234,20 @@ Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans s
 - [x] 02.1-14-PLAN.md — Wave 14: A held unrelated reply becomes one whole-thread draft, inside the time budget (ANSR-03)
 - [x] 02.1-15-PLAN.md — Wave 15: Map re-check, once, after the code (ANSR-01 to ANSR-04)
 - [x] 02.1-16-PLAN.md — Wave 16: Sprint 1.1 delivered-by lines, 02.2 hand-off notes, Principle 6, and the phase gate on both databases (ANSR-01 to ANSR-04)
+
+**Gap closure** (02.1-VERIFICATION.md gaps 1 to 3, with CONTEXT "Settled after verification" and "Gap plan scope", D-42 to D-51, and review items WR-01, WR-04, WR-07; one plan per wave, run in order)
+- [ ] 02.1-17-PLAN.md — Wave 1: Jev reads the customer's text on every run; its safety, complaint and person readings act on every path (gap 3, D-42, D-45; ANSR-01 to ANSR-04)
+- [ ] 02.1-18-PLAN.md — Wave 2: a complaint stops owner sentences; held code answers pre-fill the draft; a refused closing send keeps the waiting draft's words (CR-01, D-43, D-44, D-47; ANSR-01, ANSR-02, ANSR-04)
+- [ ] 02.1-19-PLAN.md — Wave 3: Jev reads vetoed words; a draft closes as answered only on evidence (CR-02; ANSR-03)
+- [ ] 02.1-20-PLAN.md — Wave 4: no second holding reply after a close-plus-partial run; a touching blank-words answer gets a whole-thread draft; split tests (WR-01, WR-04, WR-07; ANSR-03, ANSR-04)
+- [ ] 02.1-21-PLAN.md — Wave 5: the agent's possible_danger sends the safety line; the holding reply when every model is down (D-45, D-51; ANSR-04)
+- [ ] 02.1-22-PLAN.md — Wave 6: owner alerts about the whole business and the safety_check_down reason (D-50; ANSR-04)
+- [ ] 02.1-23-PLAN.md — Wave 7: Jev outage mode: failed calls and a health ping mark it down, one down alert, one back-up alert with the count (D-50; ANSR-01, ANSR-02, ANSR-04)
+- [ ] 02.1-24-PLAN.md — Wave 8: the sender refuses an automated text without a reading, what each kind of text needs, and while Jev is down (D-45, D-49, D-50; ANSR-01, ANSR-02, ANSR-04)
+- [ ] 02.1-25-PLAN.md — Wave 9: Send anyway, buttons disabled while sending, Discard asks first, the newest text quoted (D-48; ANSR-03)
+- [ ] 02.1-26-PLAN.md — Wave 10: the D-46 invariant test over every combination (ANSR-01 to ANSR-04)
+- [ ] 02.1-27-PLAN.md — Wave 11: map re-check, once, after the gap code (ANSR-01 to ANSR-04)
+- [ ] 02.1-28-PLAN.md — Wave 12: sprint notes, Principle 6, review disposition, and the phase gate on both databases (ANSR-01 to ANSR-04)
 
 ### Phase 02.2: Owner Loop (INSERTED)
 
