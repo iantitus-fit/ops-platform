@@ -19,7 +19,11 @@ use App\Models\OwnerAlert;
 use App\Models\SafetyCheckOutage;
 use App\Models\User;
 use App\SendRule\AsksForPerson;
+use App\SendRule\Classifier;
+use App\SendRule\ClassifierResult;
+use App\SendRule\FakeClassifier;
 use App\SendRule\LifeSafety;
+use App\SendRule\TriageQuestions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Queue;
@@ -610,6 +614,88 @@ it('tells the owner of a complaint the agent labeled when the agent also asks fo
 
 it('tells the owner of a complaint the agent labeled when the agent also flags a danger and asks for a person with Jev down (D-46, D-45)', function () {
     invariantCheck(invariantFlags(['complaint', 'hazard', 'jevFail'], 'agent'));
+});
+
+/**
+ * A customer whose price question waits with the owner writes again with a question that touches nothing waiting, and
+ * the agent is asked twice: its first reply is held for its label, so the run asks once more for one draft that covers
+ * both questions (D-35). The two replies are scripted apart, which no combination in the matrix does, because each
+ * combination gives both calls the same fields.
+ *
+ * @param  array<string, mixed>  $first
+ * @param  array<string, mixed>  $second
+ * @return array{flags: array<string, mixed>, number: string, conversation: ?Conversation, text: string, markerMessageId: int, markerAlertId: int, waitCurrent: bool, waitingDraftId: ?int}
+ */
+function invariantCoverBothRun(string $text, array $first, array $second): array
+{
+    $number = invariantNextNumber();
+    invariantWaitingDraft($number);
+
+    $before = invariantConversation($number);
+    $run = [
+        'flags' => invariantFlags(),
+        'number' => $number,
+        'text' => $text,
+        'markerMessageId' => (int) Message::query()->max('id'),
+        'markerAlertId' => (int) OwnerAlert::query()->max('id'),
+        'waitCurrent' => app(SendFixedReply::class)->holdingAlreadySent($before),
+        'waitingDraftId' => $before->messages()->where('status', MessageStatus::Draft)->value('id'),
+    ];
+
+    fakeClassifier()->answer('faq')->answerReading('faq');
+    scriptFrontDeskReplies(
+        ['reply' => 'Thanks, we will look at it.', 'label' => 'other', 'touches_waiting' => false, ...$first],
+        ['reply' => 'Thanks, Mike will answer both.', 'label' => 'intake_question', ...$second],
+    );
+    invariantPostAndRun($number, $text);
+
+    return [...$run, 'conversation' => invariantConversation($number)];
+}
+
+it('sends the safety line when only the second reply of a cover-both run flags a danger (D-46, D-45)', function () {
+    $run = invariantCoverBothRun(
+        'My head is pounding and the kids feel dizzy since the furnace came on. Also do you work Saturdays?',
+        ['possible_danger' => false],
+        ['possible_danger' => true],
+    );
+
+    $sent = invariantSentTexts($run);
+
+    expect($sent->first()?->kind)->toBe(MessageKind::LifeSafety)
+        ->and($sent->filter(fn (Message $message): bool => $message->kind === MessageKind::LifeSafety))->toHaveCount(1)
+        ->and($run['conversation']->fresh()->paused_reason)->toBe(PausedReason::LifeSafety)
+        ->and(OwnerAlert::query()->where('id', '>', $run['markerAlertId'])->where('reason', AlertReason::LifeSafety->value)->count())->toBe(1)
+        ->and(Message::query()->where('conversation_id', $run['conversation']->id)->where('status', MessageStatus::Draft)->count())->toBe(1);
+});
+
+it('keeps the owner sentence out of the text when only the second reply of a cover-both run is a complaint (D-46, D-43)', function () {
+    $secondIsComplaint = new class extends FakeClassifier
+    {
+        public function classify(string $customerMessage, string $draftReply, TriageQuestions $questions): ClassifierResult
+        {
+            $draftReply === 'Thanks, Mike will answer both.'
+                ? $this->answer('complaint', 0.95, ['complaint' => 0.9])
+                : $this->answer('faq');
+
+            return parent::classify($customerMessage, $draftReply, $questions);
+        }
+    };
+    app()->instance(Classifier::class, $secondIsComplaint);
+
+    $run = invariantCoverBothRun(
+        'How much is an AC repair? Also do you work Saturdays?',
+        ['price_services' => ['ac-repair']],
+        ['price_services' => ['ac-repair']],
+    );
+
+    $sent = invariantSentTexts($run);
+    $draft = Message::query()->where('conversation_id', $run['conversation']->id)->where('status', MessageStatus::Draft)->sole();
+
+    expect($sent->filter(fn (Message $message): bool => invariantCarriesOwnerSentence($message)))->toHaveCount(0)
+        ->and($sent->filter(fn (Message $message): bool => invariantCarriesComplaintReply($message)))->toHaveCount(1)
+        ->and(OwnerAlert::query()->where('id', '>', $run['markerAlertId'])->where('reason', AlertReason::Complaint->value)->count())->toBe(1)
+        ->and($draft->meta['held_sentences'] ?? [])->toHaveCount(1)
+        ->and($draft->body)->toContain('$89');
 });
 
 /**
