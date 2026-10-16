@@ -208,3 +208,20 @@ it('marks a reading missing, not failed, when no business folder is live, and se
         ->and(app(SafetyCheckStatus::class)->isDown())->toBeFalse()
         ->and(jevDownAlerts(AlertReason::SafetyCheckDown))->toHaveCount(0);
 });
+
+it('sends only the holding reply to a text the keywords do not catch while Jev is down, and tells the owner the safety check is down (D-49)', function () {
+    activateExampleFolder();
+    jevDownBegins('2026-10-13 10:00');
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question']);
+
+    jevDownTextFrom('+12025550121', JEV_DOWN_AC);
+
+    runQueuedFrontDeskJobs();
+
+    $sent = jevDownMessagesTo('+12025550121')->where('status', MessageStatus::Sent);
+
+    expect(jevDownTextsTo('+12025550121'))->toHaveCount(1)
+        ->and($sent->pluck('kind')->all())->toBe([MessageKind::HoldingReply])
+        ->and(Message::query()->whereIn('kind', [MessageKind::AgentReply->value, MessageKind::CodeAnswer->value])->where('status', MessageStatus::Sent->value)->count())->toBe(0)
+        ->and(jevDownAlerts(AlertReason::SafetyCheckDown))->toHaveCount(1);
+});
