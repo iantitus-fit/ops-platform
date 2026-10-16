@@ -1332,7 +1332,8 @@ class RunFrontDesk
      * draft and its timeline entry are written together, so a held reply never exists without a record of why.
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
      * point at a draft that was rolled away (D-07, D-20). Last, the customer gets one holding reply saying the owner
-     * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14).
+     * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14);
+     * then they get the added-info line instead, so a text is never left silent (D-46; Ian, 2026-10-16).
      * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
      * tell someone describing a fire or a gas leak.
      *
@@ -1407,7 +1408,11 @@ class RunFrontDesk
         }
 
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
-            $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
+            if ($this->sendFixedReply->holdingAlreadySent($conversation)) {
+                $this->sendAddedInfoReply($conversation, ['meta' => $attributes['meta'] ?? []]);
+            } else {
+                $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
+            }
         }
     }
 

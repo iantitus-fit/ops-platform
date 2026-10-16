@@ -173,7 +173,8 @@ class SendFixedReply
      * Whether a draft was closed as answered by a text newer than the wait-starter. A close made by the wait-starter
      * itself, such as the partial holding line that went out with an owner sentence, answers the draft it closed but
      * not the question the line says is still with the owner, so the wait goes on (WR-01). The comparison is made in PHP
-     * so SQLite and PostgreSQL agree. A draft closed without an answering id counts, as it always did.
+     * so SQLite and PostgreSQL agree. A draft closed without an answering id does not count: missing evidence never
+     * counts as proof (Ian, 2026-10-16, the same rule as CR-02). closeAsAnswered() always records the id.
      */
     private function answeredAfter(Conversation $conversation, Message $waitStarter): bool
     {
@@ -181,6 +182,6 @@ class SendFixedReply
             ->where('resolution', DraftResolution::Answered)
             ->where('resolved_at', '>=', $waitStarter->created_at)
             ->get()
-            ->contains(fn (Message $draft): bool => ! isset($draft->meta['answered_by']) || (int) $draft->meta['answered_by'] > $waitStarter->id);
+            ->contains(fn (Message $draft): bool => isset($draft->meta['answered_by']) && (int) $draft->meta['answered_by'] > $waitStarter->id);
     }
 }
