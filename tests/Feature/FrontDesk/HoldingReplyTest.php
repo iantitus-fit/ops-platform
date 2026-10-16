@@ -296,18 +296,20 @@ it('raises the complaint alert for a held complaint beside the complaint reply (
     expect(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::Complaint);
 });
 
-it('puts the complaint reply first when a price sentence rides in the same text (D-36)', function () {
+it('sends only the complaint reply when a price sentence would have ridden in the same text, and keeps the sentence in the draft (D-36, D-43)', function () {
     holdingReplyHeldFor('The technician left a mess, and how much is the diagnostic for my AC?', 'complaint', 'We are sorry to hear that.', [
         'price_services' => ['ac-repair'],
     ]);
 
-    $sent = Message::query()->where('kind', MessageKind::ComplaintHolding->value)->sole();
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
 
     expect(holdingReplyTextsToDana())->toHaveCount(1)
-        ->and(holdingReplyTextsToDana()[0]['body'])->toBe(composedFirstReply(HOLDING_REPLY_COMPLAINT_LINE.' '.HOLDING_REPLY_AC_SENTENCE))
-        ->and($sent->meta['parts'])->toBe(['complaint_line', 'code_sentences'])
+        ->and(holdingReplyTextsToDana()[0]['body'])->toBe(composedFirstReply(HOLDING_REPLY_COMPLAINT_LINE))
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
-        ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('label:complaint');
+        ->and($draft->gate_reason)->toBe('label:complaint')
+        ->and($draft->body)->toBe('We are sorry to hear that.'."\n\n".HOLDING_REPLY_AC_SENTENCE)
+        ->and($draft->meta['held_sentences'])->toBe([HOLDING_REPLY_AC_SENTENCE]);
 });
 
 it('sends no new holding reply for a later held draft after a complaint or discount reply (D-30)', function (string $customerText, string $label, string $words, MessageKind $kind) {

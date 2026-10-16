@@ -720,7 +720,8 @@ class RunFrontDesk
      * draft and the owner's alert already exist, so a text that cannot go out falls back to the full holding reply and
      * is otherwise reported to the log, never raised (D-30). When the words were held as a complaint, the owner's
      * complaint reply leads the text instead of the partial line, so an upset customer is acknowledged before anything
-     * else (D-36).
+     * else (D-36). That text never carries the owner's price or offer sentences: a complaint stops them (D-43), and they
+     * wait in the draft instead.
      *
      * @param  array{meta: array<string, mixed>}  $attributes
      * @param  ?string  $reasonCode  Why the words were held.
@@ -734,7 +735,7 @@ class RunFrontDesk
         }
 
         $partial = in_array($reasonCode, SendFixedReply::COMPLAINT_CODES, true)
-            ? new ReplyParts(complaintLine: $this->fixedReplies->complaintReply(now()), codeSentences: $parts->codeSentences)
+            ? new ReplyParts(complaintLine: $this->fixedReplies->complaintReply(now()))
             : new ReplyParts(
                 codeSentences: $parts->codeSentences,
                 lineKind: MessageKind::PartialHolding,
