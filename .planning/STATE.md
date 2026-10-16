@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-20-PLAN.md
-last_updated: "2026-10-16T21:36:08.159Z"
+stopped_at: Completed 02.1-21-PLAN.md
+last_updated: "2026-10-16T21:48:20.881Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 7c91337fac44209e34499c53c591ec338c55bdce
+state_head: 843f5690302bfe942f318ab3b13e0ec10947d587
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 68
+  completed_plans: 69
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 21 of 28 next (19 complete)
+Plan: 22 of 28 next (19 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -125,6 +125,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P18 | 14 min | 3 tasks | 6 files |
 | Phase 02.1 P19 | 25 min | 2 tasks | 11 files |
 | Phase 02.1 P20 | 15 min | 3 tasks | 6 files |
+| Phase 02.1 P21 | 8 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -250,6 +251,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-19: priceAlone() closes a draft only on evidence: a stored clean customer reading and, for model words, a words check that ran with price-only reasons; an unrun, failed or missing check is disagreement
 - [Phase 02.1]: 02.1-20: an answered draft with no answered_by still ends the wait; only a recorded id at or below the latest wait-starter's id is ignored (WR-01)
 - [Phase 02.1]: 02.1-20: a blank-words answer with touches_waiting true sends the sentences with the partial line then asks for one whole-thread draft; a failed or blank second call leaves the waiting draft live (WR-04)
+- [Phase 02.1]: 02.1-21: possible_danger is the lowest-priority code hold reason, so a complaint, failed or unsure reading or promise label keeps its own reason; the safety line for it is sent once, right after the agent answers
+- [Phase 02.1]: 02.1-21 D-51: on the no-agent and every-model-failed returns the customer gets the holding reply once (complaint reply plus a complaint alert on the folder's timing when the reading found a complaint); the crash path stays alert-only
 
 ### Pending Todos
 
@@ -285,6 +288,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T21:36:08.079Z
-Stopped at: Completed 02.1-20-PLAN.md
+Last session: 2026-10-16T21:48:20.804Z
+Stopped at: Completed 02.1-21-PLAN.md
 Resume file: None
