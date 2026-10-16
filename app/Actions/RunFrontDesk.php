@@ -93,9 +93,11 @@ use Illuminate\Support\Str;
  * draft as answered (D-21), and an easy question asked in the same text as one that touches the waiting question is
  * answered now, with the partial holding line, while the rest becomes the fresh draft (D-19, D-20).
  *
- * A front desk that cannot answer (every model failed, no agent for texts) or cannot send alerts the owner and
- * returns, because the customer's burst is already claimed (AGNT-04). Anything else that goes wrong, such as a
- * database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
+ * A front desk that cannot answer (every model failed, no agent for texts) alerts the owner and returns, because the
+ * customer's burst is already claimed (AGNT-04), and the customer still hears from the business: the owner's holding
+ * reply goes out once, or the complaint reply when the reading found a complaint, unless a safety line already answered
+ * (D-51, replyWhenFrontDeskCannotAnswer()). A front desk that cannot send alerts the owner too. Anything else that goes
+ * wrong, such as a database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
  * left silent. A send the channel refused stays on the record as failed. A send that was only refused, such as while
  * the owner is sending to the same customer, becomes a draft.
  */
@@ -186,6 +188,7 @@ class RunFrontDesk
 
         if ($agent === null) {
             $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'no agent file answers texts', 'No front desk agent is set up for texts');
+            $this->replyWhenFrontDeskCannotAnswer($conversation, $burst);
 
             return;
         }
@@ -196,6 +199,7 @@ class RunFrontDesk
             $run = $this->runFrontDeskAgent->handle($agent, $conversation, $burst, waitingDraft: $waiting);
         } catch (FrontDeskUnavailable) {
             $this->reportFrontDeskFailure->handle($conversation, $burst->last(), 'every model failed', 'Front desk could not answer');
+            $this->replyWhenFrontDeskCannotAnswer($conversation, $burst);
 
             return;
         }
@@ -1142,6 +1146,33 @@ class RunFrontDesk
         if ($this->reading()->complaint()) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
         }
+    }
+
+    /**
+     * Tell the customer something when the front desk could not answer (D-51): the owner's holding reply, once, or the
+     * owner's complaint reply when the run's reading found a complaint, which also alerts the owner to the complaint on
+     * the folder's owner_alert timing beside the front_desk_failed alert (D-45). Nothing goes out when a safety line
+     * already answers a text in the burst or the conversation is paused, because "the owner will answer" is the wrong
+     * thing to tell someone describing a danger. holding() skips a customer whose wait is current, so a second text
+     * while the models are still down gets no second reply, and never throws. Only the two returns in handle() call
+     * this; the crash path in ProcessInbound stays alert-only, so a crash never risks a double text.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function replyWhenFrontDeskCannotAnswer(Conversation $conversation, Collection $burst): void
+    {
+        if ($this->safetyLineAlreadySent($burst) || $conversation->refresh()->isPaused()) {
+            return;
+        }
+
+        if ($this->reading()->complaint()) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and the front desk could not answer');
+            $this->sendFixedReply->holding($conversation, 'classifier:complaint');
+
+            return;
+        }
+
+        $this->sendFixedReply->holding($conversation);
     }
 
     /**

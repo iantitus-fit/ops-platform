@@ -33,7 +33,7 @@ it('tells the owner, and texts the customer the holding reply, when every model 
     $sent = textsSentToCustomers();
 
     expect(Message::query()->where('direction', MessageDirection::Out)->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
-        ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(2)
+        ->and(Message::query()->where('direction', MessageDirection::Out)->sole()->kind->value)->toBe('holding_reply')
         ->and(OwnerAlert::query()->count())->toBe(1)
         ->and(Message::query()->where('direction', MessageDirection::In)->sole()->handled_at)->not->toBeNull()
         ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: every model failed')
