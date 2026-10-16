@@ -31,7 +31,7 @@ questions:
   life_safety: "Does `customer_message` describe smelling gas, fire or smoke, a carbon monoxide alarm, sparking, or water reaching outlets, the electrical panel or plugged-in appliances?"
   asks_for_person: "Is `customer_message` asking to talk with a real person instead of the assistant?"
 ---
-These are the questions the safety check asks about every reply the assistant writes, before anything goes out. The check reads two texts: `customer_message` is what the customer wrote, and `draft_reply` is what the assistant wants to send back.
+These are the questions the safety check asks, before anything goes out. The check reads every text a customer sends, and every reply the assistant writes. It reads two texts: `customer_message` is what the customer wrote, and `draft_reply` is what the assistant wants to send back. When it reads the customer's text alone, there is no reply to read yet, so `draft_reply` is empty.
 
 The first question sorts the customer's message into one of the intents above. `other` is listed first on purpose: the checker leans toward the first option when it is unsure, so a doubtful message lands in `other`, and `other` never sends on its own.
 
