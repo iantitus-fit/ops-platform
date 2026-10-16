@@ -8,6 +8,7 @@ use App\Enums\MessageKind;
 use App\Enums\SendOrigin;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\CustomerReading;
 use App\SendRule\ReplyParts;
 use DomainException;
 
@@ -18,7 +19,8 @@ use DomainException;
  * A text with no model words in it was written entirely by code from the owner's own sentences, which the sync already
  * checked, so it records a fixed-reply verdict and skips the classifier. A text with model words in it takes the
  * verdict attributes the caller got from the send rule. Either way it goes out through the one outbound path with the
- * disclosure and sign-off added like any automated text (D-50).
+ * disclosure and sign-off added like any automated text (D-50). Every text carries the run's reading of the customer's
+ * text in its gate, which the outbound path demands of an automated text (D-45, D-49).
  */
 class SendCombinedReply
 {
@@ -28,11 +30,12 @@ class SendCombinedReply
     ) {}
 
     /**
+     * @param  CustomerReading  $reading  What Jev read in the customer's text for this run; a gate the caller built keeps its own.
      * @param  array<string, mixed>  $attributes  Further message columns, such as the verdict of the model's words and meta.
      *
      * @throws DomainException what OutboundSender throws
      */
-    public function handle(Conversation $conversation, ReplyParts $parts, array $attributes = []): Message
+    public function handle(Conversation $conversation, ReplyParts $parts, CustomerReading $reading, array $attributes = []): Message
     {
         $kind = $parts->kind();
 
@@ -48,9 +51,11 @@ class SendCombinedReply
                 ...$attributes,
                 'gate_outcome' => GateOutcome::Send,
                 'gate_reason' => 'fixed_reply',
-                'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null]],
+                'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null], 'customer_reading' => $reading->toArray()],
                 'label' => null,
             ];
+        } elseif (! isset($attributes['gate']['customer_reading'])) {
+            $attributes['gate'] = [...($attributes['gate'] ?? []), 'customer_reading' => $reading->toArray()];
         }
 
         return $this->outboundSender->send(

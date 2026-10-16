@@ -58,7 +58,9 @@ use Illuminate\Support\Str;
  * the agent is not asked (D-40).
  *
  * The run's order is: the keyword safety line, the opt-out check, then Jev's reading of the customer's text, then
- * everything else. The reading is one Jev call per run, made before any early return, and when it finds a danger the
+ * everything else. A reading that is missing, such as when no business folder is live, counts as no reading at all: the
+ * owner is alerted at once with safety_check_missing, before any send is tried (Ian, 2026-10-16), and the outbound
+ * path refuses every automated text that has no reading, so nothing the front desk writes goes out. The reading is one Jev call per run, made before any early return, and when it finds a danger the
  * safety line goes first, before the paused check, the reply cap, a handoff or any price sentence (D-42, D-45). After
  * it, in order: the paused check, the reply cap, the request for a person (a keyword phrase or Jev's reading), then the
  * agent. A text no reply will answer, paused or capped, still alerts the owner to a complaint or a request for a person
@@ -158,6 +160,7 @@ class RunFrontDesk
 
         $promptText = $this->prompt->promptText($burst);
         $this->reading = $this->readCustomerText->handle($promptText);
+        $this->alertAboutMissingReading($conversation, $burst);
 
         if ($this->reading()->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
@@ -456,7 +459,7 @@ class RunFrontDesk
                 );
             }
 
-            return $this->sendCombinedReply->handle($conversation, $parts, [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
+            return $this->sendCombinedReply->handle($conversation, $parts, $this->reading(), [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
         } catch (DomainException $exception) {
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
                 return null;
@@ -569,7 +572,7 @@ class RunFrontDesk
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
             $this->sendAddedInfoReply($conversation, $sentMeta);
         } else {
-            $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
+            $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
         }
     }
 
@@ -758,7 +761,7 @@ class RunFrontDesk
         ), $easy, $attributes);
 
         try {
-            $this->sendCombinedReply->handle($conversation, $text, $attributes);
+            $this->sendCombinedReply->handle($conversation, $text, $this->reading(), $attributes);
         } catch (DomainException $exception) {
             if (! $this->alertAboutFailedSend($exception, $conversation, $burst)) {
                 report($exception);
@@ -812,7 +815,7 @@ class RunFrontDesk
             $this->sendCombinedReply->handle($conversation, new ReplyParts(
                 lineKind: MessageKind::AddedInfoReply,
                 line: $this->fixedReplies->addedInfoReply(now()),
-            ), $attributes);
+            ), $this->reading(), $attributes);
         } catch (DomainException $exception) {
             report($exception);
         }
@@ -848,11 +851,11 @@ class RunFrontDesk
         [$partial, $attributes] = $this->withEasyWords($conversation, $partial, $easy, $attributes);
 
         try {
-            return $this->sendCombinedReply->handle($conversation, $partial, $attributes);
+            return $this->sendCombinedReply->handle($conversation, $partial, $this->reading(), $attributes);
         } catch (DomainException $exception) {
             report($exception);
 
-            $this->sendFixedReply->holding($conversation, $reasonCode);
+            $this->sendFixedReply->holding($conversation, $this->reading(), $reasonCode);
 
             return null;
         }
@@ -976,7 +979,7 @@ class RunFrontDesk
         $inReplyTo = $burst->pluck('id')->all();
 
         try {
-            return $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), [
+            return $this->sendCombinedReply->handle($conversation, new ReplyParts(codeSentences: $sentences), $this->reading(), [
                 'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$this->codeSentencesMeta($picks, $offerSlugs)],
             ]);
         } catch (DomainException $exception) {
@@ -1075,6 +1078,28 @@ class RunFrontDesk
     }
 
     /**
+     * Tell the owner at once when the run's reading is missing, before any send is tried (Ian, 2026-10-16). A missing
+     * reading counts as no reading at all: nothing the front desk writes can go out without the safety check having
+     * read the customer's text, so the owner hears about the text now, at any hour, whatever the folder lists under
+     * right_away. It is a safety alert like life_safety and safety_check_down, and it is not an outage: Jev is not
+     * marked down. The alert names why the text was not read, such as no business folder being live. It is raised
+     * once for the burst's newest text; a later refused send for the same text raises it again and RaiseOwnerAlert
+     * skips the repeat.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutMissingReading(Conversation $conversation, Collection $burst): void
+    {
+        $reading = $this->reading();
+
+        if (! $reading->missing) {
+            return;
+        }
+
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::SafetyCheckMissing, $burst->last(), $reading->error ?? 'The customer text was not read, so the safety check did not run');
+    }
+
+    /**
      * Whether a safety line already answers one of the burst's texts, such as one the keywords sent a moment ago, so
      * Jev's reading of the same burst does not send a second.
      *
@@ -1141,7 +1166,7 @@ class RunFrontDesk
     private function handOffToOwner(Conversation $conversation, Collection $burst): void
     {
         $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
-        $this->sendFixedReply->handoff($conversation);
+        $this->sendFixedReply->handoff($conversation, $this->reading());
         $this->pauseConversation->handle($conversation, PausedReason::AskedForPerson);
 
         if ($this->reading()->complaint()) {
@@ -1168,12 +1193,12 @@ class RunFrontDesk
 
         if ($this->reading()->complaint()) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and the front desk could not answer');
-            $this->sendFixedReply->holding($conversation, 'classifier:complaint');
+            $this->sendFixedReply->holding($conversation, $this->reading(), 'classifier:complaint');
 
             return;
         }
 
-        $this->sendFixedReply->holding($conversation);
+        $this->sendFixedReply->holding($conversation, $this->reading());
     }
 
     /**
@@ -1339,7 +1364,7 @@ class RunFrontDesk
         }
 
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
-            $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
+            $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
         }
     }
 

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Channels\RecipientOptedOut;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
+use App\Enums\AlertReason;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
@@ -16,6 +17,7 @@ use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\CustomerReading;
 use Carbon\CarbonInterface;
 use DomainException;
 use Illuminate\Contracts\Cache\Lock;
@@ -31,6 +33,11 @@ use Throwable;
  * its id, so a message is never recorded as sent unless the channel accepted it. Every send to one conversation
  * takes the same lock as the owner's own replies, so two texts to one customer never go out together. Checks that
  * must hold for every sender belong here, in whyBlocked(), so no path can skip them.
+ *
+ * It is also the second chokepoint (D-45): an automated text goes out only with a reading of the customer's text
+ * attached to its gate (gate.customer_reading). The safety line is the one exception and is never asked for one. A
+ * reading marked missing counts as no reading at all (Ian, 2026-10-16). A refused send is never sent and the owner
+ * is told: a text with no reading raises safety_check_missing, always right away and once per customer text.
  */
 class OutboundSender
 {
@@ -51,9 +58,15 @@ class OutboundSender
      */
     public const string NO_READING = 'Not sent without the safety check: ';
 
+    /**
+     * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
+     */
+    private const string NO_READING_WHY = "A text was stopped because the safety check had not read the customer's message";
+
     public function __construct(
         private readonly TextChannel $textChannel,
         private readonly ActiveConfig $activeConfig,
+        private readonly RaiseOwnerAlert $raiseOwnerAlert,
     ) {}
 
     /**
@@ -185,6 +198,10 @@ class OutboundSender
             throw new DomainException($refusal);
         }
 
+        if ($origin === SendOrigin::Automated) {
+            $this->refuseWithoutReading($conversation, $attributes);
+        }
+
         $summary = $attributes['activity_summary'] ?? null;
         unset($attributes['activity_summary']);
 
@@ -293,6 +310,78 @@ class OutboundSender
         CustomerRecordChanged::dispatch($contact->id);
 
         return $message;
+    }
+
+    /**
+     * Refuse an automated text that lacks what its gate must carry (D-45, D-49), tell the owner, and stop. A text with
+     * no reading of the customer's text, or one marked missing, raises safety_check_missing; the owner is told at once
+     * at any hour, once per customer text. A text that has a reading but lacks something else raises front_desk_failed,
+     * on the folder's owner_alert timing.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws DomainException
+     */
+    private function refuseWithoutReading(Conversation $conversation, array $attributes): void
+    {
+        $why = $this->whyReadingBlocks($attributes);
+
+        if ($why === null) {
+            return;
+        }
+
+        $this->alertAboutRefusal(
+            $conversation,
+            $this->readingOf($attributes) === null ? AlertReason::SafetyCheckMissing : AlertReason::FrontDeskFailed,
+            $why,
+        );
+
+        throw new DomainException(self::NO_READING.$why);
+    }
+
+    /**
+     * Why an automated text lacks what it needs from the reading of the customer's text, or null when it has it.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function whyReadingBlocks(array $attributes): ?string
+    {
+        if ($this->readingOf($attributes) === null) {
+            return self::NO_READING_WHY;
+        }
+
+        return null;
+    }
+
+    /**
+     * The reading attached to a text's gate, or null when there is none: absent, malformed, or marked missing.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function readingOf(array $attributes): ?CustomerReading
+    {
+        $gate = $attributes['gate'] ?? null;
+
+        return CustomerReading::fromStoredIfMade(is_array($gate) ? ($gate['customer_reading'] ?? null) : null);
+    }
+
+    /**
+     * Tell the owner a text was stopped, about the conversation's newest customer text. A second refused send for the
+     * same customer text and reason adds no second alert, because RaiseOwnerAlert skips one that is already there. A
+     * failure to raise the alert is reported and never hides the refusal.
+     */
+    private function alertAboutRefusal(Conversation $conversation, AlertReason $reason, string $why): void
+    {
+        try {
+            $newestCustomerText = $conversation->messages()
+                ->reorder('id', 'desc')
+                ->where('direction', MessageDirection::In)
+                ->first();
+
+            $this->raiseOwnerAlert->handle($conversation, $reason, $newestCustomerText, $why);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**

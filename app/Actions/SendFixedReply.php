@@ -11,6 +11,7 @@ use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\SendRule\CustomerReading;
 use App\SendRule\FixedReplies;
 use DomainException;
 
@@ -19,7 +20,9 @@ use DomainException;
  *
  * The text comes from rules/replies.md through FixedReplies, with the time worked out at the moment of sending
  * (D-13), and goes out through the one outbound path with the disclosure and sign-off added like any automated text
- * (D-50). The classifier is not asked: code wrote the words, and the sync already checked them.
+ * (D-50). The classifier is not asked: code wrote the words, and the sync already checked them. Each text carries the
+ * run's reading of the customer's text in its gate, because the one outbound path refuses an automated text without one
+ * (D-45, D-49); a reading that failed still counts, one that is missing does not.
  */
 class SendFixedReply
 {
@@ -51,7 +54,7 @@ class SendFixedReply
      * (D-14), or when the text could not go out. The draft and the owner's alert already exist by now, so a refusal
      * or a channel failure is reported to the log and never raised.
      */
-    public function holding(Conversation $conversation, ?string $reasonCode = null): ?Message
+    public function holding(Conversation $conversation, CustomerReading $reading, ?string $reasonCode = null): ?Message
     {
         if ($this->holdingAlreadySent($conversation)) {
             return null;
@@ -70,7 +73,7 @@ class SendFixedReply
                 'kind' => $kind,
                 'gate_outcome' => GateOutcome::Send,
                 'gate_reason' => 'fixed_reply',
-                'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null]],
+                'gate' => $this->fixedGate($reading),
             ]);
         } catch (DomainException $exception) {
             report($exception);
@@ -85,7 +88,7 @@ class SendFixedReply
      * go around them (D-50). Unlike holding(), it always sends: a customer who asks again is told again. Returns null
      * when the text could not go out; the owner's alert already exists by then, so that is reported to the log.
      */
-    public function handoff(Conversation $conversation): ?Message
+    public function handoff(Conversation $conversation, CustomerReading $reading): ?Message
     {
         $body = $this->composeAutomatedText->forReply($conversation, $this->fixedReplies->handoffReply(now()));
 
@@ -94,13 +97,28 @@ class SendFixedReply
                 'kind' => MessageKind::HandoffReply,
                 'gate_outcome' => GateOutcome::Send,
                 'gate_reason' => 'fixed_reply',
-                'gate' => ['version' => 1, 'fixed' => true, 'reason' => ['code' => 'fixed_reply', 'plain' => null]],
+                'gate' => $this->fixedGate($reading),
             ]);
         } catch (DomainException $exception) {
             report($exception);
 
             return null;
         }
+    }
+
+    /**
+     * The gate of a fixed reply: code wrote the words, so no words check ran, and the run's reading is attached.
+     *
+     * @return array<string, mixed>
+     */
+    private function fixedGate(CustomerReading $reading): array
+    {
+        return [
+            'version' => 1,
+            'fixed' => true,
+            'reason' => ['code' => 'fixed_reply', 'plain' => null],
+            'customer_reading' => $reading->toArray(),
+        ];
     }
 
     /**

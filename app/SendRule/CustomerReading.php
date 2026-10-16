@@ -94,6 +94,18 @@ readonly class CustomerReading
     }
 
     /**
+     * The reading kept in an earlier verdict's gate JSON, only when a reading was actually made. A record that is absent,
+     * malformed or marked missing counts as no reading at all and gives null (Ian, 2026-10-16). A failed reading is
+     * still a reading: a Jev call went wrong, but the customer's text was put to it.
+     */
+    public static function fromStoredIfMade(mixed $stored): ?self
+    {
+        $reading = self::fromStored($stored);
+
+        return $reading === null || $reading->missing ? null : $reading;
+    }
+
+    /**
      * Whether the reading answers nothing, because the call failed or no reading was made. Both hold the model's
      * words; they differ in what the owner is told.
      */

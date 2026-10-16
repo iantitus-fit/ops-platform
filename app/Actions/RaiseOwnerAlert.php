@@ -115,16 +115,17 @@ class RaiseOwnerAlert
     }
 
     /**
-     * Whether the owner wants this event at once: a safety message and the safety check being
-     * down always do (the only two forced right away, whatever the folder says), and so does any
-     * event the business folder lists under owner_alert right_away. An owner_alert the code
+     * Whether the owner wants this event at once: a safety message, the safety check being down
+     * and a text stopped because the safety check never read it always do (the only three forced
+     * right away, whatever the folder says), and so does any event the business folder lists
+     * under owner_alert right_away. An owner_alert the code
      * cannot read (no live version, or a folder from before the front desk) counts as urgent:
      * the alert goes out now rather than risk being held, because an alert must never fail
      * silently (D-19).
      */
     public function isUrgent(AlertReason $reason): bool
     {
-        if ($reason === AlertReason::LifeSafety || $reason === AlertReason::SafetyCheckDown) {
+        if (in_array($reason, [AlertReason::LifeSafety, AlertReason::SafetyCheckDown, AlertReason::SafetyCheckMissing], true)) {
             return true;
         }
 
