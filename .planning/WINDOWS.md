@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 13
+open_count: 14
 waived_count: 0
 fixed_count: 2
-total_count: 15
-last_updated: 2026-10-16T21:46:11.228Z
+total_count: 16
+last_updated: 2026-10-16T22:06:46.795Z
 ---
 
 # Broken Windows Ledger
@@ -30,6 +30,7 @@ last_updated: 2026-10-16T21:46:11.228Z
 | 13 | 02.1 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | Ian's UX walk on his phone at UAT (02.1 D-48): walk the Needs you card and the Business Folder Offers section, then decide UI-REVIEW fix 2's styling (card hierarchy, colour, icon) and fix 3 (Offers warning colour, file name, date format), both deferred until this walk. Also: Contacts and Conversations tables at 375 wide, pick the columns to hide; the thread's scroll box inside the page scroll; the hardcoded red (#dc2626) in dark mode | open |  | 2026-10-15T02:25:15.746Z |  |
 | 14 | 02.1 | unrun-verify | tests/Feature/FrontDesk/CustomerReadingTest.php |  | Plan 02.1-17 human-check (live JEV_API_KEY: text from /dev/chat 'My head is pounding and the kids feel dizzy since the furnace came on.' and confirm gate.customer_reading shows Jev answered a call with an empty draft_reply and read life_safety above 0.075) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T20:57:36.914Z |  |
 | 15 | 02.1 | unrun-verify | tests/Feature/FrontDesk/PossibleDangerTest.php |  | Plan 02.1-21 human-check (live provider key: text from /dev/chat 'My head is pounding and the kids feel dizzy since the furnace came on.' and confirm the stored AgentReply sets possible_danger true) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T21:46:11.228Z |  |
+| 16 | 02.1 | unrun-verify | tests/Feature/SendRule/SafetyCheckOutageTest.php |  | Plan 02.1-23 human-check (live JEV_API_KEY with php artisan schedule:work running: confirm the health ping succeeds against OpenRouter and no outage row opens; set a wrong key, wait for the next ping, and confirm one safety_check_down text reaches the owner's phone; restore the key and confirm the back-up text) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T22:06:46.795Z |  |
 
 ````json
 [
@@ -225,6 +226,19 @@ last_updated: 2026-10-16T21:46:11.228Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-16T21:46:11.228Z",
+    "resolved_at": null,
+    "milestone": null
+  },
+  {
+    "id": 16,
+    "kind": "unrun-verify",
+    "phase": "02.1",
+    "file": "tests/Feature/SendRule/SafetyCheckOutageTest.php",
+    "line": null,
+    "description": "Plan 02.1-23 human-check (live JEV_API_KEY with php artisan schedule:work running: confirm the health ping succeeds against OpenRouter and no outage row opens; set a wrong key, wait for the next ping, and confirm one safety_check_down text reaches the owner's phone; restore the key and confirm the back-up text) not run by the executor; left for end-of-phase UAT",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-16T22:06:46.795Z",
     "resolved_at": null,
     "milestone": null
   }

@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-22-PLAN.md
-last_updated: "2026-10-16T21:54:27.184Z"
+stopped_at: Completed 02.1-23-PLAN.md
+last_updated: "2026-10-16T22:07:49.882Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: d4e6df70b50efee31e7e6c57b0e5fd9c65332d26
+state_head: d5e8779c15c84b026c5764542b40df7da2ce9876
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 70
+  completed_plans: 71
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 23 of 28 next (19 complete)
+Plan: 24 of 28 next (19 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -127,6 +127,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P20 | 15 min | 3 tasks | 6 files |
 | Phase 02.1 P21 | 8 min | 3 tasks | 11 files |
 | Phase 02.1 P22 | 6 min | 2 tasks | 8 files |
+| Phase 02.1 P23 | 9 min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -255,6 +256,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-21: possible_danger is the lowest-priority code hold reason, so a complaint, failed or unsure reading or promise label keeps its own reason; the safety line for it is sent once, right after the agent answers
 - [Phase 02.1]: 02.1-21 D-51: on the no-agent and every-model-failed returns the customer gets the holding reply once (complaint reply plus a complaint alert on the folder's timing when the reading found a complaint); the crash path stays alert-only
 - [Phase 02.1]: 02.1-22: safety_check_down is urgent in code like life_safety, so rules/sending.md may list it or leave it off; forBusiness() never dedupes (plan 02.1-23 decides when to call it); a business alert has a null conversation_id and writes no customer timeline entry
+- [Phase 02.1]: Plan 23 (Ian, 2026-10-16): a reading that never ran is marked missing, never failed (the reading() fallback and no live business folder); it holds the model's words, never calls recordFailure, and fromStored() reads it back as missing; plan 02.1-24 raises safety_check_missing
+- [Phase 02.1]: Plan 23: Jev outage status is a safety_check_outages table row changed under Cache::lock('safety-check-status'); a held missing reading keeps hold reason code classifier_failed
 
 ### Pending Todos
 
@@ -290,6 +293,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T21:54:27.103Z
-Stopped at: Completed 02.1-22-PLAN.md
+Last session: 2026-10-16T22:07:49.807Z
+Stopped at: Completed 02.1-23-PLAN.md
 Resume file: None
