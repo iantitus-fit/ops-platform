@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\FrontDeskAgent;
 use App\Ai\FrontDeskPrompt;
 use App\Enums\AlertReason;
 use App\Enums\MessageAuthor;
@@ -121,4 +122,302 @@ it('scripts the words check with answer() and the reading with answerReading(), 
     $classifier->failWith('everything down');
 
     expect(fn () => $classifier->classify('hello', 'a reply', $questions))->toThrow(ClassifierFailed::class, 'everything down');
+});
+
+const CUSTOMER_READING_AFTER_HOURS = '2026-10-14 02:00';
+
+/**
+ * Take the given alert reasons off the folder's right_away list. Call it before Dana's text arrives, because the
+ * folder is activated when the text does.
+ *
+ * @param  list<string>  $reasons
+ */
+function customerReadingTakeOffRightAway(array $reasons): void
+{
+    breakFile('rules/sending.md', fn (string $text): string => preg_replace_callback(
+        '/right_away: \[([^\]]*)\]/',
+        fn (array $match): string => 'right_away: ['.implode(', ', array_filter(
+            array_map('trim', explode(',', $match[1])),
+            fn (string $reason): bool => ! in_array($reason, $reasons, true),
+        )).']',
+        $text,
+        1,
+    ));
+}
+
+/**
+ * The conversation the owner has taken over, so the assistant is paused in it.
+ */
+function customerReadingOwnerTakesOver(): void
+{
+    Conversation::query()->sole()->update(['paused_at' => now(), 'paused_reason' => PausedReason::TakenOver]);
+}
+
+/**
+ * The one alert of a reason, or null.
+ */
+function customerReadingAlert(AlertReason $reason): ?OwnerAlert
+{
+    return OwnerAlert::query()->where('reason', $reason->value)->first();
+}
+
+/**
+ * The shop's next opening after the after-hours text, as the alert stores it.
+ */
+function customerReadingDueAtOpening(OwnerAlert $alert): string
+{
+    return $alert->due_at->setTimezone('America/Chicago')->format('Y-m-d H:i');
+}
+
+it('still sends the safety line in a paused conversation when Jev reads a hazard the keywords miss (D-45)', function () {
+    customerReadingDanaTexts(CUSTOMER_READING_DIZZY);
+    customerReadingOwnerTakesOver();
+    fakeClassifier()->answerReading('emergency', 0.95, ['life_safety' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?']);
+
+    runQueuedFrontDeskJobs();
+
+    $line = Message::query()->where('kind', MessageKind::LifeSafety->value)->sole();
+
+    expect(customerReadingTextsToDana())->toHaveCount(1)
+        ->and($line->gate['life_safety']['trigger'])->toBe('classifier')
+        ->and(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::LifeSafety)
+        ->and(customerReadingAlert(AlertReason::PausedMessage))->toBeNull();
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('sends the life_safety alert at once at 2 am even with complaint and asked_for_person off right_away', function () {
+    customerReadingTakeOffRightAway(['complaint', 'asked_for_person']);
+    customerReadingDanaTexts(CUSTOMER_READING_DIZZY, CUSTOMER_READING_AFTER_HOURS);
+    customerReadingOwnerTakesOver();
+    fakeClassifier()->answerReading('emergency', 0.95, ['life_safety' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?']);
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::LifeSafety)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull();
+});
+
+it('alerts the owner of a complaint the keywords cannot see in a paused conversation, and the customer gets nothing (D-45)', function () {
+    customerReadingDanaTexts('The last tech left a mess in my basement and nobody called me back.', CUSTOMER_READING_AFTER_HOURS);
+    customerReadingOwnerTakesOver();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::Complaint)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and(customerReadingTextsToDana())->toBe([])
+        ->and(Message::query()->where('kind', MessageKind::AgentReply->value)->count())->toBe(0);
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('holds a paused complaint alert until the shop opens when the folder takes complaint off right_away', function () {
+    customerReadingTakeOffRightAway(['complaint']);
+    customerReadingDanaTexts('The last tech left a mess in my basement and nobody called me back.', CUSTOMER_READING_AFTER_HOURS);
+    customerReadingOwnerTakesOver();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::Complaint)
+        ->and($alert->urgent)->toBeFalse()
+        ->and(customerReadingDueAtOpening($alert))->toBe('2026-10-14 08:00')
+        ->and($alert->sent_at)->toBeNull()
+        ->and(customerReadingTextsToDana())->toBe([]);
+});
+
+it('alerts asked_for_person in a paused conversation on Jev\'s reading or a keyword phrase, and sends nothing', function (string $text, array $reading) {
+    customerReadingDanaTexts($text, CUSTOMER_READING_AFTER_HOURS);
+    customerReadingOwnerTakesOver();
+    fakeClassifier()->answerReading('faq', 0.95, $reading);
+    scriptFrontDeskReplies(['reply' => 'Sure.']);
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::AskedForPerson)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and(customerReadingTextsToDana())->toBe([]);
+})->with([
+    'Jev reads a request' => ['Honestly I\'d rather sort this out with Mike directly.', ['asks_for_person' => 0.9]],
+    'a keyword phrase' => ['Can I talk to a real person?', []],
+]);
+
+it('holds a paused asked_for_person alert until the shop opens when the folder takes it off right_away', function () {
+    customerReadingTakeOffRightAway(['asked_for_person']);
+    customerReadingDanaTexts('Can I talk to a real person?', CUSTOMER_READING_AFTER_HOURS);
+    customerReadingOwnerTakesOver();
+    scriptFrontDeskReplies(['reply' => 'Sure.']);
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->sole();
+
+    expect($alert->reason)->toBe(AlertReason::AskedForPerson)
+        ->and($alert->urgent)->toBeFalse()
+        ->and(customerReadingDueAtOpening($alert))->toBe('2026-10-14 08:00')
+        ->and($alert->sent_at)->toBeNull()
+        ->and(customerReadingTextsToDana())->toBe([]);
+});
+
+/**
+ * Six texts from the front desk in the last hour, so the reply cap is reached.
+ */
+function customerReadingFillReplyCap(): void
+{
+    foreach ([5, 10, 20, 30, 40, 55] as $minutes) {
+        Message::factory()->for(Conversation::query()->sole())->outbound()->create([
+            'kind' => MessageKind::AgentReply,
+            'body' => 'Earlier automated text',
+            'created_at' => now()->subMinutes($minutes),
+        ]);
+    }
+}
+
+it('alerts a complaint on the reply-cap path beside the reply_cap alert, sends nothing and pauses (D-45, D-52)', function () {
+    customerReadingDanaTexts('The last tech left a mess in my basement and nobody called me back.');
+    customerReadingFillReplyCap();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $complaint = customerReadingAlert(AlertReason::Complaint);
+
+    expect($complaint)->not->toBeNull()
+        ->and($complaint->urgent)->toBeTrue()
+        ->and($complaint->sent_at)->not->toBeNull()
+        ->and(customerReadingAlert(AlertReason::ReplyCap))->not->toBeNull()
+        ->and(customerReadingTextsToDana())->toBe([])
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::ReplyCap);
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('lets the complaint alert wait for opening on the reply-cap path while the reply_cap alert keeps its own timing', function () {
+    customerReadingTakeOffRightAway(['complaint']);
+    customerReadingDanaTexts('The last tech left a mess in my basement and nobody called me back.', CUSTOMER_READING_AFTER_HOURS);
+    customerReadingFillReplyCap();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $complaint = customerReadingAlert(AlertReason::Complaint);
+    $cap = customerReadingAlert(AlertReason::ReplyCap);
+
+    expect($complaint->urgent)->toBeFalse()
+        ->and(customerReadingDueAtOpening($complaint))->toBe('2026-10-14 08:00')
+        ->and($complaint->sent_at)->toBeNull()
+        ->and($cap->urgent)->toBeTrue()
+        ->and($cap->sent_at)->not->toBeNull();
+});
+
+it('sends the safety line first and only when a hazard the keywords miss comes with a request for a person (D-45)', function () {
+    customerReadingDanaTexts(CUSTOMER_READING_DIZZY.' Can I talk to a real person?');
+    fakeClassifier()->answerReading('emergency', 0.95, ['life_safety' => 0.9, 'asks_for_person' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sure.']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(customerReadingTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
+        ->and(OwnerAlert::query()->pluck('reason')->all())->toEqualCanonicalizing([AlertReason::LifeSafety, AlertReason::AskedForPerson])
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::LifeSafety);
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('sends the safety line for a hazard the keywords miss when every model fails (D-45)', function () {
+    customerReadingDanaTexts(CUSTOMER_READING_DIZZY);
+    fakeClassifier()->answerReading('emergency', 0.95, ['life_safety' => 0.9]);
+    FrontDeskAgent::fake(fn () => throw new RuntimeException('down'))->preventStrayPrompts();
+
+    runQueuedFrontDeskJobs();
+
+    expect(customerReadingTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1);
+});
+
+it('hands the customer to the owner on Jev\'s asks_for_person reading before the agent is asked (D-42)', function () {
+    customerReadingDanaTexts('Honestly I\'d rather sort this out with Mike directly.');
+    fakeClassifier()->answerReading('faq', 0.95, ['asks_for_person' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sure, what is going on?']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(customerReadingTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AgentReply->value)->count())->toBe(0)
+        ->and(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::AskedForPerson)
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::AskedForPerson);
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('does not hand off on an unsure asks_for_person reading and goes on to the agent', function () {
+    customerReadingDanaTexts('Honestly I\'d rather sort this out with Mike directly.');
+    fakeClassifier()->answerReading('faq', 0.95, ['asks_for_person' => 0.5]);
+    scriptFrontDeskReplies(['reply' => 'Sure, what is going on?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(0)
+        ->and(Conversation::query()->sole()->isPaused())->toBeFalse();
+
+    FrontDeskAgent::assertPrompted(fn () => true);
+});
+
+it('hands off a complaint that asks for a person, with a complaint alert beside the asked_for_person one (D-34, D-45)', function () {
+    customerReadingDanaTexts('Your last tech was rude. Can I talk to a real person?');
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $complaint = customerReadingAlert(AlertReason::Complaint);
+    $person = customerReadingAlert(AlertReason::AskedForPerson);
+
+    expect(customerReadingTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(1)
+        ->and($complaint->urgent)->toBeTrue()
+        ->and($complaint->sent_at)->not->toBeNull()
+        ->and($person->urgent)->toBeTrue()
+        ->and($person->sent_at)->not->toBeNull()
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::AskedForPerson);
+});
+
+it('lets the complaint alert on a handoff wait for opening when complaint is off right_away, while the person alert goes at once', function () {
+    customerReadingTakeOffRightAway(['complaint']);
+    customerReadingDanaTexts('Your last tech was rude. Can I talk to a real person?', CUSTOMER_READING_AFTER_HOURS);
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that.']);
+
+    runQueuedFrontDeskJobs();
+
+    $complaint = customerReadingAlert(AlertReason::Complaint);
+    $person = customerReadingAlert(AlertReason::AskedForPerson);
+
+    expect($complaint->urgent)->toBeFalse()
+        ->and(customerReadingDueAtOpening($complaint))->toBe('2026-10-14 08:00')
+        ->and($complaint->sent_at)->toBeNull()
+        ->and($person->urgent)->toBeTrue()
+        ->and($person->sent_at)->not->toBeNull();
 });
