@@ -4,12 +4,14 @@ use App\Actions\PauseConversation;
 use App\Actions\SendFixedReply;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\AlertReason;
+use App\Enums\ContactStatus;
 use App\Enums\DraftResolution;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
 use App\Jobs\ProcessInbound;
+use App\Jobs\RenderCustomerCard;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -23,6 +25,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Queue;
 
 const INVARIANT_OWNER_PHONE = '+12025550199';
+
+/**
+ * The jobs held back while a combination runs: the front desk job until the test runs it, and the customer card render,
+ * which rewrites the records folder for every customer each time and would make the whole matrix slower with every
+ * combination. The card is not what these invariants are about.
+ */
+const INVARIANT_HELD_JOBS = [ProcessInbound::class, RenderCustomerCard::class];
 
 const INVARIANT_JEV_FAILURE = 'Jev could not be reached or took too long to answer.';
 
@@ -158,7 +167,7 @@ function invariantPost(string $number, string $body): void
  */
 function invariantPostAndRun(string $number, string $body): void
 {
-    Queue::fake([ProcessInbound::class]);
+    Queue::fake(INVARIANT_HELD_JOBS);
 
     invariantPost($number, $body);
     runQueuedFrontDeskJobs();
@@ -237,7 +246,7 @@ function invariantWaitingDraft(string $number): void
 {
     fakeClassifier()->answer('faq')->answerReading('faq');
 
-    Queue::fake([ProcessInbound::class]);
+    Queue::fake(INVARIANT_HELD_JOBS);
     invariantPost($number, 'How much for a new unit?');
     scriptFrontDeskReplies(['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
     runQueuedFrontDeskJobs();
@@ -273,7 +282,8 @@ function invariantRun(array $flags): array
     if ($flags['waiting']) {
         invariantWaitingDraft($number);
     } elseif ($flags['paused'] || $flags['cap']) {
-        Conversation::factory()->for(Contact::factory()->create(['phone_e164' => $number]))->create();
+        // Not Contact::factory(): its unique-phone generator runs out of its 200 fictional numbers long before 1,440 combinations.
+        Conversation::factory()->for(Contact::query()->forceCreate(['name' => 'Customer '.$number, 'phone_e164' => $number, 'status' => ContactStatus::Lead, 'lead_source_key' => 'text']))->create();
     }
 
     $before = invariantConversation($number);
@@ -592,4 +602,36 @@ it('alerts the owner to a complaint when the reply cap is reached (D-46, D-52)',
 
 it('sends no second holding reply when a price ask and a keyword person phrase arrive beside a waiting draft (D-46)', function () {
     invariantCheck(invariantFlags(['waiting', 'price'], 'keyword'));
+});
+
+it('tells the owner of a complaint the agent labeled when the agent also asks for a person and Jev is down (D-46, D-50)', function () {
+    invariantCheck(invariantFlags(['complaint', 'jevFail'], 'agent'));
+});
+
+it('tells the owner of a complaint the agent labeled when the agent also flags a danger and asks for a person with Jev down (D-46, D-45)', function () {
+    invariantCheck(invariantFlags(['complaint', 'hazard', 'jevFail'], 'agent'));
+});
+
+/**
+ * Every combination of the D-46 dimensions, each on its own customer, each checked against every invariant. A breach
+ * is collected rather than thrown, so one run lists every failing combination with its flags.
+ *
+ * Jev down with every model down and a hazard the keywords miss is the one case with no safety line: no detector can
+ * see the hazard. What is possible there is checked by the same invariants: the customer gets the owner's holding reply
+ * (D-51), and the owner gets the safety_check_down and front_desk_failed alerts at once (D-50).
+ *
+ * A reading that never ran (no live business folder) is outside this matrix by Ian's 2026-10-16 ruling; that path is
+ * covered by ReadingRequiredToSendTest and JevDownTest, and here the folder is live, so safety_check_missing is never
+ * expected (D-49).
+ */
+it('holds the D-46 invariants in every combination', function () {
+    $combinations = invariantAllCombinations();
+    $breaches = [];
+
+    foreach ($combinations as $flags) {
+        array_push($breaches, ...invariantBreaches($flags, invariantRun($flags)));
+    }
+
+    expect($combinations)->toHaveCount(1440)
+        ->and($breaches)->toBe([]);
 });
