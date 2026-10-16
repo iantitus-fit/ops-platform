@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-26-PLAN.md
-last_updated: "2026-10-16T23:04:31.960Z"
+stopped_at: Completed 02.1-27-PLAN.md
+last_updated: "2026-10-16T23:22:31.524Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 69a1e562bb0c3983d041a175770ce64d514ee797
+state_head: 0763ed2b76248d6b48ffff12810ef37b62f12f99
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 74
+  completed_plans: 75
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 27 of 28 next (24 complete)
+Plan: 28 of 28 next (24 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -131,6 +131,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P24 | 11 min | 3 tasks | 13 files |
 | Phase 02.1 P25 | 22 min | 2 tasks | 5 files |
 | Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
+| Phase 02.1 P27 | 41 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -266,6 +267,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: Plan 26: the D-46 matrix reads D-46 'never silent' beside D-51: a customer whose earlier wait is still current, who writes while every model is down, gets no new text (the holding reply stands, the owner gets front_desk_failed); every other unpaused, uncapped combination must send a text
 - [Phase 02.1]: Plan 26: the agent's complaint label is a detector like Jev's reading, so a handoff on the agent's wants_person raises the complaint alert; the agent's possible_danger on the second call of a cover-both run is read and sends the safety line; a complaint only the second reply finds holds the owner's sentences in the draft
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
+- [Phase 02.1]: Map cards are stamped 2026-10-16 @ cd1bc79, the last commit that touched app code; process card steps renumbered (reading is step 7, sender's check step 19) and other cards' step references updated
 
 ### Pending Todos
 
@@ -301,6 +303,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T23:04:18.619Z
-Stopped at: Completed 02.1-26-PLAN.md
+Last session: 2026-10-16T23:22:31.443Z
+Stopped at: Completed 02.1-27-PLAN.md
 Resume file: None
