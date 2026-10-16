@@ -418,6 +418,88 @@ it('leaves the draft live when the sentence could not be sent (D-21)', function 
         ->and(Conversation::query()->sole()->contact->activities()->where('type', ActivityType::DraftAnswered)->count())->toBe(0);
 });
 
+it('never closes a price draft as answered when the customer also complained, and keeps its complaint alert (CR-02)', function () {
+    test()->travelTo(Carbon::parse('2026-10-13 18:00', 'America/Chicago'));
+    User::factory()->withPhone(ANSWERED_DRAFT_OWNER_PHONE)->create();
+
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    frontDeskCustomerTexts('Your tech was rude last time and I am furious. How much for a new unit?');
+    scriptFrontDeskReplies(['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
+    runQueuedFrontDeskJobs();
+
+    $waiting = answeredDraftTheDraft();
+    $alert = OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->sole();
+
+    expect($waiting->gate['customer_reading']['ran'])->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull();
+
+    fakeClassifier()->answerReading();
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => '', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+
+    $waiting->refresh();
+    $sentToDana = collect(answeredDraftTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], ANSWERED_DRAFT_AC_SENTENCE));
+
+    expect($sentToDana)->toBeTrue()
+        ->and($waiting->status)->toBe(MessageStatus::Draft)
+        ->and($waiting->resolution)->toBeNull()
+        ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0)
+        ->and($alert->refresh()->sent_at)->not->toBeNull()
+        ->and($alert->skipped_at)->toBeNull();
+});
+
+it('reads the words of a vetoed price draft, finds the promise in them, and never closes the draft when the sentence goes out (CR-02, D-45)', function () {
+    fakeClassifier()->answer('faq', 0.95, ['promise' => 0.9]);
+
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price by 9 am tomorrow.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    expect($waiting->gate_reason)->toBe('label:price')
+        ->and($waiting->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and($waiting->gate['checks']['classifier']['reading']['reasons'])->toContain('classifier:promise')
+        ->and(fakeClassifier()->calls())->toHaveCount(1)
+        ->and(fakeClassifier()->calls()[0]['draft_reply'])->toBe('Mike will text you the repair price by 9 am tomorrow.');
+
+    fakeClassifier()->answer('faq');
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => '', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+
+    $live = answeredDraftTheDraft();
+
+    expect(answeredDraftTextsToDana())->toHaveCount(2)
+        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_AC_SENTENCE))
+        ->and($live->id)->toBe($waiting->id)
+        ->and($live->resolution)->toBeNull()
+        ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0);
+});
+
+it('lets a words check on a vetoed reply add the safety line, and keeps the veto as the reason (D-45)', function () {
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.9]);
+
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    expect($waiting->gate_reason)->toBe('label:price')
+        ->and($waiting->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
+        ->and(HeldReasons::priceAlone($waiting))->toBeFalse();
+});
+
+it('still closes a price draft whose words check and customer reading are both clean when its sentence goes out (D-21, CR-02 control)', function () {
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    expect($waiting->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and($waiting->gate['checks']['classifier']['reading']['reasons'])->toBe([]);
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => '', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+
+    $waiting->refresh();
+
+    expect($waiting->resolution)->toBe(DraftResolution::Answered)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+});
+
 /**
  * A stored verdict as the send rule leaves it: the reason code and, under checks, whatever the row names. The checks a
  * row leaves out are absent, which the read treats as not failed.
