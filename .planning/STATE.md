@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-25-PLAN.md
-last_updated: "2026-10-16T22:31:31.950Z"
+stopped_at: Completed 02.1-26-PLAN.md
+last_updated: "2026-10-16T23:04:31.960Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 9bde6ef573fd26e562cc26cfde23c7cf9767f549
+state_head: 69a1e562bb0c3983d041a175770ce64d514ee797
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 73
+  completed_plans: 74
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 26 of 28 next (24 complete)
+Plan: 27 of 28 next (24 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -130,6 +130,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P23 | 9 min | 3 tasks | 14 files |
 | Phase 02.1 P24 | 11 min | 3 tasks | 13 files |
 | Phase 02.1 P25 | 22 min | 2 tasks | 5 files |
+| Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -262,6 +263,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: Plan 23: Jev outage status is a safety_check_outages table row changed under Cache::lock('safety-check-status'); a held missing reading keeps hold reason code classifier_failed
 - [Phase 02.1]: Plan 24 (Ian, 2026-10-16): a reading marked missing counts as no reading at all; RunFrontDesk raises safety_check_missing at once before any send, OutboundSender refuses every automated text without a reading (a stored missing reading counts as absent) and a text with no kind is held to the model-words rule
 - [Phase 02.1]: Plan 25: the wrote-again line replaces the Customer wrote line, so the newest customer text is quoted once above Send anyway; no styling change before Ian's phone walk
+- [Phase 02.1]: Plan 26: the D-46 matrix reads D-46 'never silent' beside D-51: a customer whose earlier wait is still current, who writes while every model is down, gets no new text (the holding reply stands, the owner gets front_desk_failed); every other unpaused, uncapped combination must send a text
+- [Phase 02.1]: Plan 26: the agent's complaint label is a detector like Jev's reading, so a handoff on the agent's wants_person raises the complaint alert; the agent's possible_danger on the second call of a cover-both run is read and sends the safety line; a complaint only the second reply finds holds the owner's sentences in the draft
+- [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
 
 ### Pending Todos
 
@@ -297,6 +301,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T22:31:31.874Z
-Stopped at: Completed 02.1-25-PLAN.md
+Last session: 2026-10-16T23:04:18.619Z
+Stopped at: Completed 02.1-26-PLAN.md
 Resume file: None
