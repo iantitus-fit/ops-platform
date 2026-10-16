@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\ResolveDraft;
 use App\Actions\SendFixedReply;
 use App\Enums\AlertReason;
 use App\Enums\DraftResolution;
@@ -246,11 +247,12 @@ it('ends the wait when the waiting draft is closed as answered (D-21, D-30)', fu
 
     expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeTrue();
 
-    Message::query()->where('status', MessageStatus::Draft->value)->sole()->update([
-        'status' => MessageStatus::Withdrawn,
-        'resolution' => DraftResolution::Answered,
-        'resolved_at' => now(),
+    $answer = Message::factory()->outbound()->for($conversation)->create([
+        'kind' => MessageKind::CodeAnswer,
+        'body' => 'A repair visit is $89.',
     ]);
+
+    app(ResolveDraft::class)->closeAsAnswered(Message::query()->where('status', MessageStatus::Draft->value)->sole(), $answer);
 
     expect(app(SendFixedReply::class)->holdingAlreadySent($conversation))->toBeFalse();
 });

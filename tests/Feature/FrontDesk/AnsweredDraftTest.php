@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\ResolveDraft;
+use App\Actions\SendFixedReply;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
@@ -624,6 +625,29 @@ it('sends a new holding reply for the next held question once the owner approved
 
     expect(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(2)
         ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(0);
+});
+
+it('keeps the wait when a draft was closed as answered with no answered_by, so the next text gets the added-info line, not a second holding reply (Ian, 2026-10-16)', function () {
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    $waiting->update([
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'resolved_at' => now(),
+    ]);
+
+    expect(app(SendFixedReply::class)->holdingAlreadySent($waiting->conversation))->toBeTrue();
+
+    answeredDraftCustomerTexts('Hello?', [
+        'reply' => 'Mike has your question and will follow up.',
+        'label' => 'other',
+        'touches_waiting' => true,
+        'waiting_note' => 'added_info',
+    ]);
+
+    expect(answeredDraftNewestTextToDana()->kind)->toBe(MessageKind::AddedInfoReply)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1);
 });
 
 /**
