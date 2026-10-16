@@ -76,6 +76,14 @@ use Illuminate\Support\Str;
  * code with the price sentences (D-13). With no offer live the question is held as discount:no_live_offer, handled like
  * a price with no sentence on file, so the owner hears about it (D-14).
  *
+ * A complaint stops every owner price and offer sentence in the run, on every path (D-43). A complaint is Jev's reading
+ * of the customer's text, the agent's complaint label, or the complaint the words check finds. The complaint reply goes
+ * out instead, the owner is alerted under the folder's owner_alert rules like any complaint, never dropped and only
+ * timed, and the draft is pre-filled with the sentence code would have sent (D-44). The same pre-fill happens whenever
+ * code knew the owner's sentence and it did not go out for another reason: a failed or unsure reading, a promise label
+ * on blank words, a danger in the words, or a refused send. Easy FAQ words that passed their own checks still ride
+ * with the complaint line (D-36).
+ *
  * A customer who writes while a draft waits is handled by answerWhileDraftWaits(). Two things can finish work there
  * without the owner: the owner's price sentence for the service a price-only draft waits on goes out and closes that
  * draft as answered (D-21), and an easy question asked in the same text as one that touches the waiting question is
@@ -210,11 +218,21 @@ class RunFrontDesk
         $priceHeld = count($priceSentences) !== count($picks);
         $noLiveOffer = $run->reply->asksDiscount && $offers === [];
 
+        $codeHold = $this->codeHoldReason($run, $this->reading(), $words);
+        $heldSentences = [];
+
+        if ($codeHold !== null && $sentences !== []) {
+            $heldSentences = $sentences;
+            $sentences = [];
+            $offers = [];
+            $picks = $this->withoutSentPicks($picks);
+        }
+
         $answersWaiting = $waiting !== null && HeldReasons::answeredBy($waiting, $this->slugsWith($picks, PricePick::SEND), $run->reply->touchesWaiting);
         $stillWaiting = $answersWaiting ? null : $waiting;
 
         $checkIn = $stillWaiting !== null && $run->reply->waitingNote === self::CHECK_IN;
-        $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer;
+        $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer && $heldSentences === [];
 
         if ($codeOnly && $stillWaiting === null) {
             $this->closeAsAnswered($answersWaiting ? $waiting : null, $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'), $lookups));
@@ -225,6 +243,9 @@ class RunFrontDesk
         if ($codeOnly) {
             $composed = '';
             $verdict = null;
+        } elseif ($words === '' && $codeHold !== null && ($heldSentences !== [] || in_array($codeHold, SendFixedReply::COMPLAINT_CODES, true))) {
+            $composed = '';
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, $this->reading(), $codeHold);
         } elseif ($words === '' && $noLiveOffer && ! $priceHeld) {
             $composed = '';
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, $this->reading(), 'discount:no_live_offer');
@@ -239,6 +260,7 @@ class RunFrontDesk
         if ($verdict?->lifeSafety) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
             $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+            $heldSentences = $sentences !== [] ? $sentences : $heldSentences;
             $picks = [];
             $offers = [];
             $sentences = [];
@@ -258,6 +280,16 @@ class RunFrontDesk
             $verdict = $verdict->heldFor('classifier:complaint');
         }
 
+        if ($sentences !== [] && $verdict !== null && ! $verdict->lifeSafety && in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true)) {
+            $heldSentences = $sentences;
+            $sentences = [];
+            $offers = [];
+            $picks = $this->withoutSentPicks($picks);
+            $answersWaiting = false;
+            $stillWaiting = $waiting;
+            $checkIn = $stillWaiting !== null && $run->reply->waitingNote === self::CHECK_IN;
+        }
+
         $easyAnswer = null;
 
         if ($stillWaiting !== null && $words !== '' && $verdict !== null && ! $verdict->lifeSafety && ($easyPart = $run->reply->easyPart()) !== null) {
@@ -273,6 +305,7 @@ class RunFrontDesk
                 $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
                 $verdict = $verdict->flaggedLifeSafety();
                 $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+                $heldSentences = $sentences !== [] ? $sentences : $heldSentences;
                 $picks = [];
                 $offers = [];
                 $sentences = [];
@@ -290,7 +323,7 @@ class RunFrontDesk
         $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($picks, array_column($offers, 'slug'))]];
 
         if ($stillWaiting !== null) {
-            $this->answerWhileDraftWaits($agent, $run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn, $easyAnswer);
+            $this->answerWhileDraftWaits($agent, $run, $conversation, $burst, $stillWaiting, $verdict, $composed, $parts, $attributes, $sentMeta, $picks, array_column($offers, 'slug'), $checkIn, $easyAnswer, $heldSentences);
 
             return;
         }
@@ -313,12 +346,12 @@ class RunFrontDesk
 
         if ($answersWaiting && $sentences !== []) {
             $this->closeAsAnswered($waiting, $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode));
-            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false);
+            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false, heldSentences: $heldSentences);
 
             return;
         }
 
-        $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === []);
+        $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === [], heldSentences: $heldSentences);
 
         if ($sentences !== []) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
@@ -436,8 +469,9 @@ class RunFrontDesk
      * @param  list<PricePick>  $picks
      * @param  list<string>  $offerSlugs
      * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  The split-off easy answer that passed every check, with the verdict it is stored under.
+     * @param  list<string>  $heldSentences  The owner's sentences code held back in this run; the fresh draft is pre-filled with them (D-44).
      */
-    private function answerWhileDraftWaits(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn, ?array $easy = null): void
+    private function answerWhileDraftWaits(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ?Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta, array $picks, array $offerSlugs, bool $checkIn, ?array $easy = null, array $heldSentences = []): void
     {
         if ($verdict?->outcome === GateOutcome::Send && $run->reply->touchesWaiting !== false) {
             $verdict = $checkIn ? null : $verdict->heldFor('touches_waiting');
@@ -491,7 +525,7 @@ class RunFrontDesk
             $attributes['meta'] = [...$attributes['meta'], 'first_reply' => ['reply' => (string) $parts->modelWords, 'gate_reason' => $covered['firstReason']]];
         }
 
-        $this->storeDraft($conversation, $draftWords, $verdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason);
+        $this->storeDraft($conversation, $draftWords, $verdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
@@ -818,8 +852,8 @@ class RunFrontDesk
     }
 
     /**
-     * Send the owner's sentences alone, the customer's whole answer to a price or discount question. Code wrote them, so Jev is not
-     * asked (D-04). A send that failed alerts the owner exactly as a reply that failed does; any other refusal becomes
+     * Send the owner's sentences alone, the customer's whole answer to a price or discount question. Jev is not asked
+     * about the words, which code wrote; the run's reading of the customer's text still decides whether they may go (D-42). A send that failed alerts the owner exactly as a reply that failed does; any other refusal becomes
      * an empty price draft, so the question still reaches the owner, as a refused reply does.
      *
      * @param  Collection<int, Message>  $burst
@@ -1085,14 +1119,26 @@ class RunFrontDesk
      * that knows better than the verdict alone why the owner should hear, such as a whole-thread draft one of whose two
      * replies was a complaint, passes `$alertReason`.
      *
+     * When code knew the owner's price or offer sentences and they did not go out, the caller passes them as
+     * `$heldSentences`. The draft body is then the held words, a blank line and the sentences exactly as code would
+     * have sent them, and the draft's meta lists them as `held_sentences`, so the owner can send the answer with one tap
+     * (D-43, D-44). A complaint that held sentences alerts the owner as any complaint does, on the folder's owner_alert
+     * timing (D-43).
+     *
      * @param  array<string, mixed>  $attributes
+     * @param  list<string>  $heldSentences
      */
-    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null): void
+    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null, array $heldSentences = []): void
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
         $alertReason ??= $this->alertReasonFor($verdict);
+        $body = $this->prefilledBody($words, $heldSentences);
 
-        [$draft, $replacedChain] = DB::transaction(function () use ($conversation, $words, $verdict, $label, $attributes, $plainReason): array {
+        if ($heldSentences !== []) {
+            $attributes['meta'] = [...($attributes['meta'] ?? []), 'held_sentences' => $heldSentences];
+        }
+
+        [$draft, $replacedChain] = DB::transaction(function () use ($conversation, $body, $verdict, $label, $attributes, $plainReason): array {
             $replaced = $conversation->messages()
                 ->where('status', MessageStatus::Draft)
                 ->lockForUpdate()
@@ -1118,7 +1164,7 @@ class RunFrontDesk
                 'channel' => MessageChannel::Sms,
                 'direction' => MessageDirection::Out,
                 'author' => MessageAuthor::Agent,
-                'body' => $words,
+                'body' => $body,
                 'status' => MessageStatus::Draft,
             ]);
 
@@ -1142,6 +1188,55 @@ class RunFrontDesk
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
             $this->sendFixedReply->holding($conversation, $verdict->reasonCode);
         }
+    }
+
+    /**
+     * The body of a draft that holds owner sentences code could not send (D-44): the held model words, a blank line,
+     * then the sentences joined by one space, exactly as code would have sent them. A part that is empty is left out
+     * with its separator.
+     *
+     * @param  list<string>  $sentences
+     */
+    private function prefilledBody(string $words, array $sentences): string
+    {
+        $words = trim($words);
+        $sentenceText = implode(' ', $sentences);
+
+        if ($sentenceText === '') {
+            return $words;
+        }
+
+        return $words === '' ? $sentenceText : $words."\n\n".$sentenceText;
+    }
+
+    /**
+     * Why code must not send the owner's price or offer sentences in this run, or null when it may (D-43). The first
+     * that applies: Jev reads a complaint in the customer's text, the agent labeled its reply a complaint, the reading
+     * failed, the reading is unsure whether the customer asked for a person, or the agent labeled blank words a promise.
+     * The model's label and Jev's reading are two independent signals, so either one stops the sentence.
+     */
+    private function codeHoldReason(AgentRun $run, CustomerReading $reading, string $words): ?string
+    {
+        return match (true) {
+            $reading->complaint() => 'classifier:complaint',
+            $run->reply->label === ReplyLabel::Complaint => 'label:complaint',
+            $reading->failed => 'classifier_failed',
+            $reading->unsureAboutPerson() => 'classifier_unsure:asks_for_person',
+            $words === '' && $run->reply->label === ReplyLabel::Promise => 'label:promise',
+            default => null,
+        };
+    }
+
+    /**
+     * The picks that did not give a sentence to send, such as those still waiting on the customer's answers or the
+     * owner's price. A pick whose sentence was held is left out, so nothing records it as sent.
+     *
+     * @param  list<PricePick>  $picks
+     * @return list<PricePick>
+     */
+    private function withoutSentPicks(array $picks): array
+    {
+        return array_values(array_filter($picks, fn (PricePick $pick): bool => ! $pick->isSend()));
     }
 
     /**
