@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-16-PLAN.md
-last_updated: "2026-10-15T22:53:32.146Z"
-last_activity: 2026-10-14
-last_activity_desc: Phase 02.1 execution started
-state_head: 1f0f5d3191fbab7f4cb31c9c1c8ee7125a36ab59
+stopped_at: Completed 02.1-17-PLAN.md
+last_updated: "2026-10-16T20:58:42.399Z"
+last_activity: 2026-10-16
+last_activity_desc: Phase 02.1 execution resumed (wave continue)
+state_head: f1b63829dbc6e1e60c7cfa059d49ef6b0e04d4fe
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 64
+  completed_plans: 65
   percent: 40
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 
 ## Current Position
 
-Phase: 02.1 (Faster Answers) — READY TO EXECUTE
-Plan: 16 of 16
-Status: Ready to execute
-Last activity: 2026-10-14 — Phase 02.1 execution started
+Phase: 02.1 (Faster Answers) — EXECUTING
+Plan: 18 of 28 next (17 complete)
+Status: Executing gap plans
+Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
 Progress: [████░░░░░░] 40%
 
@@ -121,6 +121,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P14 | 6 min | 2 tasks | 7 files |
 | Phase 02.1 P15 | 12 min | 3 tasks | 8 files |
 | Phase 02.1 P16 | 9 min | 3 tasks | 3 files |
+| Phase 02.1 P17 | 8 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -238,6 +239,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: escalate_to and the owner-alert stub in the map now point at Phase 02.2 (Owner Loop); Phase 2.1 was renumbered to Faster Answers
 - [Phase 02.1]: Map process steps 9 to 14 were added rather than steps 8 to 11 rewritten; cross-references in the intake, agent, conversation and opt-out cards were updated to match
 - [Phase 02.1]: 02.1-16: Phase 02.2 hand-off lives in sprint-1.1.md Notes for Phase 02.2; SPEC Principle 6 gains the owner-words exception; suite 1455 green on SQLite and PostgreSQL 17
+- [Phase 02.1]: 02.1-17: Jev's reading of the customer's text runs once per handle() call after the opt-out check and before the paused check; a reading life_safety sends the safety line first unless the burst already has one
+- [Phase 02.1]: 02.1-17: complaint and asked_for_person alerts on paused, reply-cap and handoff paths follow the folder's owner_alert timing with no right-away override; a complaint reading holds the main reply as classifier:complaint except a life_safety hold
 
 ### Pending Todos
 
@@ -273,6 +276,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-14T22:13:48.434Z
-Stopped at: Completed 02.1-16-PLAN.md
+Last session: 2026-10-16T20:58:42.320Z
+Stopped at: Completed 02.1-17-PLAN.md
 Resume file: None
