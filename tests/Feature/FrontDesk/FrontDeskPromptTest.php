@@ -531,3 +531,33 @@ it('writes the waiting-question and price rules into the instructions (D-23, D-0
     'the code writes the price' => 'never write the price yourself',
     'a model-written price still holds' => 'Never state or estimate a price.',
 ]);
+
+it('tells the model to set possible_danger for a hazard and whenever it is not sure (D-45)', function (string $phrase) {
+    [$agent, , $contact] = promptTestThread();
+
+    expect(FrontDeskPrompt::RULES)->toContain('- possible_danger: true when')
+        ->and(FrontDeskPrompt::RULES)->toContain($phrase)
+        ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($phrase);
+})->with([
+    'gas' => 'gas',
+    'fire or smoke' => 'fire or smoke',
+    'carbon monoxide and its signs' => 'carbon monoxide or its signs such as headaches or dizziness near a furnace',
+    'sparking' => 'sparking',
+    'water near electricity' => 'water near electricity',
+    'unsure counts' => 'whenever you are not sure',
+]);
+
+it('puts the possible_danger line after the waiting fields in the other-fields list (D-45)', function () {
+    $rules = FrontDeskPrompt::RULES;
+
+    expect(strpos($rules, '- possible_danger: true when'))->toBeGreaterThan(strpos($rules, '- easy_reply and easy_label:'))
+        ->and(strpos($rules, '- possible_danger: true when'))->toBeGreaterThan(strpos($rules, 'How to fill in the other fields:'));
+});
+
+it('writes the possible_danger line in plain words, with no exclamation point or em dash (D-41)', function () {
+    $line = collect(explode("\n", FrontDeskPrompt::RULES))->first(fn (string $line): bool => str_starts_with($line, '- possible_danger: true when'));
+
+    expect($line)->not->toBeNull()
+        ->and($line)->not->toContain('!')
+        ->and($line)->not->toContain('—');
+});

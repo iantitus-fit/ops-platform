@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\Verdict;
 use Illuminate\Support\Carbon;
 
 const POSSIBLE_DANGER_OWNER_PHONE = '+12025550199';
@@ -206,4 +207,18 @@ it('does not carry possible_danger into the easy part of a reply', function () {
     ]);
 
     expect($reply->easyPart()?->possibleDanger)->toBeFalse();
+});
+
+it('tells the owner a possible_danger draft may be urgent', function () {
+    possibleDangerDanaTexts();
+    scriptFrontDeskReplies(['reply' => '', 'price_services' => ['furnace-repair'], 'possible_danger' => true]);
+
+    runQueuedFrontDeskJobs();
+
+    expect(possibleDangerDraft()?->gate['reason']['plain'])->toBe('Held: may be urgent');
+});
+
+it('words the agent:possible_danger code as may be urgent and any other agent code as needing judgment', function () {
+    expect(Verdict::plainReasonFor('agent:possible_danger'))->toBe('Held: may be urgent')
+        ->and(Verdict::plainReasonFor('agent:something_else'))->toBe('Held: needs your judgment');
 });
