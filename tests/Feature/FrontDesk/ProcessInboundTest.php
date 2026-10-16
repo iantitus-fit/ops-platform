@@ -293,7 +293,7 @@ it('keeps the reply as a draft when the sender refuses it, such as a conversatio
         ->and($draft->gate_reason)->toBe('send_refused');
 });
 
-it('writes a note and sends nothing when every model failed', function () {
+it('writes a note and sends only the holding reply when every model failed (D-51)', function () {
     frontDeskCustomerTexts();
     FrontDeskAgent::fake(fn () => throw new RuntimeException('down'))->preventStrayPrompts();
 
@@ -301,8 +301,8 @@ it('writes a note and sends nothing when every model failed', function () {
 
     $note = Contact::sole()->activities()->where('type', ActivityType::Note)->sole();
 
-    expect(textsSentToCustomers())->toBe([])
-        ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0)
+    expect(textsSentToCustomers())->toHaveCount(1)
+        ->and(Message::query()->where('direction', MessageDirection::Out)->sole()->kind)->toBe(MessageKind::HoldingReply)
         ->and($note->summary)->toBe('Front desk could not answer: every model failed');
 });
 
