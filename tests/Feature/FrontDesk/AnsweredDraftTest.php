@@ -500,20 +500,83 @@ it('still closes a price draft whose words check and customer reading are both c
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
 });
 
+it('closes a price draft as answered when its run read the complaint at exactly 0.15, and never at 0.16 (ANSR-03 boundary)', function (float $complaint, bool $closes) {
+    fakeClassifier()->answerReading('faq', 0.95, ['complaint' => $complaint]);
+
+    answeredDraftQuestionHeld('How much for a new unit?', ['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    expect($waiting->gate_reason)->toBe($closes ? 'label:price' : 'classifier:complaint');
+
+    fakeClassifier()->answerReading();
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => '', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+
+    $waiting->refresh();
+
+    expect($waiting->resolution === DraftResolution::Answered)->toBe($closes)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe($closes ? 0 : 1);
+})->with([
+    'exactly 0.15' => [0.15, true],
+    'at 0.16' => [0.16, false],
+]);
+
 /**
- * A stored verdict as the send rule leaves it: the reason code and, under checks, whatever the row names. The checks a
- * row leaves out are absent, which the read treats as not failed.
+ * The customer reading a verdict keeps under gate.customer_reading (D-42). The defaults are a reading that ran, did not
+ * fail and found nothing; a row changes only what it is about.
  *
- * @param  array<string, mixed>  $checks
+ * @param  list<string>  $reasons
  * @return array<string, mixed>
  */
-function answeredDraftGate(string $code, array $checks = []): array
+function answeredDraftCustomerReading(array $reasons = [], bool $lifeSafety = false, bool $asksForPerson = false, bool $ran = true, bool $failed = false, bool $hasReading = true): array
+{
+    return [
+        'ran' => $ran,
+        'failed' => $failed,
+        'error' => $failed ? 'timeout' : null,
+        'model' => $failed ? null : 'fake-jev',
+        'answers' => null,
+        'reading' => $hasReading ? [
+            'sendable' => $reasons === [] && ! $lifeSafety && ! $asksForPerson,
+            'reason_code' => $reasons[0] ?? null,
+            'reasons' => $reasons,
+            'life_safety' => $lifeSafety,
+            'asks_for_person' => $asksForPerson,
+        ] : null,
+    ];
+}
+
+/**
+ * A stored verdict as the send rule leaves it: the reason code and, under checks, whatever the row names. The checks a
+ * row leaves out are absent, which the read treats as not failed. The customer reading is a clean one unless the row
+ * gives another; a row that wants none removes the key itself. A row with model words names them in $agentReply.
+ *
+ * @param  array<string, mixed>  $checks
+ * @param  ?array<string, mixed>  $customerReading
+ * @return array<string, mixed>
+ */
+function answeredDraftGate(string $code, array $checks = [], ?array $customerReading = null, ?string $agentReply = null): array
 {
     return [
         'version' => 1,
         'reason' => ['code' => $code, 'plain' => 'Held'],
+        ...($agentReply === null ? [] : ['inputs' => ['customer_text' => 'How much?', 'agent_reply' => $agentReply]]),
+        'customer_reading' => $customerReading ?? answeredDraftCustomerReading(),
         'checks' => $checks,
     ];
+}
+
+/**
+ * A verdict stored before the customer reading existed.
+ *
+ * @param  array<string, mixed>  $gate
+ * @return array<string, mixed>
+ */
+function answeredDraftWithoutCustomerReading(array $gate): array
+{
+    unset($gate['customer_reading']);
+
+    return $gate;
 }
 
 /**
@@ -536,6 +599,27 @@ function answeredDraftReading(array $reasons, bool $lifeSafety = false, bool $as
             ],
         ],
     ];
+}
+
+/**
+ * The classifier block of a words check that ran, with the reasons the row gives and nothing else set.
+ *
+ * @param  ?list<string>  $reasons  Null for a words check that ran and left no reading.
+ * @return array<string, array<string, mixed>>
+ */
+function answeredDraftWordsChecked(?array $reasons, bool $lifeSafety = false, bool $asksForPerson = false): array
+{
+    return ['classifier' => [
+        'ran' => true,
+        'error' => null,
+        'reading' => $reasons === null ? null : [
+            'sendable' => $reasons === [],
+            'reason_code' => $reasons[0] ?? null,
+            'reasons' => $reasons,
+            'life_safety' => $lifeSafety,
+            'asks_for_person' => $asksForPerson,
+        ],
+    ]];
 }
 
 /**
@@ -611,6 +695,46 @@ it('reads a draft as held on price alone only when every recorded check agrees (
     'Jev read a danger beside price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price'], lifeSafety: true)), false],
     'Jev read a request for a person beside price' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price'], asksForPerson: true)), false],
     'no verdict at all' => [null, false],
+    'no customer reading stored, a draft from before this gap run' => [answeredDraftWithoutCustomerReading(answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']])), false],
+    'the customer reading failed' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(ran: true, failed: true, hasReading: false)), false],
+    'the customer reading did not run' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(ran: false, hasReading: false)), false],
+    'the customer reading ran with no answers' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(hasReading: false)), false],
+    'the customer reading found a complaint' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(['classifier:complaint'])), false],
+    'the customer reading found the complaint intent' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(['classifier_intent:complaint'])), false],
+    'the customer reading found a danger' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(lifeSafety: true)), false],
+    'the customer reading found a request for a person' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(asksForPerson: true)), false],
+    'the customer reading was unsure of a request for a person' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(['classifier_unsure:asks_for_person'])), false],
+    'the customer reading found price and discount, which never act (D-42)' => [answeredDraftGate('label:price', ['label' => ['passed' => false, 'label' => 'price']], answeredDraftCustomerReading(['classifier:price', 'classifier:discount'])), true],
+    'model words and the words check never ran (the CR-02 shape)' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        'classifier' => ['ran' => false, 'error' => null, 'reading' => null],
+    ], agentReply: 'Mike will text you the price.'), false],
+    'model words and the words check found nothing' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        ...answeredDraftWordsChecked([]),
+    ], agentReply: 'Mike will text you the price.'), true],
+    'model words and the words check found only price' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        ...answeredDraftWordsChecked(['classifier:price']),
+    ], agentReply: 'Mike will text you the price.'), true],
+    'model words and the words check left no reading' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        ...answeredDraftWordsChecked(null),
+    ], agentReply: 'Mike will text you the price.'), false],
+    'model words and the words check found a promise' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        ...answeredDraftWordsChecked(['classifier:promise']),
+    ], agentReply: 'Mike will text you the price by 9 am.'), false],
+    'model words and the words check found a danger' => [answeredDraftGate('label:price', [
+        'label' => ['passed' => false, 'label' => 'price'],
+        ...answeredDraftWordsChecked([], lifeSafety: true),
+    ], agentReply: 'Mike will text you the price.'), false],
+    'blank model words, the words check not run, a clean customer reading' => [answeredDraftGate('price:no_sentence', [
+        'label' => ['passed' => null, 'label' => 'faq_answer'],
+        'length' => ['passed' => null],
+        'code' => ['passed' => null, 'findings' => []],
+        'classifier' => ['ran' => false, 'reading' => null],
+    ], agentReply: ''), true],
 ]);
 
 it('closes a draft only for a sentence about the service it still waits on (D-21)', function (string $heldAs, ?array $slugs, ?array $open, ?array $replacedSpec, array $sent, ?bool $touches, bool $expected) {
