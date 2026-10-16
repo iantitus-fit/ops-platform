@@ -264,10 +264,10 @@ it('says the customer wrote again since the draft, above Send (D-22)', function 
         ->assertOk()
         ->assertSeeInOrder([
             'Needs you',
-            'Customer wrote',
             'The customer wrote again since this draft',
+            'Also, it is leaking',
             'wire:model="draftBody"',
-            'Send',
+            'Send anyway',
         ], escape: false);
 
     expect(conversationViewNeedsYouCard($response->getContent()))->toContain('The customer wrote again since this draft');
@@ -402,4 +402,73 @@ it('labels the disabled reply box too when replies are blocked (D-48)', function
     expect($html)->toContain('This conversation is closed. Reopen it to reply.')
         ->and($html)->toMatch('/<textarea[^>]*disabled[^>]*aria-label="Reply to the customer"/')
         ->and($html)->not->toContain('wire:model="body"');
+});
+
+/**
+ * Dana's thread, the draft answering her first text, and a newer text from her at 4:29 pm on Oct 13 (the business zone).
+ * Returns the conversation.
+ */
+function conversationViewWithNewerText(string $body): Conversation
+{
+    activateExampleFolder();
+    test()->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => $body, 'created_at' => now()->subMinute()]);
+
+    return $conversation;
+}
+
+it("quotes the customer's newest text with its time on the wrote-again line, above Send anyway (D-48)", function () {
+    $conversation = conversationViewWithNewerText('Actually it started making a grinding noise too');
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSeeInOrder([
+            'Needs you',
+            'The customer wrote again since this draft',
+            'Oct 13, 4:29 pm',
+            'Actually it started making a grinding noise too',
+            'wire:model="draftBody"',
+            'Send anyway',
+        ], escape: false);
+
+    expect(conversationViewNeedsYouCard($response->getContent()))
+        ->not->toContain('Customer wrote,')
+        ->and(substr_count($response->getContent(), 'Actually it started making a grinding noise too'))->toBe(2);
+});
+
+it('keeps the Customer wrote line and no wrote-again line when nothing is newer than the draft (D-48)', function () {
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->assertOk();
+    $card = conversationViewNeedsYouCard($response->getContent());
+
+    expect($card)->toContain('Customer wrote, Oct 13, 4:20 pm:')
+        ->and($card)->toContain(CONVERSATION_VIEW_FIRST_TEXT)
+        ->and($card)->not->toContain('The customer wrote again since this draft');
+});
+
+it('squishes and cuts the quoted newest text to 160 characters, multibyte letters included (D-48, ANSR-03)', function () {
+    $longText = "ça  ne marche pas\n\n".str_repeat('é', 200);
+    $conversation = conversationViewWithNewerText($longText);
+
+    $card = conversationViewNeedsYouCard($this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent());
+    $cut = Str::limit(Str::squish($longText), 160);
+
+    expect(mb_strlen($cut))->toBeLessThanOrEqual(163)
+        ->and($cut)->toEndWith('...')
+        ->and($card)->toContain(e($cut))
+        ->and($card)->not->toContain(str_repeat('é', 161));
+});
+
+it("escapes the customer's newest text on the wrote-again line (T-02.1-56)", function () {
+    $conversation = conversationViewWithNewerText('<b>bold</b> <script>alert(4)</script>');
+
+    $html = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent();
+
+    expect(conversationViewNeedsYouCard($html))->toContain('&lt;b&gt;bold&lt;/b&gt; &lt;script&gt;alert(4)&lt;/script&gt;')
+        ->and($html)->not->toContain('<script>alert(4)')
+        ->and($html)->not->toContain('<b>bold</b>');
 });
