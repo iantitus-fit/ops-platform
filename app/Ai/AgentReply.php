@@ -16,6 +16,7 @@ readonly class AgentReply
      * @param  list<string>  $priceServices  Slugs of the services whose price the customer asked about.
      * @param  ?bool  $touchesWaiting  Whether the text touches the question already with the owner; null when unknown.
      * @param  ?string  $waitingNote  check_in or added_info; null when unknown.
+     * @param  bool  $possibleDanger  Whether the text could describe a danger to people or the home; the third danger net (D-45).
      */
     public function __construct(
         public string $reply,
@@ -30,6 +31,7 @@ readonly class AgentReply
         public ?string $waitingNote = null,
         public ?string $easyReply = null,
         public ?ReplyLabel $easyLabel = null,
+        public bool $possibleDanger = false,
     ) {}
 
     /**
@@ -78,6 +80,7 @@ readonly class AgentReply
             waitingNote: in_array($data['waiting_note'] ?? null, self::WAITING_NOTES, true) ? $data['waiting_note'] : null,
             easyReply: self::tolerantText($data['easy_reply'] ?? null),
             easyLabel: is_string($data['easy_label'] ?? null) ? ReplyLabel::tryFrom($data['easy_label']) : null,
+            possibleDanger: ($data['possible_danger'] ?? null) === true,
         );
     }
 
@@ -105,7 +108,7 @@ readonly class AgentReply
     }
 
     /**
-     * @return array{reply: string, label: string, wants_person: bool, service_slug: ?string, intake_answers: list<array{question_key: string, option: ?string, raw_text: string}>, customer_name: ?string, price_services: list<string>, asks_discount: bool, touches_waiting: ?bool, waiting_note: ?string, easy_reply: ?string, easy_label: ?string}
+     * @return array{reply: string, label: string, wants_person: bool, service_slug: ?string, intake_answers: list<array{question_key: string, option: ?string, raw_text: string}>, customer_name: ?string, price_services: list<string>, asks_discount: bool, touches_waiting: ?bool, waiting_note: ?string, easy_reply: ?string, easy_label: ?string, possible_danger: bool}
      */
     public function toArray(): array
     {
@@ -122,6 +125,7 @@ readonly class AgentReply
             'waiting_note' => $this->waitingNote,
             'easy_reply' => $this->easyReply,
             'easy_label' => $this->easyLabel?->value,
+            'possible_danger' => $this->possibleDanger,
         ];
     }
 

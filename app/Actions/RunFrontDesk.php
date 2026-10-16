@@ -68,9 +68,13 @@ use Illuminate\Support\Str;
  * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
  * and alerts the owner (D-52), so two auto-responders cannot text each other all night; a complaint or a request for a
  * person in that text alerts the owner first, as it does in a paused conversation. A customer who asks for a
- * person in words that cannot mean anything else is handed to the owner (D-23, D-47). The agent's own wants_person
- * and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words are then
- * not stored or sent.
+ * person in words that cannot mean anything else is handed to the owner (D-23, D-47). The third danger net is the
+ * agent's own possible_danger: once the agent has answered, a true value sends the safety line for the burst's newest
+ * text before anything else the run would send, because an unsure danger gets the line (D-45, Phase 2 D-15). The
+ * sentences code knew then wait in the draft, held as agent:possible_danger, and no holding reply follows the line; a
+ * wants_person beside it raises only the asked_for_person alert, since the conversation is paused. The agent's own
+ * wants_person and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words
+ * are then not stored or sent.
  *
  * A customer who asks about a discount gets the sentence of every offer live today, written by the owner and sent by
  * code with the price sentences (D-13). With no offer live the question is held as discount:no_live_offer, handled like
@@ -196,6 +200,18 @@ class RunFrontDesk
             return;
         }
 
+        if ($run->reply->possibleDanger) {
+            if (! $this->safetyLineAlreadySent($burst)) {
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'agent');
+            }
+
+            if ($run->reply->wantsPerson) {
+                $this->alertAboutPersonAfterSafetyLine($conversation, $burst);
+
+                return;
+            }
+        }
+
         if ($run->reply->wantsPerson) {
             $this->handOffToOwner($conversation, $burst);
 
@@ -232,7 +248,7 @@ class RunFrontDesk
         $stillWaiting = $answersWaiting ? null : $waiting;
 
         $checkIn = $stillWaiting !== null && $run->reply->waitingNote === self::CHECK_IN;
-        $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer && $heldSentences === [];
+        $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer && $heldSentences === [] && ! $run->reply->possibleDanger;
 
         if ($codeOnly && $stillWaiting === null) {
             $this->closeAsAnswered($answersWaiting ? $waiting : null, $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'), $lookups, $answersWaiting ? $waiting : null));
@@ -243,7 +259,7 @@ class RunFrontDesk
         if ($codeOnly) {
             $composed = '';
             $verdict = null;
-        } elseif ($words === '' && $codeHold !== null && ($heldSentences !== [] || in_array($codeHold, SendFixedReply::COMPLAINT_CODES, true))) {
+        } elseif ($words === '' && $codeHold !== null && ($heldSentences !== [] || $codeHold === 'agent:possible_danger' || in_array($codeHold, SendFixedReply::COMPLAINT_CODES, true))) {
             $composed = '';
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, $this->reading(), $codeHold);
         } elseif ($words === '' && $noLiveOffer && ! $priceHeld) {
@@ -257,9 +273,16 @@ class RunFrontDesk
             $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->reading(), $this->labelGuardFor($stillWaiting));
         }
 
+        if ($run->reply->possibleDanger && $verdict !== null) {
+            $verdict = $verdict->flaggedLifeSafety();
+        }
+
         if ($verdict?->lifeSafety) {
-            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
-            $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
+            if (! $run->reply->possibleDanger) {
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+            }
+
+            $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor($run->reply->possibleDanger ? 'agent:possible_danger' : 'classifier:life_safety') : $verdict;
             $heldSentences = $sentences !== [] ? $sentences : $heldSentences;
             $picks = [];
             $offers = [];
@@ -1122,6 +1145,23 @@ class RunFrontDesk
     }
 
     /**
+     * The agent says the text may describe a danger and also asks for a person (D-45, Phase 2 D-15). The safety line has
+     * gone out and the conversation is paused for it, so the handoff text would be refused: the owner is alerted that
+     * the customer asked for a person, and a complaint in the reading is alerted as well, exactly as handOffToOwner()
+     * would. Nothing more is sent.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutPersonAfterSafetyLine(Conversation $conversation, Collection $burst): void
+    {
+        $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
+
+        if ($this->reading()->complaint()) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
+        }
+    }
+
+    /**
      * Tell the owner what Jev's reading, or a keyword phrase, found in a text that no reply will answer, such as one
      * that arrives while the assistant is paused or the reply cap is reached: a complaint, and a request for a person.
      * Both go through RaiseOwnerAlert, so their timing is the folder's owner_alert rules and neither is dropped; only
@@ -1293,8 +1333,8 @@ class RunFrontDesk
     /**
      * Why code must not send the owner's price or offer sentences in this run, or null when it may (D-43). The first
      * that applies: Jev reads a complaint in the customer's text, the agent labeled its reply a complaint, the reading
-     * failed, the reading is unsure whether the customer asked for a person, or the agent labeled blank words a promise.
-     * The model's label and Jev's reading are two independent signals, so either one stops the sentence.
+     * failed, the reading is unsure whether the customer asked for a person, the agent labeled blank words a promise, or the agent
+     * says the text may describe a danger (D-45). The model's label and Jev's reading are two independent signals, so either one stops the sentence.
      */
     private function codeHoldReason(AgentRun $run, CustomerReading $reading, string $words): ?string
     {
@@ -1304,6 +1344,7 @@ class RunFrontDesk
             $reading->failed => 'classifier_failed',
             $reading->unsureAboutPerson() => 'classifier_unsure:asks_for_person',
             $words === '' && $run->reply->label === ReplyLabel::Promise => 'label:promise',
+            $run->reply->possibleDanger => 'agent:possible_danger',
             default => null,
         };
     }
