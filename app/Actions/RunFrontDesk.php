@@ -65,7 +65,7 @@ use Illuminate\Support\Str;
  * it, in order: the paused check, the reply cap, the request for a person (a keyword phrase or Jev's reading), then the
  * agent. A text no reply will answer, paused or capped, still alerts the owner to a complaint or a request for a person
  * the reading found, on the folder's own timing; and a handoff for any cause also raises a complaint alert when the
- * reading found a complaint.
+ * reading found a complaint or the agent labeled its reply one, so a complaint the agent saw is never lost to the handoff (D-46).
  *
  * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
  * and alerts the owner (D-52), so two auto-responders cannot text each other all night; a complaint or a request for a
@@ -220,14 +220,14 @@ class RunFrontDesk
             }
 
             if ($run->reply->wantsPerson) {
-                $this->alertAboutPersonAfterSafetyLine($conversation, $burst);
+                $this->alertAboutPersonAfterSafetyLine($conversation, $burst, $run->reply->label === ReplyLabel::Complaint);
 
                 return;
             }
         }
 
         if ($run->reply->wantsPerson) {
-            $this->handOffToOwner($conversation, $burst);
+            $this->handOffToOwner($conversation, $burst, $run->reply->label === ReplyLabel::Complaint);
 
             return;
         }
@@ -302,7 +302,7 @@ class RunFrontDesk
             $offers = [];
             $sentences = [];
         } elseif ($verdict?->asksForPerson) {
-            $this->handOffToOwner($conversation, $burst);
+            $this->handOffToOwner($conversation, $burst, $run->reply->label === ReplyLabel::Complaint);
 
             return;
         }
@@ -695,7 +695,7 @@ class RunFrontDesk
         }
 
         if ($second->reply->wantsPerson) {
-            $this->handOffToOwner($conversation, $burst);
+            $this->handOffToOwner($conversation, $burst, $second->reply->label === ReplyLabel::Complaint);
 
             return ['outcome' => 'handed_off'];
         }
@@ -716,7 +716,7 @@ class RunFrontDesk
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
             $stored = $secondVerdict->outcome === GateOutcome::Send ? $secondVerdict->heldFor('classifier:life_safety') : $secondVerdict;
         } elseif ($secondVerdict->asksForPerson) {
-            $this->handOffToOwner($conversation, $burst);
+            $this->handOffToOwner($conversation, $burst, $second->reply->label === ReplyLabel::Complaint);
 
             return ['outcome' => 'handed_off'];
         } else {
@@ -1169,14 +1169,15 @@ class RunFrontDesk
      * because the outbound path refuses automated texts once the conversation is paused.
      *
      * @param  Collection<int, Message>  $burst
+     * @param  bool  $agentFoundComplaint  Whether the agent labeled its reply a complaint, which is a detector like Jev's reading: the owner hears of the complaint even when Jev is down (D-46).
      */
-    private function handOffToOwner(Conversation $conversation, Collection $burst): void
+    private function handOffToOwner(Conversation $conversation, Collection $burst, bool $agentFoundComplaint = false): void
     {
         $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
         $this->sendFixedReply->handoff($conversation, $this->reading());
         $this->pauseConversation->handle($conversation, PausedReason::AskedForPerson);
 
-        if ($this->reading()->complaint()) {
+        if ($this->reading()->complaint() || $agentFoundComplaint) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
         }
     }
@@ -1215,12 +1216,13 @@ class RunFrontDesk
      * would. Nothing more is sent.
      *
      * @param  Collection<int, Message>  $burst
+     * @param  bool  $agentFoundComplaint  Whether the agent labeled its reply a complaint (D-46).
      */
-    private function alertAboutPersonAfterSafetyLine(Conversation $conversation, Collection $burst): void
+    private function alertAboutPersonAfterSafetyLine(Conversation $conversation, Collection $burst, bool $agentFoundComplaint = false): void
     {
         $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
 
-        if ($this->reading()->complaint()) {
+        if ($this->reading()->complaint() || $agentFoundComplaint) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
         }
     }
