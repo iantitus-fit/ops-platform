@@ -77,15 +77,54 @@ class RaiseOwnerAlert
     }
 
     /**
-     * Whether the owner wants this event at once: a safety message always does, and so does
-     * any event the business folder lists under owner_alert right_away. An owner_alert the code
+     * Alert the owner about the business itself rather than one conversation, such as the safety
+     * check going down (D-50): one stored alert per person with a phone on file, or one failed
+     * alert when nobody has a phone (D-19). The alert has no conversation and no message, is
+     * urgent, due now and sent at once through SendOwnerAlert, at any hour.
+     *
+     * Nothing here dedupes on purpose: the caller decides when an alert is worth sending. Nothing
+     * here throws on a send failure.
+     *
+     * @return Collection<int, OwnerAlert> the alerts stored by this call, in recipient order
+     */
+    public function forBusiness(AlertReason $reason, string $why): Collection
+    {
+        $recipients = User::query()->orderBy('id')->get()
+            ->filter(fn (User $user): bool => filled($user->phone))
+            ->values();
+
+        $recipientIds = $recipients->isEmpty() ? [null] : $recipients->pluck('id')->all();
+        $body = $this->alertText->forBusiness($reason, $why);
+
+        return collect($recipientIds)->map(function (?int $userId) use ($reason, $recipients, $body): OwnerAlert {
+            $alert = OwnerAlert::query()->create([
+                'conversation_id' => null,
+                'message_id' => null,
+                'user_id' => $userId,
+                'reason' => $reason,
+                'urgent' => true,
+                'due_at' => now(),
+                'to_phone' => $userId === null ? null : trim((string) $recipients->firstWhere('id', $userId)?->phone),
+                'body' => $body,
+            ]);
+
+            $this->sendOwnerAlert->handle($alert);
+
+            return $alert;
+        })->values();
+    }
+
+    /**
+     * Whether the owner wants this event at once: a safety message and the safety check being
+     * down always do (the only two forced right away, whatever the folder says), and so does any
+     * event the business folder lists under owner_alert right_away. An owner_alert the code
      * cannot read (no live version, or a folder from before the front desk) counts as urgent:
      * the alert goes out now rather than risk being held, because an alert must never fail
      * silently (D-19).
      */
     public function isUrgent(AlertReason $reason): bool
     {
-        if ($reason === AlertReason::LifeSafety) {
+        if ($reason === AlertReason::LifeSafety || $reason === AlertReason::SafetyCheckDown) {
             return true;
         }
 

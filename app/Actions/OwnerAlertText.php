@@ -8,6 +8,7 @@ use App\Enums\MessageStatus;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Models\Conversation;
 use App\Models\Message;
+use Filament\Facades\Filament;
 
 /**
  * Builds the text an owner alert carries, in code with no model call (D-21).
@@ -71,6 +72,16 @@ class OwnerAlertText
         $lines[] = ConversationResource::getUrl('view', ['record' => $conversation]);
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Assemble an alert about the business rather than one conversation (D-50): the reason's
+     * words, the why, a blank line, and the link to the dashboard added last. It quotes nothing
+     * a customer wrote, so it needs no clean().
+     */
+    public function forBusiness(AlertReason $reason, string $why): string
+    {
+        return $reason->plainWords().': '.trim($why)."\n\n".Filament::getUrl();
     }
 
     /**
