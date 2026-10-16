@@ -115,8 +115,10 @@ function something()
 }
 
 /**
- * The scripted classifier every Feature test runs with: `answer()` sets what it says, `failWith()` makes it fail
- * like Jev down, and `calls()` lists the texts it was asked about.
+ * The scripted classifier every Feature test runs with: `answer()` sets what it says to a words check,
+ * `answerReading()` what it says when reading the customer's text alone, `failWith()` makes every call fail like Jev
+ * down (`failReadingWith()` only the readings), and `calls()` lists the words checks, `readingCalls()` the readings
+ * and `allCalls()` both.
  */
 function fakeClassifier(): FakeClassifier
 {

@@ -28,6 +28,7 @@ use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\SendRule\AsksForPerson;
+use App\SendRule\CustomerReading;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\FixedReplies;
 use App\SendRule\HeldReasons;
@@ -35,6 +36,7 @@ use App\SendRule\LifeSafety;
 use App\SendRule\OfferSentences;
 use App\SendRule\PricePick;
 use App\SendRule\PriceSentencePicker;
+use App\SendRule\ReadCustomerText;
 use App\SendRule\ReplyParts;
 use App\SendRule\Verdict;
 use DomainException;
@@ -54,6 +56,10 @@ use Illuminate\Support\Str;
  *
  * A customer who opted out of texts is never answered: the owner is alerted to the newest text so they can call, and
  * the agent is not asked (D-40).
+ *
+ * The run's order is: the keyword safety line, the opt-out check, then Jev's reading of the customer's text, then
+ * everything else. The reading is one Jev call per run, made before any early return, and when it finds a danger the
+ * safety line goes first, before the paused check, the reply cap, a handoff or any price sentence (D-42, D-45).
  *
  * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
  * and alerts the owner (D-52), so two auto-responders cannot text each other all night. A customer who asks for a
@@ -107,7 +113,14 @@ class RunFrontDesk
         private readonly FixedReplies $fixedReplies,
         private readonly OfferSentences $offerSentences,
         private readonly ResolveDraft $resolveDraft,
+        private readonly ReadCustomerText $readCustomerText,
     ) {}
+
+    /**
+     * What Jev read in the customer's text for the run under way. Set at the top of every handle() call and never kept
+     * from one run to the next (D-42).
+     */
+    private ?CustomerReading $reading = null;
 
     /**
      * @param  Collection<int, Message>  $burst  The customer's texts this run claimed, oldest first. Must not be empty.
@@ -120,6 +133,12 @@ class RunFrontDesk
             $this->alertAboutOptedOutBurst($conversation, $burst);
 
             return;
+        }
+
+        $this->reading = $this->readCustomerText->handle($this->prompt->promptText($burst));
+
+        if ($this->reading->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
+            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
         }
 
         if ($conversation->refresh()->isPaused()) {
@@ -885,6 +904,17 @@ class RunFrontDesk
                 $this->sendLifeSafetyLine->handle($message, $hazard, 'keyword');
             }
         }
+    }
+
+    /**
+     * Whether a safety line already answers one of the burst's texts, such as one the keywords sent a moment ago, so
+     * Jev's reading of the same burst does not send a second.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function safetyLineAlreadySent(Collection $burst): bool
+    {
+        return $burst->contains(fn (Message $message): bool => $this->sendLifeSafetyLine->lineSentFor($message));
     }
 
     /**
