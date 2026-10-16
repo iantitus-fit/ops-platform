@@ -169,7 +169,7 @@ class HeldReasons
 
         return $reading !== null
             && $reading->ran
-            && ! $reading->failed
+            && ! $reading->gaveNoAnswer()
             && $reading->reading !== null
             && ! $reading->complaint()
             && ! $reading->lifeSafety()

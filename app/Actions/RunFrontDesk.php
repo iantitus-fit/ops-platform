@@ -1065,12 +1065,13 @@ class RunFrontDesk
     }
 
     /**
-     * What Jev read for the run under way. A run that somehow has no reading is treated as one whose reading failed, so
-     * the model's words are held rather than sent.
+     * What Jev read for the run under way. A run that somehow has no reading is given a missing one, never a failed
+     * one: the danger check did not run, and that is not a Jev problem (Ian, 2026-10-16). The model's words are held
+     * rather than sent, and Jev is not marked down.
      */
     private function reading(): CustomerReading
     {
-        return $this->reading ??= CustomerReading::failed('The customer text was not read for this run.', ran: false);
+        return $this->reading ??= CustomerReading::missing('The customer text was not read for this run.');
     }
 
     /**
@@ -1364,7 +1365,7 @@ class RunFrontDesk
     /**
      * Why code must not send the owner's price or offer sentences in this run, or null when it may (D-43). The first
      * that applies: Jev reads a complaint in the customer's text, the agent labeled its reply a complaint, the reading
-     * failed, the reading is unsure whether the customer asked for a person, the agent labeled blank words a promise, or the agent
+     * failed or is missing, the reading is unsure whether the customer asked for a person, the agent labeled blank words a promise, or the agent
      * says the text may describe a danger (D-45). The model's label and Jev's reading are two independent signals, so either one stops the sentence.
      */
     private function codeHoldReason(AgentRun $run, CustomerReading $reading, string $words): ?string
@@ -1372,7 +1373,7 @@ class RunFrontDesk
         return match (true) {
             $reading->complaint() => 'classifier:complaint',
             $run->reply->label === ReplyLabel::Complaint => 'label:complaint',
-            $reading->failed => 'classifier_failed',
+            $reading->gaveNoAnswer() => 'classifier_failed',
             $reading->unsureAboutPerson() => 'classifier_unsure:asks_for_person',
             $words === '' && $run->reply->label === ReplyLabel::Promise => 'label:promise',
             $run->reply->possibleDanger => 'agent:possible_danger',

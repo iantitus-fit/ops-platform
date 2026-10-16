@@ -9,14 +9,18 @@ namespace App\SendRule;
  * empty draft still answers them. Its price, promise and discount answers are recorded and never acted on: a reading
  * can only hold the model's words, hand the customer to the owner or send the safety line, never make anything send.
  *
- * A reading that did not run, or that failed, answers nothing. `failed()` is the one builder for that, and
- * `fromStored()` rebuilds a reading from the gate JSON of an earlier verdict.
+ * A reading that failed, or that never ran, answers nothing, and the two are kept apart. `failed()` is a Jev call that
+ * went wrong: Jev is down. `missing()` is a reading that was never made, such as no business folder being live or a run
+ * that somehow has none; the danger check did not run, and that is not a Jev problem (Ian, 2026-10-16). Everything that
+ * holds on a failed reading holds on a missing one, but only a failed reading ever marks Jev down. `fromStored()`
+ * rebuilds a reading from the gate JSON of an earlier verdict, and reads a missing one back as missing, not failed.
  */
 readonly class CustomerReading
 {
     /**
      * @param  bool  $ran  Whether Jev was asked at all.
      * @param  bool  $failed  Whether the call failed or gave an answer that could not be used.
+     * @param  bool  $missing  Whether no reading was made at all, which is not a failure of Jev's.
      * @param  ?array{intent: string, intent_confidence: float, intent_probabilities: array<string, float>, yes_no: array<string, float>}  $answers
      * @param  ?array{sendable: bool, reason_code: ?string, reasons: list<string>, life_safety: bool, asks_for_person: bool, thresholds: array<string, float>}  $reading
      */
@@ -27,6 +31,7 @@ readonly class CustomerReading
         public ?string $model,
         public ?array $answers,
         public ?array $reading,
+        public bool $missing = false,
     ) {}
 
     /**
@@ -52,11 +57,20 @@ readonly class CustomerReading
     }
 
     /**
-     * A reading that gave no answer, such as Jev down or no business folder live.
+     * A reading from a Jev call that went wrong, such as Jev down or an answer that could not be used.
      */
     public static function failed(string $error, bool $ran = true): self
     {
         return new self(ran: $ran, failed: true, error: $error, model: null, answers: null, reading: null);
+    }
+
+    /**
+     * A reading that was never made, such as no business folder being live. It answers nothing, and it is not a
+     * failure of Jev's: the reason says what was missing.
+     */
+    public static function missing(string $reason): self
+    {
+        return new self(ran: false, failed: false, error: $reason, model: null, answers: null, reading: null, missing: true);
     }
 
     /**
@@ -75,7 +89,17 @@ readonly class CustomerReading
             model: is_string($stored['model'] ?? null) ? $stored['model'] : null,
             answers: is_array($stored['answers'] ?? null) ? $stored['answers'] : null,
             reading: is_array($stored['reading'] ?? null) ? $stored['reading'] : null,
+            missing: ($stored['missing'] ?? false) === true,
         );
+    }
+
+    /**
+     * Whether the reading answers nothing, because the call failed or no reading was made. Both hold the model's
+     * words; they differ in what the owner is told.
+     */
+    public function gaveNoAnswer(): bool
+    {
+        return $this->failed || $this->missing;
     }
 
     /**
@@ -91,7 +115,7 @@ readonly class CustomerReading
      */
     public function lifeSafety(): bool
     {
-        return ! $this->failed && ($this->reading['life_safety'] ?? false) === true;
+        return ! $this->gaveNoAnswer() && ($this->reading['life_safety'] ?? false) === true;
     }
 
     /**
@@ -99,7 +123,7 @@ readonly class CustomerReading
      */
     public function asksForPerson(): bool
     {
-        return ! $this->failed && ($this->reading['asks_for_person'] ?? false) === true;
+        return ! $this->gaveNoAnswer() && ($this->reading['asks_for_person'] ?? false) === true;
     }
 
     /**
@@ -111,13 +135,14 @@ readonly class CustomerReading
     }
 
     /**
-     * @return array{ran: bool, failed: bool, error: ?string, model: ?string, answers: ?array<string, mixed>, reading: ?array<string, mixed>}
+     * @return array{ran: bool, failed: bool, missing: bool, error: ?string, model: ?string, answers: ?array<string, mixed>, reading: ?array<string, mixed>}
      */
     public function toArray(): array
     {
         return [
             'ran' => $this->ran,
             'failed' => $this->failed,
+            'missing' => $this->missing,
             'error' => $this->error,
             'model' => $this->model,
             'answers' => $this->answers,
@@ -127,6 +152,6 @@ readonly class CustomerReading
 
     private function hasReason(string $reason): bool
     {
-        return ! $this->failed && in_array($reason, $this->reading['reasons'] ?? [], true);
+        return ! $this->gaveNoAnswer() && in_array($reason, $this->reading['reasons'] ?? [], true);
     }
 }

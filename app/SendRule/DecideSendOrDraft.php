@@ -27,7 +27,7 @@ use Throwable;
  *
  * Jev is also asked once per run about the customer's text alone (the reading, ReadCustomerText). Its result is passed
  * in and stored on every verdict as customer_reading. A words check can add a hold, a safety line or a handoff, never
- * clear what the reading found: when the words would send, a failed reading holds them as classifier_failed and a
+ * clear what the reading found: when the words would send, a failed or missing reading holds them as classifier_failed and a
  * reading unsure whether the customer asked for a person holds them as classifier_unsure:asks_for_person. A complaint
  * in the reading does not change the result here; the caller decides what a complaint holds (D-42, D-45).
  *
@@ -106,7 +106,7 @@ class DecideSendOrDraft
             return Verdict::hold($jevReading->reasonCode ?? 'classifier_failed', $details, $jevReading->lifeSafety, $jevReading->asksForPerson);
         }
 
-        if ($reading->failed) {
+        if ($reading->gaveNoAnswer()) {
             return Verdict::hold('classifier_failed', $details);
         }
 
