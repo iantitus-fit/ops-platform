@@ -18,9 +18,12 @@ use Throwable;
  *     CodeChecks' rules.
  *  3. Jev's reading of the owner's triage questions, read against the thresholds in config/gate.php.
  *
- * Jev is asked once per set of words (the words check), and only when the first two checks pass, so a veto never
- * costs a call and a Jev answer can only hold a reply, never rescue one (D-02). Anything that goes wrong in the call
- * also holds it.
+ * Jev is asked once per set of words (the words check), vetoed or not, because Jev is fast and cheap and its reading
+ * of the words is what later tells a draft held on price alone from one with more in it (D-21, CR-02). A veto keeps
+ * its reason, the first one found: the label, the waiting guard, the length or a code finding. Jev's answer can only
+ * add to that, never take it away: it can add a hold when the checks would send, a safety line or a hand-off to the
+ * person, and it never sends a reply a veto holds (Phase 2 D-02). A call that goes wrong is recorded in the
+ * classifier block and also holds the reply; on a vetoed reply the reason stays the veto.
  *
  * Jev is also asked once per run about the customer's text alone (the reading, ReadCustomerText). Its result is passed
  * in and stored on every verdict as customer_reading. A words check can add a hold, a safety line or a handoff, never
@@ -29,8 +32,7 @@ use Throwable;
  * in the reading does not change the result here; the caller decides what a complaint holds (D-42, D-45).
  *
  * While a draft waits for the owner the caller may pass a guard, a short list of labels that may still send. A reply
- * whose label is not on it is held as waiting_guard:<label>, after the label check and before the length check, so
- * Jev is not asked about it (D-20).
+ * whose label is not on it is held as waiting_guard:<label>, after the label check and before the length check (D-20).
  */
 class DecideSendOrDraft
 {
@@ -90,11 +92,29 @@ class DecideSendOrDraft
             default => null,
         };
 
+        [$details, $jevReading] = $this->askJev($details, $customerText, $reply->reply);
+
         if ($veto !== null) {
-            return Verdict::hold($veto, $details);
+            return Verdict::hold($veto, $details, $jevReading?->lifeSafety ?? false, $jevReading?->asksForPerson ?? false);
         }
 
-        return $this->askJev($details, $customerText, $reply->reply, $reading);
+        if ($jevReading === null) {
+            return Verdict::hold('classifier_failed', $details);
+        }
+
+        if (! $jevReading->sendable) {
+            return Verdict::hold($jevReading->reasonCode ?? 'classifier_failed', $details, $jevReading->lifeSafety, $jevReading->asksForPerson);
+        }
+
+        if ($reading->failed) {
+            return Verdict::hold('classifier_failed', $details);
+        }
+
+        if ($reading->unsureAboutPerson()) {
+            return Verdict::hold('classifier_unsure:asks_for_person', $details);
+        }
+
+        return Verdict::send($details, $jevReading->lifeSafety, $jevReading->asksForPerson);
     }
 
     /**
@@ -127,11 +147,13 @@ class DecideSendOrDraft
     }
 
     /**
-     * Ask Jev the owner's questions about the customer's text and the agent's words, and read the answers.
+     * Ask Jev the owner's questions about the customer's text and the agent's words, and fill the classifier block of
+     * the details with what came back. A call that failed leaves its message in the block and returns no reading.
      *
      * @param  array<string, mixed>  $details
+     * @return array{0: array<string, mixed>, 1: ?TriageReading} The details with the classifier block filled, and Jev's reading or null when the call failed.
      */
-    private function askJev(array $details, string $customerText, string $agentWords, CustomerReading $customerReading): Verdict
+    private function askJev(array $details, string $customerText, string $agentWords): array
     {
         $questions = TriageQuestions::fromConfig($this->activeConfig->triage());
         $details['checks']['classifier']['ran'] = true;
@@ -145,7 +167,7 @@ class DecideSendOrDraft
 
             $details['checks']['classifier']['error'] = $exception->getMessage();
 
-            return Verdict::hold('classifier_failed', $details);
+            return [$details, null];
         }
 
         $reading = TriageReading::read($result, $questions, config('gate.classifier'));
@@ -159,18 +181,6 @@ class DecideSendOrDraft
         ];
         $details['checks']['classifier']['reading'] = $reading->toArray();
 
-        if (! $reading->sendable) {
-            return Verdict::hold($reading->reasonCode ?? 'classifier_failed', $details, $reading->lifeSafety, $reading->asksForPerson);
-        }
-
-        if ($customerReading->failed) {
-            return Verdict::hold('classifier_failed', $details);
-        }
-
-        if ($customerReading->unsureAboutPerson()) {
-            return Verdict::hold('classifier_unsure:asks_for_person', $details);
-        }
-
-        return Verdict::send($details, $reading->lifeSafety, $reading->asksForPerson);
+        return [$details, $reading];
     }
 }

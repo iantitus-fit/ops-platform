@@ -99,7 +99,7 @@ it('asks Jev once, about the burst text and the words the agent wrote, not the d
     ]]);
 });
 
-it('keeps a price reply as a draft even when the agent labels it a faq answer, and never asks Jev (GATE-01, D-02)', function () {
+it('keeps a price reply as a draft even when the agent labels it a faq answer, and the veto stays its reason (GATE-01, D-02, D-45)', function () {
     frontDeskCustomerTexts('How much is a diagnostic?');
     scriptFrontDeskReplies(['reply' => 'A diagnostic visit is $89.', 'label' => 'faq_answer']);
 
@@ -116,7 +116,7 @@ it('keeps a price reply as a draft even when the agent labels it a faq answer, a
         ->and($draft->gate_outcome)->toBe(GateOutcome::Hold)
         ->and($draft->gate_reason)->toBe('code:price')
         ->and($draft->provider_message_id)->toBeNull()
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['A diagnostic visit is $89.']);
 });
 
 it('never sends a reply the agent labels price, promise, discount or complaint, or other', function (string $label) {
@@ -129,7 +129,8 @@ it('never sends a reply the agent labels price, promise, discount or complaint, 
         ->and(theAgentMessage()->status)->toBe(MessageStatus::Draft)
         ->and(theAgentMessage()->gate_outcome)->toBe(GateOutcome::Hold)
         ->and(theAgentMessage()->gate_reason)->toBe("label:{$label}")
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(theAgentMessage()->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['The owner will follow up with you.']);
 })->with(['price', 'promise', 'discount', 'complaint', 'other']);
 
 it('keeps the floor in code: a stored rule that lists price as sendable still holds a price reply (D-08)', function () {
@@ -148,7 +149,7 @@ it('keeps the floor in code: a stored rule that lists price as sendable still ho
 
     expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('label:price')
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['The owner will follow up with you.']);
 });
 
 it('holds a reply that uses a phrase the voice file says never to use', function () {
@@ -159,7 +160,7 @@ it('holds a reply that uses a phrase the voice file says never to use', function
 
     expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('code:never_say')
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Sure, no problem at all.']);
 });
 
 it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)', function () {
@@ -178,7 +179,7 @@ it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)'
         ->and($draft->body)->toBe($words)
         ->and($draft->gate_reason)->toBe('too_long')
         ->and($draft->gate['checks']['length'])->toMatchArray(['characters' => mb_strlen(composedFirstReply($words)), 'limit' => 1600])
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe([$words]);
 });
 
 it('holds the reply when Jev is down', function () {
@@ -256,7 +257,7 @@ it('stores the rule that held a reply and a plain reason on the verdict', functi
 
     expect($gate['checks']['code']['passed'])->toBeFalse()
         ->and($gate['checks']['code']['findings'][0])->toBe(['rule' => 'price', 'match' => '$89'])
-        ->and($gate['checks']['classifier']['ran'])->toBeFalse()
+        ->and($gate['checks']['classifier']['ran'])->toBeTrue()
         ->and($gate['reason']['code'])->toBe('code:price')
         ->and($gate['reason']['plain'])->toBeString()->not->toBe('');
 });

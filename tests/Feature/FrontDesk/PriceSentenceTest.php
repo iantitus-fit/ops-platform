@@ -256,7 +256,7 @@ it('holds a price the model writes itself as code:price and still sends the sent
         ->and($draft->body)->toBe("It's $89 and yes, we do Carrier.")
         ->and(priceSentenceTextsToDana())->toHaveCount(1)
         ->and(priceSentenceTextsToDana()[0]['body'])->toBe(priceSentenceFirstText(PRICE_SENTENCE_AC.' '.PRICE_SENTENCE_PARTIAL_LINE))
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(["It's $89 and yes, we do Carrier."]);
 });
 
 it('sends both sentences in one text, in the order asked (D-08)', function () {

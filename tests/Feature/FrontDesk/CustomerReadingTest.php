@@ -451,7 +451,7 @@ it('stores the reading on a sent reply\'s verdict, beside the unchanged checks (
         ->and(array_keys($gate['checks']['classifier']))->toBe(['ran', 'model', 'answers', 'error', 'reading']);
 });
 
-it('stores the reading on a hold that never reached the words check, such as a label veto', function () {
+it('stores the reading next to the words check on a hold that a label veto decided', function () {
     customerReadingDanaTexts('Can you come Thursday?');
     scriptFrontDeskReplies(['reply' => 'We will be there Thursday.', 'label' => 'promise']);
 
@@ -460,7 +460,9 @@ it('stores the reading on a hold that never reached the words check, such as a l
     $draft = customerReadingTheDraft();
 
     expect($draft->gate['customer_reading']['ran'])->toBeTrue()
-        ->and($draft->gate['checks']['classifier']['ran'])->toBeFalse();
+        ->and($draft->gate_reason)->toBe('label:promise')
+        ->and($draft->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and($draft->gate['checks']['classifier']['reading'])->not->toBeNull();
 });
 
 it('stores the reading on a hold written without model words', function () {

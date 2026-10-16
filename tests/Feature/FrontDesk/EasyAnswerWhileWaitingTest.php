@@ -176,7 +176,7 @@ it('lets only a faq answer or an intake question send while a scheduling draft w
     'an intake question' => ['intake_question', 'What kind of heat pump do you have?'],
 ]);
 
-it('holds a scheduling reply as waiting_guard:scheduling while a scheduling draft waits, and never asks Jev (D-20)', function () {
+it('holds a scheduling reply as waiting_guard:scheduling while a scheduling draft waits, and Jev still reads the words (D-20, D-45)', function () {
     easyAnswerSchedulingQuestionHeld();
 
     $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
@@ -195,7 +195,8 @@ it('holds a scheduling reply as waiting_guard:scheduling while a scheduling draf
         ->and($live->gate['reason']['plain'])->toBe('Held: waits behind a question you already have')
         ->and($live->gate['checks']['label']['guard'])->toBe(['faq_answer', 'intake_question'])
         ->and($live->gate['checks']['label']['guard_passed'])->toBeFalse()
-        ->and(fakeClassifier()->calls())->toBe([])
+        ->and($live->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['We guarantee 9 am Thursday. Does that work?', 'We have 9 am Friday open. Does that work?'])
         ->and(Message::query()->where('body', easyAnswerLater('We have 9 am Friday open. Does that work?'))->count())->toBe(0);
 });
 
@@ -272,7 +273,7 @@ it('answers the easy part now with the partial holding line and keeps the touchi
         ->and($live->body)->toBe('Mike will text you about Friday and the price.')
         ->and($live->gate_reason)->toBe('touches_waiting')
         ->and($waiting->fresh()->resolution)->toBe(DraftResolution::Replaced)
-        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you about Friday and the price.', 'Yes, we service heat pumps.'])
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you a price for a new unit.', 'Mike will text you about Friday and the price.', 'Yes, we service heat pumps.'])
         ->and(Message::query()->where('body', 'like', '%Friday%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
         ->and(OwnerAlert::query()->count())->toBe(1);
 });
@@ -283,7 +284,7 @@ it('sends no easy words when Jev holds the easy part, and still tells the custom
 
     easyAnswerCustomerTexts('Do you do heat pumps? Also Friday might work better', easyAnswerSplitScript());
 
-    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Yes, we service heat pumps.'])
+    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you a price for a new unit.', 'Mike will text you about Friday and the price.', 'Yes, we service heat pumps.'])
         ->and(easyAnswerTextsToDana())->toHaveCount(2)
         ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
         ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
@@ -291,7 +292,7 @@ it('sends no easy words when Jev holds the easy part, and still tells the custom
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('label:price');
 });
 
-it('holds a scheduling easy part with the guard and never asks Jev about it (D-20)', function () {
+it('holds a scheduling easy part with the guard, and Jev still reads its words (D-20, D-45)', function () {
     easyAnswerPriceQuestionHeld();
 
     easyAnswerCustomerTexts('Is Friday open? Also, do you do heat pumps?', easyAnswerSplitScript([
@@ -299,7 +300,7 @@ it('holds a scheduling easy part with the guard and never asks Jev about it (D-2
         'easy_label' => 'scheduling',
     ]));
 
-    expect(fakeClassifier()->calls())->toBe([])
+    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you a price for a new unit.', 'Mike will text you about Friday and the price.', 'We have 9 am Friday open. Does that work?'])
         ->and(easyAnswerTextsToDana())->toHaveCount(2)
         ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
         ->and(Message::query()->where('body', 'like', '%9 am Friday%')->where('status', MessageStatus::Sent->value)->count())->toBe(0);
@@ -316,7 +317,7 @@ it('does not split without a clear easy part on a clear touch (ANSR-03)', functi
         'easy_label' => $easyLabel,
     ]));
 
-    expect(fakeClassifier()->calls())->toBe([])
+    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you a price for a new unit.', 'Mike will text you about Friday and the price.'])
         ->and(easyAnswerTextsToDana())->toHaveCount(2)
         ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_ADDED_INFO_LINE))
         ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)

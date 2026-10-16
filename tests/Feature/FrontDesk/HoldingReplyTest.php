@@ -101,11 +101,11 @@ it('texts the customer a holding reply that says when the owner will answer, wit
         ->and($holding[0]->gate['reason']['code'])->toBe('fixed_reply');
 });
 
-it('does not ask Jev about the holding reply, because code wrote it (D-12)', function () {
+it('does not ask Jev about the holding reply, because code wrote it, only about the model\'s words (D-12, D-45)', function () {
     holdingReplyPriceQuestionHeld();
 
     expect(holdingReplyMessages())->toHaveCount(1)
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Mike will text you a price for a new unit.']);
 });
 
 it('says today while the shop is open and leaves the disclosure out when an agent text already went out (D-13, D-50)', function () {
@@ -282,7 +282,7 @@ it('sends the reply that fits why the first draft was held (D-31)', function (st
         ->and(holdingReplyTextsToDana()[0]['body'])->toBe(composedFirstReply($line))
         ->and($sent->gate_reason)->toBe('fixed_reply')
         ->and($sent->gate_outcome)->toBe(GateOutcome::Send)
-        ->and(fakeClassifier()->calls())->toBe([])
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe([$words])
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
 })->with([
     'a complaint' => ['The technician left a mess in my basement', 'complaint', 'We are sorry to hear that.', HOLDING_REPLY_COMPLAINT_LINE, MessageKind::ComplaintHolding],

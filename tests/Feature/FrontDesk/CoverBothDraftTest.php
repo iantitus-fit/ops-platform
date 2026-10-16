@@ -181,6 +181,7 @@ it('holds a second reply that would send for the first reply\'s reason, so the o
 
 it('asks Jev at most twice in a whole-thread run, once for each reply (D-35)', function () {
     coverBothPriceQuestionHeld();
+    $callsBeforeTheRun = count(fakeClassifier()->calls());
     fakeClassifier()->answer('faq', 0.95, ['promise' => 0.9]);
 
     coverBothCustomerTexts('Do you do heat pumps?', [
@@ -194,7 +195,7 @@ it('asks Jev at most twice in a whole-thread run, once for each reply (D-35)', f
 
     $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
 
-    expect(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Yes, we service heat pumps.', 'Yes, we service heat pumps, and Mike will text you the price for a new unit.'])
+    expect(array_column(array_slice(fakeClassifier()->calls(), $callsBeforeTheRun), 'draft_reply'))->toBe(['Yes, we service heat pumps.', 'Yes, we service heat pumps, and Mike will text you the price for a new unit.'])
         ->and($live->body)->toBe('Yes, we service heat pumps, and Mike will text you the price for a new unit.')
         ->and($live->gate_reason)->toBe($live->meta['first_reply']['gate_reason'])
         ->and($live->gate_reason)->not->toBeNull()
