@@ -4,9 +4,11 @@ use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Icm\ActiveConfig;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\FixedReplies;
 use Illuminate\Support\Carbon;
 
 const HELD_CODE_ANSWER_OWNER_PHONE = '+12025550199';
@@ -14,6 +16,12 @@ const HELD_CODE_ANSWER_OWNER_PHONE = '+12025550199';
 const HELD_CODE_ANSWER_CUSTOMER_PHONE = '+12025550123';
 
 const HELD_CODE_ANSWER_AC_SENTENCE = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
+
+const HELD_CODE_ANSWER_FIRST_VISIT = "If you're a first-time customer, we're running a promotion that takes \$50 off your first visit.";
+
+const HELD_CODE_ANSWER_SENIOR = "If you're 65 or older, we take 10% off any repair.";
+
+const HELD_CODE_ANSWER_WORDS = 'Yes, we work on Carrier units.';
 
 const HELD_CODE_ANSWER_COMPLAINT_ASK = 'Your tech was rude and I want to complain. How much is a repair?';
 
@@ -161,4 +169,322 @@ it('still sends the price sentence by code for a price ask with no complaint, an
         ->and($answer->body)->toContain(HELD_CODE_ANSWER_AC_SENTENCE)
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0)
         ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+/**
+ * Dana texts again a minute later and the front desk answers that burst with the given script.
+ *
+ * @param  array<string, mixed>  $reply
+ */
+function heldCodeAnswerCustomerTextsAgain(string $body, array $reply): void
+{
+    static $count = 0;
+    $count++;
+
+    test()->travel(1)->minutes();
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload([
+        'MessageSid' => 'SM'.str_pad((string) $count, 32, 'h', STR_PAD_LEFT),
+        'Body' => $body,
+    ]))->assertOk();
+    scriptFrontDeskReplies($reply);
+
+    runQueuedFrontDeskJobs();
+}
+
+/**
+ * The words as Dana receives them after the first automated text: the sign-off closes them, the disclosure is left out.
+ */
+function heldCodeAnswerLater(string $words): string
+{
+    return $words."\n".app(ActiveConfig::class)->voice()['sign_off'];
+}
+
+/**
+ * Dana's price question about a new unit, held as a draft with its holding reply and its one alert.
+ */
+function heldCodeAnswerPriceQuestionHeld(): void
+{
+    heldCodeAnswerRun('How much for a new unit?', ['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
+}
+
+/**
+ * A second live offer in the folder, a file that sorts before the example one and has no end date.
+ */
+function heldCodeAnswerWriteSeniorOffer(): void
+{
+    writeIcmFile('business/offers/a-senior-discount.md', implode("\n", [
+        '---',
+        'type: offer',
+        'name: Senior discount',
+        'slug: a-senior-discount',
+        'sentence: "'.HELD_CODE_ANSWER_SENIOR.'"',
+        'percent: 10',
+        'start_date: 2026-10-01',
+        '---',
+        'The business confirms the customer\'s age at the visit.',
+        '',
+    ]));
+}
+
+it('holds the offer sentence beside a complaint in the customer\'s text, even when the model labels the reply a plain FAQ (CR-01, D-42, D-43)', function () {
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerRun('Your crew tracked mud through my house. Do you have any discounts for the repair?', [
+        'reply' => '',
+        'label' => 'faq_answer',
+        'asks_discount' => true,
+    ]);
+
+    $draft = heldCodeAnswerMaybeDraft();
+    $alert = OwnerAlert::query()->first();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(heldCodeAnswerTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($draft?->gate_reason)->toBe('classifier:complaint')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_FIRST_VISIT)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_FIRST_VISIT])
+        ->and(OwnerAlert::query()->count())->toBe(1)
+        ->and($alert?->reason)->toBe(AlertReason::Complaint)
+        ->and($alert?->urgent)->toBeTrue()
+        ->and($alert?->sent_at)->not->toBeNull();
+});
+
+it('gives a discount ask with a complaint and no live offer the complaint reply, not the discount reply, and a complaint alert (D-34)', function () {
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerRun('Your crew tracked mud through my house. Do you have any discounts for the repair?', [
+        'reply' => '',
+        'label' => 'faq_answer',
+        'asks_discount' => true,
+    ], '2026-09-20 10:00');
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::DiscountHolding->value)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($draft?->gate_reason)->toBe('classifier:complaint')
+        ->and($draft?->body)->toBe('')
+        ->and(OwnerAlert::query()->count())->toBe(1)
+        ->and(OwnerAlert::query()->first()?->reason)->toBe(AlertReason::Complaint);
+});
+
+it('puts every live offer sentence in the one draft, in the order a sent text uses, and sends none (ANSR-02 adjacency)', function () {
+    heldCodeAnswerWriteSeniorOffer();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerRun('Your crew tracked mud through my house. Do you have any discounts for the repair?', [
+        'reply' => '',
+        'label' => 'faq_answer',
+        'asks_discount' => true,
+    ]);
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(heldCodeAnswerTextsToDana())->toHaveCount(1)
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_SENIOR.' '.HELD_CODE_ANSWER_FIRST_VISIT)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_SENIOR, HELD_CODE_ANSWER_FIRST_VISIT]);
+});
+
+it('holds a price sentence for a promise label on blank words, tells Dana with the holding reply, and does not force the alert right away (D-44)', function () {
+    heldCodeAnswerRun('Can you fix my AC today and how much?', heldCodeAnswerBlankAcScript('promise'));
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and($draft?->gate_reason)->toBe('label:promise')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(OwnerAlert::query()->first()?->reason)->toBe(AlertReason::DraftWaiting);
+});
+
+it('holds a price sentence, pre-filled, when the reading is unsure whether the customer asked for a person (D-42, D-44)', function () {
+    fakeClassifier()->answerReading('faq', 0.95, ['asks_for_person' => 0.5]);
+
+    heldCodeAnswerRun('How much is a repair for my AC?', heldCodeAnswerBlankAcScript('faq_answer'));
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and($draft?->gate_reason)->toBe('classifier_unsure:asks_for_person')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1);
+});
+
+it('holds a price sentence, pre-filled, when the reading failed, and the holding reply still goes out (D-42, D-44)', function () {
+    fakeClassifier()->failReadingWith('Jev is down');
+
+    heldCodeAnswerRun('How much is a repair for my AC?', heldCodeAnswerBlankAcScript('faq_answer'));
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and($draft?->gate_reason)->toBe('classifier_failed')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1);
+});
+
+it('treats a reading complaint answer of exactly 0.15 as no complaint and 0.16 as one (ANSR-01 boundary)', function (float $answer, bool $held) {
+    fakeClassifier()->answerReading('faq', 0.95, ['complaint' => $answer]);
+
+    heldCodeAnswerRun('How much is a repair for my AC?', heldCodeAnswerBlankAcScript('faq_answer'));
+
+    if (! $held) {
+        expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(1)
+            ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+
+        return;
+    }
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(heldCodeAnswerMaybeDraft()?->gate_reason)->toBe('classifier:complaint')
+        ->and(heldCodeAnswerMaybeDraft()?->body)->toBe(HELD_CODE_ANSWER_AC_SENTENCE);
+})->with([
+    'exactly complaint_max_yes' => [0.15, false],
+    'just above complaint_max_yes' => [0.16, true],
+]);
+
+it('pre-fills the sentence byte for byte as code renders it, the owner\'s lead included (ANSR-01 precision)', function () {
+    heldCodeAnswerRun('How much is the diagnostic for my AC?', heldCodeAnswerBlankAcScript('faq_answer'));
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(1);
+
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerCustomerTextsAgain('That tech was rude. What was the diagnostic price again?', ['reply' => '', 'price_services' => ['ac-repair']]);
+
+    $lead = app(FixedReplies::class)->priceLead('same', now());
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(1)
+        ->and($draft?->body)->toBe(trim((string) $lead).' '.HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([trim((string) $lead).' '.HELD_CODE_ANSWER_AC_SENTENCE]);
+});
+
+it('sends only the complaint reply when a complaint comes with easy words and a price ask, and holds the words then the sentence (D-36, D-43)', function () {
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerRun('Your tech was rude. How much is the AC diagnostic, and do you work on Carrier units?', [
+        'reply' => HELD_CODE_ANSWER_WORDS,
+        'label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+    ]);
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(heldCodeAnswerTextsToDana())->toHaveCount(1)
+        ->and(collect(heldCodeAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$89')))->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_WORDS."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_AC_SENTENCE])
+        ->and(OwnerAlert::query()->first()?->reason)->toBe(AlertReason::Complaint)
+        ->and(OwnerAlert::query()->first()?->urgent)->toBeTrue();
+});
+
+it('sends no sentence beside a complaint while a draft waits, withdraws the waiting draft, and keeps its words in the fresh draft (D-43, D-44)', function () {
+    heldCodeAnswerPriceQuestionHeld();
+    $waiting = heldCodeAnswerTheDraft();
+
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerCustomerTextsAgain('Your tech never showed up. How much is the AC diagnostic anyway?', [
+        'reply' => '',
+        'price_services' => ['ac-repair'],
+        'touches_waiting' => true,
+    ]);
+
+    $live = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(collect(heldCodeAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$89')))->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($waiting->fresh()->status)->toBe(MessageStatus::Withdrawn)
+        ->and($waiting->fresh()->resolution?->value)->toBe('replaced')
+        ->and($live?->id)->not->toBe($waiting->id)
+        ->and($live?->body)->toBe('Mike will text you a price for a new unit.'."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->count())->toBe(1);
+});
+
+it('holds the sentence, pre-filled, when Jev finds a danger in the model\'s words, and sends only the safety line (D-44)', function () {
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.9]);
+
+    heldCodeAnswerRun('How much is the AC diagnostic, and do you work on Carrier units?', [
+        'reply' => HELD_CODE_ANSWER_WORDS,
+        'label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+    ]);
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::LifeSafety->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(heldCodeAnswerTextsToDana())->toHaveCount(1)
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_WORDS."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_AC_SENTENCE]);
+});
+
+it('lets easy words that passed their own checks ride with the complaint line while no price sentence goes out (D-36)', function () {
+    heldCodeAnswerPriceQuestionHeld();
+
+    fakeClassifier()->answerReading('faq', 0.95, ['complaint' => 0.01]);
+
+    heldCodeAnswerCustomerTextsAgain('Your tech was rude. Do you do heat pumps? And what is the AC diagnostic?', [
+        'reply' => 'Sorry about the tech. Mike will text you.',
+        'label' => 'complaint',
+        'touches_waiting' => true,
+        'easy_reply' => 'Yes, we service heat pumps.',
+        'easy_label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+    ]);
+
+    $toDana = heldCodeAnswerTextsToDana();
+    $complaintReply = app(FixedReplies::class)->complaintReply(now());
+
+    expect($toDana)->toHaveCount(2)
+        ->and($toDana[1]['body'])->toBe(heldCodeAnswerLater($complaintReply.' Yes, we service heat pumps.'))
+        ->and($toDana[1]['body'])->not->toContain('$89')
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(heldCodeAnswerMaybeDraft()?->body)->toBe('Sorry about the tech. Mike will text you.'."\n\n".HELD_CODE_ANSWER_AC_SENTENCE);
+});
+
+it('holds the sentence when only the words check finds the complaint, with a clean reading of the customer\'s text (D-43)', function () {
+    fakeClassifier()->answer('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerRun('How much is the AC diagnostic, and do you work on Carrier units?', [
+        'reply' => HELD_CODE_ANSWER_WORDS,
+        'label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+    ]);
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(heldCodeAnswerTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($draft?->gate_reason)->toBe('classifier:complaint')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_WORDS."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->count())->toBe(1);
+});
+
+it('does not close a waiting draft as answered when the words check finds a complaint beside the sentence that would have answered it (D-43)', function () {
+    heldCodeAnswerRun('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = heldCodeAnswerTheDraft();
+
+    fakeClassifier()->answer('complaint', 0.95, ['complaint' => 0.9]);
+
+    heldCodeAnswerCustomerTextsAgain('It is the AC, and your tech was rude.', [
+        'reply' => 'Sorry about that.',
+        'label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+        'touches_waiting' => true,
+    ]);
+
+    $live = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and($waiting->fresh()->resolution?->value)->toBe('replaced')
+        ->and($live?->body)->toBe('Sorry about that.'."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1);
 });
