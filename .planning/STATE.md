@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-17-PLAN.md
-last_updated: "2026-10-16T20:58:42.399Z"
+stopped_at: Completed 02.1-18-PLAN.md
+last_updated: "2026-10-16T21:15:48.020Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: f1b63829dbc6e1e60c7cfa059d49ef6b0e04d4fe
+state_head: 98bb3e0a5439f138315f2db95671b86485c2f78d
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 65
+  completed_plans: 66
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 18 of 28 next (17 complete)
+Plan: 19 of 28 next (17 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -122,6 +122,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P15 | 12 min | 3 tasks | 8 files |
 | Phase 02.1 P16 | 9 min | 3 tasks | 3 files |
 | Phase 02.1 P17 | 8 min | 3 tasks | 10 files |
+| Phase 02.1 P18 | 14 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -241,6 +242,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-16: Phase 02.2 hand-off lives in sprint-1.1.md Notes for Phase 02.2; SPEC Principle 6 gains the owner-words exception; suite 1455 green on SQLite and PostgreSQL 17
 - [Phase 02.1]: 02.1-17: Jev's reading of the customer's text runs once per handle() call after the opt-out check and before the paused check; a reading life_safety sends the safety line first unless the burst already has one
 - [Phase 02.1]: 02.1-17: complaint and asked_for_person alerts on paused, reply-cap and handoff paths follow the folder's owner_alert timing with no right-away override; a complaint reading holds the main reply as classifier:complaint except a life_safety hold
+- [Phase 02.1]: 02.1-18: a complaint (Jev reading or agent label), a failed or unsure reading, or a promise label on blank words moves the run's price and offer sentences into held sentences before any send is built; the draft is pre-filled with them and meta.held_sentences lists them (D-43, D-44)
+- [Phase 02.1]: 02.1-18: a refused code send stores a send_refused draft with the sentence and the waiting draft's words, never an empty body (D-44, D-47); the complaint alert follows the folder's owner_alert timing with no right-away override
 
 ### Pending Todos
 
@@ -276,6 +279,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T20:58:42.320Z
-Stopped at: Completed 02.1-17-PLAN.md
+Last session: 2026-10-16T21:15:47.946Z
+Stopped at: Completed 02.1-18-PLAN.md
 Resume file: None
