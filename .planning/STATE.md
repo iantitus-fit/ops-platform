@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-24-PLAN.md
-last_updated: "2026-10-16T22:24:17.858Z"
+stopped_at: Completed 02.1-25-PLAN.md
+last_updated: "2026-10-16T22:31:31.950Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: d52ddffbc880bdf9423d626942089afcd4a4f7da
+state_head: 9bde6ef573fd26e562cc26cfde23c7cf9767f549
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 72
+  completed_plans: 73
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 25 of 28 next (24 complete)
+Plan: 26 of 28 next (24 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -129,6 +129,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P22 | 6 min | 2 tasks | 8 files |
 | Phase 02.1 P23 | 9 min | 3 tasks | 14 files |
 | Phase 02.1 P24 | 11 min | 3 tasks | 13 files |
+| Phase 02.1 P25 | 22 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -260,6 +261,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: Plan 23 (Ian, 2026-10-16): a reading that never ran is marked missing, never failed (the reading() fallback and no live business folder); it holds the model's words, never calls recordFailure, and fromStored() reads it back as missing; plan 02.1-24 raises safety_check_missing
 - [Phase 02.1]: Plan 23: Jev outage status is a safety_check_outages table row changed under Cache::lock('safety-check-status'); a held missing reading keeps hold reason code classifier_failed
 - [Phase 02.1]: Plan 24 (Ian, 2026-10-16): a reading marked missing counts as no reading at all; RunFrontDesk raises safety_check_missing at once before any send, OutboundSender refuses every automated text without a reading (a stored missing reading counts as absent) and a text with no kind is held to the model-words rule
+- [Phase 02.1]: Plan 25: the wrote-again line replaces the Customer wrote line, so the newest customer text is quoted once above Send anyway; no styling change before Ian's phone walk
 
 ### Pending Todos
 
@@ -295,6 +297,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T22:24:17.783Z
-Stopped at: Completed 02.1-24-PLAN.md
+Last session: 2026-10-16T22:31:31.874Z
+Stopped at: Completed 02.1-25-PLAN.md
 Resume file: None
