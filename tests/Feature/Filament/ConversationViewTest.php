@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ConversationStatus;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Livewire\ConversationThread;
 use App\Models\Contact;
@@ -324,4 +325,81 @@ it('shows no wrote-again line without a held draft (D-22)', function () {
         ->assertDontSee('The customer wrote again since this draft');
 
     expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+/**
+ * The first button on the page that runs the given Livewire action, as written in the page, or an empty string.
+ */
+function conversationViewButtonRunning(string $html, string $action): string
+{
+    preg_match('/<button[^>]*wire:target="'.$action.'"[^>]*>.*?<\/button>/s', $html, $matches);
+
+    return $matches[0] ?? '';
+}
+
+/**
+ * The words on a button, with the markup and the extra spaces taken out.
+ */
+function conversationViewButtonWords(string $button): string
+{
+    return Str::squish(strip_tags($button));
+}
+
+it('reads Send on the draft when the customer has not written again (D-48)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonWords(conversationViewButtonRunning($html, 'approveDraft')))->toBe('Send')
+        ->and($html)->not->toContain('Send anyway');
+});
+
+it('reads Send anyway on the draft when the customer wrote again, and approving it still sends (D-48)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => 'Also, it is leaking', 'created_at' => now()->subMinute()]);
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonWords(conversationViewButtonRunning($html, 'approveDraft')))->toBe('Send anyway');
+});
+
+it('disables the draft Send, the reply Send and Discard while their own action runs (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    foreach (['approveDraft', 'sendReply', 'discardDraft'] as $action) {
+        expect(conversationViewButtonRunning($html, $action))->toContain('wire:loading.attr="disabled"');
+    }
+});
+
+it('asks before Discard does anything (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonRunning($html, 'discardDraft'))
+        ->toContain('wire:confirm="Discard this draft? Nothing will be sent to the customer."');
+});
+
+it('labels the draft box and the reply box for a screen reader (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(substr_count($html, 'aria-label="Draft reply to the customer"'))->toBe(1)
+        ->and(substr_count($html, 'aria-label="Reply to the customer"'))->toBe(1)
+        ->and($html)->toMatch('/<textarea[^>]*wire:model="draftBody"[^>]*aria-label="Draft reply to the customer"/')
+        ->and($html)->toMatch('/<textarea[^>]*wire:model="body"[^>]*aria-label="Reply to the customer"/');
+});
+
+it('labels the disabled reply box too when replies are blocked (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    $conversation->forceFill(['status' => ConversationStatus::Closed])->save();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect($html)->toContain('This conversation is closed. Reopen it to reply.')
+        ->and($html)->toMatch('/<textarea[^>]*disabled[^>]*aria-label="Reply to the customer"/')
+        ->and($html)->not->toContain('wire:model="body"');
 });

@@ -159,6 +159,21 @@ it('treats the draft retyped without a change as sent as written', function () {
         ->and($draft->original_body)->toBeNull();
 });
 
+it('sends a draft the customer has written past, from the button that now reads Send anyway (D-48)', function () {
+    draftReviewPriceQuestionHeld();
+    $draft = draftReviewTheDraft();
+    Message::factory()->for(Conversation::query()->sole())->create(['body' => 'Also, do you do heat pumps?']);
+
+    draftReviewThread()
+        ->assertSee('Send anyway')
+        ->call('approveDraft')
+        ->assertHasNoErrors();
+
+    expect($draft->refresh()->status)->toBe(MessageStatus::Sent)
+        ->and($draft->resolution)->toBe(DraftResolution::Approved)
+        ->and(draftReviewTextsToDana())->toHaveCount(2);
+});
+
 it('discards the draft, sends nothing, and shows it on the timeline and the card (GATE-04)', function () {
     $owner = draftReviewPriceQuestionHeld();
     $draft = draftReviewTheDraft();
