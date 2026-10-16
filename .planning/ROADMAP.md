@@ -215,7 +215,7 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 21/28 plans executed; 12 gap-closure plans (02.1-17 to 02.1-28) to run
+**Plans:** 22/28 plans executed; 12 gap-closure plans (02.1-17 to 02.1-28) to run
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
@@ -241,7 +241,7 @@ Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans s
 - [x] 02.1-19-PLAN.md — Wave 3: Jev reads vetoed words; a draft closes as answered only on evidence (CR-02; ANSR-03)
 - [x] 02.1-20-PLAN.md — Wave 4: no second holding reply after a close-plus-partial run; a touching blank-words answer gets a whole-thread draft; split tests (WR-01, WR-04, WR-07; ANSR-03, ANSR-04)
 - [x] 02.1-21-PLAN.md — Wave 5: the agent's possible_danger sends the safety line; the holding reply when every model is down (D-45, D-51; ANSR-04)
-- [ ] 02.1-22-PLAN.md — Wave 6: owner alerts about the whole business and the safety_check_down reason (D-50; ANSR-04)
+- [x] 02.1-22-PLAN.md — Wave 6: owner alerts about the whole business and the safety_check_down reason (D-50; ANSR-04)
 - [ ] 02.1-23-PLAN.md — Wave 7: Jev outage mode: failed calls and a health ping mark it down, one down alert, one back-up alert with the count (D-50; ANSR-01, ANSR-02, ANSR-04)
 - [ ] 02.1-24-PLAN.md — Wave 8: the sender refuses an automated text without a reading, what each kind of text needs, and while Jev is down (D-45, D-49, D-50; ANSR-01, ANSR-02, ANSR-04)
 - [ ] 02.1-25-PLAN.md — Wave 9: Send anyway, buttons disabled while sending, Discard asks first, the newest text quoted (D-48; ANSR-03)
@@ -316,7 +316,7 @@ Phases execute in numeric order: 1 → 2 → 02.1 → 02.2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
-| 02.1. Faster Answers | 21/28 | In Progress | - |
+| 02.1. Faster Answers | 22/28 | In Progress | - |
 | 02.2. Owner Loop | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
