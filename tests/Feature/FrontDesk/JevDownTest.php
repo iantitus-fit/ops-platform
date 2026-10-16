@@ -7,6 +7,7 @@ use App\Enums\AlertReason;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\SafetyCheckOutage;
@@ -224,4 +225,117 @@ it('sends only the holding reply to a text the keywords do not catch while Jev i
         ->and($sent->pluck('kind')->all())->toBe([MessageKind::HoldingReply])
         ->and(Message::query()->whereIn('kind', [MessageKind::AgentReply->value, MessageKind::CodeAnswer->value])->where('status', MessageStatus::Sent->value)->count())->toBe(0)
         ->and(jevDownAlerts(AlertReason::SafetyCheckDown))->toHaveCount(1);
+});
+
+const JEV_DOWN_AC_SENTENCE = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
+
+const JEV_DOWN_FIRST_VISIT_OFFER = "If you're a first-time customer, we're running a promotion that takes \$50 off your first visit.";
+
+const JEV_DOWN_COMPLAINT_WORDS = 'Sorry about the mess, Mike will call you.';
+
+/**
+ * Wednesday 2026-10-14 at 02:00 with Jev down: Dana texts and the front desk answers with the scripted reply. The
+ * folder is activated first, with the lines the given edits make to rules/sending.md.
+ *
+ * @param  array<string, mixed>  $reply
+ * @param  array<string, string>  $sendingEdits  Text in rules/sending.md => its replacement.
+ */
+function jevDownAtNightRun(string $body, array $reply, array $sendingEdits = []): void
+{
+    test()->travelTo(Carbon::parse('2026-10-14 02:00', 'America/Chicago'));
+    User::factory()->withPhone(JEV_DOWN_OWNER_PHONE)->create();
+
+    foreach ($sendingEdits as $from => $to) {
+        breakFile('rules/sending.md', fn (string $text): string => str_replace($from, $to, $text));
+    }
+
+    activateExampleFolder();
+    fakeClassifier()->failWith(JEV_DOWN_FAILURE);
+    scriptFrontDeskReplies($reply);
+
+    jevDownTextFrom('+12025550121', $body);
+
+    runQueuedFrontDeskJobs();
+}
+
+it('holds a price sentence while Jev is down, pre-filled in the draft, and sends the holding reply (D-50)', function () {
+    jevDownAtNightRun('How much is an AC repair?', ['reply' => '', 'label' => 'faq_answer', 'price_services' => ['ac-repair']]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->first();
+    $waiting = jevDownAlerts(AlertReason::DraftWaiting);
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(collect(jevDownTextsTo('+12025550121'))->contains(fn (array $text): bool => str_contains($text['body'], '$89')))->toBeFalse()
+        ->and($draft?->gate_reason)->toBe('classifier_failed')
+        ->and($draft?->body)->toBe(JEV_DOWN_AC_SENTENCE)
+        ->and(jevDownMessagesTo('+12025550121')->where('kind', MessageKind::HoldingReply)->where('status', MessageStatus::Sent))->toHaveCount(1)
+        ->and($waiting)->toHaveCount(1)
+        ->and(jevDownDueAt($waiting->first()))->toBe('2026-10-14 08:00')
+        ->and($waiting->first()->sent_at)->toBeNull();
+});
+
+it('holds an offer sentence while Jev is down, pre-filled in the draft, and sends the holding reply (D-50)', function () {
+    jevDownAtNightRun('Do you have any discounts?', ['reply' => '', 'label' => 'faq_answer', 'asks_discount' => true]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->first();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(collect(jevDownTextsTo('+12025550121'))->contains(fn (array $text): bool => str_contains($text['body'], '$50')))->toBeFalse()
+        ->and($draft?->gate_reason)->toBe('classifier_failed')
+        ->and($draft?->body)->toBe(JEV_DOWN_FIRST_VISIT_OFFER)
+        ->and(jevDownMessagesTo('+12025550121')->where('kind', MessageKind::HoldingReply)->where('status', MessageStatus::Sent))->toHaveCount(1);
+});
+
+it('sends the complaint reply and a right-away complaint alert when the agent labels its words a complaint while Jev is down (D-50)', function () {
+    jevDownAtNightRun('Your tech tracked mud through my house.', ['reply' => JEV_DOWN_COMPLAINT_WORDS, 'label' => 'complaint']);
+
+    $complaint = jevDownAlerts(AlertReason::Complaint);
+
+    expect(jevDownMessagesTo('+12025550121')->where('kind', MessageKind::ComplaintHolding)->where('status', MessageStatus::Sent))->toHaveCount(1)
+        ->and(collect(jevDownTextsTo('+12025550121'))->contains(fn (array $text): bool => str_contains($text['body'], JEV_DOWN_COMPLAINT_WORDS)))->toBeFalse()
+        ->and($complaint)->toHaveCount(1)
+        ->and($complaint->first()->urgent)->toBeTrue()
+        ->and(jevDownDueAt($complaint->first()))->toBe('2026-10-14 02:00')
+        ->and($complaint->first()->sent_at)->not->toBeNull()
+        ->and(jevDownAlerts(AlertReason::SafetyCheckDown))->toHaveCount(1);
+});
+
+it('stores the complaint alert for the next opening when complaint is off right_away while Jev is down, and still sends the one safety_check_down alert at once (D-50)', function () {
+    jevDownAtNightRun('Your tech tracked mud through my house.', ['reply' => JEV_DOWN_COMPLAINT_WORDS, 'label' => 'complaint'], ['right_away: [complaint, ' => 'right_away: [']);
+
+    $complaint = jevDownAlerts(AlertReason::Complaint);
+    $down = jevDownAlerts(AlertReason::SafetyCheckDown);
+
+    expect(jevDownMessagesTo('+12025550121')->where('kind', MessageKind::ComplaintHolding)->where('status', MessageStatus::Sent))->toHaveCount(1)
+        ->and($complaint)->toHaveCount(1)
+        ->and($complaint->first()->urgent)->toBeFalse()
+        ->and(jevDownDueAt($complaint->first()))->toBe('2026-10-14 08:00')
+        ->and($complaint->first()->sent_at)->toBeNull()
+        ->and($down)->toHaveCount(1)
+        ->and(jevDownDueAt($down->first()))->toBe('2026-10-14 02:00')
+        ->and($down->first()->sent_at)->not->toBeNull();
+});
+
+it('hands a request for a person to the owner while Jev is down (D-50)', function () {
+    jevDownAtNightRun('Can someone please look at my AC today?', ['reply' => 'I can help with that myself.', 'label' => 'faq_answer', 'wants_person' => true]);
+
+    expect(jevDownMessagesTo('+12025550121')->where('kind', MessageKind::HandoffReply)->where('status', MessageStatus::Sent))->toHaveCount(1)
+        ->and(jevDownAlerts(AlertReason::AskedForPerson))->toHaveCount(1)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0)
+        ->and(Conversation::query()->sole()->isPaused())->toBeTrue()
+        ->and(jevDownAlerts(AlertReason::SafetyCheckDown))->toHaveCount(1);
+});
+
+it('keeps an ordinary held draft\'s alert for the next opening while the safety_check_down alert goes out at once (D-50)', function () {
+    jevDownAtNightRun(JEV_DOWN_AC, ['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question']);
+
+    $waiting = jevDownAlerts(AlertReason::DraftWaiting);
+    $down = jevDownAlerts(AlertReason::SafetyCheckDown);
+
+    expect($waiting)->toHaveCount(1)
+        ->and(jevDownDueAt($waiting->first()))->toBe('2026-10-14 08:00')
+        ->and($waiting->first()->sent_at)->toBeNull()
+        ->and($down)->toHaveCount(1)
+        ->and(jevDownDueAt($down->first()))->toBe('2026-10-14 02:00')
+        ->and($down->first()->sent_at)->not->toBeNull();
 });
