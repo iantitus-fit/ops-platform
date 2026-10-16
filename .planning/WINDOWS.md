@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 15
 waived_count: 0
 fixed_count: 2
-total_count: 16
-last_updated: 2026-10-16T22:06:46.795Z
+total_count: 17
+last_updated: 2026-10-16T22:29:40.293Z
 ---
 
 # Broken Windows Ledger
@@ -31,6 +31,7 @@ last_updated: 2026-10-16T22:06:46.795Z
 | 14 | 02.1 | unrun-verify | tests/Feature/FrontDesk/CustomerReadingTest.php |  | Plan 02.1-17 human-check (live JEV_API_KEY: text from /dev/chat 'My head is pounding and the kids feel dizzy since the furnace came on.' and confirm gate.customer_reading shows Jev answered a call with an empty draft_reply and read life_safety above 0.075) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T20:57:36.914Z |  |
 | 15 | 02.1 | unrun-verify | tests/Feature/FrontDesk/PossibleDangerTest.php |  | Plan 02.1-21 human-check (live provider key: text from /dev/chat 'My head is pounding and the kids feel dizzy since the furnace came on.' and confirm the stored AgentReply sets possible_danger true) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T21:46:11.228Z |  |
 | 16 | 02.1 | unrun-verify | tests/Feature/SendRule/SafetyCheckOutageTest.php |  | Plan 02.1-23 human-check (live JEV_API_KEY with php artisan schedule:work running: confirm the health ping succeeds against OpenRouter and no outage row opens; set a wrong key, wait for the next ping, and confirm one safety_check_down text reaches the owner's phone; restore the key and confirm the back-up text) not run by the executor; left for end-of-phase UAT | open |  | 2026-10-16T22:06:46.795Z |  |
+| 17 | 02.1 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | Plan 02.1-25 human-check (on a phone, a Needs you card after the customer wrote again shows the quoted newest text and 'Send anyway'; tapping Send twice sends once; Discard asks first and Cancel keeps the draft) not run by the executor; left for end-of-phase UAT with entry 13's walk | open |  | 2026-10-16T22:29:40.293Z |  |
 
 ````json
 [
@@ -239,6 +240,19 @@ last_updated: 2026-10-16T22:06:46.795Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-16T22:06:46.795Z",
+    "resolved_at": null,
+    "milestone": null
+  },
+  {
+    "id": 17,
+    "kind": "unrun-verify",
+    "phase": "02.1",
+    "file": "resources/views/livewire/conversation-thread.blade.php",
+    "line": null,
+    "description": "Plan 02.1-25 human-check (on a phone, a Needs you card after the customer wrote again shows the quoted newest text and 'Send anyway'; tapping Send twice sends once; Discard asks first and Cancel keeps the draft) not run by the executor; left for end-of-phase UAT with entry 13's walk",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-16T22:29:40.293Z",
     "resolved_at": null,
     "milestone": null
   }
