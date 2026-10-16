@@ -5,6 +5,7 @@ use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\DraftResolution;
+use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
@@ -520,6 +521,59 @@ it('closes a price draft as answered when its run read the complaint at exactly 
     'exactly 0.15' => [0.15, true],
     'at 0.16' => [0.16, false],
 ]);
+
+/**
+ * The newest text that reached the customer, whoever wrote it.
+ */
+function answeredDraftNewestTextToDana(): Message
+{
+    return Message::query()
+        ->where('direction', MessageDirection::Out->value)
+        ->whereIn('status', [MessageStatus::Queued->value, MessageStatus::Sent->value, MessageStatus::Delivered->value])
+        ->orderByDesc('id')
+        ->firstOrFail();
+}
+
+it('answers the third text with the added-info line, not a second holding reply, after the partial line closed the waiting draft (WR-01, D-30)', function () {
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    answeredDraftCustomerTexts("It's the AC. Can you come Thursday?", [
+        'reply' => 'We can come Thursday morning.',
+        'label' => 'promise',
+        'price_services' => ['ac-repair'],
+        'touches_waiting' => true,
+    ]);
+
+    $partial = Message::query()->where('kind', MessageKind::PartialHolding->value)->sole();
+    $waiting->refresh();
+
+    expect($waiting->resolution)->toBe(DraftResolution::Answered)
+        ->and($waiting->meta['answered_by'])->toBe($partial->id)
+        ->and(answeredDraftTheDraft()->id)->not->toBe($waiting->id)
+        ->and(answeredDraftTheDraft()->body)->toBe('We can come Thursday morning.');
+
+    answeredDraftCustomerTexts('Hello?', [
+        'reply' => 'Mike has your question and will follow up.',
+        'label' => 'other',
+        'touches_waiting' => true,
+        'waiting_note' => 'added_info',
+    ]);
+
+    expect(answeredDraftNewestTextToDana()->kind)->toBe(MessageKind::AddedInfoReply)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1);
+});
+
+it('sends a new holding reply for the next held question once the owner approved the draft that waited (D-14, WR-01 control)', function () {
+    $owner = answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+
+    app(ResolveDraft::class)->approve(answeredDraftTheDraft(), $owner, 'A repair visit is $89.');
+
+    answeredDraftCustomerTexts('How much for a new unit?', ['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
+
+    expect(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(2)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(0);
+});
 
 /**
  * The customer reading a verdict keeps under gate.customer_reading (D-42). The defaults are a reading that ran, did not
