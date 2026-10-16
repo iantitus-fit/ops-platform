@@ -7,9 +7,11 @@ use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\ConversationStatus;
+use App\Enums\GateOutcome;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Events\CustomerRecordChanged;
@@ -346,8 +348,72 @@ class OutboundSender
      */
     private function whyReadingBlocks(array $attributes): ?string
     {
-        if ($this->readingOf($attributes) === null) {
+        $reading = $this->readingOf($attributes);
+
+        if ($reading === null) {
             return self::NO_READING_WHY;
+        }
+
+        foreach ($this->partsOf($attributes) as $part) {
+            $why = match ($part) {
+                'code_sentences' => $reading->allowsOwnerSentences() ? null : "an owner sentence needs a clean reading of the customer's text",
+                'model_words' => $this->whyModelWordsAreBlocked($attributes, $reading),
+                default => null,
+            };
+
+            if ($why !== null) {
+                return $why;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The parts a text is made of. A combined text records them in meta.parts. A text with no parts is the model's words
+     * when its kind is agent_reply, and a text with no kind is treated the same, so a path that forgets to name its kind
+     * is held to the strictest rule. Any other kind is a fixed line, which needs only the reading record (Phase 2 D-12).
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return list<string>
+     */
+    private function partsOf(array $attributes): array
+    {
+        $parts = data_get($attributes, 'meta.parts');
+
+        if (is_array($parts) && $parts !== []) {
+            return array_values(array_filter($parts, is_string(...)));
+        }
+
+        $kind = $attributes['kind'] ?? null;
+        $kind = is_string($kind) ? MessageKind::tryFrom($kind) : $kind;
+
+        return $kind === null || $kind === MessageKind::AgentReply ? ['model_words'] : [];
+    }
+
+    /**
+     * Why the model's words may not go out, or null when they may: they need their own words check to have passed (the
+     * send rule let them send and Jev ran on them and found them sendable), and a reading of the customer's text that ran
+     * and did not fail (D-45, D-49, D-50).
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function whyModelWordsAreBlocked(array $attributes, CustomerReading $reading): ?string
+    {
+        $outcome = $attributes['gate_outcome'] ?? null;
+        $classifier = data_get($attributes, 'gate.checks.classifier');
+
+        $passed = ($outcome === GateOutcome::Send || $outcome === GateOutcome::Send->value)
+            && is_array($classifier)
+            && ($classifier['ran'] ?? false) === true
+            && (data_get($classifier, 'reading.sendable') ?? false) === true;
+
+        if (! $passed) {
+            return "the reply's words did not pass the safety check";
+        }
+
+        if (! $reading->ran || $reading->failed) {
+            return "the safety check could not read the customer's message, so the reply's words cannot go out";
         }
 
         return null;

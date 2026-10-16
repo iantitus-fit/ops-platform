@@ -362,7 +362,7 @@ it('keeps a failed send on the record and raises it, when the channel will not t
 
     $gate = ['version' => 1, 'fixed' => true, 'customer_reading' => ['ran' => true, 'failed' => false]];
 
-    expect(fn () => app(OutboundSender::class)->send($conversation, 'Hello', MessageAuthor::Agent, SendOrigin::Automated, ['gate' => $gate]))
+    expect(fn () => app(OutboundSender::class)->send($conversation, 'Hello', MessageAuthor::Agent, SendOrigin::Automated, ['kind' => MessageKind::HoldingReply, 'gate' => $gate]))
         ->toThrow(DomainException::class, 'The reply was not sent: carrier down');
 
     $failed = Message::query()->sole();

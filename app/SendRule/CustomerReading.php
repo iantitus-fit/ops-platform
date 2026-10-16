@@ -115,6 +115,15 @@ readonly class CustomerReading
     }
 
     /**
+     * Whether the owner's price and offer sentences may go out on this reading (D-49): Jev was asked, did not fail, and
+     * found no complaint. A reading that did not run, failed, is missing or found a complaint holds them.
+     */
+    public function allowsOwnerSentences(): bool
+    {
+        return $this->ran && ! $this->gaveNoAnswer() && ! $this->complaint();
+    }
+
+    /**
      * Whether Jev read the customer's text as a complaint, by the complaint question or the complaint intent.
      */
     public function complaint(): bool
