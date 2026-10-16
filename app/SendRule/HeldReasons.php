@@ -23,15 +23,25 @@ class HeldReasons
     /**
      * Whether the draft was held on nothing but price, so that a price sentence is a complete answer to it.
      *
-     * Every recorded check has to agree, because a draft held on price and a complaint, a promise, a failed check or a
-     * life-safety reading still has something left for the owner after a price sentence goes out:
+     * Every recorded check has to agree, and each rule needs evidence, because a draft held on price and a complaint, a
+     * promise, a failed check or a life-safety reading still has something left for the owner after a price sentence
+     * goes out:
      *  - the reason code is one of the price codes;
      *  - the length check did not fail;
      *  - every code finding is the price rule;
      *  - the label check did not fail, or it failed only because the label was price;
-     *  - when Jev read it, every reason Jev gave is a price reason and neither the safety nor the hand-off reading is set.
+     *  - the run's reading of the customer's text (gate.customer_reading) is stored, ran, did not fail, and found no
+     *    complaint, danger, request for a person or unsure request for a person; its price and discount answers never act
+     *    (D-42);
+     *  - when the draft holds model words (gate.inputs.agent_reply is not blank), their words check
+     *    (gate.checks.classifier) ran and found only price reasons, with no danger and no request for a person. A draft
+     *    with no model words, such as price:no_sentence, needs no words check, but a words reading that is stored is
+     *    read either way.
      *
-     * A missing or malformed verdict is not price alone: the code cannot show the draft waited on nothing else.
+     * A check that did not run, failed or is missing is disagreement, never agreement (CR-02): the code cannot show the
+     * draft waited on nothing else, so it stays with the owner. That includes a draft stored before the customer
+     * reading was kept, and a missing or malformed verdict. The stored reasons and flags are read as they are; Jev's
+     * numbers are never compared or rounded again here.
      */
     public static function priceAlone(Message $draft): bool
     {
@@ -53,7 +63,8 @@ class HeldReasons
             && ($checks['length']['passed'] ?? null) !== false
             && self::onlyPriceFindings($checks['code']['findings'] ?? [])
             && (($checks['label']['passed'] ?? null) !== false || ($checks['label']['label'] ?? null) === 'price')
-            && self::readingIsPriceAlone($checks['classifier']['reading'] ?? null);
+            && self::customerReadingFoundNothingElse($gate['customer_reading'] ?? null)
+            && self::wordsCheckFoundNothingElse($gate['inputs']['agent_reply'] ?? null, $checks['classifier'] ?? null);
     }
 
     /**
@@ -148,10 +159,38 @@ class HeldReasons
     }
 
     /**
-     * Whether Jev's stored reading, when there is one, holds the draft for price reasons only.
+     * Whether the run's stored reading of the customer's text ran, did not fail and found no complaint, danger, request
+     * for a person or unsure request for a person. A reading that is missing, did not run or gave no answers is not
+     * evidence of anything (CR-02).
      */
-    private static function readingIsPriceAlone(mixed $reading): bool
+    private static function customerReadingFoundNothingElse(mixed $stored): bool
     {
+        $reading = CustomerReading::fromStored($stored);
+
+        return $reading !== null
+            && $reading->ran
+            && ! $reading->failed
+            && $reading->reading !== null
+            && ! $reading->complaint()
+            && ! $reading->lifeSafety()
+            && ! $reading->asksForPerson()
+            && ! $reading->unsureAboutPerson();
+    }
+
+    /**
+     * Whether Jev's stored reading of the draft's words, when there is one, holds it for price reasons only, and, when
+     * the draft has model words, whether there is one. A draft with no model words needs no words check; one with words
+     * needs a check that ran and left a reading, and a check that did not run is disagreement (CR-02).
+     */
+    private static function wordsCheckFoundNothingElse(mixed $agentReply, mixed $classifier): bool
+    {
+        $hasWords = is_string($agentReply) && trim($agentReply) !== '';
+        $reading = is_array($classifier) ? ($classifier['reading'] ?? null) : null;
+
+        if ($hasWords && (($classifier['ran'] ?? null) !== true || ! is_array($reading))) {
+            return false;
+        }
+
         if ($reading === null) {
             return true;
         }
