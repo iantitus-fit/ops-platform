@@ -1,15 +1,19 @@
 <?php
 
+use App\Channels\TextChannel;
 use App\Enums\AlertReason;
 use App\Enums\GateOutcome;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
+use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use App\SendRule\FixedReplies;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Mockery\MockInterface;
 
 const HELD_CODE_ANSWER_OWNER_PHONE = '+12025550199';
 
@@ -20,6 +24,10 @@ const HELD_CODE_ANSWER_AC_SENTENCE = 'AC repair starts with an $89 diagnostic vi
 const HELD_CODE_ANSWER_FIRST_VISIT = "If you're a first-time customer, we're running a promotion that takes \$50 off your first visit.";
 
 const HELD_CODE_ANSWER_SENIOR = "If you're 65 or older, we take 10% off any repair.";
+
+const HELD_CODE_ANSWER_LARGE_SENTENCE = 'For a larger system, 3 tons and up, a replacement system typically runs $5,000 to $10,000 installed.';
+
+const HELD_CODE_ANSWER_WAITING_WORDS = 'Mike will text you the price for a new system.';
 
 const HELD_CODE_ANSWER_WORDS = 'Yes, we work on Carrier units.';
 
@@ -487,4 +495,111 @@ it('does not close a waiting draft as answered when the words check finds a comp
         ->and($waiting->fresh()->resolution?->value)->toBe('replaced')
         ->and($live?->body)->toBe('Sorry about that.'."\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
         ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1);
+});
+
+/**
+ * Take the replacement system's default sentence out of the folder, so a "Not sure" size has no sentence on file, and
+ * hold Dana's price question as a draft that waits on the replacement system's price.
+ */
+function heldCodeAnswerReplacementPriceHeld(): Message
+{
+    breakFile('business/services/system-replacement.md', fn (string $text): string => (string) preg_replace('/^price_default:\n(?:  .*\n)+/m', '', $text));
+
+    heldCodeAnswerRun('How much for a new system? Not sure what size I have.', [
+        'reply' => HELD_CODE_ANSWER_WAITING_WORDS,
+        'label' => 'price',
+        'service_slug' => 'system-replacement',
+        'price_services' => ['system-replacement'],
+        'intake_answers' => [['question_key' => 'unit_size', 'option' => 'Not sure', 'raw_text' => 'Not sure what size I have']],
+    ]);
+
+    return heldCodeAnswerTheDraft();
+}
+
+/**
+ * The model's script for the later text that says the size is large, so the replacement system's sentence closes the wait.
+ *
+ * @return array<string, mixed>
+ */
+function heldCodeAnswerLargeScript(): array
+{
+    return [
+        'reply' => '',
+        'service_slug' => 'system-replacement',
+        'price_services' => ['system-replacement'],
+        'intake_answers' => [['question_key' => 'unit_size', 'option' => 'Large (3 tons and up)', 'raw_text' => "I checked, it's about 4 tons"]],
+        'touches_waiting' => true,
+    ];
+}
+
+it('keeps the owner\'s sentence in a send_refused draft when a code-only send is refused (D-44, accepted 02.1-08 call)', function () {
+    config(['gate.agent.lock_wait_seconds' => 0]);
+
+    heldCodeAnswerCustomerTexts('How much is a repair for my AC?');
+    scriptFrontDeskReplies(heldCodeAnswerBlankAcScript('faq_answer'));
+
+    $lock = Cache::lock('reply:'.Conversation::query()->sole()->id, 30);
+    $lock->get();
+
+    try {
+        runQueuedFrontDeskJobs();
+    } finally {
+        $lock->release();
+    }
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and(collect(heldCodeAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$89')))->toBeFalse()
+        ->and($draft?->gate_reason)->toBe('send_refused')
+        ->and($draft?->body)->toBe(HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_AC_SENTENCE])
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('never replaces the waiting draft with an empty one when the closing send is refused, and keeps its words with the sentence (D-47)', function () {
+    config(['gate.agent.lock_wait_seconds' => 0]);
+
+    $waiting = heldCodeAnswerReplacementPriceHeld();
+
+    expect($waiting->gate_reason)->toBe('label:price')
+        ->and($waiting->body)->toBe(HELD_CODE_ANSWER_WAITING_WORDS)
+        ->and($waiting->meta['price_open'])->toBe(['system-replacement']);
+
+    $lock = Cache::lock('reply:'.Conversation::query()->sole()->id, 600);
+    $lock->get();
+
+    try {
+        heldCodeAnswerCustomerTextsAgain("I checked, it's about 4 tons", heldCodeAnswerLargeScript());
+    } finally {
+        $lock->release();
+    }
+
+    $live = heldCodeAnswerMaybeDraft();
+
+    expect(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
+        ->and($waiting->fresh()->resolution?->value)->toBe('replaced')
+        ->and($live?->id)->not->toBe($waiting->id)
+        ->and($live?->gate_reason)->toBe('send_refused')
+        ->and($live?->body)->toBe(HELD_CODE_ANSWER_WAITING_WORDS."\n\n".HELD_CODE_ANSWER_LARGE_SENTENCE)
+        ->and($live?->body)->toContain('a replacement system typically runs $5,000 to $10,000 installed.')
+        ->and($live?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_LARGE_SENTENCE]);
+});
+
+it('leaves the waiting draft live when the closing send fails in the channel, as before (D-21)', function () {
+    $waiting = heldCodeAnswerReplacementPriceHeld();
+
+    $this->mock(TextChannel::class, function (MockInterface $channel) {
+        $channel->shouldReceive('name')->andReturn('fake');
+        $channel->shouldReceive('send')->andThrow(new RuntimeException('carrier down'));
+    });
+
+    heldCodeAnswerCustomerTextsAgain("I checked, it's about 4 tons", heldCodeAnswerLargeScript());
+
+    $live = heldCodeAnswerMaybeDraft();
+
+    expect($live?->id)->toBe($waiting->id)
+        ->and($live?->resolution)->toBeNull()
+        ->and($live?->body)->toBe(HELD_CODE_ANSWER_WAITING_WORDS)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->sole()->status)->toBe(MessageStatus::Failed);
 });
