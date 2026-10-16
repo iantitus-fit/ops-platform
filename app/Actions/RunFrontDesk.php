@@ -59,10 +59,15 @@ use Illuminate\Support\Str;
  *
  * The run's order is: the keyword safety line, the opt-out check, then Jev's reading of the customer's text, then
  * everything else. The reading is one Jev call per run, made before any early return, and when it finds a danger the
- * safety line goes first, before the paused check, the reply cap, a handoff or any price sentence (D-42, D-45).
+ * safety line goes first, before the paused check, the reply cap, a handoff or any price sentence (D-42, D-45). After
+ * it, in order: the paused check, the reply cap, the request for a person (a keyword phrase or Jev's reading), then the
+ * agent. A text no reply will answer, paused or capped, still alerts the owner to a complaint or a request for a person
+ * the reading found, on the folder's own timing; and a handoff for any cause also raises a complaint alert when the
+ * reading found a complaint.
  *
  * Before the agent runs, two things can stop the run for good. A conversation that has reached the reply cap pauses
- * and alerts the owner (D-52), so two auto-responders cannot text each other all night. A customer who asks for a
+ * and alerts the owner (D-52), so two auto-responders cannot text each other all night; a complaint or a request for a
+ * person in that text alerts the owner first, as it does in a paused conversation. A customer who asks for a
  * person in words that cannot mean anything else is handed to the owner (D-23, D-47). The agent's own wants_person
  * and Jev's asks_for_person, once the agent has answered, lead to the same handoff, and the agent's words are then
  * not stored or sent.
@@ -135,26 +140,29 @@ class RunFrontDesk
             return;
         }
 
-        $this->reading = $this->readCustomerText->handle($this->prompt->promptText($burst));
+        $promptText = $this->prompt->promptText($burst);
+        $this->reading = $this->readCustomerText->handle($promptText);
 
         if ($this->reading->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
         }
 
         if ($conversation->refresh()->isPaused()) {
+            $this->alertAboutReading($conversation, $burst, $promptText, 'Complaint while you are handling it', 'Asked for a person while you are handling it');
             $this->alertAboutPausedBurst($conversation, $burst);
 
             return;
         }
 
         if ($this->replyCapReached($conversation)) {
+            $this->alertAboutReading($conversation, $burst, $promptText, 'Complaint; the reply limit is reached', 'Asked for a person; the reply limit is reached');
             $this->raiseOwnerAlert->handle($conversation, AlertReason::ReplyCap, $burst->last(), 'Reply limit reached');
             $this->pauseConversation->handle($conversation, PausedReason::ReplyCap);
 
             return;
         }
 
-        if (AsksForPerson::inText($this->prompt->promptText($burst))) {
+        if (AsksForPerson::inText($promptText) || $this->reading->asksForPerson()) {
             $this->handOffToOwner($conversation, $burst);
 
             return;
@@ -932,7 +940,8 @@ class RunFrontDesk
 
     /**
      * Tell the owner a customer wrote while the assistant is paused, once per burst (D-24). A burst whose newest text
-     * already alerted the owner, such as a safety message that paused the conversation, is not alerted twice.
+     * already alerted the owner, such as a safety message that paused the conversation or a complaint or request for a
+     * person the reading found (alertAboutReading() runs first), is not alerted twice.
      *
      * @param  Collection<int, Message>  $burst
      */
@@ -974,6 +983,29 @@ class RunFrontDesk
         $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), 'Asked for a person');
         $this->sendFixedReply->handoff($conversation);
         $this->pauseConversation->handle($conversation, PausedReason::AskedForPerson);
+
+        if ($this->reading?->complaint()) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
+        }
+    }
+
+    /**
+     * Tell the owner what Jev's reading, or a keyword phrase, found in a text that no reply will answer, such as one
+     * that arrives while the assistant is paused or the reply cap is reached: a complaint, and a request for a person.
+     * Both go through RaiseOwnerAlert, so their timing is the folder's owner_alert rules and neither is dropped; only
+     * the safety alerts are forced right away. Nothing is sent to the customer.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function alertAboutReading(Conversation $conversation, Collection $burst, string $promptText, string $complaintWhy, string $personWhy): void
+    {
+        if ($this->reading?->complaint()) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), $complaintWhy);
+        }
+
+        if ($this->reading?->asksForPerson() || AsksForPerson::inText($promptText)) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), $personWhy);
+        }
     }
 
     /**
