@@ -95,6 +95,13 @@ use Illuminate\Support\Str;
  * draft as answered (D-21), and an easy question asked in the same text as one that touches the waiting question is
  * answered now, with the partial holding line, while the rest becomes the fresh draft (D-19, D-20).
  *
+ * While Jev is down (D-50) the reading is failed, and a failed reading holds: nothing the model wrote goes out, the owner's
+ * price and offer sentences are held pre-filled in the draft, and the customer gets the owner's holding reply. The
+ * agent's complaint label sends the complaint reply, and its complaint alert follows the folder's owner_alert rules like
+ * any complaint; its wants_person hands off; its possible_danger sends the safety line; every other draft's alert follows
+ * the folder's after_hours rule. The one safety_check_down alert is the only one forced right away (SafetyCheckStatus).
+ * Every text the run sends carries the run's reading, because the outbound path refuses an automated text without one.
+ *
  * A front desk that cannot answer (every model failed, no agent for texts) alerts the owner and returns, because the
  * customer's burst is already claimed (AGNT-04), and the customer still hears from the business: the owner's holding
  * reply goes out once, or the complaint reply when the reading found a complaint, unless a safety line already answered
