@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-18-PLAN.md
-last_updated: "2026-10-16T21:15:48.020Z"
+stopped_at: Completed 02.1-19-PLAN.md
+last_updated: "2026-10-16T21:26:26.209Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 98bb3e0a5439f138315f2db95671b86485c2f78d
+state_head: d185c61fea5af65e765866729daae6d575576b2a
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 66
+  completed_plans: 67
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 19 of 28 next (18 complete)
+Plan: 20 of 28 next (19 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -123,6 +123,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P16 | 9 min | 3 tasks | 3 files |
 | Phase 02.1 P17 | 8 min | 3 tasks | 10 files |
 | Phase 02.1 P18 | 14 min | 3 tasks | 6 files |
+| Phase 02.1 P19 | 25 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -244,6 +245,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-17: complaint and asked_for_person alerts on paused, reply-cap and handoff paths follow the folder's owner_alert timing with no right-away override; a complaint reading holds the main reply as classifier:complaint except a life_safety hold
 - [Phase 02.1]: 02.1-18: a complaint (Jev reading or agent label), a failed or unsure reading, or a promise label on blank words moves the run's price and offer sentences into held sentences before any send is built; the draft is pre-filled with them and meta.held_sentences lists them (D-43, D-44)
 - [Phase 02.1]: 02.1-18: a refused code send stores a send_refused draft with the sentence and the waiting draft's words, never an empty body (D-44, D-47); the complaint alert follows the folder's owner_alert timing with no right-away override
+- [Phase 02.1]: 02.1-19: Jev reads every set of model words, vetoed or not; a veto keeps its reason and Jev can only add a hold, safety line or hand-off (CR-02)
+- [Phase 02.1]: 02.1-19: priceAlone() closes a draft only on evidence: a stored clean customer reading and, for model words, a words check that ran with price-only reasons; an unrun, failed or missing check is disagreement
 
 ### Pending Todos
 
@@ -279,6 +282,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T21:15:47.946Z
-Stopped at: Completed 02.1-18-PLAN.md
+Last session: 2026-10-16T21:26:26.132Z
+Stopped at: Completed 02.1-19-PLAN.md
 Resume file: None
