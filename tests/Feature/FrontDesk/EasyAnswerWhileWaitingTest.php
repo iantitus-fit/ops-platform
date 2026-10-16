@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\DraftResolution;
 use App\Enums\GateOutcome;
 use App\Enums\MessageKind;
@@ -20,6 +21,8 @@ const EASY_ANSWER_ADDED_INFO_LINE = "Got it, I've passed that along to Mike with
 const EASY_ANSWER_PARTIAL_LINE = "I've passed your other question to Mike, and he'll follow up on it.";
 
 const EASY_ANSWER_CHECK_IN_LINE = "Thanks for checking in. Mike still has your question and you're on his list. He'll get back to you today if possible, or after we open at 8 am tomorrow.";
+
+const EASY_ANSWER_FIRST_VISIT_SENTENCE = "If you're a first-time customer, we're running a promotion that takes \$50 off your first visit.";
 
 const EASY_ANSWER_AC_SENTENCE = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
 
@@ -381,3 +384,94 @@ it('sends only the safety line when Jev reads a danger in the easy part (D-19)',
         ->and(Message::query()->where('body', 'like', '%heat pumps%')->where('status', MessageStatus::Sent->value)->count())->toBe(0)
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->sole()->gate_reason)->toBe('label:price');
 });
+
+/**
+ * Dana changes the waiting booking and asks about discounts: the model's blank words carry the discount ask, and it
+ * reads the text as touching the waiting question. The second reply is the whole-thread draft it is asked for.
+ *
+ * @param  array<string, mixed>  ...$secondReplies
+ */
+function easyAnswerFridayWithDiscountAsk(?bool $touches, array ...$secondReplies): void
+{
+    easyAnswerCustomerTexts('Actually Friday works better. Any discounts?', ...[
+        ['reply' => '', 'label' => 'faq_answer', 'asks_discount' => true, 'touches_waiting' => $touches],
+        ...$secondReplies,
+    ]);
+}
+
+it('sends the offer with the partial line and replaces the stale draft with a whole-thread one when a blank-words answer touches it (WR-04, D-18, D-35)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerFridayWithDiscountAsk(true, ['reply' => 'We have 9 am Friday open. Does that work?', 'label' => 'scheduling']);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+    $sent = Message::query()->where('kind', MessageKind::PartialHolding->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_FIRST_VISIT_SENTENCE.' '.EASY_ANSWER_PARTIAL_LINE))
+        ->and($sent->meta['parts'])->toBe(['code_sentences', 'partial_holding_line'])
+        ->and($waiting->fresh()->status)->toBe(MessageStatus::Withdrawn)
+        ->and($waiting->fresh()->resolution)->toBe(DraftResolution::Replaced)
+        ->and($live->id)->not->toBe($waiting->id)
+        ->and($live->body)->toBe('We have 9 am Friday open. Does that work?')
+        ->and($live->gate_reason)->toBe('touches_waiting')
+        ->and($live->gate['checks']['label']['guard'])->toBe(['faq_answer', 'intake_question'])
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['We guarantee 9 am Thursday. Does that work?', 'We have 9 am Friday open. Does that work?'])
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('keeps the waiting draft live and untouched when the second call cannot answer (WR-04)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerFridayWithDiscountAsk(true);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_FIRST_VISIT_SENTENCE.' '.EASY_ANSWER_PARTIAL_LINE))
+        ->and($live->id)->toBe($waiting->id)
+        ->and($live->body)->toBe($waiting->body)
+        ->and($live->resolution)->toBeNull()
+        ->and(OwnerAlert::query()->count())->toBe(1);
+});
+
+it('keeps the waiting draft live and untouched when the second reply has no words (WR-04)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerFridayWithDiscountAsk(true, ['reply' => '', 'label' => 'scheduling', 'asks_discount' => true]);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_FIRST_VISIT_SENTENCE.' '.EASY_ANSWER_PARTIAL_LINE))
+        ->and($live->id)->toBe($waiting->id)
+        ->and($live->body)->toBe($waiting->body)
+        ->and($live->resolution)->toBeNull();
+});
+
+it('sends only the offer and leaves the waiting draft live, with no second call, when the text does not clearly touch it (WR-04, D-18)', function (?bool $touches) {
+    easyAnswerSchedulingQuestionHeld();
+
+    $waiting = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    easyAnswerFridayWithDiscountAsk($touches);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    FrontDeskAgent::assertPromptedTimes(2);
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toBe(easyAnswerLater(EASY_ANSWER_FIRST_VISIT_SENTENCE))
+        ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
+        ->and($live->id)->toBe($waiting->id)
+        ->and($live->resolution)->toBeNull();
+})->with([
+    'touches_waiting false' => [false],
+    'touches_waiting missing' => [null],
+]);
