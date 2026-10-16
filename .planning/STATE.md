@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-23-PLAN.md
-last_updated: "2026-10-16T22:07:49.882Z"
+stopped_at: Completed 02.1-24-PLAN.md
+last_updated: "2026-10-16T22:24:17.858Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: d5e8779c15c84b026c5764542b40df7da2ce9876
+state_head: d52ddffbc880bdf9423d626942089afcd4a4f7da
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 71
+  completed_plans: 72
   percent: 40
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 ## Current Position
 
 Phase: 02.1 (Faster Answers) — EXECUTING
-Plan: 24 of 28 next (19 complete)
+Plan: 25 of 28 next (19 complete)
 Status: Executing gap plans
 Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
 
@@ -128,6 +128,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P21 | 8 min | 3 tasks | 11 files |
 | Phase 02.1 P22 | 6 min | 2 tasks | 8 files |
 | Phase 02.1 P23 | 9 min | 3 tasks | 14 files |
+| Phase 02.1 P24 | 11 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -258,6 +259,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: 02.1-22: safety_check_down is urgent in code like life_safety, so rules/sending.md may list it or leave it off; forBusiness() never dedupes (plan 02.1-23 decides when to call it); a business alert has a null conversation_id and writes no customer timeline entry
 - [Phase 02.1]: Plan 23 (Ian, 2026-10-16): a reading that never ran is marked missing, never failed (the reading() fallback and no live business folder); it holds the model's words, never calls recordFailure, and fromStored() reads it back as missing; plan 02.1-24 raises safety_check_missing
 - [Phase 02.1]: Plan 23: Jev outage status is a safety_check_outages table row changed under Cache::lock('safety-check-status'); a held missing reading keeps hold reason code classifier_failed
+- [Phase 02.1]: Plan 24 (Ian, 2026-10-16): a reading marked missing counts as no reading at all; RunFrontDesk raises safety_check_missing at once before any send, OutboundSender refuses every automated text without a reading (a stored missing reading counts as absent) and a text with no kind is held to the model-words rule
 
 ### Pending Todos
 
@@ -293,6 +295,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T22:07:49.807Z
-Stopped at: Completed 02.1-23-PLAN.md
+Last session: 2026-10-16T22:24:17.783Z
+Stopped at: Completed 02.1-24-PLAN.md
 Resume file: None
