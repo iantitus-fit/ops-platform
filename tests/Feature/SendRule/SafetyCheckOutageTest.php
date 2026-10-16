@@ -4,6 +4,7 @@ use App\Ai\AgentReply;
 use App\Ai\AgentRun;
 use App\Enums\AlertReason;
 use App\Enums\MessageChannel;
+use App\Jobs\PingSafetyCheck;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
@@ -12,6 +13,8 @@ use App\Models\User;
 use App\SendRule\CustomerReading;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\SafetyCheckStatus;
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -262,4 +265,71 @@ it('still reads and checks every run while an outage is open, and the answers cl
         ->and(fakeClassifier()->readingCalls())->toHaveCount(1)
         ->and(fakeClassifier()->calls())->toHaveCount(1)
         ->and(safetyCheckOutageStatus()->isDown())->toBeFalse();
+});
+
+/**
+ * Run the health ping the way the scheduler would.
+ */
+function safetyCheckOutagePing(): void
+{
+    app()->forgetScopedInstances();
+
+    app()->call([new PingSafetyCheck, 'handle']);
+}
+
+it('pings Jev with a fixed fictional text and an empty draft, and a successful ping ends an open outage', function () {
+    safetyCheckOutageBegins('2026-10-14 02:00');
+    safetyCheckOutageStatus()->recordFailure('Jev is down.');
+
+    safetyCheckOutageAt('2026-10-14 02:05');
+    safetyCheckOutagePing();
+
+    $calls = fakeClassifier()->allCalls();
+
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['customer_message'])->toBe(PingSafetyCheck::TEXT)
+        ->and($calls[0]['draft_reply'])->toBe('')
+        ->and(PingSafetyCheck::TEXT)->toBe('Hi, do you work on heat pumps?')
+        ->and(safetyCheckOutageStatus()->isDown())->toBeFalse()
+        ->and(safetyCheckOutageBackAlerts())->toHaveCount(1);
+});
+
+it('opens an outage and tells the owner at once when the ping fails on a night with no customer texts', function () {
+    safetyCheckOutageBegins('2026-10-14 03:00');
+    fakeClassifier()->failWith('Jev could not be reached or took too long to answer.');
+
+    safetyCheckOutagePing();
+
+    $down = safetyCheckOutageDownAlerts();
+
+    expect($down)->toHaveCount(1)
+        ->and($down->sole()->conversation_id)->toBeNull()
+        ->and($down->sole()->sent_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->down_alerted_at)->not->toBeNull();
+
+    safetyCheckOutageAt('2026-10-14 03:05');
+    safetyCheckOutagePing();
+
+    expect(safetyCheckOutageAlerts())->toHaveCount(1)
+        ->and(SafetyCheckOutage::query()->count())->toBe(1);
+});
+
+it('asks nothing and changes nothing when no business folder is live', function () {
+    User::factory()->withPhone(SAFETY_CHECK_OUTAGE_OWNER_PHONE)->create();
+    SafetyCheckOutage::factory()->create();
+
+    expect(fn () => safetyCheckOutagePing())->not->toThrow(Throwable::class)
+        ->and(fakeClassifier()->allCalls())->toBe([])
+        ->and(SafetyCheckOutage::query()->count())->toBe(1)
+        ->and(SafetyCheckOutage::query()->sole()->ended_at)->toBeNull()
+        ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+it('is on the scheduler every five minutes without overlapping', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn (Event $event) => str_contains($event->description ?? '', 'PingSafetyCheck'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('*/5 * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue();
 });
