@@ -28,6 +28,8 @@ const ANSWERED_DRAFT_CUSTOMER_PHONE = '+12025550123';
 
 const ANSWERED_DRAFT_AC_SENTENCE = 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
 
+const ANSWERED_DRAFT_PARTIAL_LINE = "I've passed your other question to Mike, and he'll follow up on it.";
+
 const ANSWERED_DRAFT_LARGE_SENTENCE = 'For a larger system, 3 tons and up, a replacement system typically runs $5,000 to $10,000 installed.';
 
 /**
@@ -344,7 +346,7 @@ it('never closes a draft that waits on one service with the sentence for another
     $live = answeredDraftTheDraft();
 
     expect(answeredDraftTextsToDana())->toHaveCount(2)
-        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_AC_SENTENCE))
+        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_AC_SENTENCE.' '.ANSWERED_DRAFT_PARTIAL_LINE))
         ->and($live->id)->toBe($waiting->id)
         ->and($live->body)->toBe($waiting->body)
         ->and($live->gate)->toBe($waiting->gate)
@@ -468,7 +470,7 @@ it('reads the words of a vetoed price draft, finds the promise in them, and neve
     $live = answeredDraftTheDraft();
 
     expect(answeredDraftTextsToDana())->toHaveCount(2)
-        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_AC_SENTENCE))
+        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_AC_SENTENCE.' '.ANSWERED_DRAFT_PARTIAL_LINE))
         ->and($live->id)->toBe($waiting->id)
         ->and($live->resolution)->toBeNull()
         ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0);

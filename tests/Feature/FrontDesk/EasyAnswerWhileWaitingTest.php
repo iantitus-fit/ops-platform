@@ -59,11 +59,11 @@ function easyAnswerSchedulingQuestionHeld(): void
 }
 
 /**
- * Dana texts again a minute later and the front desk answers that burst with the given script.
+ * Dana texts again a minute later and the front desk answers that burst with the given scripts, one per model call.
  *
- * @param  array<string, mixed>  $reply
+ * @param  array<string, mixed>  ...$replies
  */
-function easyAnswerCustomerTexts(string $body, array $reply): void
+function easyAnswerCustomerTexts(string $body, array ...$replies): void
 {
     static $count = 0;
     $count++;
@@ -74,7 +74,7 @@ function easyAnswerCustomerTexts(string $body, array $reply): void
         'MessageSid' => 'SM'.str_pad((string) $count, 32, 'e', STR_PAD_LEFT),
         'Body' => $body,
     ]))->assertOk();
-    scriptFrontDeskReplies($reply);
+    scriptFrontDeskReplies(...$replies);
 
     runQueuedFrontDeskJobs();
 }

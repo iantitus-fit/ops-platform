@@ -484,6 +484,8 @@ class RunFrontDesk
         if ($verdict === null) {
             if ($checkIn) {
                 $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
+            } elseif ($run->reply->touchesWaiting === true && $parts->codeSentences !== []) {
+                $this->answerTouchingWithWholeThreadDraft($agent, $run, $conversation, $burst, $waiting, $parts, $attributes, $sentMeta);
             } else {
                 $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs, array_intersect_key($attributes['meta'] ?? [], ['price_slugs' => true, 'price_open' => true]), $waiting);
             }
@@ -550,7 +552,7 @@ class RunFrontDesk
      * and the second reply goes through the same checks, with the same label guard, for the record. The hold reason stays
      * the first reply's, so the owner reads why the new text held: a second reply that would send is held for it, and
      * one held for a reason of its own keeps that reason's checks but is stored under the first reason. A danger or a
-     * request for a person in the second reply acts as it does for a first one.
+     * request for a person in the second reply acts as it does for a first one. See askForWholeThreadReply().
      *
      * The second call shares the first call's time budget. When it cannot answer, or answers with no words, the draft
      * is W's words, a blank line and the first reply's words, so neither question is dropped. Nothing more is told to
@@ -574,20 +576,95 @@ class RunFrontDesk
             'firstReason' => $firstVerdict->reasonCode,
         ];
 
+        $asked = $this->askForWholeThreadReply($agent, $run, $conversation, $burst, $waiting, $firstVerdict);
+
+        if ($asked['outcome'] === 'handed_off') {
+            return null;
+        }
+
+        if ($asked['outcome'] === 'unusable') {
+            return $joined;
+        }
+
+        return [
+            'words' => $asked['second']->reply->reply,
+            'label' => $asked['second']->reply->label,
+            'verdict' => $asked['stored'],
+            'alertReason' => $firstIsComplaint || $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting,
+            'firstReason' => $firstVerdict->reasonCode,
+        ];
+    }
+
+    /**
+     * A blank-words answer that touches the waiting draft W (WR-04, D-18): the model had no words of its own, only the
+     * owner's sentences to send, and read the text as touching W. The sentences go out at once with the partial holding
+     * line, which counts as the holding reply (D-30). Leaving W untouched would leave a stale draft beside a changed
+     * question, such as Thursday beside "Friday works better", so the agent is asked once more for one whole-thread
+     * draft that replaces W (D-35), checked like any reply with W's label guard and stored under touches_waiting.
+     *
+     * When the sentences could not go out, or the second call cannot answer or answers with no words, nothing is stored:
+     * W stays live as it is, so "The customer wrote again since this draft" still warns the owner. A replacement with
+     * W's old body would clear that warning while its words are stale. No new alert is raised for a replacement that
+     * does not raise urgency (D-22).
+     *
+     * @param  Collection<int, Message>  $burst
+     * @param  array<string, mixed>  $attributes
+     * @param  array{meta: array<string, mixed>}  $sentMeta
+     */
+    private function answerTouchingWithWholeThreadDraft(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ReplyParts $parts, array $attributes, array $sentMeta): void
+    {
+        if ($this->sendPartialHolding($conversation, $parts, $sentMeta, null) === null) {
+            return;
+        }
+
+        $firstVerdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), $this->reading(), 'touches_waiting');
+        $asked = $this->askForWholeThreadReply($agent, $run, $conversation, $burst, $waiting, $firstVerdict);
+
+        if ($asked['outcome'] !== 'checked') {
+            return;
+        }
+
+        $this->storeDraft(
+            $conversation,
+            $asked['second']->reply->reply,
+            $asked['stored'],
+            $asked['second']->reply->label,
+            $attributes,
+            sendHolding: false,
+            alertReason: $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting,
+        );
+    }
+
+    /**
+     * Ask the agent once more for one reply that covers W's question and the new one, and check it (D-35, D-45). The
+     * second call shares the first call's time budget. Its words go through the same checks as any reply, with W's
+     * label guard and the run's reading. A danger in them sends the safety line and is stored held; a request for a
+     * person hands the customer to the owner; anything else is held for the first verdict's reason, so the owner reads
+     * why the new text held.
+     *
+     * The outcome is `unusable` when the call could not answer or answered with no words, `handed_off` when the customer
+     * was handed to the owner and the run is over, and `checked` with the second run, the verdict to store and whether
+     * the second reply was itself a complaint.
+     *
+     * @param  Collection<int, Message>  $burst
+     * @return array{outcome: 'unusable'|'handed_off'}|array{outcome: 'checked', second: AgentRun, stored: Verdict, secondIsComplaint: bool}
+     */
+    private function askForWholeThreadReply(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, Verdict $firstVerdict): array
+    {
         try {
             $second = $this->runFrontDeskAgent->handle($agent, $conversation, $burst, waitingDraft: $waiting, coverBoth: true, budgetFrom: $run->startedAt);
         } catch (FrontDeskUnavailable) {
-            return $joined;
+            return ['outcome' => 'unusable'];
         }
 
         if ($second->reply->wantsPerson) {
             $this->handOffToOwner($conversation, $burst);
 
-            return null;
+            return ['outcome' => 'handed_off'];
         }
 
         if ($second->reply->reply === '') {
-            return $joined;
+            return ['outcome' => 'unusable'];
         }
 
         $secondVerdict = $this->decideSendOrDraft->decide(
@@ -604,19 +681,16 @@ class RunFrontDesk
         } elseif ($secondVerdict->asksForPerson) {
             $this->handOffToOwner($conversation, $burst);
 
-            return null;
+            return ['outcome' => 'handed_off'];
         } else {
             $stored = $secondVerdict->heldFor((string) $firstVerdict->reasonCode, $firstVerdict->plainReason);
         }
 
-        $secondIsComplaint = in_array($secondVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
-
         return [
-            'words' => $second->reply->reply,
-            'label' => $second->reply->label,
-            'verdict' => $stored,
-            'alertReason' => $firstIsComplaint || $secondIsComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting,
-            'firstReason' => $firstVerdict->reasonCode,
+            'outcome' => 'checked',
+            'second' => $second,
+            'stored' => $stored,
+            'secondIsComplaint' => in_array($secondVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true),
         ];
     }
 
