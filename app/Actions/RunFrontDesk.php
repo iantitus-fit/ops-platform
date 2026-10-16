@@ -132,6 +132,8 @@ class RunFrontDesk
      */
     public function handle(Conversation $conversation, Collection $burst): void
     {
+        $this->reading = null;
+
         $this->answerDanger($burst);
 
         if ($conversation->contact->refresh()->isOptedOut()) {
@@ -143,7 +145,7 @@ class RunFrontDesk
         $promptText = $this->prompt->promptText($burst);
         $this->reading = $this->readCustomerText->handle($promptText);
 
-        if ($this->reading->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
+        if ($this->reading()->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
             $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
         }
 
@@ -162,7 +164,7 @@ class RunFrontDesk
             return;
         }
 
-        if (AsksForPerson::inText($promptText) || $this->reading->asksForPerson()) {
+        if (AsksForPerson::inText($promptText) || $this->reading()->asksForPerson()) {
             $this->handOffToOwner($conversation, $burst);
 
             return;
@@ -225,13 +227,13 @@ class RunFrontDesk
             $verdict = null;
         } elseif ($words === '' && $noLiveOffer && ! $priceHeld) {
             $composed = '';
-            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'discount:no_live_offer');
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, $this->reading(), 'discount:no_live_offer');
         } elseif ($words === '') {
             $composed = '';
-            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $customerText, $this->reading(), 'price:no_sentence', $this->noPriceReason([...$unanswered, ...$this->slugsWith($picks, PricePick::NEEDS_ANSWERS)]));
         } else {
             $composed = $this->composeAutomatedText->forReply($conversation, $words);
-            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->labelGuardFor($stillWaiting));
+            $verdict = $this->decideSendOrDraft->decide($run, $customerText, $composed, $this->reading(), $this->labelGuardFor($stillWaiting));
         }
 
         if ($verdict?->lifeSafety) {
@@ -252,6 +254,10 @@ class RunFrontDesk
             $verdict = $verdict->heldFor('discount:no_live_offer');
         }
 
+        if ($verdict !== null && ! $verdict->lifeSafety && $this->reading()->complaint()) {
+            $verdict = $verdict->heldFor('classifier:complaint');
+        }
+
         $easyAnswer = null;
 
         if ($stillWaiting !== null && $words !== '' && $verdict !== null && ! $verdict->lifeSafety && ($easyPart = $run->reply->easyPart()) !== null) {
@@ -259,6 +265,7 @@ class RunFrontDesk
                 new AgentRun($easyPart, $run->provider, $run->model, $run->failedAttempts),
                 $customerText,
                 $this->composeAutomatedText->forReply($conversation, $easyPart->reply),
+                $this->reading(),
                 self::SPLIT_LABELS,
             );
 
@@ -551,6 +558,7 @@ class RunFrontDesk
             $second,
             $this->prompt->promptText($burst),
             $this->composeAutomatedText->forReply($conversation, $second->reply->reply),
+            $this->reading(),
             $this->labelGuardFor($waiting),
         );
 
@@ -836,7 +844,7 @@ class RunFrontDesk
 
             report($exception);
 
-            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), 'send_refused');
+            $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), $this->reading(), 'send_refused');
 
             $this->storeDraft($conversation, '', $verdict, $run->reply->label, [
                 'kind' => MessageKind::AgentReply,
@@ -915,6 +923,15 @@ class RunFrontDesk
     }
 
     /**
+     * What Jev read for the run under way. A run that somehow has no reading is treated as one whose reading failed, so
+     * the model's words are held rather than sent.
+     */
+    private function reading(): CustomerReading
+    {
+        return $this->reading ??= CustomerReading::failed('The customer text was not read for this run.', ran: false);
+    }
+
+    /**
      * Whether a safety line already answers one of the burst's texts, such as one the keywords sent a moment ago, so
      * Jev's reading of the same burst does not send a second.
      *
@@ -984,7 +1001,7 @@ class RunFrontDesk
         $this->sendFixedReply->handoff($conversation);
         $this->pauseConversation->handle($conversation, PausedReason::AskedForPerson);
 
-        if ($this->reading?->complaint()) {
+        if ($this->reading()->complaint()) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and asked for a person');
         }
     }
@@ -999,11 +1016,11 @@ class RunFrontDesk
      */
     private function alertAboutReading(Conversation $conversation, Collection $burst, string $promptText, string $complaintWhy, string $personWhy): void
     {
-        if ($this->reading?->complaint()) {
+        if ($this->reading()->complaint()) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), $complaintWhy);
         }
 
-        if ($this->reading?->asksForPerson() || AsksForPerson::inText($promptText)) {
+        if ($this->reading()->asksForPerson() || AsksForPerson::inText($promptText)) {
             $this->raiseOwnerAlert->handle($conversation, AlertReason::AskedForPerson, $burst->last(), $personWhy);
         }
     }

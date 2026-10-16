@@ -24,8 +24,9 @@ use Throwable;
  *
  * The second call of a run (the whole-thread draft, D-35) shares the first call's budget: it passes the first call's
  * start as `$budgetFrom`, and then every provider, the first included, must fit. That keeps one run inside
- * ProcessInbound's 300-second timeout: 150 seconds for both agent calls together, about 8 for each of the two Jev
- * calls, and the rest as margin.
+ * ProcessInbound's 300-second timeout: 150 seconds for both agent calls together, about 8 for each Jev call, and the
+ * rest as margin. A run now makes up to four Jev calls: the reading of the customer's text, the reply's words check, an
+ * easy part's words check and a whole-thread draft's words check (D-42, D-45).
  */
 class RunFrontDeskAgent
 {

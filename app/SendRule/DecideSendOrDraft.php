@@ -18,8 +18,15 @@ use Throwable;
  *     CodeChecks' rules.
  *  3. Jev's reading of the owner's triage questions, read against the thresholds in config/gate.php.
  *
- * Jev is asked once, and only when the first two checks pass, so a veto never costs a call and a Jev answer can
- * only hold a reply, never rescue one (D-02). Anything that goes wrong in the call also holds it.
+ * Jev is asked once per set of words (the words check), and only when the first two checks pass, so a veto never
+ * costs a call and a Jev answer can only hold a reply, never rescue one (D-02). Anything that goes wrong in the call
+ * also holds it.
+ *
+ * Jev is also asked once per run about the customer's text alone (the reading, ReadCustomerText). Its result is passed
+ * in and stored on every verdict as customer_reading. A words check can add a hold, a safety line or a handoff, never
+ * clear what the reading found: when the words would send, a failed reading holds them as classifier_failed and a
+ * reading unsure whether the customer asked for a person holds them as classifier_unsure:asks_for_person. A complaint
+ * in the reading does not change the result here; the caller decides what a complaint holds (D-42, D-45).
  *
  * While a draft waits for the owner the caller may pass a guard, a short list of labels that may still send. A reply
  * whose label is not on it is held as waiting_guard:<label>, after the label check and before the length check, so
@@ -35,9 +42,10 @@ class DecideSendOrDraft
     /**
      * @param  string  $customerText  What the customer wrote, the whole burst, exactly as Jev should read it.
      * @param  string  $composedText  The text as it would reach the customer, with disclosure and sign-off.
+     * @param  CustomerReading  $reading  What Jev read in the customer's text alone for this run.
      * @param  ?list<ReplyLabel>  $onlyLabels  The only labels that may send while a draft waits; null when no guard applies.
      */
-    public function decide(AgentRun $run, string $customerText, string $composedText, ?array $onlyLabels = null): Verdict
+    public function decide(AgentRun $run, string $customerText, string $composedText, CustomerReading $reading, ?array $onlyLabels = null): Verdict
     {
         $reply = $run->reply;
         $label = $reply->label;
@@ -57,6 +65,7 @@ class DecideSendOrDraft
             'label' => $label->value,
             'wants_person' => $reply->wantsPerson,
             'inputs' => ['customer_text' => $customerText, 'agent_reply' => $reply->reply],
+            'customer_reading' => $reading->toArray(),
             'checks' => [
                 'label' => [
                     'passed' => $labelPassed,
@@ -85,7 +94,7 @@ class DecideSendOrDraft
             return Verdict::hold($veto, $details);
         }
 
-        return $this->askJev($details, $customerText, $reply->reply);
+        return $this->askJev($details, $customerText, $reply->reply, $reading);
     }
 
     /**
@@ -93,7 +102,7 @@ class DecideSendOrDraft
      * what was and was not checked, so the owner and later tuning read the same shape as any other held reply: the
      * label, length and code checks did not run (passed is null), and Jev was not asked (Phase 2 D-07).
      */
-    public function holdWithoutWords(AgentRun $run, string $customerText, string $reasonCode, ?string $plainReason = null): Verdict
+    public function holdWithoutWords(AgentRun $run, string $customerText, CustomerReading $reading, string $reasonCode, ?string $plainReason = null): Verdict
     {
         $reply = $run->reply;
 
@@ -102,6 +111,7 @@ class DecideSendOrDraft
             'label' => $reply->label->value,
             'wants_person' => $reply->wantsPerson,
             'inputs' => ['customer_text' => $customerText, 'agent_reply' => ''],
+            'customer_reading' => $reading->toArray(),
             'checks' => [
                 'label' => ['passed' => null, 'label' => $reply->label->value, 'guard' => null, 'guard_passed' => null],
                 'length' => ['passed' => null, 'characters' => 0, 'limit' => SendOwnerReply::MAX_LENGTH],
@@ -121,7 +131,7 @@ class DecideSendOrDraft
      *
      * @param  array<string, mixed>  $details
      */
-    private function askJev(array $details, string $customerText, string $agentWords): Verdict
+    private function askJev(array $details, string $customerText, string $agentWords, CustomerReading $customerReading): Verdict
     {
         $questions = TriageQuestions::fromConfig($this->activeConfig->triage());
         $details['checks']['classifier']['ran'] = true;
@@ -151,6 +161,14 @@ class DecideSendOrDraft
 
         if (! $reading->sendable) {
             return Verdict::hold($reading->reasonCode ?? 'classifier_failed', $details, $reading->lifeSafety, $reading->asksForPerson);
+        }
+
+        if ($customerReading->failed) {
+            return Verdict::hold('classifier_failed', $details);
+        }
+
+        if ($customerReading->unsureAboutPerson()) {
+            return Verdict::hold('classifier_unsure:asks_for_person', $details);
         }
 
         return Verdict::send($details, $reading->lifeSafety, $reading->asksForPerson);
