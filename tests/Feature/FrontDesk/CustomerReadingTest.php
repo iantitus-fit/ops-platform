@@ -1,10 +1,13 @@
 <?php
 
+use App\Ai\AgentReply;
+use App\Ai\AgentRun;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Ai\FrontDeskPrompt;
 use App\Enums\AlertReason;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
+use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -12,6 +15,8 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use App\SendRule\ClassifierFailed;
+use App\SendRule\CustomerReading;
+use App\SendRule\DecideSendOrDraft;
 use App\SendRule\TriageQuestions;
 use Illuminate\Support\Carbon;
 
@@ -420,4 +425,120 @@ it('lets the complaint alert on a handoff wait for opening when complaint is off
         ->and($complaint->sent_at)->toBeNull()
         ->and($person->urgent)->toBeTrue()
         ->and($person->sent_at)->not->toBeNull();
+});
+
+/**
+ * The one draft the run kept for the owner.
+ */
+function customerReadingTheDraft(): Message
+{
+    return Message::query()->where('status', MessageStatus::Draft->value)->sole();
+}
+
+it('stores the reading on a sent reply\'s verdict, beside the unchanged checks (D-42)', function () {
+    customerReadingDanaTexts('My AC is blowing warm air');
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    $gate = theAgentMessage()->gate;
+
+    expect($gate['customer_reading']['ran'])->toBeTrue()
+        ->and($gate['customer_reading']['failed'])->toBeFalse()
+        ->and($gate['customer_reading']['model'])->toBe('fake-jev')
+        ->and($gate['customer_reading']['reading']['life_safety'])->toBeFalse()
+        ->and(array_keys($gate['checks']))->toBe(['label', 'length', 'code', 'classifier'])
+        ->and(array_keys($gate['checks']['classifier']))->toBe(['ran', 'model', 'answers', 'error', 'reading']);
+});
+
+it('stores the reading on a hold that never reached the words check, such as a label veto', function () {
+    customerReadingDanaTexts('Can you come Thursday?');
+    scriptFrontDeskReplies(['reply' => 'We will be there Thursday.', 'label' => 'promise']);
+
+    runQueuedFrontDeskJobs();
+
+    $draft = customerReadingTheDraft();
+
+    expect($draft->gate['customer_reading']['ran'])->toBeTrue()
+        ->and($draft->gate['checks']['classifier']['ran'])->toBeFalse();
+});
+
+it('stores the reading on a hold written without model words', function () {
+    $run = new AgentRun(AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'price_services' => ['ac-repair']]), 'anthropic', 'claude', []);
+    activateExampleFolder();
+
+    $verdict = app(DecideSendOrDraft::class)->holdWithoutWords($run, 'How much?', CustomerReading::failed('Jev is down.'), 'price:no_sentence');
+
+    expect($verdict->details['customer_reading']['failed'])->toBeTrue()
+        ->and($verdict->details['customer_reading']['error'])->toBe('Jev is down.');
+});
+
+it('holds the model\'s words as classifier_failed when the reading failed, and says so on the verdict (D-42)', function () {
+    customerReadingDanaTexts('My AC is blowing warm air');
+    fakeClassifier()->failReadingWith('Jev could not be reached or took too long to answer.');
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    $draft = customerReadingTheDraft();
+
+    expect($draft->gate_reason)->toBe('classifier_failed')
+        ->and($draft->gate['customer_reading']['failed'])->toBeTrue()
+        ->and($draft->gate['customer_reading']['error'])->toBe('Jev could not be reached or took too long to answer.')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1);
+});
+
+it('holds the model\'s words when the reading is unsure about a person, and does not hand off', function () {
+    customerReadingDanaTexts('Honestly I\'d rather sort this out with Mike directly.');
+    fakeClassifier()->answerReading('faq', 0.95, ['asks_for_person' => 0.5]);
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(customerReadingTheDraft()->gate_reason)->toBe('classifier_unsure:asks_for_person')
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HandoffReply->value)->count())->toBe(0)
+        ->and(Conversation::query()->sole()->isPaused())->toBeFalse();
+});
+
+it('holds the main reply as a complaint when the reading found one, and the complaint reply and alert follow (D-31, D-34)', function () {
+    customerReadingDanaTexts('Your tech was rude to my wife. Can someone come look at the AC again?');
+    fakeClassifier()->answerReading('faq', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Sorry to hear that. What is the AC doing?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(customerReadingTheDraft()->gate_reason)->toBe('classifier:complaint')
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(0)
+        ->and(customerReadingAlert(AlertReason::Complaint))->not->toBeNull();
+});
+
+it('holds as a complaint whatever else held the words first, and still records every check (Phase 2 D-07)', function () {
+    customerReadingDanaTexts('Your tech was rude to my wife. Can someone come look at the AC again?');
+    fakeClassifier()->answerReading('faq', 0.95, ['complaint' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'We will be there Thursday.', 'label' => 'promise']);
+
+    runQueuedFrontDeskJobs();
+
+    $draft = customerReadingTheDraft();
+
+    expect($draft->gate_reason)->toBe('classifier:complaint')
+        ->and($draft->gate['checks']['label']['passed'])->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1);
+});
+
+it('records the reading\'s price, promise and discount answers and never acts on them (D-42)', function () {
+    customerReadingDanaTexts('My AC is blowing warm air');
+    fakeClassifier()->answerReading('faq', 0.95, ['price' => 0.9, 'promise' => 0.9, 'discount' => 0.9]);
+    scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?', 'label' => 'intake_question']);
+
+    runQueuedFrontDeskJobs();
+
+    $message = theAgentMessage();
+
+    expect($message->status)->not->toBe(MessageStatus::Draft)
+        ->and(customerReadingTextsToDana())->toHaveCount(1)
+        ->and($message->gate['customer_reading']['answers']['yes_no']['price'])->toBe(0.9)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
 });
