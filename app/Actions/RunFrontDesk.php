@@ -564,6 +564,14 @@ class RunFrontDesk
 
             ['words' => $draftWords, 'label' => $draftLabel, 'verdict' => $verdict, 'alertReason' => $alertReason] = $covered;
             $attributes['meta'] = [...$attributes['meta'], 'first_reply' => ['reply' => (string) $parts->modelWords, 'gate_reason' => $covered['firstReason']]];
+
+            if ($covered['stops'] !== null && $parts->codeSentences !== []) {
+                // Only the second reply found a danger or a complaint, so the owner's sentences have not been held yet (D-43, D-44, D-46).
+                $heldSentences = $heldSentences !== [] ? $heldSentences : $parts->codeSentences;
+                $parts = new ReplyParts(modelWords: $parts->modelWords);
+                $sentMeta = ['meta' => [...$attributes['meta'], ...$this->codeSentencesMeta($this->withoutSentPicks($picks), [])]];
+                $verdict = $covered['stops'] === 'danger' ? $verdict : $verdict->heldFor($covered['stops']);
+            }
         }
 
         $this->storeDraft($conversation, $draftWords, $verdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
@@ -598,7 +606,7 @@ class RunFrontDesk
      * The alert reason is a complaint when either reply was held as one, so a complaint still leads (D-34).
      *
      * @param  Collection<int, Message>  $burst
-     * @return ?array{words: string, label: ReplyLabel, verdict: Verdict, alertReason: AlertReason, firstReason: ?string} Null when the customer was handed to the owner and the run is over.
+     * @return ?array{words: string, label: ReplyLabel, verdict: Verdict, alertReason: AlertReason, firstReason: ?string, stops: ?string} Null when the customer was handed to the owner and the run is over. `stops` is `danger` or the complaint reason code when only the second reply found one, so the owner's sentences must be held.
      */
     private function coverBothDraft(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, Verdict $firstVerdict, ReplyParts $parts): ?array
     {
@@ -611,6 +619,7 @@ class RunFrontDesk
             'verdict' => $firstVerdict,
             'alertReason' => $firstIsComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting,
             'firstReason' => $firstVerdict->reasonCode,
+            'stops' => null,
         ];
 
         $asked = $this->askForWholeThreadReply($agent, $run, $conversation, $burst, $waiting, $firstVerdict);
@@ -620,7 +629,7 @@ class RunFrontDesk
         }
 
         if ($asked['outcome'] === 'unusable') {
-            return $joined;
+            return [...$joined, 'stops' => $asked['stops']];
         }
 
         return [
@@ -629,6 +638,7 @@ class RunFrontDesk
             'verdict' => $asked['stored'],
             'alertReason' => $firstIsComplaint || $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting,
             'firstReason' => $firstVerdict->reasonCode,
+            'stops' => $asked['stops'],
         ];
     }
 
@@ -675,23 +685,37 @@ class RunFrontDesk
     /**
      * Ask the agent once more for one reply that covers W's question and the new one, and check it (D-35, D-45). The
      * second call shares the first call's time budget. Its words go through the same checks as any reply, with W's
-     * label guard and the run's reading. A danger in them sends the safety line and is stored held; a request for a
-     * person hands the customer to the owner; anything else is held for the first verdict's reason, so the owner reads
+     * label guard and the run's reading. A danger in them, or the agent's own possible_danger on this second reply
+     * (D-46: the first reply is not the only one that is read), sends the safety line and is stored held; a request for
+     * a person hands the customer to the owner; anything else is held for the first verdict's reason, so the owner reads
      * why the new text held.
      *
      * The outcome is `unusable` when the call could not answer or answered with no words, `handed_off` when the customer
      * was handed to the owner and the run is over, and `checked` with the second run, the verdict to store and whether
-     * the second reply was itself a complaint.
+     * the second reply was itself a complaint. `stops` says what only this second reply found that stops the owner's
+     * sentences: `danger`, or the complaint reason code (D-43, D-46).
      *
      * @param  Collection<int, Message>  $burst
-     * @return array{outcome: 'unusable'|'handed_off'}|array{outcome: 'checked', second: AgentRun, stored: Verdict, secondIsComplaint: bool}
+     * @return array{outcome: 'handed_off'}|array{outcome: 'unusable', stops: ?string}|array{outcome: 'checked', second: AgentRun, stored: Verdict, secondIsComplaint: bool, stops: ?string}
      */
     private function askForWholeThreadReply(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, Verdict $firstVerdict): array
     {
         try {
             $second = $this->runFrontDeskAgent->handle($agent, $conversation, $burst, waitingDraft: $waiting, coverBoth: true, budgetFrom: $run->startedAt);
         } catch (FrontDeskUnavailable) {
-            return ['outcome' => 'unusable'];
+            return ['outcome' => 'unusable', 'stops' => null];
+        }
+
+        if ($second->reply->possibleDanger) {
+            if (! $this->safetyLineAlreadySent($burst)) {
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'agent');
+            }
+
+            if ($second->reply->wantsPerson) {
+                $this->alertAboutPersonAfterSafetyLine($conversation, $burst, $second->reply->label === ReplyLabel::Complaint);
+
+                return ['outcome' => 'handed_off'];
+            }
         }
 
         if ($second->reply->wantsPerson) {
@@ -701,7 +725,7 @@ class RunFrontDesk
         }
 
         if ($second->reply->reply === '') {
-            return ['outcome' => 'unusable'];
+            return ['outcome' => 'unusable', 'stops' => $second->reply->possibleDanger ? 'danger' : null];
         }
 
         $secondVerdict = $this->decideSendOrDraft->decide(
@@ -712,9 +736,16 @@ class RunFrontDesk
             $this->labelGuardFor($waiting),
         );
 
+        if ($second->reply->possibleDanger) {
+            $secondVerdict = $secondVerdict->flaggedLifeSafety();
+        }
+
         if ($secondVerdict->lifeSafety) {
-            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
-            $stored = $secondVerdict->outcome === GateOutcome::Send ? $secondVerdict->heldFor('classifier:life_safety') : $secondVerdict;
+            if (! $second->reply->possibleDanger) {
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+            }
+
+            $stored = $secondVerdict->outcome === GateOutcome::Send ? $secondVerdict->heldFor($second->reply->possibleDanger ? 'agent:possible_danger' : 'classifier:life_safety') : $secondVerdict;
         } elseif ($secondVerdict->asksForPerson) {
             $this->handOffToOwner($conversation, $burst, $second->reply->label === ReplyLabel::Complaint);
 
@@ -723,11 +754,14 @@ class RunFrontDesk
             $stored = $secondVerdict->heldFor((string) $firstVerdict->reasonCode, $firstVerdict->plainReason);
         }
 
+        $secondIsComplaint = in_array($secondVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
+
         return [
             'outcome' => 'checked',
             'second' => $second,
             'stored' => $stored,
-            'secondIsComplaint' => in_array($secondVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true),
+            'secondIsComplaint' => $secondIsComplaint,
+            'stops' => $secondVerdict->lifeSafety ? 'danger' : ($secondIsComplaint ? $secondVerdict->reasonCode : null),
         ];
     }
 
