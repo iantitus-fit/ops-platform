@@ -2,13 +2,13 @@
 type: object
 cluster: intake
 status: live
-verified: 2026-10-14 @ c48491d (working tree, source inspection; owner ruling 2026-10-12)
+verified: 2026-10-16 @ cd1bc79 (source inspection after plan 02.1-26; owner ruling 2026-10-12)
 entity: app/Models/IntakeAnswer.php
 ---
 
 # Intake answer
 
-**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-14 @ c48491d · **Where:** `app/Models/IntakeAnswer.php:20`
+**Type:** object · **Mark:** live; two columns half-wired (`icm_version_id`, `message_id`: writer-only, intent parked) · **Checked:** 2026-10-16 @ cd1bc79 · **Where:** `app/Models/IntakeAnswer.php:20`
 
 **One sentence.** An `intake_answers` row is one answer a customer gave to one of a service's intake questions, found by the agent in their texts; a correction is a new row, never an update.
 
@@ -16,10 +16,10 @@ entity: app/Models/IntakeAnswer.php
 
 ## Shape
 - Table: `database/migrations/2026_10_12_000007_create_intake_answers_table.php:19`; lookup index `:30`. Columns: `conversation_id`, `message_id`, `icm_version_id`, `service_slug`, `question_key`, `option` (nullable), `raw_text`.
-- Written once per answer, together with an `intake_answered` timeline entry, inside one transaction: `RecordIntakeAnswers.php:56-71`. Called by `RunFrontDesk.php:168` after the agent answers and before the send rule runs, so an answer is stored even when the reply is held; the rows it stores are handed on to the price pick in the same run (`RunFrontDesk.php:171-172`).
-- The agent proposes answers in its structured output (`AgentReply.php:73`, kept by `AgentReply.php:192-216`, schema `FrontDeskAgent.php:60`); the question list comes from the live service file (`RecordIntakeAnswers.php:35`, `:108-124`).
-- **Answers now pick the price sentence (Phase 02.1).** The newest row per question (`currentFor`, `RecordIntakeAnswers.php:93`) is what `PriceSentencePicker::pickKeyed` reads for each question a service's price sentences are keyed on (`PriceSentencePicker.php:188-224`, the read at `:191`). With no row for a question, the price is pending and the customer is asked first (`PricePick::needsAnswers`, `PricePick.php:46`; the run remembers it in `meta.price_pending`, `RunFrontDesk.php:252`, and reads it back next run at `:726-738`). An answer that matches none of the question's options is asked again once, then not (`PriceSentencePicker.php:199`, `unmatchedCount` `:231-238`, Phase 2.1 D-06); after the second miss, and for any combination the owner has no sentence for, the owner's default sentence goes out, or the price holds if the file has none (`pickDefault`, `:245-254`). The model is told to ask the first unanswered question and to re-ask an unmatched one once, listing the options (`FrontDeskPrompt.php:41`, `:58`).
-- **A correction re-sends.** A new row for a keying question makes the picker run again for that service even though the customer did not ask the price again (`RunFrontDesk.php:697-707`, `PriceSentencePicker.php:54`, `:128-137`). If it picks a different sentence than the customer was last told, it goes out at once behind the owner's lead for how the price moved: higher, lower or changed (`PriceSentencePicker.php:144-157`, `direction` `:105-120`, `FixedReplies::priceLead` `FixedReplies.php:83`); an identical sentence is not repeated unless the customer asks again (`PriceSentencePicker.php:152-154`).
+- Written once per answer, together with an `intake_answered` timeline entry, inside one transaction: `RecordIntakeAnswers.php:56-71`. Called by `RunFrontDesk.php:235` after the agent answers and before the send rule runs, so an answer is stored even when the reply is held; the rows it stores are handed on to the price pick in the same run (`RunFrontDesk.php:238-239`).
+- The agent proposes answers in its structured output (`AgentReply.php:75`, kept by `AgentReply.php:196-220`, schema `FrontDeskAgent.php:60`); the question list comes from the live service file (`RecordIntakeAnswers.php:35`, `:108-124`).
+- **Answers now pick the price sentence (Phase 02.1).** The newest row per question (`currentFor`, `RecordIntakeAnswers.php:93`) is what `PriceSentencePicker::pickKeyed` reads for each question a service's price sentences are keyed on (`PriceSentencePicker.php:188-224`, the read at `:191`). With no row for a question, the price is pending and the customer is asked first (`PricePick::needsAnswers`, `PricePick.php:46`; the run remembers it in `meta.price_pending`, `RunFrontDesk.php:356`, and reads it back next run at `:943-956`). An answer that matches none of the question's options is asked again once, then not (`PriceSentencePicker.php:199`, `unmatchedCount` `:231-238`, Phase 2.1 D-06); after the second miss, and for any combination the owner has no sentence for, the owner's default sentence goes out, or the price holds if the file has none (`pickDefault`, `:245-254`). The model is told to ask the first unanswered question and to re-ask an unmatched one once, listing the options (`FrontDeskPrompt.php:41`, `:58`).
+- **A correction re-sends.** A new row for a keying question makes the picker run again for that service even though the customer did not ask the price again (`pickPrices`, `RunFrontDesk.php:914-924`, `PriceSentencePicker.php:54`, `:128-137`). If it picks a different sentence than the customer was last told, it goes out at once behind the owner's lead for how the price moved: higher, lower or changed (`PriceSentencePicker.php:144-157`, `direction` `:105-120`, `FixedReplies::priceLead` `FixedReplies.php:83`); an identical sentence is not repeated unless the customer asks again (`PriceSentencePicker.php:152-154`).
 - Read: `CustomerCard::intakeAnswerLines` (`CustomerCard.php:298`, latest per question), the timeline arm (`CustomerCard.php:165`, `intakeAnswerParts` `:275`) and the price picker (above). Morph alias `intake_answer` at `AppServiceProvider.php:77`.
 
 ## Half-wired columns
@@ -31,7 +31,7 @@ entity: app/Models/IntakeAnswer.php
 Belongs to a conversation (`IntakeAnswer.php:30`), a message and an `icm_versions` row (nullable `message_id`, set null on delete). Looks like it but is not: the service file's `intake:` list (the questions, owner-written, in the folder) and `meta` on a message.
 
 ## If you change this
-**Hits:** `RecordIntakeAnswers`, the customer card (heading and "Intake answers" section), the timeline entry type `intake_answered`, the price picker (`PriceSentencePicker`, which keys sentences on these rows, so renaming a question key or its options changes which sentence goes out), and the agent's output schema if the answer shape changes. [answer-inbound](../../processes/answer-inbound.md) step 8 writes it and step 9 reads it.
+**Hits:** `RecordIntakeAnswers`, the customer card (heading and "Intake answers" section), the timeline entry type `intake_answered`, the price picker (`PriceSentencePicker`, which keys sentences on these rows, so renaming a question key or its options changes which sentence goes out), and the agent's output schema if the answer shape changes. [answer-inbound](../../processes/answer-inbound.md) step 12 writes it and step 13 reads it.
 **Does not hit:** the send rule's verdict (an answer is stored before the verdict, and neither the code checks nor Jev read it; only the price picker does, before the verdict); the contact's name (filled by `RunFrontDesk::fillEmptyName`, a different path); the folder's service file (read, never written).
 
 ## Surfaces
