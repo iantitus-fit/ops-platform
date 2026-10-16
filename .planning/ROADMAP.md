@@ -262,6 +262,7 @@ Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans s
 - Assist mode: an owner reply stops the agent sending on its own but it keeps drafting suggestions; it returns after a per-business quiet period (replaces Phase 2's owner-reply takeover).
 - The after-hours on-call switch per business (urgent service requests such as plain flooding).
 - `escalate_to` may name a staff user.
+- Complaint alerts can go to a person the owner names (for example an office manager), chosen at setup and changeable later, with the owner as backup when that person cannot be reached; a complaint always reaches someone (Ian, 2026-10-16).
 - The LLM fallback classifier driver on a ZDR route.
 - A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
 - Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW-DISPOSITION.md` WR-03, WR-04; 02.2 rebuilds alerts).

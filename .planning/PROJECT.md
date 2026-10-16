@@ -117,6 +117,27 @@ Open decisions (not locked; each has a trigger for deciding):
 | Hosting (Laravel Cloud or Forge) | At first deploy | One instance per client |
 | Which legal entity registers A2P for Ian's own test number | Before Twilio goes live | DEC-05 says Ian registers; the entity is not stated. Does not gate the build |
 
+## Frontend
+
+Decided:
+
+- Filament 5 for the back office, Livewire for customer pages (DEC-08, `docs/DECISIONS.md` 2026-10-10).
+- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11).
+- No styling changes until Ian's phone walk (02.1 D-48, `.planning/WINDOWS.md` entry 13).
+- The Needs you card shows the customer's last message above the draft, and the thread runs oldest first (Phase 2 G-02-1.1).
+- Customer-facing strings: no exclamation points and no em dashes (02.1 D-41).
+
+Open (Ian, 2026-10-16). Decide each before its first use; never improvise:
+
+1. How custom views get styled: a Filament theme CSS file so Tailwind classes compile, or Filament components only. Either way, no new inline style attributes.
+2. Color: Filament semantic colors only (danger, warning, success, gray), never hex. Amber primary is a placeholder until the brand pass.
+3. One small text size and one spacing scale, taken from Filament.
+4. Phone layout, decided at the phone walk: which table columns hide below tablet width, and the thread's own scroll box versus page scroll. Checked at 375 and 390 wide.
+5. Accessibility baseline: every input has a label, visible or aria-label; WCAG AA contrast in light and dark mode; whether dark mode stays on.
+6. Errors the owner must fix show inline under the field. Decide whether channel failures stay toasts.
+7. The thread's polling interval (5 s now), and whether long threads load in pages.
+8. What "/" shows before Phase 3 (the stock Laravel page today).
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.

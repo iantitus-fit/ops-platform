@@ -252,6 +252,7 @@ None yet.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.2 (Owner Loop) scope.
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
+- [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 
 ### Roadmap Evolution
