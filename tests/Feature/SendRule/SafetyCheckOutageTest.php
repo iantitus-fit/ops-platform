@@ -80,12 +80,20 @@ function safetyCheckOutageBackAlerts(): Collection
 }
 
 /**
+ * A time in the shop's zone as the database stores it, in the app's own zone.
+ */
+function safetyCheckOutageStored(string $at): Carbon
+{
+    return Carbon::parse($at, 'America/Chicago')->setTimezone(config('app.timezone'));
+}
+
+/**
  * A text from a customer that arrived at the given time, in a conversation of its own.
  */
 function safetyCheckOutageCustomerText(string $at, array $state = []): Message
 {
     return Message::factory()->for(Conversation::factory())->create([
-        'created_at' => Carbon::parse($at, 'America/Chicago'),
+        'created_at' => safetyCheckOutageStored($at),
         ...$state,
     ]);
 }
@@ -97,7 +105,7 @@ it('tells the owner once that the safety check is back, counting the customer te
     safetyCheckOutageCustomerText('2026-10-14 02:10');
     safetyCheckOutageCustomerText('2026-10-14 02:20');
     safetyCheckOutageCustomerText('2026-10-14 03:00');
-    Message::factory()->for(Conversation::factory())->outbound()->create(['created_at' => Carbon::parse('2026-10-14 02:30', 'America/Chicago')]);
+    Message::factory()->for(Conversation::factory())->outbound()->create(['created_at' => safetyCheckOutageStored('2026-10-14 02:30')]);
     safetyCheckOutageCustomerText('2026-10-14 02:40', ['channel' => MessageChannel::Web]);
 
     safetyCheckOutageAt('2026-10-14 03:30');

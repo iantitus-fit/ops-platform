@@ -31,6 +31,9 @@ use Throwable;
  * reading unsure whether the customer asked for a person holds them as classifier_unsure:asks_for_person. A complaint
  * in the reading does not change the result here; the caller decides what a complaint holds (D-42, D-45).
  *
+ * Each words check also moves the safety check's status (D-50): a failed call marks Jev down and an answer marks it up.
+ * Being marked down never skips a call; every run still asks.
+ *
  * While a draft waits for the owner the caller may pass a guard, a short list of labels that may still send. A reply
  * whose label is not on it is held as waiting_guard:<label>, after the label check and before the length check (D-20).
  */
@@ -39,6 +42,7 @@ class DecideSendOrDraft
     public function __construct(
         private readonly ActiveConfig $activeConfig,
         private readonly Classifier $classifier,
+        private readonly SafetyCheckStatus $safetyCheckStatus,
     ) {}
 
     /**
@@ -165,10 +169,14 @@ class DecideSendOrDraft
                 report($exception);
             }
 
+            $this->safetyCheckStatus->recordFailure($exception->getMessage());
+
             $details['checks']['classifier']['error'] = $exception->getMessage();
 
             return [$details, null];
         }
+
+        $this->safetyCheckStatus->recordSuccess();
 
         $reading = TriageReading::read($result, $questions, config('gate.classifier'));
 
