@@ -272,7 +272,11 @@ it('sends both sentences in one text, in the order asked (D-08)', function () {
         ->and(array_column($message->meta['price_sentences'], 'slug'))->toBe(['ac-repair', 'furnace-repair']);
 });
 
-it('sends a combined text of exactly 1,600 characters whole and drafts the words at 1,601 (D-07)', function (int $length, bool $sendsWhole) {
+/**
+ * Dana's question, answered by the AC sentence and model words of the given length.
+ */
+function priceSentenceRunWithWordsOfLength(int $length): void
+{
     priceSentenceCustomerTexts('How much is the diagnostic, and do you work on Carrier units?');
     scriptFrontDeskReplies([
         'reply' => trim(priceSentenceWordsForLength($length)),
@@ -280,26 +284,28 @@ it('sends a combined text of exactly 1,600 characters whole and drafts the words
         'price_services' => ['ac-repair'],
     ]);
     runQueuedFrontDeskJobs();
+}
+
+it('sends a combined text of exactly 1,600 characters whole (D-07)', function () {
+    priceSentenceRunWithWordsOfLength(1600);
 
     $texts = priceSentenceTextsToDana();
 
-    if ($sendsWhole) {
-        expect($texts)->toHaveCount(1)
-            ->and(mb_strlen($texts[0]['body']))->toBe(1600)
-            ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+    expect($texts)->toHaveCount(1)
+        ->and(mb_strlen($texts[0]['body']))->toBe(1600)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+});
 
-        return;
-    }
+it('drafts the words at 1,601 characters and sends the sentence with the partial line (D-07)', function () {
+    priceSentenceRunWithWordsOfLength(1601);
 
     $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+    $texts = priceSentenceTextsToDana();
 
     expect($draft->gate_reason)->toBe('too_long')
         ->and($texts)->toHaveCount(1)
         ->and($texts[0]['body'])->toBe(priceSentenceFirstText(PRICE_SENTENCE_AC.' '.PRICE_SENTENCE_PARTIAL_LINE));
-})->with([
-    'exactly 1,600' => [1600, true],
-    'one over, 1,601' => [1601, false],
-]);
+});
 
 it('stops the sentence for the run when Jev finds a danger in the model\'s words (D-11)', function () {
     priceSentenceRunWithJev('How much is the diagnostic? My thermostat smells funny', [

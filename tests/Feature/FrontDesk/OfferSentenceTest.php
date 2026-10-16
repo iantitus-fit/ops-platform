@@ -128,16 +128,19 @@ function offerSentenceWriteSeniorOffer(): void
     ]));
 }
 
-it('sends the offer on its start day and its end day, and not the day before or after, in the shop\'s zone (D-13, T-02.1-25)', function (string $at, bool $live) {
+it('sends the offer on its start day and its end day, in the shop\'s zone (D-13, T-02.1-25)', function (string $at) {
     offerSentenceRun('Do you have any discounts?', ['reply' => '', 'asks_discount' => true], $at);
 
-    if ($live) {
-        expect(offerSentenceTextsToDana())->toHaveCount(1)
-            ->and(offerSentenceTextsToDana()[0]['body'])->toBe(composedFirstReply(OFFER_SENTENCE_FIRST_VISIT))
-            ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+    expect(offerSentenceTextsToDana())->toHaveCount(1)
+        ->and(offerSentenceTextsToDana()[0]['body'])->toBe(composedFirstReply(OFFER_SENTENCE_FIRST_VISIT))
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+})->with([
+    'the start day at 00:05' => ['2026-10-01 00:05'],
+    'the end day at 23:30, already the next day in UTC' => ['2026-12-31 23:30'],
+]);
 
-        return;
-    }
+it('holds the question as discount:no_live_offer the day before the offer starts and the day after it ends, in the shop\'s zone (D-14, T-02.1-25)', function (string $at) {
+    offerSentenceRun('Do you have any discounts?', ['reply' => '', 'asks_discount' => true], $at);
 
     $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
 
@@ -146,10 +149,8 @@ it('sends the offer on its start day and its end day, and not the day before or 
         ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0)
         ->and(OwnerAlert::query()->sole()->reason)->toBe(AlertReason::DraftWaiting);
 })->with([
-    'the start day at 00:05' => ['2026-10-01 00:05', true],
-    'the day before the start at 23:55' => ['2026-09-30 23:55', false],
-    'the end day at 23:30, already the next day in UTC' => ['2026-12-31 23:30', true],
-    'the day after the end at 00:30' => ['2027-01-01 00:30', false],
+    'the day before the start at 23:55' => ['2026-09-30 23:55'],
+    'the day after the end at 00:30' => ['2027-01-01 00:30'],
 ]);
 
 it('sends several live offers in one text, in folder path order (D-13)', function () {

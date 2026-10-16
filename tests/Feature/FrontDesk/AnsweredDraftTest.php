@@ -173,11 +173,11 @@ function answeredDraftQuestionHeld(string $body, array $reply): User
 }
 
 /**
- * Dana texts again a minute later and the front desk answers that burst with the given script.
+ * Dana texts again a minute later and the front desk answers that burst with the given scripts, one per model call.
  *
- * @param  array<string, mixed>  $reply
+ * @param  array<string, mixed>  ...$replies
  */
-function answeredDraftCustomerTexts(string $body, array $reply): void
+function answeredDraftCustomerTexts(string $body, array ...$replies): void
 {
     static $count = 0;
     $count++;
@@ -188,7 +188,7 @@ function answeredDraftCustomerTexts(string $body, array $reply): void
         'MessageSid' => 'SM'.str_pad((string) $count, 32, 'a', STR_PAD_LEFT),
         'Body' => $body,
     ]))->assertOk();
-    scriptFrontDeskReplies($reply);
+    scriptFrontDeskReplies(...$replies);
 
     runQueuedFrontDeskJobs();
 }
@@ -377,7 +377,11 @@ it('never closes a draft whose own run already sent a sentence for every service
         ->and($live->resolution)->toBeNull();
 });
 
-it('sends the sentence but never closes a draft held on price and a complaint (D-21)', function (string $reply) {
+/**
+ * Dana's price question and a complaint in one text, held as a draft that Jev read as both. Returns the waiting draft.
+ */
+function answeredDraftPriceAndComplaintHeld(): Message
+{
     fakeClassifier()->answer('faq', 0.95, ['price' => 0.9, 'complaint' => 0.9]);
 
     answeredDraftQuestionHeld('How much for a new unit? Your last tech was rude.', ['reply' => 'Sorry about that. Mike will text you.', 'label' => 'faq_answer']);
@@ -387,20 +391,65 @@ it('sends the sentence but never closes a draft held on price and a complaint (D
 
     fakeClassifier()->answer('faq');
 
-    answeredDraftCustomerTexts("It's the AC", ['reply' => $reply, 'label' => 'faq_answer', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+    return $waiting;
+}
+
+/**
+ * Whether a text that reached Dana carries the AC repair sentence.
+ */
+function answeredDraftAcSentenceSent(): bool
+{
+    return collect(answeredDraftTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], ANSWERED_DRAFT_AC_SENTENCE));
+}
+
+it('sends the sentence, replaces the draft held on price and a complaint with the fresh reply, and does not close it as answered (D-21)', function () {
+    $waiting = answeredDraftPriceAndComplaintHeld();
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => 'Happy to help with your AC.', 'label' => 'faq_answer', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
 
     $waiting->refresh();
     $live = answeredDraftTheDraft();
-    $sentToDana = collect(answeredDraftTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], ANSWERED_DRAFT_AC_SENTENCE));
 
-    expect($sentToDana)->toBeTrue()
-        ->and($waiting->resolution)->not->toBe(DraftResolution::Answered)
+    expect(answeredDraftAcSentenceSent())->toBeTrue()
+        ->and($waiting->resolution)->toBe(DraftResolution::Replaced)
         ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0)
-        ->and($reply === '' ? $live->id === $waiting->id : $live->id !== $waiting->id)->toBeTrue();
-})->with([
-    'a fresh reply replaces the draft' => ['Happy to help with your AC.'],
-    'a blank reply leaves the draft live' => [''],
-]);
+        ->and($live->id)->not->toBe($waiting->id);
+});
+
+it('sends the sentence and gives a blank reply that touches the draft held on price and a complaint a whole-thread draft (D-21, WR-04)', function () {
+    $waiting = answeredDraftPriceAndComplaintHeld();
+
+    answeredDraftCustomerTexts("It's the AC", [
+        'reply' => '',
+        'label' => 'faq_answer',
+        'price_services' => ['ac-repair'],
+        'touches_waiting' => true,
+    ], ['reply' => 'Sorry about the last visit. Mike will text you the new unit price.', 'label' => 'faq_answer']);
+
+    $waiting->refresh();
+    $live = answeredDraftTheDraft();
+
+    expect(answeredDraftAcSentenceSent())->toBeTrue()
+        ->and($waiting->resolution)->toBe(DraftResolution::Replaced)
+        ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0)
+        ->and($live->id)->not->toBe($waiting->id)
+        ->and($live->body)->toBe('Sorry about the last visit. Mike will text you the new unit price.')
+        ->and($live->gate_reason)->toBe('touches_waiting');
+});
+
+it('sends the sentence and leaves the draft held on price and a complaint live when the whole-thread call fails (D-21, WR-04)', function () {
+    $waiting = answeredDraftPriceAndComplaintHeld();
+
+    answeredDraftCustomerTexts("It's the AC", ['reply' => '', 'label' => 'faq_answer', 'price_services' => ['ac-repair'], 'touches_waiting' => true]);
+
+    $waiting->refresh();
+
+    expect(answeredDraftAcSentenceSent())->toBeTrue()
+        ->and($waiting->status)->toBe(MessageStatus::Draft)
+        ->and($waiting->resolution)->toBeNull()
+        ->and(answeredDraftTheDraft()->id)->toBe($waiting->id)
+        ->and(Message::query()->where('resolution', DraftResolution::Answered->value)->count())->toBe(0);
+});
 
 it('leaves the draft live when the sentence could not be sent (D-21)', function () {
     answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
