@@ -110,7 +110,8 @@ class SendFixedReply
      * reorder() because the relation already sorts oldest first. It stays current until the owner answers: a text the
      * owner sent after it, or a draft the owner approved, edited or discarded, or code closed as answered, since it
      * went out. A draft is written before its holding reply, so its id is lower, and the decision comes later, so
-     * resolved_at says whether it ended the wait.
+     * resolved_at says whether it ended the wait. A close made by the text that started the wait does not end that
+     * wait: only a draft answered by a newer text does (WR-01).
      *
      * Automated texts never end the wait. While a draft waits the assistant may send answers, check-in lines and
      * added-info lines, and none of them answers the question the owner still has.
@@ -127,7 +128,7 @@ class SendFixedReply
             return false;
         }
 
-        $answeredSince = $conversation->messages()
+        $endedByOwner = $conversation->messages()
             ->where(function ($query) use ($latest): void {
                 $query
                     ->where(function ($sent) use ($latest): void {
@@ -137,12 +138,31 @@ class SendFixedReply
                             ->where('id', '>', $latest->id);
                     })
                     ->orWhere(function ($resolved) use ($latest): void {
-                        $resolved->whereIn('resolution', [DraftResolution::Approved, DraftResolution::Edited, DraftResolution::Discarded, DraftResolution::Answered])
+                        $resolved->whereIn('resolution', [DraftResolution::Approved, DraftResolution::Edited, DraftResolution::Discarded])
                             ->where('resolved_at', '>=', $latest->created_at);
                     });
             })
             ->exists();
 
-        return ! $answeredSince;
+        if ($endedByOwner) {
+            return false;
+        }
+
+        return ! $this->answeredAfter($conversation, $latest);
+    }
+
+    /**
+     * Whether a draft was closed as answered by a text newer than the wait-starter. A close made by the wait-starter
+     * itself, such as the partial holding line that went out with an owner sentence, answers the draft it closed but
+     * not the question the line says is still with the owner, so the wait goes on (WR-01). The comparison is made in PHP
+     * so SQLite and PostgreSQL agree. A draft closed without an answering id counts, as it always did.
+     */
+    private function answeredAfter(Conversation $conversation, Message $waitStarter): bool
+    {
+        return $conversation->messages()
+            ->where('resolution', DraftResolution::Answered)
+            ->where('resolved_at', '>=', $waitStarter->created_at)
+            ->get()
+            ->contains(fn (Message $draft): bool => ! isset($draft->meta['answered_by']) || (int) $draft->meta['answered_by'] > $waitStarter->id);
     }
 }
