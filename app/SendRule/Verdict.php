@@ -136,6 +136,10 @@ readonly class Verdict
                 'no_live_offer' => 'Held: no offer running today',
                 default => 'Held: mentions a discount',
             },
+            'agent' => match ($detail) {
+                'possible_danger' => 'Held: may be urgent',
+                default => 'Held: needs your judgment',
+            },
             'touches_waiting' => 'Held: adds to a question you already have',
             'waiting_guard' => 'Held: waits behind a question you already have',
             'too_long' => 'Held: too long for one text',

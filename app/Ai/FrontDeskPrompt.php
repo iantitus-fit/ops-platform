@@ -60,6 +60,7 @@ How to fill in the other fields:
 - touches_waiting: only when a question is already with the owner. True when the new text adds to it, changes it or asks about it, false when it is about something else. Otherwise null.
 - waiting_note: only when a question is already with the owner. check_in when the customer asks whether anyone has seen it or when they will hear back, otherwise added_info. Null when nothing is waiting.
 - easy_reply and easy_label: only when touches_waiting is true and the new text also asks something you can answer from the files on its own. easy_reply is that answer and easy_label is its label (faq_answer or intake_question). Otherwise both are null.
+- possible_danger: true when the customer's text could describe a danger to people or the home, such as gas, fire or smoke, carbon monoxide or its signs such as headaches or dizziness near a furnace, sparking, or water near electricity. Set it true whenever you are not sure. Otherwise false.
 TEXT;
 
     /**
