@@ -17,6 +17,7 @@ enum AlertReason: string
     case ReplyCap = 'reply_cap';
     case CheckIn = 'check_in';
     case SafetyCheckDown = 'safety_check_down';
+    case SafetyCheckMissing = 'safety_check_missing';
 
     /**
      * Every event as the text an owner writes in the folder.
@@ -44,6 +45,7 @@ enum AlertReason: string
             self::ReplyCap => 'Reply limit reached',
             self::CheckIn => 'Customer checked in',
             self::SafetyCheckDown => 'Safety check is down',
+            self::SafetyCheckMissing => 'Safety check did not run',
         };
     }
 }

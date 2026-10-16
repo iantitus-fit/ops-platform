@@ -45,6 +45,12 @@ class OutboundSender
      */
     public const string CARRIER_OPTED_OUT = 'The customer has opted out of texts.';
 
+    /**
+     * How the sentence begins when an automated text was refused because the safety check had not read the customer's
+     * message, or a part of the text lacked what it needs from that reading (D-45, D-49).
+     */
+    public const string NO_READING = 'Not sent without the safety check: ';
+
     public function __construct(
         private readonly TextChannel $textChannel,
         private readonly ActiveConfig $activeConfig,
