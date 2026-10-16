@@ -21,22 +21,26 @@ what the opening hours can keep.
    model writes, or a service with `price_policy: none`, still holds. A price
    sentence whose amounts do not match its file fails the sync in plain words.
    Delivered by plans 02.1-02 (dollar amounts read as integer cents), 02.1-06 (price sentences checked at sync), 02.1-08 (the sentence sent by code, holds for a model price), 02.1-09 (intake answers pick the sentence, corrections and leads) (tests: tests/Feature/Icm/PriceSentenceValidationTest.php, tests/Unit/SendRule/CodeChecksTest.php, tests/Feature/FrontDesk/PriceSentenceTest.php, tests/Feature/FrontDesk/KeyedPriceSentenceTest.php, tests/Feature/FrontDesk/PriceLeadTest.php).
+   Gap closure: a price or offer sentence the owner wrote is held, never sent, when the customer's own text also complains, when the reading of the customer's text failed or was unsure, or when blank model words promise something; the held sentences are pre-filled into the draft exactly as code would have sent them (`meta.held_sentences`), and the complaint reply and complaint alert still go. Closed by plans 02.1-17 (one Jev reading of the customer's text on every run, stored as `gate.customer_reading`), 02.1-18 (the hold reason and the pre-filled draft), 02.1-23 (a Jev outage tells the owner once and every waiting customer is still answered) and 02.1-24 (the one outbound path refuses an automated text that carries no reading) (tests: tests/Feature/FrontDesk/CustomerReadingTest.php, tests/Feature/FrontDesk/HeldCodeAnswerTest.php, tests/Feature/FrontDesk/JevDownTest.php, tests/Feature/FrontDesk/ReadingRequiredToSendTest.php).
 2. A discount question gets every live offer's conditional sentence (dates in
    the business time zone, end date inclusive) or, with none live, the owner's
    discount reply and an owner alert. The Business Folder page warns about an
    offer live over 90 days with no end date.
    Delivered by plans 02.1-07 (offer files checked at sync), 02.1-10 (the 90-day warning), 02.1-11 (live offers sent by code, the discount reply when none is live) (tests: tests/Feature/Icm/OfferValidationTest.php, tests/Feature/FrontDesk/OfferSentenceTest.php, tests/Feature/Filament/BusinessFolderPageTest.php).
+   Gap closure: the same four plans cover the discount path. An offer sentence or the discount reply is held and pre-filled when the reading finds a complaint, a danger or a request for a person, and no offer goes out on a text the safety check did not read. Closed by plans 02.1-17, 02.1-18, 02.1-23 and 02.1-24 (tests: tests/Feature/FrontDesk/CustomerReadingTest.php, tests/Feature/FrontDesk/HeldCodeAnswerTest.php, tests/Feature/FrontDesk/JevDownTest.php, tests/Feature/FrontDesk/ReadingRequiredToSendTest.php).
 3. While a draft waits, an easy answer that does not touch it sends on its own
    and the draft stays live with "The customer wrote again since this draft". A
    message that touches it replaces the draft, with any split-off FAQ or intake
    answer sent alongside the partial holding line. Scheduling never sends while
    a scheduling draft waits.
    Delivered by plans 02.1-05 (the touches flag and the prompt that never mentions a waiting question), 02.1-10 (the wrote-again line), 02.1-12 (easy answers send while a draft waits, the label guard), 02.1-13 (the split, a price draft closed as answered), 02.1-14 (a held unrelated reply becomes one whole-thread draft) (tests: tests/Feature/FrontDesk/EasyAnswerWhileWaitingTest.php, tests/Feature/FrontDesk/CoverBothDraftTest.php, tests/Feature/FrontDesk/FrontDeskPromptTest.php, tests/Feature/Filament/ConversationViewTest.php).
+   Gap closure: a draft counts as answered by a price sentence only on evidence (a stored reading that ran clean and, for model words, a words check that ran with price-only reasons), so a complaint is never closed away; a partial holding line that closes a draft does not end the wait it starts; a blank-words price or discount answer that touches the waiting draft sends the sentences with the partial line and replaces the draft with one whole-thread draft; and the owner's screen reads "Send anyway" with one wrote-again line once the customer has written past the draft. Closed by plans 02.1-19, 02.1-20 and 02.1-25 (tests: tests/Feature/FrontDesk/AnsweredDraftTest.php, tests/Feature/FrontDesk/EasyAnswerWhileWaitingTest.php, tests/Feature/Filament/ConversationViewTest.php, tests/Feature/Filament/DraftReviewTest.php).
 4. A customer who writes while a draft waits always gets a reply: the check-in
    reply (which alerts the owner) or the added-info reply. A price draft
    answered by a price sentence closes as `answered` and refuses Send with
    "Already answered".
    Delivered by plans 02.1-01 (the answered resolution, the holding reply counting for every wait-starting kind), 02.1-12 (the check-in reply and the added-info reply, the check-in alert), 02.1-13 (a price draft answered by a sentence closes as answered) (tests: tests/Feature/FrontDesk/WaitingCustomerRepliesTest.php, tests/Feature/FrontDesk/AnsweredDraftTest.php, tests/Feature/Filament/DraftReviewTest.php).
+   Gap closure: a customer who writes always hears back, and a danger comes first. The safety line goes out first on every path once Jev reads a danger (plan 02.1-17) or the agent suspects one with `possible_danger` (plan 02.1-21); a waiting customer still gets a holding reply when the front desk cannot answer (plan 02.1-21); the added-info and check-in replies stay correct after the WR-01 wait rule (plan 02.1-20); and one test walks 1,440 combinations of the eleven things D-46 names through the real webhook and front desk (plan 02.1-26). Closed by plans 02.1-17, 02.1-20, 02.1-21 and 02.1-26 (tests: tests/Feature/FrontDesk/CustomerReadingTest.php, tests/Feature/FrontDesk/PossibleDangerTest.php, tests/Feature/FrontDesk/FrontDeskFailureTest.php, tests/Feature/FrontDesk/FrontDeskInvariantTest.php).
 5. Holding replies use only fill-ins computed from `hours.md`. The check-in time
    is off by default. Every new reply the folder needs is required at sync, and
    the example folder passes with all of them.
@@ -46,7 +50,15 @@ Still open for UAT, because only a person with a phone or a live account can
 check them: the live-model check (does a real model set `price_services`,
 `asks_discount`, `touches_waiting` and `waiting_note` sensibly) and the owner
 phone walk (the wrote-again line above Send, and "Already answered" on a draft a
-price sentence closed).
+price sentence closed). The gap closure added four more, each recorded as an
+`unrun-verify` row in `.planning/WINDOWS.md`: the live reading with an empty
+draft (does Jev answer the customer-text call and read `life_safety` above
+0.075; entry 14), the live `possible_danger` field (does a real model set it for
+a hazard worded without a danger word; entry 15), the live ping and outage
+texts (the health ping succeeds, one `safety_check_down` text on a wrong key, one
+back-up text when it recovers; entry 16), and the phone walk of "Send anyway"
+(the quoted newest text, one send on a double tap, Discard asking first; entry
+17, walked together with entry 13).
 
 ## Notes for testing
 
