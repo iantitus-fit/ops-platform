@@ -235,7 +235,7 @@ class RunFrontDesk
         $codeOnly = $words === '' && ($sentences !== [] || $checkIn) && ! $priceHeld && ! $noLiveOffer && $heldSentences === [];
 
         if ($codeOnly && $stillWaiting === null) {
-            $this->closeAsAnswered($answersWaiting ? $waiting : null, $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'), $lookups));
+            $this->closeAsAnswered($answersWaiting ? $waiting : null, $this->sendCodeAnswer($run, $conversation, $burst, $picks, $sentences, array_column($offers, 'slug'), $lookups, $answersWaiting ? $waiting : null));
 
             return;
         }
@@ -360,7 +360,9 @@ class RunFrontDesk
 
     /**
      * Close the waiting draft as answered because the text with the price sentence for it went out (D-21). The text must
-     * have been sent: a draft is never closed on a send that failed, so it stays with the owner. A draft the owner or a
+     * have been sent: a draft is never closed on a send that failed, so it stays with the owner. A send that was only
+     * refused is stored by sendCodeAnswer() as a draft that replaces the waiting one and keeps its words, so nothing is
+     * closed (D-47). A draft the owner or a
      * newer text already dealt with is left alone, and nothing more is done about it. No alert follows a close.
      */
     private function closeAsAnswered(?Message $waiting, ?Message $answer): void
@@ -483,7 +485,7 @@ class RunFrontDesk
             if ($checkIn) {
                 $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
             } else {
-                $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs, array_intersect_key($attributes['meta'] ?? [], ['price_slugs' => true, 'price_open' => true]));
+                $this->sendCodeAnswer($run, $conversation, $burst, $picks, $parts->codeSentences, $offerSlugs, array_intersect_key($attributes['meta'] ?? [], ['price_slugs' => true, 'price_open' => true]), $waiting);
             }
 
             return;
@@ -854,17 +856,21 @@ class RunFrontDesk
 
     /**
      * Send the owner's sentences alone, the customer's whole answer to a price or discount question. Jev is not asked
-     * about the words, which code wrote; the run's reading of the customer's text still decides whether they may go (D-42). A send that failed alerts the owner exactly as a reply that failed does; any other refusal becomes
-     * an empty price draft, so the question still reaches the owner, as a refused reply does.
+     * about the words, which code wrote; the run's reading of the customer's text still decides whether they may go
+     * (D-42). A send that failed alerts the owner exactly as a reply that failed does. Any other refusal becomes a
+     * send_refused draft that holds the sentences exactly as they would have gone out, so the question reaches the owner
+     * with the answer ready (D-44). When a draft was waiting, the new draft replaces it and keeps its words in front of
+     * the sentences, so a refusal never leaves the owner an empty draft (D-47).
      *
      * @param  Collection<int, Message>  $burst
      * @param  list<PricePick>  $picks
      * @param  list<string>  $sentences
      * @param  list<string>  $offerSlugs  The offers whose sentences are among the sentences.
      * @param  array<string, list<string>>  $lookups  The price_slugs and price_open of the draft stored when the send is refused.
+     * @param  ?Message  $waiting  The draft waiting for the owner when the sentences go out beside it or close it; its words and label carry into the draft stored when the send is refused.
      * @return ?Message The text that went out, or null when it did not.
      */
-    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences, array $offerSlugs, array $lookups = []): ?Message
+    private function sendCodeAnswer(AgentRun $run, Conversation $conversation, Collection $burst, array $picks, array $sentences, array $offerSlugs, array $lookups = [], ?Message $waiting = null): ?Message
     {
         $inReplyTo = $burst->pluck('id')->all();
 
@@ -881,10 +887,10 @@ class RunFrontDesk
 
             $verdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), $this->reading(), 'send_refused');
 
-            $this->storeDraft($conversation, '', $verdict, $run->reply->label, [
+            $this->storeDraft($conversation, (string) $waiting?->body, $verdict, $waiting?->label ?? $run->reply->label, [
                 'kind' => MessageKind::AgentReply,
                 'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$lookups],
-            ]);
+            ], heldSentences: $sentences);
 
             return null;
         }

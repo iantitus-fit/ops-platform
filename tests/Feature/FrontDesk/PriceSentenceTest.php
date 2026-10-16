@@ -496,7 +496,7 @@ it('counts the code answer against the reply cap, so the following burst pauses 
         ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::ReplyCap);
 });
 
-it('keeps the price question for the owner as an empty draft when the sentence cannot be sent right now (D-04)', function () {
+it('keeps the price question for the owner as a draft that holds the sentence when it cannot be sent right now (D-04, D-44)', function () {
     config(['gate.agent.lock_wait_seconds' => 0]);
     priceSentenceCustomerTexts('How much is the diagnostic?');
     $lock = Cache::lock('reply:'.Conversation::query()->sole()->id, 30);
@@ -509,7 +509,8 @@ it('keeps the price question for the owner as an empty draft when the sentence c
 
     $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
 
-    expect($draft->body)->toBe('')
+    expect($draft->body)->toBe(PRICE_SENTENCE_AC)
+        ->and($draft->meta['held_sentences'])->toBe([PRICE_SENTENCE_AC])
         ->and($draft->gate_reason)->toBe('send_refused')
         ->and(OwnerAlert::query()->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
