@@ -336,6 +336,30 @@ it('closes a price draft with the sentence for its own service, whatever the mod
     'touches_waiting missing' => [null],
 ]);
 
+it('holds blank words labelled promise under label:promise, and a later sentence sends without closing the draft (WR-03)', function () {
+    answeredDraftWithoutDefaultSentence();
+
+    answeredDraftQuestionHeld('How much for a new system? Not sure what size I have.', [...answeredDraftNotSureScript(), 'label' => 'promise']);
+    $waiting = answeredDraftTheDraft();
+
+    expect($waiting->gate_reason)->toBe('label:promise')
+        ->and($waiting->gate['reason']['plain'])->toBe('Held: makes a promise')
+        ->and($waiting->meta['price_open'])->toBe(['system-replacement'])
+        ->and(Conversation::query()->sole()->contact->activities()->where('type', ActivityType::DraftHeld)->latest('id')->first()->summary)->toContain('Held: makes a promise');
+
+    answeredDraftCustomerTexts("I checked, it's about 4 tons", answeredDraftLargeScript(true));
+
+    $live = answeredDraftTheDraft();
+
+    expect(answeredDraftTextsToDana())->toHaveCount(2)
+        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_LARGE_SENTENCE))
+        ->and($live->id)->toBe($waiting->id)
+        ->and($live->resolution)->toBeNull()
+        ->and($live->meta)->not->toHaveKey('answered_by')
+        ->and($live->gate_reason)->toBe('label:promise')
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
+});
+
 it('never closes a draft that waits on one service with the sentence for another (D-21)', function () {
     answeredDraftWithoutDefaultSentence();
 
@@ -811,6 +835,19 @@ it('reads a draft as held on price alone only when every recorded check agrees (
         'code' => ['passed' => null, 'findings' => []],
         'classifier' => ['ran' => false, 'reading' => null],
     ]), true],
+    'no sentence, checks never ran, the label was a promise (WR-03)' => [answeredDraftGate('price:no_sentence', [
+        'label' => ['passed' => null, 'label' => 'promise'],
+        'length' => ['passed' => null],
+        'code' => ['passed' => null, 'findings' => []],
+        'classifier' => ['ran' => false, 'reading' => null],
+    ], agentReply: ''), false],
+    'no sentence, checks never ran, the label was a discount (WR-03)' => [answeredDraftGate('price:no_sentence', [
+        'label' => ['passed' => null, 'label' => 'discount'],
+        'length' => ['passed' => null],
+        'code' => ['passed' => null, 'findings' => []],
+        'classifier' => ['ran' => false, 'reading' => null],
+    ], agentReply: ''), false],
+    'the label check passed with a promise label (WR-03)' => [answeredDraftGate('label:price', ['label' => ['passed' => true, 'label' => 'promise']]), false],
     'Jev read price and a complaint' => [answeredDraftGate('classifier:price', answeredDraftReading(['classifier:price', 'classifier:complaint'])), false],
     'code findings price and promise' => [answeredDraftGate('code:price', [
         'code' => ['passed' => false, 'findings' => [['rule' => 'price', 'match' => '$89'], ['rule' => 'promise', 'match' => 'guarantee']]],

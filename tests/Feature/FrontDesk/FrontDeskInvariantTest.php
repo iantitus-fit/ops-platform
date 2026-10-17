@@ -498,12 +498,9 @@ function invariantBreaches(array $flags, array $run): array
 
     /**
      * D-46: the customer is never left silent, except in a paused or capped conversation, where the owner is alerted
-     * instead. One more case sends nothing by design (D-51): every model is down while the customer's earlier wait is
-     * still current, so the holding reply they already have stands.
+     * instead. Every model down while the customer's wait is current sends the added-info reply (D-29, D-51).
      */
-    $silentByDesign = $flags['waiting'] && $run['waitCurrent'] && $agentAsked && $flags['agentFail'];
-
-    if ($sent->isEmpty() && ! $flags['paused'] && ! $flags['cap'] && ! $silentByDesign) {
+    if ($sent->isEmpty() && ! $flags['paused'] && ! $flags['cap']) {
         $breaches[] = "{$label}: the customer was left silent";
     }
 

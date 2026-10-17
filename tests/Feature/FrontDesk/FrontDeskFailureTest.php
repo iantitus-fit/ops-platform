@@ -355,16 +355,65 @@ it('treats an answer with no possible_danger as a failed model, so the customer 
         ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull();
 });
 
-it('does not send a second holding reply when a second text arrives while every model is still down (D-51)', function () {
+it('sends the added-info reply, not a second holding reply, when a second text arrives while every model is still down (D-29, D-51; Ian, 2026-10-16)', function () {
     frontDeskFailureDanaTextsWhileEveryModelIsDown();
     runQueuedFrontDeskJobs();
 
     $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('d', 32), 'Body' => 'Hello?']))->assertOk();
     runQueuedFrontDeskJobs();
 
-    expect(frontDeskFailureTextsToDana())->toHaveCount(1)
+    expect(frontDeskFailureTextsToDana())->toHaveCount(2)
         ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
         ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(2);
+});
+
+/**
+ * Tuesday 10:00 in the shop's zone, the owner with a phone, and Dana's price question held as a draft with the holding
+ * reply while the models are up. A minute later she texts again and the given models answer: every model down by
+ * default.
+ */
+function frontDeskFailureDanaWaitsThenTextsAgain(string $secondText = 'Hello? Any news?'): void
+{
+    test()->travelTo(Carbon::parse('2026-10-13 10:00', 'America/Chicago'));
+
+    User::factory()->withPhone(FRONT_DESK_FAILURE_OWNER_PHONE)->create();
+    frontDeskCustomerTexts('How much for a new unit?');
+    scriptFrontDeskReplies(['reply' => 'Mike will text you a price for a new unit.', 'label' => 'price']);
+    runQueuedFrontDeskJobs();
+
+    test()->travel(1)->minutes();
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('e', 32), 'Body' => $secondText]))->assertOk();
+    FrontDeskAgent::fake(fn () => throw new RuntimeException('down'))->preventStrayPrompts();
+}
+
+it('sends the added-info reply once and tells the owner when every model fails while an earlier held draft is still current (item 6)', function () {
+    frontDeskFailureDanaWaitsThenTextsAgain();
+
+    runQueuedFrontDeskJobs();
+
+    $texts = frontDeskFailureTextsToDana();
+    $newest = Message::query()->where('direction', MessageDirection::Out)->latest('id')->first();
+
+    expect($texts)->toHaveCount(2)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and($newest->kind)->toBe(MessageKind::AddedInfoReply)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1);
+});
+
+it('sends the added-info reply, not the complaint reply, and raises both alerts when a complaint finds every model down during a current wait (item 6)', function () {
+    frontDeskFailureDanaWaitsThenTextsAgain(FRONT_DESK_FAILURE_COMPLAINT);
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    runQueuedFrontDeskJobs();
+
+    expect(frontDeskFailureTextsToDana())->toHaveCount(2)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(0)
+        ->and(frontDeskFailureAlert(AlertReason::Complaint))->not->toBeNull()
+        ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull();
 });
 
 it('sends the complaint reply, a complaint alert and the failure alert when a complaint finds every model down (D-45, D-51)', function () {
