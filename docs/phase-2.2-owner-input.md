@@ -70,3 +70,17 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
 **Recommendation:** one short list ordered by urgency, safety and complaints first. Each item is a card: who (name, or phone number when there is no name), what they asked in plain words, how long they have waited, one clear tap. Leads and today's conversations below it or on their own page. See PROJECT.md "Frontend" open items.
 
 **Reopens:** the 2026-10-11 decision that the admin stays stock Filament with a brand pass and that a UI-SPEC is written only for Phase 3's booking page. Ian's call.
+
+## 7. Held from the 2026-10-17 role play (decide when the full workflow exists)
+
+**Ian's call (2026-10-17):** 02.1 closes on wiring, not business specifics (recorded in `.planning/PROJECT.md`). The items below are held until the full workflow exists, from first contact to finished job.
+
+- **Message shape (B):** the model writes a warm reply with the owner's fixed text inside it, answer first, and a short AI notice at the bottom. **Reopens** 02.1 D-07 (price sentence first) and Phase 2 D-50 (the notice leads the first automated text). Notice placement goes on the attorney review list. If the model's words fail their check, the fixed text goes alone, as today.
+- **Open:** does B cover every fixed reply (complaint, holding, discount holding, check-in, added-info), or only price and offer sentences? Either way, the 911 safety line stays fixed, first and unwrapped.
+- **When the front desk can't answer, it doesn't say so.** It moves to the step that gets the question answered: a visit or a person.
+- **Intake questions for setup:**
+  - the repeat-visit policy (is a return visit for the same problem charged?);
+  - how an offer combines with other credits (the $89 diagnostic);
+  - whether phrases like "make this right" belong on the promise list.
+- **Phase 3:** the front desk sees job history (what was fixed, what was charged) and can offer real appointment times.
+- **Jev tuning, later:** whether heat plus a newborn should trip the hazard reading.

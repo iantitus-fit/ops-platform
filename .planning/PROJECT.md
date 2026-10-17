@@ -107,6 +107,10 @@ Phase 2 decisions (full log: `.planning/phases/02-text-front-desk/02-CONTEXT.md`
 - **D-37** Before a real client goes live, every provider an agent file names gets a no-retained-copy (ZDR) route.
 - Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11.
 
+Principle for closing phases (Ian, 2026-10-17, Phase 02.1 UAT):
+
+- **02.1 closes on wiring, not business specifics.** A phase is done when the paths work: what is read, what is held, what is sent and who is alerted. Wording, which replies get a warm wrapper, where the AI notice sits, and what goes on the promise list get settled once the full workflow exists (first contact to finished job). Items held this way are listed in `docs/phase-2.2-owner-input.md` under "Held from the 2026-10-17 role play".
+
 Open decisions (not locked; each has a trigger for deciding):
 
 | Decision | Decide when | Notes |
@@ -157,4 +161,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-13 after Phase 2*
+*Last updated: 2026-10-17, Phase 02.1 UAT (closing principle)*
