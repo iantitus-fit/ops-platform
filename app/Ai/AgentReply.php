@@ -16,7 +16,7 @@ readonly class AgentReply
      * @param  list<string>  $priceServices  Slugs of the services whose price the customer asked about.
      * @param  ?bool  $touchesWaiting  Whether the text touches the question already with the owner; null when unknown.
      * @param  ?string  $waitingNote  check_in or added_info; null when unknown.
-     * @param  bool  $possibleDanger  Whether the text could describe a danger to people or the home; the third danger net (D-45).
+     * @param  bool  $possibleDanger  Whether the text could describe a danger to people or the home; the third danger net (D-45). The model must give a true or false: a missing or non-boolean value is rejected like wants_person, so the chain tries the next model.
      */
     public function __construct(
         public string $reply,
@@ -67,6 +67,10 @@ readonly class AgentReply
             throw new UnexpectedValueException('The answer has no true or false for wants_person.');
         }
 
+        if (! is_bool($data['possible_danger'] ?? null)) {
+            throw new UnexpectedValueException('The answer has no true or false for possible_danger.');
+        }
+
         return new self(
             reply: trim($reply),
             label: $label,
@@ -80,7 +84,7 @@ readonly class AgentReply
             waitingNote: in_array($data['waiting_note'] ?? null, self::WAITING_NOTES, true) ? $data['waiting_note'] : null,
             easyReply: self::tolerantText($data['easy_reply'] ?? null),
             easyLabel: is_string($data['easy_label'] ?? null) ? ReplyLabel::tryFrom($data['easy_label']) : null,
-            possibleDanger: ($data['possible_danger'] ?? null) === true,
+            possibleDanger: $data['possible_danger'],
         );
     }
 

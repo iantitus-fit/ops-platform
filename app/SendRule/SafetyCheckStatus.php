@@ -38,6 +38,12 @@ class SafetyCheckStatus
      */
     public const int ALERT_GAP_MINUTES = 60;
 
+    /**
+     * The headline of the back-up alert. It is stored under the safety_check_down reason so it stays forced urgent, but
+     * it must not open with "Safety check is down" (WR-01).
+     */
+    public const string BACK_UP_HEADLINE = 'Safety check is back';
+
     public function __construct(private readonly RaiseOwnerAlert $raiseOwnerAlert) {}
 
     /**
@@ -92,7 +98,7 @@ class SafetyCheckStatus
                 return;
             }
 
-            $this->raiseOwnerAlert->forBusiness(AlertReason::SafetyCheckDown, $this->backUpWords($this->customerTextsSince($outage)));
+            $this->raiseOwnerAlert->forBusiness(AlertReason::SafetyCheckDown, $this->backUpWords($this->customerTextsSince($outage)), self::BACK_UP_HEADLINE);
 
             $outage->up_alerted_at = now();
             $outage->save();
@@ -120,9 +126,9 @@ class SafetyCheckStatus
     private function backUpWords(int $customerTexts): string
     {
         return match ($customerTexts) {
-            0 => 'The safety check is back. No customer texts came in while it was down.',
-            1 => 'The safety check is back. 1 customer text came in while it was down; its reply is in Needs you.',
-            default => "The safety check is back. {$customerTexts} customer texts came in while it was down; their replies are in Needs you.",
+            0 => 'No customer texts came in while it was down.',
+            1 => '1 customer text came in while it was down; its reply is in Needs you.',
+            default => "{$customerTexts} customer texts came in while it was down; their replies are in Needs you.",
         };
     }
 

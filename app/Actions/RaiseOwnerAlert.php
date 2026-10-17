@@ -83,18 +83,19 @@ class RaiseOwnerAlert
      * urgent, due now and sent at once through SendOwnerAlert, at any hour.
      *
      * Nothing here dedupes on purpose: the caller decides when an alert is worth sending. Nothing
-     * here throws on a send failure.
+     * here throws on a send failure. A title replaces the reason's words as the headline while the
+     * stored reason, and so the urgency, stays the reason's own.
      *
      * @return Collection<int, OwnerAlert> the alerts stored by this call, in recipient order
      */
-    public function forBusiness(AlertReason $reason, string $why): Collection
+    public function forBusiness(AlertReason $reason, string $why, ?string $title = null): Collection
     {
         $recipients = User::query()->orderBy('id')->get()
             ->filter(fn (User $user): bool => filled($user->phone))
             ->values();
 
         $recipientIds = $recipients->isEmpty() ? [null] : $recipients->pluck('id')->all();
-        $body = $this->alertText->forBusiness($reason, $why);
+        $body = $this->alertText->forBusiness($reason, $why, $title);
 
         return collect($recipientIds)->map(function (?int $userId) use ($reason, $recipients, $body): OwnerAlert {
             $alert = OwnerAlert::query()->create([

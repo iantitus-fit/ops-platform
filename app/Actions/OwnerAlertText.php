@@ -75,13 +75,15 @@ class OwnerAlertText
     }
 
     /**
-     * Assemble an alert about the business rather than one conversation (D-50): the reason's
-     * words, the why, a blank line, and the link to the dashboard added last. It quotes nothing
-     * a customer wrote, so it needs no clean().
+     * Assemble an alert about the business rather than one conversation (D-50): the headline,
+     * the why, a blank line, and the link to the dashboard added last. The headline is the
+     * reason's words unless the caller gives a title, because the safety check's back-up alert
+     * keeps the safety_check_down reason so it stays forced urgent. It quotes nothing a customer
+     * wrote, so it needs no clean().
      */
-    public function forBusiness(AlertReason $reason, string $why): string
+    public function forBusiness(AlertReason $reason, string $why, ?string $title = null): string
     {
-        return $reason->plainWords().': '.trim($why)."\n\n".Filament::getUrl();
+        return ($title ?? $reason->plainWords()).': '.trim($why)."\n\n".Filament::getUrl();
     }
 
     /**

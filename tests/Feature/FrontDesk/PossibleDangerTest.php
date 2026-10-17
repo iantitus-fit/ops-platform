@@ -183,11 +183,9 @@ it('reads possible_danger as true only when the model gives exactly true', funct
         ->and($reply->toArray()['possible_danger'])->toBeTrue();
 });
 
-it('reads a missing, null or malformed possible_danger as false and never throws', function (array $extra) {
-    $reply = AgentReply::fromStructured(['reply' => 'Hi', 'label' => 'faq_answer', 'wants_person' => false, ...$extra]);
-
-    expect($reply->possibleDanger)->toBeFalse()
-        ->and($reply->toArray()['possible_danger'])->toBeFalse();
+it('rejects a missing, null or malformed possible_danger like wants_person, so the chain tries the next model (WR-02)', function (array $extra) {
+    expect(fn () => AgentReply::fromStructured(['reply' => 'Hi', 'label' => 'faq_answer', 'wants_person' => false, ...$extra]))
+        ->toThrow(UnexpectedValueException::class, 'possible_danger');
 })->with([
     'missing' => [[]],
     'null' => [['possible_danger' => null]],
