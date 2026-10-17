@@ -352,7 +352,7 @@ it('holds blank words labelled promise under label:promise, and a later sentence
     $live = answeredDraftTheDraft();
 
     expect(answeredDraftTextsToDana())->toHaveCount(2)
-        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_LARGE_SENTENCE))
+        ->and(answeredDraftTextsToDana()[1]['body'])->toBe(answeredDraftLater(ANSWERED_DRAFT_LARGE_SENTENCE.' '.ANSWERED_DRAFT_PARTIAL_LINE))
         ->and($live->id)->toBe($waiting->id)
         ->and($live->resolution)->toBeNull()
         ->and($live->meta)->not->toHaveKey('answered_by')

@@ -2,6 +2,7 @@
 
 namespace App\SendRule;
 
+use App\Enums\ReplyLabel;
 use App\Models\Message;
 
 /**
@@ -30,6 +31,8 @@ class HeldReasons
      *  - the length check did not fail;
      *  - every code finding is the price rule;
      *  - the label check did not fail, or it failed only because the label was price;
+     *  - the recorded label is not promise, discount or complaint, whether the label check passed, failed or never ran
+     *    (WR-03): a draft the model flagged with one of those never counts as price alone;
      *  - the run's reading of the customer's text (gate.customer_reading) is stored, ran, did not fail, and found no
      *    complaint, danger, request for a person or unsure request for a person; its price and discount answers never act
      *    (D-42);
@@ -63,8 +66,20 @@ class HeldReasons
             && ($checks['length']['passed'] ?? null) !== false
             && self::onlyPriceFindings($checks['code']['findings'] ?? [])
             && (($checks['label']['passed'] ?? null) !== false || ($checks['label']['label'] ?? null) === 'price')
+            && ! self::recordedLabelNeverGoesAlone($checks['label']['label'] ?? null)
             && self::customerReadingFoundNothingElse($gate['customer_reading'] ?? null)
             && self::wordsCheckFoundNothingElse($gate['inputs']['agent_reply'] ?? null, $checks['classifier'] ?? null);
+    }
+
+    /**
+     * Whether the label recorded on the draft is one that never goes out on its own, other than price (WR-03). A string
+     * that is not in the vocabulary is not one of them.
+     */
+    private static function recordedLabelNeverGoesAlone(mixed $label): bool
+    {
+        $label = is_string($label) ? ReplyLabel::tryFrom($label) : null;
+
+        return $label !== null && $label !== ReplyLabel::Price && in_array($label, ReplyLabel::neverOnItsOwn(), true);
     }
 
     /**
