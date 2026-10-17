@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
-stopped_at: Completed 02.1-27-PLAN.md
-last_updated: "2026-10-16T23:22:31.524Z"
+stopped_at: Completed 02.1-28-PLAN.md
+last_updated: "2026-10-17T01:08:58.095Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 0763ed2b76248d6b48ffff12810ef37b62f12f99
+state_head: 3d5283dbcfb6fd07926221d7b4102b33c9ab6492
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 76
-  completed_plans: 75
+  completed_plans: 76
   percent: 40
 ---
 
@@ -132,6 +132,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02.1 P25 | 22 min | 2 tasks | 5 files |
 | Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
 | Phase 02.1 P27 | 41 min | 2 tasks | 8 files |
+| Phase 02.1 P28 | 100 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -268,6 +269,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02.1]: Plan 26: the agent's complaint label is a detector like Jev's reading, so a handoff on the agent's wants_person raises the complaint alert; the agent's possible_danger on the second call of a cover-both run is read and sends the safety line; a complaint only the second reply finds holds the owner's sentences in the draft
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
 - [Phase 02.1]: Map cards are stamped 2026-10-16 @ cd1bc79, the last commit that touched app code; process card steps renumbered (reading is step 7, sender's check step 19) and other cards' step references updated
+- [Phase 02.1]: 02.1-28: the D-46 matrix test runs in eight slices of 180 combinations, one transaction each, so PostgreSQL finishes it (one 1,440-combination transaction did not finish in over an hour)
 
 ### Pending Todos
 
@@ -303,6 +305,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-16T23:22:31.443Z
-Stopped at: Completed 02.1-27-PLAN.md
+Last session: 2026-10-17T01:08:58.013Z
+Stopped at: Completed 02.1-28-PLAN.md
 Resume file: None
