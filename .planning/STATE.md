@@ -273,7 +273,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 
 ### Pending Todos
 
-None yet.
+- [2026-10-17] [ui] Phone design pass for the dashboard, the Needs you card and the Business Folder page — [todo file](.planning/todos/pending/2026-10-17-phone-design-pass.md) — Needs Ian's layout call in the design pass.
 
 ### Blockers/Concerns
 
