@@ -117,7 +117,7 @@ it('still rejects a blank reply from the model when it flags no price ask (D-04)
 });
 
 it('accepts a blank reply when the model names a service whose price was asked (D-04)', function () {
-    $reply = AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'price_services' => ['ac-repair']]);
+    $reply = AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'price_services' => ['ac-repair'], 'possible_danger' => false]);
 
     expect($reply->reply)->toBe('')
         ->and($reply->priceServices)->toBe(['ac-repair']);

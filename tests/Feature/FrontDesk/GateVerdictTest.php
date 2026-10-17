@@ -45,6 +45,7 @@ it('records the failed provider and the fallback model that answered', function 
             'service_slug' => null,
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     })->preventStrayPrompts();
 

@@ -466,7 +466,7 @@ it('stores the reading next to the words check on a hold that a label veto decid
 });
 
 it('stores the reading on a hold written without model words', function () {
-    $run = new AgentRun(AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'price_services' => ['ac-repair']]), 'anthropic', 'claude', []);
+    $run = new AgentRun(AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'price_services' => ['ac-repair'], 'possible_danger' => false]), 'anthropic', 'claude', []);
     activateExampleFolder();
 
     $verdict = app(DecideSendOrDraft::class)->holdWithoutWords($run, 'How much?', CustomerReading::failed('Jev is down.'), 'price:no_sentence');

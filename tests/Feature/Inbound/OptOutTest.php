@@ -436,6 +436,7 @@ function optOutDanaStopsWhileTheAgentWrites(): void
             'service_slug' => null,
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     }])->preventStrayPrompts();
 }

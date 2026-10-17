@@ -92,8 +92,25 @@ it('rejects a wants_person that is not a boolean', function () {
         ->toThrow(UnexpectedValueException::class);
 });
 
+it('rejects a possible_danger that is missing or not a boolean, so the chain tries the next model (WR-02)', function (array $overrides) {
+    $answer = frontDeskAgentTestAnswer();
+    unset($answer['possible_danger']);
+
+    expect(fn () => AgentReply::fromStructured([...$answer, ...$overrides]))
+        ->toThrow(UnexpectedValueException::class, 'possible_danger');
+})->with([
+    'missing' => [[]],
+    'null' => [['possible_danger' => null]],
+    'the string true' => [['possible_danger' => 'true']],
+    'the integer 1' => [['possible_danger' => 1]],
+]);
+
+it('reads possible_danger back as the boolean the model gave (WR-02)', function (bool $danger) {
+    expect(AgentReply::fromStructured(frontDeskAgentTestAnswer(['possible_danger' => $danger]))->possibleDanger)->toBe($danger);
+})->with([true, false]);
+
 it('treats missing intake answers as an empty list and trims the reply', function () {
-    $reply = AgentReply::fromStructured(['reply' => "  Hello there \n", 'label' => 'faq_answer', 'wants_person' => false]);
+    $reply = AgentReply::fromStructured(['reply' => "  Hello there \n", 'label' => 'faq_answer', 'wants_person' => false, 'possible_danger' => false]);
 
     expect($reply->intakeAnswers)->toBe([])
         ->and($reply->reply)->toBe('Hello there')
@@ -106,6 +123,7 @@ it('keeps well-formed intake answers and drops malformed ones', function () {
         'reply' => 'Thanks',
         'label' => 'intake_question',
         'wants_person' => false,
+        'possible_danger' => false,
         'intake_answers' => [
             ['question_key' => 'symptom', 'option' => 'warm air', 'raw_text' => 'blowing warm air'],
             ['question_key' => 'age', 'option' => null, 'raw_text' => 'about ten years'],
@@ -136,6 +154,7 @@ function frontDeskAgentTestAnswer(array $overrides = []): array
         'reply' => 'Thanks',
         'label' => 'faq_answer',
         'wants_person' => false,
+        'possible_danger' => false,
         ...$overrides,
     ];
 }

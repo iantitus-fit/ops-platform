@@ -2,6 +2,7 @@
 
 use App\Ai\AgentReply;
 use App\Ai\AgentRun;
+use App\Channels\FakeTextChannel;
 use App\Enums\AlertReason;
 use App\Enums\MessageChannel;
 use App\Jobs\PingSafetyCheck;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\SendRule\CustomerReading;
 use App\SendRule\DecideSendOrDraft;
 use App\SendRule\SafetyCheckStatus;
+use Filament\Facades\Filament;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
@@ -129,6 +131,31 @@ it('tells the owner once that the safety check is back, counting the customer te
     expect(safetyCheckOutageAlerts())->toHaveCount(2);
 });
 
+it('opens the back-up text with the back headline, never the down words, and ends with the dashboard link (WR-01)', function () {
+    safetyCheckOutageBegins('2026-10-14 02:00');
+    safetyCheckOutageStatus()->recordFailure('Jev is down.');
+
+    safetyCheckOutageCustomerText('2026-10-14 02:10');
+    safetyCheckOutageCustomerText('2026-10-14 02:20');
+    safetyCheckOutageCustomerText('2026-10-14 03:00');
+
+    safetyCheckOutageAt('2026-10-14 03:30');
+    safetyCheckOutageStatus()->recordSuccess();
+
+    $back = safetyCheckOutageBackAlerts()->sole();
+
+    expect($back->body)->toStartWith('Safety check is back: ')
+        ->and($back->body)->not->toContain('is down:')
+        ->and($back->body)->toContain('3 customer texts came in while it was down')
+        ->and($back->body)->toEndWith("\n\n".Filament::getPanel('admin')->getUrl())
+        ->and($back->reason)->toBe(AlertReason::SafetyCheckDown)
+        ->and($back->urgent)->toBeTrue();
+
+    $toOwner = collect(app(FakeTextChannel::class)->sent())->where('to', SAFETY_CHECK_OUTAGE_OWNER_PHONE)->pluck('body');
+
+    expect($toOwner->last())->toBe($back->body);
+});
+
 it('says one customer text came in, not texts', function () {
     safetyCheckOutageBegins('2026-10-14 02:00');
     safetyCheckOutageStatus()->recordFailure('Jev is down.');
@@ -233,7 +260,7 @@ it('reports and skips a status change when the lock cannot be had, and never thr
  */
 function safetyCheckOutageRun(): AgentRun
 {
-    return new AgentRun(AgentReply::fromStructured(['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question', 'wants_person' => false]), 'anthropic', 'claude', []);
+    return new AgentRun(AgentReply::fromStructured(['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question', 'wants_person' => false, 'possible_danger' => false]), 'anthropic', 'claude', []);
 }
 
 it('marks Jev down on a failed words check and up on a successful one', function () {

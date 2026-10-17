@@ -335,6 +335,26 @@ it('sends the holding reply once when Jev is down and every model failed (D-51)'
         ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull();
 });
 
+it('treats an answer with no possible_danger as a failed model, so the customer gets the holding reply once and the owner hears of it (WR-02, D-51)', function () {
+    User::factory()->withPhone(FRONT_DESK_FAILURE_OWNER_PHONE)->create();
+    frontDeskCustomerTexts();
+    FrontDeskAgent::fake(fn () => [
+        'reply' => 'A technician can come out tomorrow.',
+        'label' => 'faq_answer',
+        'wants_person' => false,
+        'service_slug' => null,
+        'intake_answers' => [],
+        'customer_name' => null,
+    ])->preventStrayPrompts();
+
+    runQueuedFrontDeskJobs();
+
+    expect(frontDeskFailureTextsToDana())->toHaveCount(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AgentReply->value)->count())->toBe(0)
+        ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull();
+});
+
 it('does not send a second holding reply when a second text arrives while every model is still down (D-51)', function () {
     frontDeskFailureDanaTextsWhileEveryModelIsDown();
     runQueuedFrontDeskJobs();

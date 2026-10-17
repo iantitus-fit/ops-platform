@@ -93,6 +93,30 @@ it('writes the reason, the why, a blank line and then the dashboard link, and no
     );
 });
 
+it('puts a title in place of the reason words when one is given, and keeps the rest of the body', function () {
+    businessAlertClosedHours();
+
+    $body = app(OwnerAlertText::class)->forBusiness(AlertReason::SafetyCheckDown, BUSINESS_ALERT_WHY, 'Safety check is back');
+
+    expect($body)->toBe(
+        'Safety check is back: '.BUSINESS_ALERT_WHY."\n\n".Filament::getPanel('admin')->getUrl()
+    );
+});
+
+it('stores a titled business alert under its own reason, urgent and due now, with the title in the body (WR-01)', function () {
+    businessAlertClosedHours();
+    User::factory()->withPhone('+12025550191')->create();
+
+    $alert = businessAlertRaiser()->forBusiness(AlertReason::SafetyCheckDown, BUSINESS_ALERT_WHY, 'Safety check is back')->sole();
+
+    expect($alert->reason)->toBe(AlertReason::SafetyCheckDown)
+        ->and($alert->urgent)->toBeTrue()
+        ->and($alert->due_at->equalTo(now()))->toBeTrue()
+        ->and($alert->sent_at)->not->toBeNull()
+        ->and($alert->body)->toBe('Safety check is back: '.BUSINESS_ALERT_WHY."\n\n".Filament::getPanel('admin')->getUrl())
+        ->and(businessAlertSentTexts()[0]['body'])->toBe($alert->body);
+});
+
 it('names safety_check_down and counts it as urgent with the example folder', function () {
     businessAlertClosedHours();
 

@@ -248,6 +248,7 @@ it('joins the waiting words and the held reply when the second call has no time 
             'waiting_note' => null,
             'easy_reply' => null,
             'easy_label' => null,
+            'possible_danger' => false,
         ];
     })->preventStrayPrompts();
 

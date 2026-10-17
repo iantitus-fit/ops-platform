@@ -237,7 +237,7 @@ it('holds the model\'s words and raises one safety_check_missing alert when a ru
 
     $reading = (new ReflectionMethod(RunFrontDesk::class, 'reading'))->invoke(app(RunFrontDesk::class));
     $words = 'Thanks, what is the AC doing?';
-    $run = new AgentRun(AgentReply::fromStructured(['reply' => $words, 'label' => 'intake_question', 'wants_person' => false]), 'anthropic', 'claude', []);
+    $run = new AgentRun(AgentReply::fromStructured(['reply' => $words, 'label' => 'intake_question', 'wants_person' => false, 'possible_danger' => false]), 'anthropic', 'claude', []);
     $verdict = app(DecideSendOrDraft::class)->decide($run, READING_REQUIRED_CUSTOMER_TEXT, $words, $reading);
 
     expect($reading->missing)->toBeTrue()

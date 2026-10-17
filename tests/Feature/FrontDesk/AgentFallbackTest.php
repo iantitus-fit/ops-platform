@@ -50,6 +50,7 @@ function fakeFailingPrimary(Closure $primary): void
             'service_slug' => 'ac-repair',
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     })->preventStrayPrompts();
 }
@@ -101,6 +102,8 @@ it('answers from the fallback when the primary returns malformed json, a bogus l
     'malformed json' => [[]],
     'bogus label' => [['reply' => 'Hi', 'label' => 'bogus', 'wants_person' => false]],
     'empty reply' => [['reply' => '  ', 'label' => 'faq_answer', 'wants_person' => false]],
+    'possible_danger missing' => [['reply' => 'Hi', 'label' => 'faq_answer', 'wants_person' => false]],
+    'possible_danger not a boolean' => [['reply' => 'Hi', 'label' => 'faq_answer', 'wants_person' => false, 'possible_danger' => 'yes']],
 ]);
 
 it('accepts a very long reply, because length is the send rule\'s job', function () {

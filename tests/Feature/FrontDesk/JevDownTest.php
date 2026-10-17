@@ -172,7 +172,7 @@ it('marks a reading missing, not failed, when a run reaches the reading() fallba
         ->and($stored?->toArray()['missing'] ?? null)->toBeTrue()
         ->and($stored?->toArray()['failed'])->toBeFalse();
 
-    $run = new AgentRun(AgentReply::fromStructured(['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question', 'wants_person' => false]), 'anthropic', 'claude', []);
+    $run = new AgentRun(AgentReply::fromStructured(['reply' => 'Thanks, what is the AC doing?', 'label' => 'intake_question', 'wants_person' => false, 'possible_danger' => false]), 'anthropic', 'claude', []);
     $verdict = app(DecideSendOrDraft::class)->decide($run, JEV_DOWN_AC, 'Thanks, what is the AC doing?', $reading);
 
     expect($verdict->outcome->value)->toBe('hold')

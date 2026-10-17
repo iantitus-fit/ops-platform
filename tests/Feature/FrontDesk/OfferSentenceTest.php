@@ -95,7 +95,7 @@ it('still rejects a blank reply from the model when it flags no price and no dis
 });
 
 it('accepts a blank reply when the model flags a discount ask (D-13)', function () {
-    $reply = AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'asks_discount' => true]);
+    $reply = AgentReply::fromStructured(['reply' => '', 'label' => 'faq_answer', 'wants_person' => false, 'asks_discount' => true, 'possible_danger' => false]);
 
     expect($reply->reply)->toBe('')
         ->and($reply->asksDiscount)->toBeTrue();
