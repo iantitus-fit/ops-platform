@@ -105,8 +105,9 @@ use Illuminate\Support\Str;
  * A front desk that cannot answer (every model failed, no agent for texts) alerts the owner and returns, because the
  * customer's burst is already claimed (AGNT-04), and the customer still hears from the business: the owner's holding
  * reply goes out once, or the complaint reply when the reading found a complaint, unless a safety line already answered
- * (D-51, replyWhenFrontDeskCannotAnswer()). A customer whose earlier wait is still current gets the added-info reply
- * instead of nothing (Ian, 2026-10-16). A front desk that cannot send alerts the owner too. Anything else that goes
+ * (D-51, replyWhenFrontDeskCannotAnswer()). A customer whose earlier wait is still current gets one fixed line instead
+ * of nothing: the complaint reply for a complaint, otherwise the added-info reply (Ian, 2026-10-16 and 2026-10-17,
+ * replyWhileWaitIsCurrent()). A front desk that cannot send alerts the owner too. Anything else that goes
  * wrong, such as a database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
  * left silent. A send the channel refused stays on the record as failed. A send that was only refused, such as while
  * the owner is sending to the same customer, becomes a draft.
@@ -864,6 +865,32 @@ class RunFrontDesk
     }
 
     /**
+     * Send the one fixed line a customer gets while their earlier wait is still current, by D-34's order: the owner's
+     * complaint reply for a complaint, otherwise the added-info line (Ian, 2026-10-17). The complaint line is stored as
+     * complaint_holding, which starts a wait, so the wait stays current and a later held text still gets no second
+     * holding reply. Neither text throws, because the owner's alerts already exist: a refused send is reported to the
+     * log and nothing else goes out.
+     *
+     * @param  array{meta: array<string, mixed>}  $attributes
+     */
+    private function replyWhileWaitIsCurrent(Conversation $conversation, array $attributes, bool $complaint): void
+    {
+        if (! $complaint) {
+            $this->sendAddedInfoReply($conversation, $attributes);
+
+            return;
+        }
+
+        try {
+            $this->sendCombinedReply->handle($conversation, new ReplyParts(
+                complaintLine: $this->fixedReplies->complaintReply(now()),
+            ), $this->reading(), $attributes);
+        } catch (DomainException $exception) {
+            report($exception);
+        }
+    }
+
+    /**
      * Tell the customer the owner's sentence and that the rest of their question is with the owner, in one text. The
      * draft and the owner's alert already exist, so a text that cannot go out falls back to the full holding reply and
      * is otherwise reported to the log, never raised (D-30). When the words were held as a complaint, the owner's
@@ -1221,8 +1248,9 @@ class RunFrontDesk
      * Tell the customer something when the front desk could not answer (D-51): the owner's holding reply, once, or the
      * owner's complaint reply when the run's reading found a complaint, which also alerts the owner to the complaint on
      * the folder's owner_alert timing beside the front_desk_failed alert (D-45). A customer whose earlier wait is still
-     * current gets the added-info reply instead, the same choice storeDraft() makes, so a second text while the models
-     * are still down is never left silent and never gets a second holding reply (D-29, D-51; Ian, 2026-10-16). Nothing
+     * current gets one fixed line instead, the same choice storeDraft() makes: the complaint reply when the reading found
+     * a complaint, otherwise the added-info reply, so a second text while the models are still down is never left silent
+     * and never gets a second holding reply (D-29, D-34, D-51; Ian, 2026-10-16 and 2026-10-17). Nothing
      * goes out when a safety line already answers a text in the burst or the conversation is paused, because "the owner
      * will answer" is the wrong thing to tell someone describing a danger. Neither reply throws. Only the two returns in
      * handle() call this; the crash path in ProcessInbound stays alert-only, so a crash never risks a double text.
@@ -1241,7 +1269,7 @@ class RunFrontDesk
             $this->raiseOwnerAlert->handle($conversation, AlertReason::Complaint, $burst->last(), 'Complaint, and the front desk could not answer');
 
             if ($waitCurrent) {
-                $this->sendAddedInfoReply($conversation, ['meta' => []]);
+                $this->replyWhileWaitIsCurrent($conversation, ['meta' => []], true);
             } else {
                 $this->sendFixedReply->holding($conversation, $this->reading(), 'classifier:complaint');
             }
@@ -1250,7 +1278,7 @@ class RunFrontDesk
         }
 
         if ($waitCurrent) {
-            $this->sendAddedInfoReply($conversation, ['meta' => []]);
+            $this->replyWhileWaitIsCurrent($conversation, ['meta' => []], false);
 
             return;
         }
@@ -1348,7 +1376,8 @@ class RunFrontDesk
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
      * point at a draft that was rolled away (D-07, D-20). Last, the customer gets one holding reply saying the owner
      * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14);
-     * then they get the added-info line instead, so a text is never left silent (D-46; Ian, 2026-10-16).
+     * then they get one fixed line instead: the complaint reply when the verdict's reason is a complaint (D-34; Ian,
+     * 2026-10-17), otherwise the added-info line, so a text is never left silent (D-46; Ian, 2026-10-16).
      * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
      * tell someone describing a fire or a gas leak.
      *
@@ -1424,7 +1453,11 @@ class RunFrontDesk
 
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
             if ($this->sendFixedReply->holdingAlreadySent($conversation)) {
-                $this->sendAddedInfoReply($conversation, ['meta' => $attributes['meta'] ?? []]);
+                $this->replyWhileWaitIsCurrent(
+                    $conversation,
+                    ['meta' => $attributes['meta'] ?? []],
+                    in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true),
+                );
             } else {
                 $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
             }
