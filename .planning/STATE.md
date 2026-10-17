@@ -4,10 +4,10 @@ current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
 stopped_at: Completed 02.1-28-PLAN.md
-last_updated: "2026-10-17T01:08:58.095Z"
+last_updated: "2026-10-17T02:27:19.539Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: 3d5283dbcfb6fd07926221d7b4102b33c9ab6492
+state_head: b254c33e8ae7caaef8cae849161a6471b7db5032
 progress:
   total_phases: 5
   completed_phases: 2
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 Phase: 02.1 (Faster Answers) — EXECUTING
 Plan: 28 of 28 next (24 complete)
 Status: Executing gap plans
-Last activity: 2026-10-16 — Phase 02.1 execution resumed (wave continue)
+Last activity: 2026-10-16 - Completed quick task 261016-t5v: Phase 02.1 review fixes (WR-01, WR-02, WR-03, open item 6)
 
 Progress: [████░░░░░░] 40%
 
@@ -286,6 +286,12 @@ None yet.
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261016-t5v | Phase 02.1 review fixes: back-up alert headline (WR-01), possible_danger must be a boolean (WR-02), blank-words hold reasons kept (WR-03), added-info reply when every model is down during a wait (item 6) | 2026-10-16 | b254c33 | [261016-t5v-phase-02-1-review-fixes-back-up-alert-he](./quick/261016-t5v-phase-02-1-review-fixes-back-up-alert-he/) |
 
 ### Roadmap Evolution
 
