@@ -83,4 +83,6 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
   - how an offer combines with other credits (the $89 diagnostic);
   - whether phrases like "make this right" belong on the promise list.
 - **Phase 3:** the front desk sees job history (what was fixed, what was charged) and can offer real appointment times.
-- **Jev tuning, later:** whether heat plus a newborn should trip the hazard reading.
+- **Jev tuning, due before the first client goes live:**
+  - whether heat plus a newborn should trip the hazard reading;
+  - CO symptoms with no alarm mentioned (headache, dizziness since the heat came on) read 0.05 on text A in UAT test 3, under the 0.075 bar. The reply model's possible_danger caught it there. The one path with no second net: if Jev misses symptoms like these while every reply model is down, D-51 sends the holding reply with no 911 line, and front_desk_failed waits on the folder's timing.
