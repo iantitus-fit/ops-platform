@@ -40,6 +40,12 @@ const INVARIANT_HELD_JOBS = [ProcessInbound::class, RenderCustomerCard::class];
 const INVARIANT_JEV_FAILURE = 'Jev could not be reached or took too long to answer.';
 
 /**
+ * How the 1,440 combinations are split: eight tests of 180, so each runs in a database transaction of its own.
+ */
+const INVARIANT_SLICE_SIZE = 180;
+const INVARIANT_SLICES = 8;
+
+/**
  * The D-46 invariant test: the gap plans each closed one hole, and this file checks that they hold together. A
  * combination is an array of flags, one per dimension D-46 names. Every combination gets its own customer, runs through
  * the real webhook, the real queued job and the real front desk, and is then checked against the invariants below.
@@ -709,15 +715,19 @@ it('keeps the owner sentence out of the text when only the second reply of a cov
  * A reading that never ran (no live business folder) is outside this matrix by Ian's 2026-10-16 ruling; that path is
  * covered by ReadingRequiredToSendTest and JevDownTest, and here the folder is live, so safety_check_missing is never
  * expected (D-49).
+ *
+ * The combinations run in slices, each its own test and so its own database transaction. One transaction holding all
+ * of them made PostgreSQL slower with every combination (its query plans assume the growing tables are empty), and
+ * the run took over an hour; the slices keep each transaction small and the whole file to minutes.
  */
-it('holds the D-46 invariants in every combination', function () {
+it('holds the D-46 invariants in every combination', function (int $slice) {
     $combinations = invariantAllCombinations();
     $breaches = [];
 
-    foreach ($combinations as $flags) {
+    foreach (array_chunk($combinations, INVARIANT_SLICE_SIZE)[$slice] as $flags) {
         array_push($breaches, ...invariantBreaches($flags, invariantRun($flags)));
     }
 
-    expect($combinations)->toHaveCount(1440)
+    expect($combinations)->toHaveCount(INVARIANT_SLICE_SIZE * INVARIANT_SLICES)
         ->and($breaches)->toBe([]);
-});
+})->with(array_map(fn (int $slice): array => [$slice], range(0, INVARIANT_SLICES - 1)));
