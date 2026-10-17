@@ -4,10 +4,10 @@ current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
 stopped_at: Completed 02.1-28-PLAN.md
-last_updated: "2026-10-17T02:27:19.539Z"
+last_updated: "2026-10-17T14:03:35.375Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: b254c33e8ae7caaef8cae849161a6471b7db5032
+state_head: d49b883d929a56e8043b1ee2e0ddf0991ad11162
 progress:
   total_phases: 5
   completed_phases: 2
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 Phase: 02.1 (Faster Answers) — EXECUTING
 Plan: 28 of 28 next (24 complete)
 Status: Executing gap plans
-Last activity: 2026-10-16 - Completed quick task 261016-t5v: Phase 02.1 review fixes (WR-01, WR-02, WR-03, open item 6)
+Last activity: 2026-10-17 - Completed quick task 261017-bz2: Phase 02.1 fixed-reply order on the waiting paths (open items 6, 7) and map card refresh
 
 Progress: [████░░░░░░] 40%
 
@@ -292,6 +292,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 261016-t5v | Phase 02.1 review fixes: back-up alert headline (WR-01), possible_danger must be a boolean (WR-02), blank-words hold reasons kept (WR-03), added-info reply when every model is down during a wait (item 6) | 2026-10-16 | b254c33 | [261016-t5v-phase-02-1-review-fixes-back-up-alert-he](./quick/261016-t5v-phase-02-1-review-fixes-back-up-alert-he/) |
+| 261017-bz2 | Phase 02.1 fixed-reply order on the waiting paths (open items 6, 7) and map card refresh | 2026-10-17 | d49b883 | [261017-bz2-phase-02-1-fixed-reply-order-on-the-wait](./quick/261017-bz2-phase-02-1-fixed-reply-order-on-the-wait/) |
 
 ### Roadmap Evolution
 
