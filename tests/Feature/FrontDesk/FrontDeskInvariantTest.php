@@ -498,7 +498,8 @@ function invariantBreaches(array $flags, array $run): array
 
     /**
      * D-46: the customer is never left silent, except in a paused or capped conversation, where the owner is alerted
-     * instead. Every model down while the customer's wait is current sends the added-info reply (D-29, D-51).
+     * instead. Every model down while the customer's wait is current sends one fixed line: the complaint reply when the
+     * reading found a complaint, otherwise the added-info reply (D-29, D-34, D-51).
      */
     if ($sent->isEmpty() && ! $flags['paused'] && ! $flags['cap']) {
         $breaches[] = "{$label}: the customer was left silent";
@@ -554,6 +555,20 @@ function invariantBreaches(array $flags, array $run): array
     }
 
     /**
+     * D-34 and D-51: when the agent was asked, every model failed and Jev saw a complaint, the customer gets the
+     * complaint reply and never the added-info line, whether or not an earlier wait is current.
+     */
+    if ($agentAsked && $flags['agentFail'] && $complaintSeen) {
+        if (! $sent->contains(fn (Message $message): bool => invariantCarriesComplaintReply($message))) {
+            $breaches[] = "{$label}: a complaint got no complaint reply when the front desk could not answer";
+        }
+
+        if ($sent->contains(fn (Message $message): bool => $message->kind === MessageKind::AddedInfoReply || in_array('added_info_line', $message->meta['parts'] ?? [], true))) {
+            $breaches[] = "{$label}: a complaint got the added-info line when the front desk could not answer";
+        }
+    }
+
+    /**
      * D-50 and D-51: when Jev is down the owner hears right away, and when the agent was asked and every model failed the
      * owner hears that too.
      */
@@ -601,6 +616,10 @@ it('tells the customer and the owner what is possible when Jev and every model a
 
 it('answers a check-in that carries a complaint with the complaint reply, not the check-in reply (D-46, D-34)', function () {
     invariantCheck(invariantFlags(['waiting', 'checkin', 'complaint']));
+});
+
+it('answers a complaint that finds every model down during a current wait with the complaint reply, not the added-info line (D-46, D-34, item 6)', function () {
+    invariantCheck(invariantFlags(['waiting', 'complaint', 'agentFail']));
 });
 
 it('alerts the owner to a complaint when the reply cap is reached (D-46, D-52)', function () {

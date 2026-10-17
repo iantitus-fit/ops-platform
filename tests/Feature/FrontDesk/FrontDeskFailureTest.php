@@ -3,6 +3,7 @@
 use App\Actions\ClaimInboundBurst;
 use App\Actions\RecordIntakeAnswers;
 use App\Actions\ReportFrontDeskFailure;
+use App\Actions\SendFixedReply;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
@@ -18,6 +19,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\FixedReplies;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -403,17 +405,25 @@ it('sends the added-info reply once and tells the owner when every model fails w
         ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1);
 });
 
-it('sends the added-info reply, not the complaint reply, and raises both alerts when a complaint finds every model down during a current wait (item 6)', function () {
+it('sends the complaint reply once, not the added-info reply, and raises both alerts when a complaint finds every model down during a current wait (item 6, D-34; Ian, 2026-10-17)', function () {
     frontDeskFailureDanaWaitsThenTextsAgain(FRONT_DESK_FAILURE_COMPLAINT);
     fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
 
     runQueuedFrontDeskJobs();
 
+    $newest = Message::query()->where('direction', MessageDirection::Out)->latest('id')->first();
+
     expect(frontDeskFailureTextsToDana())->toHaveCount(2)
-        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
-        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(0)
+        ->and($newest->kind)->toBe(MessageKind::ComplaintHolding)
+        ->and($newest->meta['parts'])->toBe(['complaint_line'])
+        ->and($newest->body)->toContain(app(FixedReplies::class)->complaintReply(now()))
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1)
         ->and(frontDeskFailureAlert(AlertReason::Complaint))->not->toBeNull()
-        ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull();
+        ->and(frontDeskFailureAlert(AlertReason::FrontDeskFailed))->not->toBeNull()
+        ->and(app(SendFixedReply::class)->holdingAlreadySent(Conversation::query()->sole()))->toBeTrue();
 });
 
 it('sends the complaint reply, a complaint alert and the failure alert when a complaint finds every model down (D-45, D-51)', function () {
