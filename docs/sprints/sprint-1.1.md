@@ -92,12 +92,12 @@ What the gap closure (plans 02.1-17 to 02.1-27) added to the data, for the same 
 
 Findings still open for Ian to triage in `.planning/phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`: WR-02, WR-03, WR-05, WR-06 and IN-01 to IN-07 keep their `open` rows. The gap closure fixed CR-01, CR-02, WR-01, WR-04 and WR-07 only.
 
-Open items the gap plans found and did not decide. They are open, not delivered:
+Open items the gap plans found and did not decide. The first two are still open, not delivered; Ian decided the last two and quick tasks fixed them:
 
 - (02.1-18, confirmed open by 02.1-26) After a refused combined send, the partial line retries the sentences. If that retry is refused too, the sentences are not in the draft: the customer gets nothing, the draft holds the model's words without the owner's sentence, and the owner gets a `draft_waiting` alert.
 - (02.1-26) On the whole-thread path (`answerTouchingWithWholeThreadDraft`) the owner's sentences go out with the partial line before the second agent call. A danger or a complaint found only in that second reply therefore acts after the sentences went out, and the safety line follows them rather than leading. Read from the code, not run. Reordering would delay the sentences by one model call, so it is Ian's call.
-- (02.1-26) With every model down while the customer's earlier wait is still current (D-46 "never silent" against D-51), no new text goes out: the holding reply from the earlier wait stands and the owner gets `front_desk_failed`. Awaiting Ian.
-- (orchestrator, after 02.1-26) A draft the owner closed as answered with no `answered_by` does not end the wait (Ian, 2026-10-16). In the rare state where the waiting draft was closed without an answering id, a complaint now gets the added-info line rather than the complaint reply. The complaint alert still goes. Awaiting Ian.
+- (02.1-26) With every model down while the customer's earlier wait is still current (D-46 "never silent" against D-51), no new text went out. Fixed (Ian, 2026-10-16 and 2026-10-17; quick tasks 261016-t5v and 261017-bz2): the customer now gets one fixed line by D-34's order, the complaint reply when Jev reads a complaint, otherwise the added-info reply, and the owner still gets `front_desk_failed`, plus the complaint alert on the folder's timing.
+- (orchestrator, after 02.1-26) A draft the owner closed as answered with no `answered_by` does not end the wait (Ian, 2026-10-16). In the rare state where the waiting draft was closed without an answering id, a complaint got the added-info line rather than the complaint reply. Fixed (Ian, 2026-10-17; quick task 261017-bz2): a text held as a complaint while the wait is still current now gets the complaint reply, and the complaint alert still goes on the folder's timing.
 
 ## Walk-through log
 
