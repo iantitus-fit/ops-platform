@@ -121,6 +121,12 @@ Open decisions (not locked; each has a trigger for deciding):
 | Hosting (Laravel Cloud or Forge) | At first deploy | One instance per client |
 | Which legal entity registers A2P for Ian's own test number | Before Twilio goes live | DEC-05 says Ian registers; the entity is not stated. Does not gate the build |
 
+Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the first deploy:
+
+- **Run the queue worker under a supervisor that restarts it.** In UAT the worker crashed overnight when the Mac slept (ProcessTimedOutException), and while it was down no health ping ran, so the owner was not told. The ping runs on the same worker, so it cannot report the worker itself being down.
+- **Restart the worker after any `.env` or key change.** `queue:listen` keeps the `.env` values it started with: a restored `JEV_API_KEY` only took effect after the restart.
+- **Owner-alert delivery to a real phone is untested.** The Twilio account is still a trial and A2P can't be registered. Check it at Twilio go-live.
+
 ## Frontend
 
 Decided:
