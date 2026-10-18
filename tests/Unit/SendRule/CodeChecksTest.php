@@ -29,6 +29,30 @@ it('finds a price, a discount, a promise or a never_say phrase and reports the f
     ]],
 ]);
 
+it('finds a number in digits or words next to a money word as a price (WR-04)', function (string $text, string $match) {
+    expect(CodeChecks::findings($text, []))->toBe([['rule' => 'price', 'match' => $match]]);
+})->with([
+    'number words and dollars' => ['It runs about five thousand dollars.', 'thousand dollars'],
+    'a number word and grand' => ['Figure five grand for a new unit.', 'five grand'],
+    'digits and grand' => ['Figure 5 grand for a new unit.', '5 grand'],
+    'k shorthand' => ['It is around 5k installed.', '5k'],
+    'k shorthand with a space' => ['It is around 5 K installed.', '5 K'],
+    'a hyphenated number word and bucks' => ['The visit is eighty-nine bucks.', 'eighty-nine bucks'],
+    'a number word and a dollar' => ['That part is twenty dollars.', 'twenty dollars'],
+    'hundred and bucks' => ['A couple hundred bucks should cover it.', 'hundred bucks'],
+]);
+
+it('leaves a number that sits next to no money word alone (WR-04)', function (string $text) {
+    expect(CodeChecks::findings($text, []))->toBe([]);
+})->with([
+    'a unit size' => 'That fits a 3 tons system.',
+    'a count in words' => 'You have two systems in the house.',
+    'around the clock' => 'We answer 24/7.',
+    'a time to arrive' => 'A tech can be there within 2 hours.',
+    'a size in words' => 'A three ton unit is common for that size.',
+    'grand without a number' => 'We serve Grand Rapids.',
+]);
+
 it('finds nothing in ordinary scheduling text', function (string $text) {
     expect(CodeChecks::findings($text, []))->toBe([]);
 })->with([

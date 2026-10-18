@@ -62,6 +62,18 @@ class CodeChecks
     ];
 
     /**
+     * Numbers spelled in words. Only a number next to a money word counts as a price (WR-04), so "two
+     * systems" and "a three ton unit" are left alone.
+     *
+     * @var list<string>
+     */
+    private const NUMBER_WORDS = [
+        'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+        'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty', 'thirty',
+        'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety', 'hundred', 'thousand', 'million',
+    ];
+
+    /**
      * How many words may sit between a number and a price word for the number to count as a price.
      */
     private const PRICE_WORD_DISTANCE = 3;
@@ -80,7 +92,7 @@ class CodeChecks
     {
         $findings = [];
 
-        $price = self::earliest($text, self::PRICE_AMOUNT_PATTERNS) ?? self::numberNearPriceWord($text);
+        $price = self::earliest($text, [...self::PRICE_AMOUNT_PATTERNS, ...self::spelledAmountPatterns()]) ?? self::numberNearPriceWord($text);
 
         $discount = self::earliest($text, [
             ...array_map(self::phrasePattern(...), self::DISCOUNT_PHRASES),
@@ -178,6 +190,23 @@ class CodeChecks
     public static function plainNumberNearPriceWord(string $text): ?string
     {
         return self::numberNearPriceWord($text);
+    }
+
+    /**
+     * A number next to a money word, in digits or words: "5 grand", "eighty-nine bucks", "five thousand
+     * dollars" or "5k" (WR-04). A number with no money word beside it, such as "3 tons" or "within 2 hours",
+     * is not one. "89 dollars" is already a price amount above.
+     *
+     * @return list<string>
+     */
+    private static function spelledAmountPatterns(): array
+    {
+        $word = '(?:'.implode('|', self::NUMBER_WORDS).')';
+
+        return [
+            '/(?<![\p{L}\p{N}_])(?:\d+(?:,\d{3})*(?:\.\d+)?|'.$word.'(?:-'.$word.')?)\s+(?:dollars?|bucks?|grand)(?![\p{L}\p{N}_])/iu',
+            '/(?<![\p{L}\p{N}_])\d+(?:\.\d+)?\s?k(?![\p{L}\p{N}_])/iu',
+        ];
     }
 
     /**
