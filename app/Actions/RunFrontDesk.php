@@ -384,16 +384,17 @@ class RunFrontDesk
         }
 
         if ($answersWaiting && $sentences !== []) {
-            $this->closeAsAnswered($waiting, $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode));
-            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false, heldSentences: $heldSentences);
+            $answer = $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+            $this->closeAsAnswered($waiting, $answer);
+            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false, heldSentences: $answer === null ? [...$heldSentences, ...$sentences] : $heldSentences);
 
             return;
         }
 
-        $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === [], heldSentences: $heldSentences);
+        $draft = $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === [], heldSentences: $heldSentences);
 
-        if ($sentences !== []) {
-            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
+        if ($sentences !== [] && $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode) === null) {
+            $this->keepUnsentSentences($draft, $sentences);
         }
     }
 
@@ -587,7 +588,7 @@ class RunFrontDesk
             $attributes['meta'] = [...$attributes['meta'], 'check_in_reply_gate' => $verdict->details];
         }
 
-        $this->storeDraft($conversation, $draftWords, $storedVerdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
+        $draft = $this->storeDraft($conversation, $draftWords, $storedVerdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
@@ -597,7 +598,9 @@ class RunFrontDesk
             && ! $this->sendFixedReply->complaintReplyAlreadySent($conversation);
 
         if ($complaintLineDue || (($parts->codeSentences !== [] || $easy !== null) && ! $checkIn)) {
-            $this->sendPartialHolding($conversation, $parts, $sentMeta, $complaintLineDue ? $verdict->reasonCode : null, $easy);
+            if ($this->sendPartialHolding($conversation, $parts, $sentMeta, $complaintLineDue ? $verdict->reasonCode : null, $easy) === null && ! $complaintLineDue) {
+                $this->keepUnsentSentences($draft, $parts->codeSentences);
+            }
         } elseif ($checkIn) {
             $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy, alertsOwner: ! in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true));
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
@@ -1449,10 +1452,13 @@ class RunFrontDesk
      * (D-43, D-44). A complaint that held sentences alerts the owner as any complaint does, on the folder's owner_alert
      * timing (D-43).
      *
+     * Returns the stored draft, so a caller whose own text beside it could not go out can add what that text carried
+     * (keepUnsentSentences()).
+     *
      * @param  array<string, mixed>  $attributes
      * @param  list<string>  $heldSentences
      */
-    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null, array $heldSentences = []): void
+    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null, array $heldSentences = []): Message
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
         $alertReason ??= $this->alertReasonFor($verdict);
@@ -1520,6 +1526,32 @@ class RunFrontDesk
                 $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
             }
         }
+
+        return $draft;
+    }
+
+    /**
+     * Add the owner's sentences to a draft when the partial holding line that was to carry them could not go out, so
+     * the owner still sees the answer and can send it with one tap (IN-03; open item 5, from 02.1-18). The body and
+     * held_sentences follow storeDraft()'s rule (D-44). A draft no longer live, because the owner or a newer text
+     * already dealt with it, is left alone.
+     *
+     * @param  list<string>  $sentences
+     */
+    private function keepUnsentSentences(Message $draft, array $sentences): void
+    {
+        $draft->refresh();
+
+        if ($sentences === [] || $draft->status !== MessageStatus::Draft) {
+            return;
+        }
+
+        $alreadyHeld = $draft->meta['held_sentences'] ?? [];
+
+        $draft->update([
+            'body' => $alreadyHeld === [] ? $this->prefilledBody($draft->body, $sentences) : $draft->body.' '.implode(' ', $sentences),
+            'meta' => [...($draft->meta ?? []), 'held_sentences' => [...$alreadyHeld, ...$sentences]],
+        ]);
     }
 
     /**

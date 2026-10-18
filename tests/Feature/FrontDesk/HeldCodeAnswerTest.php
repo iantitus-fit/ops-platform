@@ -557,6 +557,34 @@ it('keeps the owner\'s sentence in a send_refused draft when a code-only send is
         ->and(OwnerAlert::query()->count())->toBe(1);
 });
 
+it('keeps the owner\'s sentence in the draft when the partial line that carries it is refused too (IN-03, open item 5)', function () {
+    config(['gate.agent.lock_wait_seconds' => 0]);
+
+    heldCodeAnswerCustomerTexts('How much is a repair for my AC, and can you come Thursday?');
+    scriptFrontDeskReplies([
+        'reply' => 'We guarantee a tech on Thursday.',
+        'label' => 'scheduling',
+        'service_slug' => 'ac-repair',
+        'price_services' => ['ac-repair'],
+    ]);
+
+    $lock = Cache::lock('reply:'.Conversation::query()->sole()->id, 30);
+    $lock->get();
+
+    try {
+        runQueuedFrontDeskJobs();
+    } finally {
+        $lock->release();
+    }
+
+    $draft = heldCodeAnswerMaybeDraft();
+
+    expect(collect(heldCodeAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$89')))->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->whereIn('status', ['queued', 'sent', 'delivered'])->count())->toBe(0)
+        ->and($draft?->body)->toBe("We guarantee a tech on Thursday.\n\n".HELD_CODE_ANSWER_AC_SENTENCE)
+        ->and($draft?->meta['held_sentences'] ?? null)->toBe([HELD_CODE_ANSWER_AC_SENTENCE]);
+});
+
 it('never replaces the waiting draft with an empty one when the closing send is refused, and keeps its words with the sentence (D-47)', function () {
     config(['gate.agent.lock_wait_seconds' => 0]);
 
