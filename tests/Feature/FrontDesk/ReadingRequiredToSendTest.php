@@ -396,6 +396,12 @@ it('checks each part of an automated text against the reading at the sender (D-4
     'a partial holding text with owner sentences and a complaint reading is refused' => [MessageKind::PartialHolding, ['code_sentences', 'partial_holding_line'], null, 'complaint', false],
     'a partial holding text with owner sentences and a clean reading sends' => [MessageKind::PartialHolding, ['code_sentences', 'partial_holding_line'], null, 'clean', true],
     'a check-in line alone with a complaint reading sends' => [MessageKind::CheckInReply, ['check_in_line'], null, 'complaint', true],
+    'a code answer that names no parts is held to the strictest rule (IN-10)' => [MessageKind::CodeAnswer, null, null, 'clean', false],
+    'a partial holding text that names no parts is held to the strictest rule (IN-10)' => [MessageKind::PartialHolding, null, null, 'clean', false],
+    'a check-in reply that names no parts is held to the strictest rule (IN-10)' => [MessageKind::CheckInReply, null, null, 'clean', false],
+    'an added-info reply that names no parts is held to the strictest rule (IN-10)' => [MessageKind::AddedInfoReply, null, null, 'clean', false],
+    'a plain complaint reply with no parts still sends as a fixed line (IN-10)' => [MessageKind::ComplaintHolding, null, null, 'complaint', true],
+    'a plain discount reply with no parts still sends as a fixed line (IN-10)' => [MessageKind::DiscountHolding, null, null, 'clean', true],
 ]);
 
 it('refuses model words that the send rule held, even with a passed words check and a clean reading', function () {

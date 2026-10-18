@@ -372,7 +372,11 @@ class OutboundSender
     /**
      * The parts a text is made of. A combined text records them in meta.parts. A text with no parts is the model's words
      * when its kind is agent_reply, and a text with no kind is treated the same, so a path that forgets to name its kind
-     * is held to the strictest rule. Any other kind is a fixed line, which needs only the reading record (Phase 2 D-12).
+     * is held to the strictest rule. A kind only a combined text has (code_answer, partial_holding, check_in_reply,
+     * added_info_reply) that arrives without its parts is held to the strictest rule too, owner sentences and model
+     * words both, so a new path that forgets meta.parts is refused instead of skipping a check (IN-10). Any other kind
+     * is a fixed line, which needs only the reading record (Phase 2 D-12); the complaint and discount replies go out
+     * that way on their own.
      *
      * @param  array<string, mixed>  $attributes
      * @return list<string>
@@ -388,7 +392,11 @@ class OutboundSender
         $kind = $attributes['kind'] ?? null;
         $kind = is_string($kind) ? MessageKind::tryFrom($kind) : $kind;
 
-        return $kind === null || $kind === MessageKind::AgentReply ? ['model_words'] : [];
+        return match (true) {
+            $kind === null || $kind === MessageKind::AgentReply => ['model_words'],
+            in_array($kind, [MessageKind::CodeAnswer, MessageKind::PartialHolding, MessageKind::CheckInReply, MessageKind::AddedInfoReply], true) => ['code_sentences', 'model_words'],
+            default => [],
+        };
     }
 
     /**
