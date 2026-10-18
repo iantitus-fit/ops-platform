@@ -266,6 +266,32 @@ it('gives a later complaint in the same wait the next line in D-34\'s order, nev
     'an added detail Jev reads as a complaint' => [true, ['reply' => 'Thanks, I will pass that on.', 'label' => 'intake_question', 'touches_waiting' => true], 'And he tracked mud on the carpet.', WAITING_REPLIES_ADDED_INFO_LINE, MessageKind::AddedInfoReply, 'classifier:complaint'],
 ]);
 
+it('sends a passing easy answer with the partial holding line when a later complaint in the same wait asks it, never a second complaint reply (D-36, G-02.1-1)', function () {
+    waitingRepliesDraftHeld();
+
+    waitingRepliesCustomerTexts(['reply' => 'We are sorry to hear that.', 'label' => 'complaint', 'touches_waiting' => true], 'The technician left a mess');
+
+    waitingRepliesCustomerTexts([
+        'reply' => 'We are sorry, we will pass that on.',
+        'label' => 'complaint',
+        'touches_waiting' => true,
+        'easy_reply' => 'Yes, we service heat pumps.',
+        'easy_label' => 'faq_answer',
+    ], 'He also scratched my floor. Do you service heat pumps?');
+
+    $sent = Message::query()->where('kind', MessageKind::PartialHolding->value)->sole();
+
+    expect(waitingRepliesTextsToDana())->toHaveCount(3)
+        ->and(waitingRepliesTextsToDana()[2]['body'])->toBe(waitingRepliesLater('Yes, we service heat pumps. '.WAITING_REPLIES_PARTIAL_LINE))
+        ->and($sent->meta['parts'])->toBe(['model_words', 'partial_holding_line'])
+        ->and($sent->gate_outcome)->toBe(GateOutcome::Send)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(0)
+        ->and(waitingRepliesLiveDraft()->gate_reason)->toBe('label:complaint')
+        ->and(waitingRepliesCheckInAlerts())->toBe([])
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->count())->toBe(1);
+});
+
 it('gives the complaint reply again once the owner has answered and a new wait starts (G-02.1-1)', function () {
     waitingRepliesDraftHeld();
 
