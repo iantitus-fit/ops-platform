@@ -1,6 +1,6 @@
 # Map: the text front desk
 
-Fence: the nouns a cold reader must understand before changing how an inbound text becomes a reply or a draft. Checked 2026-10-18 @ 0a48008. The source wins over any card.
+Fence: the nouns a cold reader must understand before changing how an inbound text becomes a reply or a draft. Checked 2026-10-18 @ 7a52361. The source wins over any card.
 
 ## By task
 - Change when a reply sends or becomes a draft (checks, thresholds, Jev), how a draft is approved, replaced or closed as answered, or how price or offer sentences are put into a text (the pick itself is step 13 of the process card): open `objects/messages/message-and-verdict.md`. Not `rules/sending.md`, which only feeds the rule.
