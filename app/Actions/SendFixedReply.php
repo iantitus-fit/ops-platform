@@ -146,6 +146,39 @@ class SendFixedReply
             return false;
         }
 
+        return $this->nothingAnsweredSince($conversation, $latest);
+    }
+
+    /**
+     * Whether the owner's complaint reply already went out in the customer's current wait (D-34; Ian, 2026-10-17, G-02.1-1).
+     *
+     * The complaint reply is kind complaint_holding whether it goes alone or leads a text (ReplyParts::kind()), and it
+     * starts a wait. So when nothing has answered since the newest one, it belongs to the customer's current wait and the
+     * customer has already been told once: a later complaint in that wait gets the check-in or added-info reply instead.
+     * A refused or failed complaint send does not count, so the next complaint tries again. Once the owner answers, it no
+     * longer counts, and the next complaint gets the complaint reply again.
+     */
+    public function complaintReplyAlreadySent(Conversation $conversation): bool
+    {
+        $latest = $conversation->messages()
+            ->where('kind', MessageKind::ComplaintHolding)
+            ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
+            ->reorder('id', 'desc')
+            ->first();
+
+        if ($latest === null) {
+            return false;
+        }
+
+        return $this->nothingAnsweredSince($conversation, $latest);
+    }
+
+    /**
+     * Whether nothing has answered the customer since a wait-starter went out: no text the owner sent after it, no draft
+     * the owner approved, edited or discarded since it, and no draft code closed as answered by a newer text (D-30, WR-01).
+     */
+    private function nothingAnsweredSince(Conversation $conversation, Message $latest): bool
+    {
         $endedByOwner = $conversation->messages()
             ->where(function ($query) use ($latest): void {
                 $query

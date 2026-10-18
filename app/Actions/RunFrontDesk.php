@@ -106,8 +106,8 @@ use Illuminate\Support\Str;
  * customer's burst is already claimed (AGNT-04), and the customer still hears from the business: the owner's holding
  * reply goes out once, or the complaint reply when the reading found a complaint, unless a safety line already answered
  * (D-51, replyWhenFrontDeskCannotAnswer()). A customer whose earlier wait is still current gets one fixed line instead
- * of nothing: the complaint reply for a complaint, otherwise the added-info reply (Ian, 2026-10-16 and 2026-10-17,
- * replyWhileWaitIsCurrent()). A front desk that cannot send alerts the owner too. Anything else that goes
+ * of nothing: the complaint reply for the first complaint of the wait, otherwise the added-info reply (Ian, 2026-10-16,
+ * 2026-10-17 and 2026-10-18, replyWhileWaitIsCurrent()). A front desk that cannot send alerts the owner too. Anything else that goes
  * wrong, such as a database error, does throw, and ProcessInbound turns it into a note and an owner alert so a claimed text is never
  * left silent. A send the channel refused stays on the record as failed. A send that was only refused, such as while
  * the owner is sending to the same customer, becomes a draft.
@@ -494,7 +494,10 @@ class RunFrontDesk
      *
      * A customer is never left with no reply: a run sends one owner-written line, chosen in order: the complaint reply,
      * the check-in reply, the partial holding line when an answer rides, the added-info reply, or, when the owner's own
-     * text already ended the wait, a new holding reply (D-34, D-36). Only a check-in alerts the owner (D-29).
+     * text already ended the wait, a new holding reply (D-34, D-36). The complaint reply goes out at most once per wait
+     * (SendFixedReply::complaintReplyAlreadySent()): a later complaint in the same wait gets the next line, the check-in
+     * reply when it is a check-in, otherwise the added-info reply, and the owner's alerts are unchanged (Ian,
+     * 2026-10-17, G-02.1-1). Only a check-in alerts the owner (D-29).
      *
      * When the text touches W and also asks something easy (D-19), the easy part has already been checked on its own
      * with the label guard. If it passed, its words ride in the same text as the owner's sentences, in front of whichever
@@ -582,8 +585,11 @@ class RunFrontDesk
             return;
         }
 
-        if (in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true) || (($parts->codeSentences !== [] || $easy !== null) && ! $checkIn)) {
-            $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode, $easy);
+        $complaintLineDue = in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true)
+            && ! $this->sendFixedReply->complaintReplyAlreadySent($conversation);
+
+        if ($complaintLineDue || (($parts->codeSentences !== [] || $easy !== null) && ! $checkIn)) {
+            $this->sendPartialHolding($conversation, $parts, $sentMeta, $complaintLineDue ? $verdict->reasonCode : null, $easy);
         } elseif ($checkIn) {
             $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
@@ -866,16 +872,18 @@ class RunFrontDesk
 
     /**
      * Send the one fixed line a customer gets while their earlier wait is still current, by D-34's order: the owner's
-     * complaint reply for a complaint, otherwise the added-info line (Ian, 2026-10-17). The complaint line is stored as
-     * complaint_holding, which starts a wait, so the wait stays current and a later held text still gets no second
-     * holding reply. Neither text throws, because the owner's alerts already exist: a refused send is reported to the
+     * complaint reply for the first complaint of the wait, otherwise the added-info line (Ian, 2026-10-17). The
+     * complaint reply goes out at most once per wait: when SendFixedReply::complaintReplyAlreadySent() says it already
+     * did, a later complaint gets the added-info line, and the owner's alerts are unchanged (G-02.1-1). The complaint
+     * line is stored as complaint_holding, which starts a wait, so the wait stays current and a later held text still
+     * gets no second holding reply. Neither text throws, because the owner's alerts already exist: a refused send is reported to the
      * log and nothing else goes out.
      *
      * @param  array{meta: array<string, mixed>}  $attributes
      */
     private function replyWhileWaitIsCurrent(Conversation $conversation, array $attributes, bool $complaint): void
     {
-        if (! $complaint) {
+        if (! $complaint || $this->sendFixedReply->complaintReplyAlreadySent($conversation)) {
             $this->sendAddedInfoReply($conversation, $attributes);
 
             return;
@@ -1249,8 +1257,9 @@ class RunFrontDesk
      * owner's complaint reply when the run's reading found a complaint, which also alerts the owner to the complaint on
      * the folder's owner_alert timing beside the front_desk_failed alert (D-45). A customer whose earlier wait is still
      * current gets one fixed line instead, the same choice storeDraft() makes: the complaint reply when the reading found
-     * a complaint, otherwise the added-info reply, so a second text while the models are still down is never left silent
-     * and never gets a second holding reply (D-29, D-34, D-51; Ian, 2026-10-16 and 2026-10-17). Nothing
+     * a complaint and none went out in this wait yet, otherwise the added-info reply, so a second text while the models
+     * are still down is never left silent and never gets a second holding or complaint reply (D-29, D-34, D-51; Ian,
+     * 2026-10-16, 2026-10-17 and G-02.1-1). The complaint alert is raised for every complaint either way. Nothing
      * goes out when a safety line already answers a text in the burst or the conversation is paused, because "the owner
      * will answer" is the wrong thing to tell someone describing a danger. Neither reply throws. Only the two returns in
      * handle() call this; the crash path in ProcessInbound stays alert-only, so a crash never risks a double text.
@@ -1376,8 +1385,9 @@ class RunFrontDesk
      * The alert goes out only after that commit: a text to the owner's phone cannot be taken back, and it must not
      * point at a draft that was rolled away (D-07, D-20). Last, the customer gets one holding reply saying the owner
      * has their question and when he will answer, unless one is already waiting on this same question (D-12, D-14);
-     * then they get one fixed line instead: the complaint reply when the verdict's reason is a complaint (D-34; Ian,
-     * 2026-10-17), otherwise the added-info line, so a text is never left silent (D-46; Ian, 2026-10-16).
+     * then they get one fixed line instead: the complaint reply when the verdict's reason is a complaint and none went
+     * out in this wait yet (D-34; Ian, 2026-10-17, G-02.1-1), otherwise the added-info line, so a text is never left
+     * silent (D-46; Ian, 2026-10-16). The owner's alerts are the same either way.
      * A reply held for a danger never gets the holding reply, because "the owner will answer" is the wrong thing to
      * tell someone describing a fire or a gas leak.
      *
