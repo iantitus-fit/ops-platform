@@ -4,10 +4,10 @@ current_phase: "02.1"
 current_phase_name: Faster Answers
 status: executing
 stopped_at: Completed 02.1-28-PLAN.md
-last_updated: "2026-10-17T14:03:35.375Z"
-last_activity: 2026-10-16
+last_updated: "2026-10-18T15:37:59.300Z"
+last_activity: 2026-10-17
 last_activity_desc: Phase 02.1 execution resumed (wave continue)
-state_head: d49b883d929a56e8043b1ee2e0ddf0991ad11162
+state_head: a616fc5ac185a14d156f7ae3e098765ee15b5a56
 progress:
   total_phases: 5
   completed_phases: 2
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-13)
 Phase: 02.1 (Faster Answers) — EXECUTING
 Plan: 28 of 28 next (24 complete)
 Status: Executing gap plans
-Last activity: 2026-10-17 - Completed quick task 261017-bz2: Phase 02.1 fixed-reply order on the waiting paths (open items 6, 7) and map card refresh
+Last activity: 2026-10-18 - Completed quick task 261018-dxy: Phase 02.1 UAT gap fixes (G-02.1-1, G-02.1-2, G-02.1-3)
 
 Progress: [████░░░░░░] 40%
 
@@ -293,6 +293,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 |---|-------------|------|--------|-----------|
 | 261016-t5v | Phase 02.1 review fixes: back-up alert headline (WR-01), possible_danger must be a boolean (WR-02), blank-words hold reasons kept (WR-03), added-info reply when every model is down during a wait (item 6) | 2026-10-16 | b254c33 | [261016-t5v-phase-02-1-review-fixes-back-up-alert-he](./quick/261016-t5v-phase-02-1-review-fixes-back-up-alert-he/) |
 | 261017-bz2 | Phase 02.1 fixed-reply order on the waiting paths (open items 6, 7) and map card refresh | 2026-10-17 | d49b883 | [261017-bz2-phase-02-1-fixed-reply-order-on-the-wait](./quick/261017-bz2-phase-02-1-fixed-reply-order-on-the-wait/) |
+| 261018-dxy | Phase 02.1 UAT gap fixes: complaint reply once per wait (G-02.1-1), one price_services rule for both models with live check passed 8/8 (G-02.1-2), reading stored on the safety line (G-02.1-3), WINDOWS 11 to 17, map re-check | 2026-10-18 | a616fc5 | [261018-dxy-phase-02-1-uat-gap-fixes](./quick/261018-dxy-phase-02-1-uat-gap-fixes/) |
 
 ### Roadmap Evolution
 
