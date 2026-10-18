@@ -34,6 +34,9 @@ Ian's phone walk in Phase 02.1 UAT test 1 (2026-10-17): the screens work but the
 - The Front desk card repeats its own label ("Front desk: Front desk answers...") and shows model IDs.
 - The fingerprint, "Not a git repository" and file types like "router" and "set_replies" are developer detail an owner doesn't need.
 
+**Draft hold reasons (02.1 review IN-02, added 2026-10-18):**
+- "Held: no price on file" shows for holds that are not that: a service that only needs the customer's answers, a blank-words promise, a failed reading or an unsure person reading. For a service waiting on answers it should say so, such as "waiting on the customer's answers for X" (`RunFrontDesk::noPriceReason()`, `Verdict::plainReasonFor()`).
+
 ## Solution
 
 Ian's layout call in the design pass.

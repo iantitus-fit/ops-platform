@@ -86,3 +86,7 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
 - **Jev tuning, due before the first client goes live:**
   - whether heat plus a newborn should trip the hazard reading;
   - CO symptoms with no alarm mentioned (headache, dizziness since the heat came on) read 0.05 on text A in UAT test 3, under the 0.075 bar. The reply model's possible_danger caught it there. The one path with no second net: if Jev misses symptoms like these while every reply model is down, D-51 sends the holding reply with no 911 line, and front_desk_failed waits on the folder's timing.
+- **Held from the 02.1 code review (Ian, 2026-10-18; `.planning/phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`):**
+  - IN-05: break `RunFrontDesk` up (the code-hold block and the waiting-draft branch into their own classes) and cite function names in the map instead of line numbers. Not a bug; it moves every map citation.
+  - IN-06: the services README says the service name must appear "exactly", but the sync ignores capitals. Say "the service's name, in any capitals".
+  - IN-08: dead code from the outage work: `CustomerReading::failed()`'s `$ran` parameter, and `SafetyCheckStatus::isDown()`, which only tests call (delete it, or show "Safety check is down since ..." on the Business Folder page).
