@@ -203,6 +203,21 @@ it('sends the matching sentence when the answer matches after one miss (D-06)', 
         ->and(keyedPriceLastReply()->meta['price_sentences'][0]['key'])->toBe('unit_size=Small (under 3 tons)');
 });
 
+it('re-asks a miss that follows a match, because only misses since the last match count (D-06, WR-06)', function () {
+    keyedPriceFirstRun('How much for a new system?', keyedPriceAskSize());
+    keyedPriceNextRun('the biggish one', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'the biggish one'], KEYED_PRICE_REASK));
+    keyedPriceNextRun('Small, 2 tons', keyedPriceAnswerSize(['option' => 'Small (under 3 tons)', 'raw_text' => 'Small, 2 tons']));
+    keyedPriceNextRun('wait, it might be the one in the attic', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'wait, it might be the one in the attic'], KEYED_PRICE_REASK));
+
+    expect(keyedPriceTextsToDana()[3])->toBe(keyedPriceLaterText(KEYED_PRICE_REASK))
+        ->and(keyedPriceLastReply()->meta['price_sentences'] ?? [])->toBe([]);
+
+    keyedPriceNextRun('still not sure, the attic one', keyedPriceAnswerSize(['option' => null, 'raw_text' => 'still not sure, the attic one']));
+
+    expect(keyedPriceTextsToDana()[4])->toBe(keyedPriceLaterText('Thanks for clarifying. That changes the estimate: '.KEYED_PRICE_DEFAULT.' '.KEYED_PRICE_ASK_RUNNING))
+        ->and(keyedPriceLastReply()->meta['price_sentences'][0]['key'])->toBe('default');
+});
+
 it('holds the price for the owner when no option fits and the file has no default sentence (D-05)', function () {
     breakFile('business/services/system-replacement.md', fn (string $text) => preg_replace('/^price_default:\n(?:  .*\n)+/m', '', $text));
 

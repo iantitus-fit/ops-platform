@@ -224,16 +224,21 @@ class PriceSentencePicker
     }
 
     /**
-     * How many of the customer's answers to one question matched no option. One miss is asked again; a second is not
-     * (D-06). Earlier misses do not matter once the newest answer matches, because the caller only asks when the
-     * newest answer is itself a miss.
+     * How many of the customer's answers to one question matched no option since the newest answer that matched one.
+     * One miss is asked again; a second is not (D-06). A miss, a match and a miss is one miss, so a customer who
+     * corrects a matched answer to something unclear is asked again before the default goes out (WR-06).
      */
     private function unmatchedCount(Conversation $conversation, string $slug, string $key): int
     {
-        return $conversation->intakeAnswers()
+        $answers = $conversation->intakeAnswers()
             ->where('service_slug', $slug)
-            ->where('question_key', $key)
+            ->where('question_key', $key);
+
+        $lastMatchId = (clone $answers)->whereNotNull('option')->max('id');
+
+        return $answers
             ->whereNull('option')
+            ->when($lastMatchId !== null, fn ($query) => $query->where('id', '>', $lastMatchId))
             ->count();
     }
 
