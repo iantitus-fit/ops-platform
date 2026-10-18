@@ -9,6 +9,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\SendRule\HeldReasons;
 use Illuminate\Support\Carbon;
 
 const WAITING_REPLIES_OWNER_PHONE = '+12025550199';
@@ -319,6 +320,48 @@ it('keeps the waiting draft body when a check-in whose words are held for their 
         ->and(waitingRepliesLiveDraft()->gate_reason)->toBe('label:complaint')
         ->and(waitingRepliesCheckInAlerts())->toBe([])
         ->and(Message::query()->where('body', 'like', '%Mike still has your question.%')->count())->toBe(0);
+});
+
+it('stores the waiting draft\'s own evidence on the kept body and the check-in words\' verdict beside it (WR-07)', function () {
+    waitingRepliesDraftHeld();
+
+    $waiting = waitingRepliesLiveDraft();
+
+    waitingRepliesCustomerTexts(['reply' => 'Mike will be there Friday, I promise.', 'label' => 'promise', 'touches_waiting' => true, 'waiting_note' => 'check_in'], 'Any update on my question?');
+
+    $live = waitingRepliesLiveDraft();
+
+    expect($live->id)->not->toBe($waiting->id)
+        ->and($live->body)->toBe($waiting->body)
+        ->and($live->label)->toBe($waiting->label)
+        ->and($live->gate_reason)->toBe($waiting->gate_reason)
+        ->and($live->gate['reason'])->toBe($waiting->gate['reason'])
+        ->and($live->gate['inputs']['agent_reply'])->toBe($waiting->gate['inputs']['agent_reply'])
+        ->and($live->gate['checks'])->toBe($waiting->gate['checks'])
+        ->and($live->meta['check_in_reply_gate']['inputs']['agent_reply'])->toBe('Mike will be there Friday, I promise.')
+        ->and($live->meta['check_in_reply_gate']['reason']['code'])->toBe('label:promise')
+        ->and(HeldReasons::priceAlone($live))->toBe(HeldReasons::priceAlone($waiting))
+        ->and(waitingRepliesTextsToDana()[1]['body'])->toBe(waitingRepliesLater(WAITING_REPLIES_CHECK_IN_LINE))
+        ->and(waitingRepliesCheckInAlerts())->toHaveCount(1);
+});
+
+it('keeps the new reading and the complaint reason on the kept body when Jev reads the check-in as a complaint (WR-07)', function () {
+    waitingRepliesDraftHeld();
+
+    $waiting = waitingRepliesLiveDraft();
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    waitingRepliesCustomerTexts(['reply' => 'Mike still has your question.', 'label' => 'other', 'touches_waiting' => true, 'waiting_note' => 'check_in'], 'Hello? This is ridiculous, nobody has called me back.');
+
+    $live = waitingRepliesLiveDraft();
+
+    expect($live->body)->toBe($waiting->body)
+        ->and($live->gate_reason)->toBe('classifier:complaint')
+        ->and($live->gate['inputs']['agent_reply'])->toBe($waiting->gate['inputs']['agent_reply'])
+        ->and($live->gate['customer_reading'])->toBe($live->meta['check_in_reply_gate']['customer_reading'])
+        ->and($live->gate['customer_reading'])->not->toBe($waiting->gate['customer_reading'])
+        ->and($live->meta['check_in_reply_gate']['inputs']['agent_reply'])->toBe('Mike still has your question.')
+        ->and(HeldReasons::priceAlone($live))->toBeFalse();
 });
 
 it('puts the owner sentence and then the partial holding line in one text when the rest is held (D-36)', function () {

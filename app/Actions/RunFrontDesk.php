@@ -580,7 +580,14 @@ class RunFrontDesk
             }
         }
 
-        $this->storeDraft($conversation, $draftWords, $verdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
+        $storedVerdict = $verdict;
+
+        if ($checkIn) {
+            $storedVerdict = $this->keptBodyVerdict($waiting, $verdict);
+            $attributes['meta'] = [...$attributes['meta'], 'check_in_reply_gate' => $verdict->details];
+        }
+
+        $this->storeDraft($conversation, $draftWords, $storedVerdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
@@ -598,6 +605,42 @@ class RunFrontDesk
         } else {
             $this->sendFixedReply->holding($conversation, $this->reading(), $verdict->reasonCode);
         }
+    }
+
+    /**
+     * The verdict stored on the fresh draft that keeps W's body when check-in words were held (D-28, WR-07). The row
+     * must describe its own body, so the words, checks and label evidence are W's, and the reason is W's too unless
+     * the check-in found something about the customer: a complaint, a danger or a request for a person, which the
+     * owner must see on the newest draft. The reading is this run's, so a complaint in the check-in can never leave
+     * the draft looking held on price alone (HeldReasons::priceAlone()). The check-in words' own verdict is kept
+     * beside it in meta.check_in_reply_gate.
+     */
+    private function keptBodyVerdict(Message $waiting, Verdict $checkInVerdict): Verdict
+    {
+        if (! is_array($waiting->gate)) {
+            return $checkInVerdict;
+        }
+
+        $aboutTheCustomer = $checkInVerdict->lifeSafety
+            || $checkInVerdict->asksForPerson
+            || in_array($checkInVerdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true);
+
+        $reason = $aboutTheCustomer || ! is_array($waiting->gate['reason'] ?? null)
+            ? $checkInVerdict->details['reason']
+            : $waiting->gate['reason'];
+
+        return new Verdict(
+            GateOutcome::Hold,
+            $reason['code'] ?? $checkInVerdict->reasonCode,
+            $reason['plain'] ?? $checkInVerdict->plainReason,
+            [
+                ...$waiting->gate,
+                ...(isset($checkInVerdict->details['customer_reading']) ? ['customer_reading' => $checkInVerdict->details['customer_reading']] : []),
+                'reason' => $reason,
+            ],
+            $checkInVerdict->lifeSafety,
+            $checkInVerdict->asksForPerson,
+        );
     }
 
     /**
