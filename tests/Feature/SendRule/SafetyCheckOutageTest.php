@@ -3,6 +3,7 @@
 use App\Ai\AgentReply;
 use App\Ai\AgentRun;
 use App\Channels\FakeTextChannel;
+use App\Channels\TextChannel;
 use App\Enums\AlertReason;
 use App\Enums\MessageChannel;
 use App\Jobs\PingSafetyCheck;
@@ -339,6 +340,110 @@ it('opens an outage and tells the owner at once when the ping fails on a night w
 
     expect(safetyCheckOutageAlerts())->toHaveCount(1)
         ->and(SafetyCheckOutage::query()->count())->toBe(1);
+});
+
+/**
+ * A text channel whose first owner text fails in the carrier and whose later ones go out. `$during` runs inside each
+ * send, before it returns, to look at the state a send happens in.
+ */
+function safetyCheckOutageFlakyChannel(?Closure $during = null): void
+{
+    $sends = 0;
+
+    test()->mock(TextChannel::class, function ($channel) use (&$sends, $during) {
+        $channel->shouldReceive('name')->andReturn('fake');
+        $channel->shouldReceive('send')->andReturnUsing(function () use (&$sends, $during) {
+            $sends++;
+
+            if ($during !== null) {
+                $during($sends);
+            }
+
+            if ($sends === 1) {
+                throw new RuntimeException('carrier down');
+            }
+
+            return 'fake-'.$sends;
+        });
+    });
+}
+
+it('releases the down alert claim when its text fails, so the next failure tries again (IN-11)', function () {
+    safetyCheckOutageBegins('2026-10-14 03:00');
+    safetyCheckOutageFlakyChannel();
+    fakeClassifier()->failWith('Jev could not be reached or took too long to answer.');
+
+    safetyCheckOutagePing();
+
+    expect(safetyCheckOutageDownAlerts())->toHaveCount(1)
+        ->and(safetyCheckOutageDownAlerts()->sole()->failed_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->down_alerted_at)->toBeNull();
+
+    safetyCheckOutageAt('2026-10-14 03:05');
+    safetyCheckOutagePing();
+
+    expect(safetyCheckOutageDownAlerts())->toHaveCount(2)
+        ->and(safetyCheckOutageDownAlerts()->last()->sent_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->down_alerted_at)->not->toBeNull();
+
+    safetyCheckOutageAt('2026-10-14 03:10');
+    safetyCheckOutagePing();
+
+    expect(safetyCheckOutageDownAlerts())->toHaveCount(2);
+});
+
+it('claims the down alert before the text goes out, so a failure seen while it is sending raises no second one (IN-11)', function () {
+    safetyCheckOutageBegins('2026-10-14 03:00');
+
+    $claimedWhileSending = null;
+
+    safetyCheckOutageFlakyChannel(function (int $send) use (&$claimedWhileSending) {
+        if ($send !== 2) {
+            return;
+        }
+
+        $claimedWhileSending = SafetyCheckOutage::query()->sole()->down_alerted_at !== null;
+
+        Cache::lock('safety-check-status')->forceRelease();
+        app(SafetyCheckStatus::class)->recordFailure('Jev is still down.');
+    });
+
+    $status = safetyCheckOutageStatus();
+    $status->recordFailure('Jev is down.');
+
+    safetyCheckOutageAt('2026-10-14 03:05');
+    safetyCheckOutageStatus()->recordFailure('Jev is down.');
+
+    expect($claimedWhileSending)->toBeTrue()
+        ->and(safetyCheckOutageDownAlerts())->toHaveCount(2)
+        ->and(safetyCheckOutageDownAlerts()->filter(fn (OwnerAlert $alert): bool => $alert->sent_at !== null))->toHaveCount(1);
+});
+
+it('releases the back-up alert claim when its text fails, so the next success tries again (IN-11)', function () {
+    safetyCheckOutageBegins('2026-10-14 03:00');
+    safetyCheckOutageStatus()->recordFailure('Jev is down.');
+
+    safetyCheckOutageFlakyChannel();
+
+    safetyCheckOutageAt('2026-10-14 03:30');
+    safetyCheckOutageStatus()->recordSuccess();
+
+    expect(safetyCheckOutageBackAlerts())->toHaveCount(1)
+        ->and(safetyCheckOutageBackAlerts()->sole()->failed_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->ended_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->up_alerted_at)->toBeNull();
+
+    safetyCheckOutageAt('2026-10-14 03:35');
+    safetyCheckOutageStatus()->recordSuccess();
+
+    expect(safetyCheckOutageBackAlerts())->toHaveCount(2)
+        ->and(safetyCheckOutageBackAlerts()->last()->sent_at)->not->toBeNull()
+        ->and(SafetyCheckOutage::query()->sole()->up_alerted_at)->not->toBeNull();
+
+    safetyCheckOutageAt('2026-10-14 03:40');
+    safetyCheckOutageStatus()->recordSuccess();
+
+    expect(safetyCheckOutageBackAlerts())->toHaveCount(2);
 });
 
 it('asks nothing and changes nothing when no business folder is live', function () {
