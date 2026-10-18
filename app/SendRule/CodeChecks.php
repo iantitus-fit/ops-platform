@@ -74,6 +74,16 @@ class CodeChecks
     ];
 
     /**
+     * A "$" amount, as dollarAmountsInCents() reads one.
+     */
+    private const DOLLAR_AMOUNT = '\$\s?\d+(?:,\d{3})*(?:\.\d{1,2})?';
+
+    /**
+     * What joins a second amount to a "$" amount: plus, to, through, or, a plus sign or a dash.
+     */
+    private const JOINED_TO_AMOUNT = '(?:\s*,)?\s*(?:plus|\+|to|through|or|-|–)\s*';
+
+    /**
      * How many words may sit between a number and a price word for the number to count as a price.
      */
     private const PRICE_WORD_DISTANCE = 3;
@@ -155,6 +165,87 @@ class CodeChecks
         sort($cents);
 
         return $cents;
+    }
+
+    /**
+     * Words that, right after a number, say it counts something other than money: "3 tons and up", "plus 2
+     * hours on site", "or two visits". A number followed by one is never read as an amount (WR-05).
+     */
+    private const COUNT_WORDS = '(?:hours?|hrs?|minutes?|mins?|days?|weeks?|months?|years?|visits?|tons?|systems?|units?|rooms?|zones?|floors?|stor(?:y|ies)|sq|square|feet|foot|ft|btus?|seer|am|pm|people|techs?|technicians?|times?|filters?|vents?|stages?|percent|%)';
+
+    /**
+     * Every amount in the text that is shaped like money but written without a leading "$", as integer cents,
+     * unique and ascending (WR-05, D-37): digits with the "$" after them ("120$"), a number joined to a "$"
+     * amount ("$89 or 120", "$4,000 to 6,000", "between $4,000 and 6,000"), a number after plus anywhere in the
+     * sentence ("plus 150 for parts"), and a number followed by more, extra or additional ("150 extra"). A number followed by a word that counts something else, such as
+     * "3 tons and up" or "plus 2 hours", is not one. The sync compares these with the file's amounts like any
+     * "$" amount, so one checked amount cannot carry an unchecked one.
+     *
+     * @return list<int>
+     */
+    public static function unsignedAmountsInCents(string $text): array
+    {
+        $number = '(\d+(?:,\d{3})*(?:\.\d{1,2})?)';
+        $notCounting = '(?![\d,.]*\d)(?!\s*-?\s*'.self::COUNT_WORDS.'(?![\p{L}]))';
+
+        $cents = [];
+
+        foreach ([
+            '/(?<![\$\d,.])'.$number.'\s?\$/u',
+            '/'.self::DOLLAR_AMOUNT.self::JOINED_TO_AMOUNT.$number.$notCounting.'/iu',
+            '/between\s+'.self::DOLLAR_AMOUNT.'\s+and\s+'.$number.$notCounting.'/iu',
+            '/(?:(?<![\p{L}\p{N}_])plus|\+)\s*'.$number.$notCounting.'/iu',
+            '/(?<![\$\d,.])'.$number.'\s+(?:more|extra|additional)(?![\p{L}])(?!\s+'.self::COUNT_WORDS.'(?![\p{L}]))/iu',
+        ] as $pattern) {
+            preg_match_all($pattern, $text, $found, PREG_SET_ORDER);
+
+            foreach ($found as $amount) {
+                [$dollars, $hundredths] = array_pad(explode('.', str_replace(',', '', $amount[1])), 2, '');
+                $cents[] = (int) $dollars * 100 + (int) str_pad($hundredths, 2, '0');
+            }
+        }
+
+        $cents = array_values(array_unique($cents));
+        sort($cents);
+
+        return $cents;
+    }
+
+    /**
+     * The earliest amount shaped like money but spelled in words, as written, or null (WR-05, D-37): a number
+     * word joined to a "$" amount or after plus ("$89 plus eighty more per hour"), or followed by more, extra or additional
+     * ("eighty more"). "one" alone is left out, because "or one of our plans" is not an amount, and so is a
+     * number followed by a word that counts something else ("or two visits").
+     */
+    public static function spelledAmountIn(string $text): ?string
+    {
+        $word = '(?:'.implode('|', self::NUMBER_WORDS).')';
+        $spelled = '('.$word.'(?:[\s-]+'.$word.')*)';
+        $notCounting = '(?!\s+'.self::COUNT_WORDS.'(?![\p{L}]))';
+
+        $best = null;
+        $bestOffset = null;
+
+        foreach ([
+            '/'.self::DOLLAR_AMOUNT.self::JOINED_TO_AMOUNT.$spelled.'(?![\p{L}])'.$notCounting.'/iu',
+            '/(?<![\p{L}\p{N}_])plus\s+'.$spelled.'(?![\p{L}])'.$notCounting.'/iu',
+            '/(?<![\p{L}\p{N}_])'.$spelled.'\s+(?:more|extra|additional)(?![\p{L}])'.$notCounting.'/iu',
+        ] as $pattern) {
+            preg_match_all($pattern, $text, $found, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+
+            foreach ($found as $match) {
+                if (mb_strtolower($match[1][0]) === 'one') {
+                    continue;
+                }
+
+                if ($bestOffset === null || $match[1][1] < $bestOffset) {
+                    $best = $match[1][0];
+                    $bestOffset = $match[1][1];
+                }
+            }
+        }
+
+        return $best;
     }
 
     /**

@@ -911,7 +911,13 @@ class Validator
             return $this->error($file->path, 'sentence', 'sentence: write every amount with a $ sign ('.PlainWords::oneLine($bareNumber).')');
         }
 
-        $amounts = CodeChecks::dollarAmountsInCents($sentence);
+        $spelled = CodeChecks::spelledAmountIn($sentence);
+
+        if ($spelled !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount as $ and digits, such as $5,000, not '.PlainWords::oneLine($spelled));
+        }
+
+        $amounts = $this->amountsInCents($sentence);
         $percents = array_values(array_unique(CodeChecks::percentsIn($sentence)));
 
         if ($amounts === [] && $percents === []) {
@@ -940,6 +946,21 @@ class Validator
         return $this->error($file->path, 'sentence', $finding['rule'] === 'promise'
             ? "{$message}; an offer sentence goes out without you, so it cannot make a promise"
             : $message);
+    }
+
+    /**
+     * Every amount a price or offer sentence names, as integer cents, unique and ascending: its "$" amounts and
+     * the amounts shaped like money but written without a leading "$" ("$89 plus 150", "120$"), so each one is
+     * compared with the file (WR-05, D-37).
+     *
+     * @return list<int>
+     */
+    private function amountsInCents(string $sentence): array
+    {
+        $cents = array_values(array_unique([...CodeChecks::dollarAmountsInCents($sentence), ...CodeChecks::unsignedAmountsInCents($sentence)]));
+        sort($cents);
+
+        return $cents;
     }
 
     /**
@@ -1169,7 +1190,13 @@ class Validator
             return $this->error($file->path, $field, "{$label}: write every amount with a \$ sign (".PlainWords::oneLine($bareNumber).')');
         }
 
-        $found = CodeChecks::dollarAmountsInCents($sentence);
+        $spelled = CodeChecks::spelledAmountIn($sentence);
+
+        if ($spelled !== null) {
+            return $this->error($file->path, $field, "{$label}: write every amount as \$ and digits, such as \$5,000, not ".PlainWords::oneLine($spelled));
+        }
+
+        $found = $this->amountsInCents($sentence);
 
         if ($found === []) {
             return $this->error($file->path, $field, "{$label}: the sentence needs at least one amount written as \$ and digits");

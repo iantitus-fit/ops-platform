@@ -102,6 +102,7 @@ dataset('offerValidation broken offers', [
     'neither amount_cents nor percent' => ["amount_cents: 5000\n", '', 'business/offers/first-visit-promotion.md: amount_cents or percent is missing, and the offer needs one'],
     'a sentence amount the field does not back' => ['takes $50 off', 'takes $40 off', "business/offers/first-visit-promotion.md: sentence: the sentence's amounts (\$40) do not match amount_cents (\$50)"],
     'a second amount the field does not back' => ['takes $50 off', 'takes $50 off, plus $25 off a tune-up', "business/offers/first-visit-promotion.md: sentence: the sentence's amounts (\$25, \$50) do not match amount_cents (\$50)"],
+    'a second amount with no $ sign (WR-05)' => ['takes $50 off', 'takes $50 off, plus 25 off a tune-up', "business/offers/first-visit-promotion.md: sentence: the sentence's amounts (\$25, \$50) do not match amount_cents (\$50)"],
     'an amount written in words' => ['takes $50 off', 'takes 50 bucks off', 'business/offers/first-visit-promotion.md: sentence: write every amount as $ and digits, such as $5,000, not bucks'],
     'an amount in k shorthand' => ['takes $50 off', 'takes $5k off', 'business/offers/first-visit-promotion.md: sentence: write every amount as $ and digits, such as $5,000, not $5k'],
     'a bare number beside a price word' => ['takes $50 off your first visit', 'takes a fee of 50 off your first visit', 'business/offers/first-visit-promotion.md: sentence: write every amount with a $ sign (50)'],

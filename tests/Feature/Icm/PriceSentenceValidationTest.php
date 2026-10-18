@@ -17,6 +17,10 @@ dataset('priceSentenceValidation broken sentences', [
     'an amount in k shorthand' => ['business/services/system-replacement.md', '$5,000 to $10,000 installed.', '$5k to $10,000 installed.', 'business/services/system-replacement.md: price_sentences item 2: write every amount as $ and digits, such as $5,000, not $5k'],
     'no amount at all' => ['business/services/ac-repair.md', '$89', '', 'business/services/ac-repair.md: price_sentences item 1: the sentence needs at least one amount written as $ and digits'],
     'a bare number beside a price word' => ['business/services/ac-repair.md', '$89 diagnostic visit', 'diagnostic fee of 89', 'business/services/ac-repair.md: price_sentences item 1: write every amount with a $ sign (89)'],
+    'an amount after plus with no $ sign (WR-05)' => ['business/services/ac-repair.md', '$89 diagnostic visit', '$89 diagnostic visit plus 150 for parts', "business/services/ac-repair.md: price_sentences item 1: the sentence's amounts (\$89, \$150) do not match price_cents (\$89)"],
+    'digits with the $ after them (WR-05)' => ['business/services/ac-repair.md', '$89 diagnostic visit', '$89 diagnostic visit, or 120$ after hours', "business/services/ac-repair.md: price_sentences item 1: the sentence's amounts (\$89, \$120) do not match price_cents (\$89)"],
+    'a spelled amount after plus (WR-05)' => ['business/services/ac-repair.md', '$89 diagnostic visit', '$89 diagnostic visit plus eighty more per hour', 'business/services/ac-repair.md: price_sentences item 1: write every amount as $ and digits, such as $5,000, not eighty'],
+    'a range end the file does not back, with no $ sign (WR-05)' => ['business/services/system-replacement.md', '$5,000 to $10,000 installed.', '$5,000 to 12,000 installed.', "business/services/system-replacement.md: price_sentences item 2: the sentence's amounts (\$5,000, \$12,000) do not match amounts_cents (\$5,000, \$10,000)"],
     'a promise' => ['business/services/ac-repair.md', 'visit, and', 'visit, guaranteed, and', 'business/services/ac-repair.md: price_sentences item 1: makes a promise (guaranteed); a price sentence goes out without you, so it cannot make a promise'],
     'a phrase the voice file bans' => ['business/services/ac-repair.md', 'AC repair starts', 'No problem. AC repair starts', 'business/services/ac-repair.md: price_sentences item 1: uses a phrase the voice file says never to use (No problem)'],
     'a fill-in' => ['business/services/ac-repair.md', 'AC repair starts', 'AC repair {owner_name} starts', 'business/services/ac-repair.md: price_sentences item 1: a price sentence cannot use fill-ins ({owner_name})'],
@@ -55,6 +59,19 @@ it('refuses a price sentence its file does not back and keeps nothing live', fun
     expect(rejectedErrors())->toBe([$line])
         ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(0);
 })->with('priceSentenceValidation broken sentences');
+
+it('keeps a sentence keyed to an option, and a number that counts something, while it checks every money-shaped amount (WR-05)', function () {
+    breakFile('business/services/system-replacement.md', fn (string $text) => str_replace('$5,000 to $10,000 installed.', '$5,000 to 10,000 installed.', $text));
+    breakFile('business/services/ac-repair.md', fn (string $text) => str_replace('$89 diagnostic visit,', '$89 diagnostic visit plus 2 hours on site,', $text));
+
+    activateExampleFolder();
+
+    $config = app(ActiveConfig::class);
+
+    expect($config->service('system-replacement')['price_sentences'][1]['sentence'])->toBe('For a larger system, 3 tons and up, a replacement system typically runs $5,000 to 10,000 installed.')
+        ->and($config->service('system-replacement')['price_sentences'][0]['sentence'])->toContain('under 3 tons')
+        ->and($config->service('ac-repair')['price_sentences'][0]['sentence'])->toContain('plus 2 hours on site');
+});
 
 it('finds the service name whatever the case and spacing', function () {
     breakFile('business/services/ac-repair.md', fn (string $text) => str_replace('AC repair starts', 'AC  REPAIR starts', $text));

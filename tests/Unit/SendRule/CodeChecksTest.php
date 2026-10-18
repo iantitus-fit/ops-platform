@@ -109,6 +109,35 @@ it('reads every dollar amount in a sentence as integer cents, unique and sorted'
     'dollars spelled out are not an amount' => ['That is 120 dollars', []],
 ]);
 
+it('reads amounts shaped like money but written without a leading $ as integer cents (WR-05)', function (string $text, array $expected) {
+    expect(CodeChecks::unsignedAmountsInCents($text))->toBe($expected);
+})->with([
+    'digits with the $ after them' => ['$89, or 120$ after hours.', [12000]],
+    'a range end with no $ sign' => ['It runs $4,000 to 6,000 installed.', [600000]],
+    'a range end after a dash' => ['It runs $4,000-6,000 installed.', [600000]],
+    'between and' => ['It runs between $4,000 and 6,000.', [600000]],
+    'a number after plus' => ['$89 diagnostic visit plus 150 for parts.', [15000]],
+    'a number followed by extra' => ['$89, and 40 extra after hours.', [4000]],
+    'a range written with $ on both ends' => ['It runs $5,000 to $10,000 installed.', []],
+    'a sentence keyed to an option' => ['For a larger system, 3 tons and up, a replacement system typically runs $5,000 to $10,000 installed.', []],
+    'a number after plus that counts hours' => ['$89 diagnostic visit plus 2 hours on site.', []],
+    'a count after or' => ['$89 for one visit, or 2 visits for $160.', []],
+    'around the clock' => ['$89 diagnostic visit, and we answer 24/7.', []],
+    'a time to arrive' => ['$89 diagnostic visit, within 2 hours.', []],
+]);
+
+it('finds an amount shaped like money but spelled in words (WR-05)', function (string $text, ?string $expected) {
+    expect(CodeChecks::spelledAmountIn($text))->toBe($expected);
+})->with([
+    'a number word after plus' => ['$89 plus eighty more per hour.', 'eighty'],
+    'a number word joined to an amount' => ['$89, or ninety after hours.', 'ninety'],
+    'a number word followed by extra' => ['$89, and forty extra after hours.', 'forty'],
+    'two systems' => ['$89 per visit, and you have two systems.', null],
+    'a count after or' => ['$89 for one visit, or two visits for $160.', null],
+    'one alone' => ['$89, or one of our plans.', null],
+    'one more thing' => ['$89, and one more thing to know.', null],
+]);
+
 it('finds percentages as the digits written, in order', function (string $text, array $expected) {
     expect(CodeChecks::percentsIn($text))->toBe($expected);
 })->with([
