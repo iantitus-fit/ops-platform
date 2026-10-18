@@ -561,3 +561,26 @@ it('writes the possible_danger line in plain words, with no exclamation point or
         ->and($line)->not->toContain('!')
         ->and($line)->not->toContain('—');
 });
+
+it('tells both models to name a service only when asked about that exact service, and to ask which system when a price fits more than one (G-02.1-2, D-04, D-08)', function (string $sentence) {
+    [$agent, , $contact] = promptTestThread();
+
+    $line = collect(explode("\n", FrontDeskPrompt::RULES))->first(fn (string $line): bool => str_starts_with($line, '- price_services:'));
+
+    expect(FrontDeskPrompt::RULES)->toContain($sentence)
+        ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($sentence)
+        ->and($line)->not->toBeNull()
+        ->and($line)->toContain($sentence);
+})->with([
+    'name a service only for that exact service' => 'Name a service only when the customer asked about that exact service.',
+    'an unoffered or unclear service gets an empty list' => 'A service the business files do not offer, or one that does not clearly match a single service, gets an empty list.',
+    'a price that fits more than one service asks which system' => 'When a price question fits more than one service, such as a repair or a diagnostic that could be for the AC or the furnace, leave the list empty and ask which system it is for; never reply that the owner will follow up instead.',
+]);
+
+it('writes the price_services line in plain words, with no exclamation point or em dash (G-02.1-2)', function () {
+    $line = collect(explode("\n", FrontDeskPrompt::RULES))->first(fn (string $line): bool => str_starts_with($line, '- price_services:'));
+
+    expect($line)->not->toBeNull()
+        ->and($line)->not->toContain('!')
+        ->and($line)->not->toContain('—');
+});

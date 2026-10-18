@@ -72,6 +72,42 @@ it('sends the safety line first when Jev reads a hazard the keywords miss, even 
         ->and($reading[0]['customer_message'])->toBe(app(FrontDeskPrompt::class)->promptText($burst));
 });
 
+it('stores Jev\'s reading on the safety line when the reading alone pauses the conversation, and asks no agent (G-02.1-3)', function () {
+    customerReadingDanaTexts(CUSTOMER_READING_DIZZY);
+    fakeClassifier()->answerReading('emergency', 0.95, ['life_safety' => 0.9]);
+
+    runQueuedFrontDeskJobs();
+
+    $line = Message::query()->where('kind', MessageKind::LifeSafety->value)->sole();
+    $stored = CustomerReading::fromStored($line->gate['customer_reading'] ?? null);
+
+    expect($line->gate['life_safety'])->toBe(['hazard' => 'general', 'trigger' => 'classifier'])
+        ->and($line->gate['customer_reading']['ran'])->toBeTrue()
+        ->and($line->gate['customer_reading']['failed'])->toBeFalse()
+        ->and($line->gate['customer_reading']['missing'])->toBeFalse()
+        ->and($line->gate['customer_reading']['answers']['yes_no']['life_safety'])->toBe(0.9)
+        ->and($stored?->lifeSafety())->toBeTrue()
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0)
+        ->and(Conversation::query()->sole()->paused_reason)->toBe(PausedReason::LifeSafety);
+
+    FrontDeskAgent::assertNeverPrompted();
+});
+
+it('stores the run\'s reading on a safety line the words check sends (G-02.1-3)', function () {
+    customerReadingDanaTexts('my thermostat smells funny');
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    fakeClassifier()->answer('faq', 0.95, ['life_safety' => 0.2]);
+
+    runQueuedFrontDeskJobs();
+
+    $line = Message::query()->where('kind', MessageKind::LifeSafety->value)->sole();
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect($line->gate['life_safety']['trigger'])->toBe('classifier')
+        ->and($line->gate['customer_reading'] ?? null)->not->toBeNull()
+        ->and($line->gate['customer_reading'])->toBe($draft->gate['customer_reading']);
+});
+
 it('reads a plain text once for the customer and once for the words, and the intake question goes out', function () {
     customerReadingDanaTexts('My AC is blowing warm air');
     scriptFrontDeskReplies(['reply' => 'Thanks, what is the system doing?', 'label' => 'intake_question']);
