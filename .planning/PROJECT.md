@@ -118,6 +118,15 @@ Phase 02.1 decisions (full log: `.planning/phases/02.1-faster-answers/02.1-CONTE
 - **D-49/D-50** The sender refuses an automated text without the reading its kind needs; a Jev outage sends one down alert and one back-up alert with the count of texts that arrived meanwhile.
 - **D-46** One invariant test runs every combination of the waiting, complaint, hazard, price, check-in, pause, cap and failure cases.
 
+Model roles (Ian, 2026-10-18):
+
+- **Cheap models read and sort:** Jev and the keyword checks.
+- **Mid-tier models write drafts:** each agent file names its own model and fallbacks.
+- **Code and the owner decide money and safety.**
+- **Frontier models only for slow back-office work**, such as owner intelligence.
+- **No model reviews outbound texts as a final check.**
+- Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance (it sets each area's model role in `docs/BLUEPRINT.md`).
+
 Principle for closing phases (Ian, 2026-10-17, Phase 02.1 UAT):
 
 - **02.1 closes on wiring, not business specifics.** A phase is done when the paths work: what is read, what is held, what is sent and who is alerted. Wording, which replies get a warm wrapper, where the AI notice sits, and what goes on the promise list get settled once the full workflow exists (first contact to finished job). Items held this way are listed in `docs/phase-2.2-owner-input.md` under "Held from the 2026-10-17 role play".

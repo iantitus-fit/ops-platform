@@ -285,7 +285,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.2 (Owner Loop) scope.
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
-- [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved. The close-out fixes ran on SQLite only, so their first Postgres run is CI.
+- [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 

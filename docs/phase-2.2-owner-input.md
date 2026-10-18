@@ -76,6 +76,7 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
 **Ian's call (2026-10-17):** 02.1 closes on wiring, not business specifics (recorded in `.planning/PROJECT.md`). The items below are held until the full workflow exists, from first contact to finished job.
 
 - **Message shape (B):** the model writes a warm reply with the owner's fixed text inside it, answer first, and a short AI notice at the bottom. **Reopens** 02.1 D-07 (price sentence first) and Phase 2 D-50 (the notice leads the first automated text). Notice placement goes on the attorney review list. If the model's words fail their check, the fixed text goes alone, as today.
+  - Affects: customer communication, marketing, sales, operations, finance, safety and compliance (every area that texts a customer; see `docs/BLUEPRINT.md`).
 - **Open:** does B cover every fixed reply (complaint, holding, discount holding, check-in, added-info), or only price and offer sentences? Either way, the 911 safety line stays fixed, first and unwrapped.
 - **When the front desk can't answer, it doesn't say so.** It moves to the step that gets the question answered: a visit or a person.
 - **Intake questions for setup:**
@@ -86,6 +87,16 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
 - **Jev tuning, due before the first client goes live:**
   - whether heat plus a newborn should trip the hazard reading;
   - CO symptoms with no alarm mentioned (headache, dizziness since the heat came on) read 0.05 on text A in UAT test 3, under the 0.075 bar. The reply model's possible_danger caught it there. The one path with no second net: if Jev misses symptoms like these while every reply model is down, D-51 sends the holding reply with no 911 line, and front_desk_failed waits on the folder's timing.
+- **An independent danger check in plain code, due before the first client goes live (Ian, 2026-10-18):**
+  - The check: symptom words such as headache or dizzy alongside furnace or heat words.
+  - It sends the 911 line with no provider dependency.
+  - Today both nets depend on outside providers: Jev on OpenRouter, and the front desk on Anthropic then OpenAI.
+  - Affects: safety and compliance, customer communication.
+- **Review with Jev tuning (Ian, 2026-10-18):**
+  - **WR-04 residual.** A spelled-out amount with no money word or price word ("it runs about five thousand") passes the code check. The model's label and Jev's price reading still catch it.
+    - Affects: customer communication, sales.
+  - **IN-11.** With no owner phone on file, a Jev outage adds a failed alert row every 5 minutes. Onboarding should require an owner phone; decide on capping retries after that.
+    - Affects: team, knowledge, safety and compliance.
 - **Held from the 02.1 code review (Ian, 2026-10-18; `.planning/phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`):**
   - IN-05: break `RunFrontDesk` up (the code-hold block and the waiting-draft branch into their own classes) and cite function names in the map instead of line numbers. Not a bug; it moves every map citation.
   - IN-06: the services README says the service name must appear "exactly", but the sync ignores capitals. Say "the service's name, in any capitals".

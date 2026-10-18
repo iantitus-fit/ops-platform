@@ -35,7 +35,7 @@ Full picture: `docs/SPEC.md`.
 | `app/SendRule/` | The send-or-draft rule: code checks, the Jev classifier, the stored verdict (Phase 2). Not `Gate`: that is Laravel's authorization facade |
 | `app/Filament/` | Back-office screens |
 | `examples/` | Fictional business folders used in development and tests |
-| `docs/` | Spec, decisions, setup, sprint plans, GSD ingest manifest |
+| `docs/` | Spec, blueprint (the business by area), decisions, setup, sprint plans, GSD ingest manifest |
 | `.planning/` | GSD: project, requirements, roadmap, state, phase plans and summaries |
 | `map/CLAUDE.md` | Cartographer map: catalog then one card, for changing how a text becomes a reply or a draft |
 | `tests/` | Pest tests |
@@ -60,6 +60,9 @@ Full picture: `docs/SPEC.md`.
 - No secrets in the repo or in ICM folders. Credentials live in `.env` or
   encrypted settings.
 - Examples and test data are fictional. No real client data anywhere in the repo.
+- `docs/BLUEPRINT.md` maps the whole business by area. Any decision, plan or
+  idea that changes an area gets an "Affects:" line naming every area it
+  touches, and `docs/BLUEPRINT.md` is updated in the same commit.
 
 <laravel-boost-guidelines>
 === foundation rules ===

@@ -215,7 +215,7 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 28/28 plans complete; 12 gap-closure plans (02.1-17 to 02.1-28) to run
+**Plans:** 28/28 plans complete
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
