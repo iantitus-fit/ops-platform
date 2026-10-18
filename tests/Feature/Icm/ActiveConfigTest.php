@@ -50,7 +50,7 @@ it('returns a service with its price as an integer and its intake questions', fu
     expect($acRepair['price_cents'])->toBe(8900)
         ->and(array_column($acRepair['intake'], 'key'))->toBe(['symptom', 'system_age'])
         ->and($config->service('nope'))->toBeNull()
-        ->and($config->services())->toHaveCount(3);
+        ->and($config->services())->toHaveCount(4);
 });
 
 it('reads hours, voice and sending rules', function () {

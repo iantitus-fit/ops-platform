@@ -179,6 +179,33 @@ class ActiveConfig
     }
 
     /**
+     * Every offer: its front matter plus the markdown body under "body" and its folder path under "path",
+     * in path order. A version compiled before offers existed has none.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function offers(): array
+    {
+        $paths = $this->version()->compiled['index']['offer'] ?? [];
+        $paths = array_values($paths);
+        sort($paths, SORT_STRING);
+
+        return array_map(fn (string $path) => [...$this->typedFile($path), 'path' => $path], $paths);
+    }
+
+    /**
+     * One offer by its slug, or null when there is no such offer.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function offer(string $slug): ?array
+    {
+        $path = $this->version()->compiled['index']['offer'][$slug] ?? null;
+
+        return $path === null ? null : [...$this->typedFile($path), 'path' => $path];
+    }
+
+    /**
      * The agent that serves one channel such as "sms": its front matter plus the markdown body
      * under "body", or null when no agent file serves that channel.
      *

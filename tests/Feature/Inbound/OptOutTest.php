@@ -25,6 +25,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use App\Records\CustomerCard;
+use App\SendRule\CustomerReading;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -35,6 +36,21 @@ use Livewire\Livewire;
 const OPT_OUT_SENTENCE = 'Opted out by texting STOP on Oct 13.';
 
 const OPT_OUT_CUSTOMER_PHONE = '+12025550123';
+
+/**
+ * A reading of the customer's text that ran and found nothing to worry about, for the fixed replies that must carry one.
+ */
+function optOutReadingThatFoundNothing(): CustomerReading
+{
+    return new CustomerReading(
+        ran: true,
+        failed: false,
+        error: null,
+        model: 'fake-jev',
+        answers: null,
+        reading: ['sendable' => true, 'reason_code' => null, 'reasons' => [], 'life_safety' => false, 'asks_for_person' => false, 'thresholds' => []],
+    );
+}
 
 /**
  * Tuesday 2026-10-13 at 10:00 in the shop's zone, the owner signed in and reachable by text, and Dana's first text
@@ -420,6 +436,7 @@ function optOutDanaStopsWhileTheAgentWrites(): void
             'service_slug' => null,
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     }])->preventStrayPrompts();
 }
@@ -440,8 +457,8 @@ it('sends no holding reply and no handoff reply to an opted-out customer (D-40)'
     $conversation->contact->update(['sms_opted_out_at' => now()]);
     $sentBefore = count(textsSentToCustomers());
 
-    expect(app(SendFixedReply::class)->holding($conversation->refresh()))->toBeNull()
-        ->and(app(SendFixedReply::class)->handoff($conversation))->toBeNull()
+    expect(app(SendFixedReply::class)->holding($conversation->refresh(), optOutReadingThatFoundNothing()))->toBeNull()
+        ->and(app(SendFixedReply::class)->handoff($conversation, optOutReadingThatFoundNothing()))->toBeNull()
         ->and(count(textsSentToCustomers()))->toBe($sentBefore);
 });
 

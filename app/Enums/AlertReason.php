@@ -15,6 +15,9 @@ enum AlertReason: string
     case OptedOutMessage = 'opted_out_message';
     case FrontDeskFailed = 'front_desk_failed';
     case ReplyCap = 'reply_cap';
+    case CheckIn = 'check_in';
+    case SafetyCheckDown = 'safety_check_down';
+    case SafetyCheckMissing = 'safety_check_missing';
 
     /**
      * Every event as the text an owner writes in the folder.
@@ -40,6 +43,9 @@ enum AlertReason: string
             self::OptedOutMessage => 'Opted-out customer texted',
             self::FrontDeskFailed => 'Front desk could not answer',
             self::ReplyCap => 'Reply limit reached',
+            self::CheckIn => 'Customer checked in',
+            self::SafetyCheckDown => 'Safety check is down',
+            self::SafetyCheckMissing => 'Safety check did not run',
         };
     }
 }

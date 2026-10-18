@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\PingSafetyCheck;
 use App\Jobs\SendDueAlerts;
 use App\Jobs\SweepUndispatched;
 use Illuminate\Foundation\Inspiring;
@@ -15,3 +16,6 @@ Schedule::job(new SweepUndispatched)->everyFiveMinutes()->withoutOverlapping();
 
 // Sends owner alerts held until opening time, unless their draft was handled first (D-20).
 Schedule::job(new SendDueAlerts)->everyMinute()->withoutOverlapping();
+
+// Asks Jev one fixed fictional question, so the owner hears the safety check is down even when no customer texts (D-50).
+Schedule::job(new PingSafetyCheck)->everyFiveMinutes()->withoutOverlapping();

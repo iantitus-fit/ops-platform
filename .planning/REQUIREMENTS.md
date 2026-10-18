@@ -48,6 +48,15 @@ Committed scope: SPEC says Sprints 0 to 2 are committed. Each maps to exactly on
 - [x] **TXT-01**: A `TwilioTextChannel` implements the `TextChannel` interface (outbound send, inbound webhook with signature verification and unique provider message id), selected by config with no other code change. Verified against Twilio-shaped payloads; going live on Ian's registered test number follows A2P approval and does not gate this phase. (DEC-05)
 - [x] **INFRA-01**: CI runs the full Pest suite on Postgres, and the suite also passes on SQLite locally, so the two cannot drift. (DEC-06)
 
+### Faster Answers (Phase 02.1)
+
+Added 2026-10-14 by `/gsd-discuss-phase 02.1` from Phase 2 UAT round 2 (`docs/phase-2.1-owner-input.md`; decisions in `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md`).
+
+- [x] **ANSR-01**: A price goes out on its own only as an owner-written price sentence from the service file, picked by code from the customer's stored intake answers (or the owner's default sentence) and checked at sync against the file's prices; corrected answers re-send with an owner-written lead; a price the model writes, and any service with `price_policy: none`, still goes to the owner as a draft.
+- [x] **ANSR-02**: A discount question gets the owner's conditional offer sentences for every offer live today (start and end dates in the business time zone), checked at sync against each offer's amounts; with no live offer, the owner's discount reply goes out and the owner is alerted.
+- [x] **ANSR-03**: An easy answer never waits behind a hard question already with the owner: while a draft waits, an answer that does not touch it (or the split-off FAQ or intake part of one that does) sends under the three checks and the label guard, the agent never mentions the waiting question, and a price draft that a price sentence answers closes as answered.
+- [x] **ANSR-04**: A customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in or added-info; complaint and discount have their own holding replies), each check-in alerts the owner, and every time a reply promises is computed from `hours.md`, with an optional check-in time that is off by default.
+
 ### Booking and the Gate (Phase 3)
 
 - [ ] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
@@ -158,6 +167,10 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | GATE-04 | Phase 2 | Complete |
 | TXT-01 | Phase 2 | Complete |
 | INFRA-01 | Phase 2 | Complete |
+| ANSR-01 | Phase 02.1 | Complete |
+| ANSR-02 | Phase 02.1 | Complete |
+| ANSR-03 | Phase 02.1 | Complete |
+| ANSR-04 | Phase 02.1 | Complete |
 | BOOK-01 | Phase 3 | Pending |
 | BOOK-02 | Phase 3 | Pending |
 | BOOK-03 | Phase 3 | Pending |
@@ -170,10 +183,10 @@ Which phases cover which requirements. Each v1 requirement maps to exactly one p
 | WALK-03 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 30 total
-- Mapped to phases: 30
+- v1 requirements: 34 total
+- Mapped to phases: 34
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-10*
-*Last updated: 2026-10-10 after roadmap creation*
+*Last updated: 2026-10-14 after Phase 02.1 discussion (ANSR-01 to ANSR-04 added; Phase 02.2 Owner Loop IDs come from its own discussion)*

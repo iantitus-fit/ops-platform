@@ -29,6 +29,30 @@ it('finds a price, a discount, a promise or a never_say phrase and reports the f
     ]],
 ]);
 
+it('finds a number in digits or words next to a money word as a price (WR-04)', function (string $text, string $match) {
+    expect(CodeChecks::findings($text, []))->toBe([['rule' => 'price', 'match' => $match]]);
+})->with([
+    'number words and dollars' => ['It runs about five thousand dollars.', 'thousand dollars'],
+    'a number word and grand' => ['Figure five grand for a new unit.', 'five grand'],
+    'digits and grand' => ['Figure 5 grand for a new unit.', '5 grand'],
+    'k shorthand' => ['It is around 5k installed.', '5k'],
+    'k shorthand with a space' => ['It is around 5 K installed.', '5 K'],
+    'a hyphenated number word and bucks' => ['The visit is eighty-nine bucks.', 'eighty-nine bucks'],
+    'a number word and a dollar' => ['That part is twenty dollars.', 'twenty dollars'],
+    'hundred and bucks' => ['A couple hundred bucks should cover it.', 'hundred bucks'],
+]);
+
+it('leaves a number that sits next to no money word alone (WR-04)', function (string $text) {
+    expect(CodeChecks::findings($text, []))->toBe([]);
+})->with([
+    'a unit size' => 'That fits a 3 tons system.',
+    'a count in words' => 'You have two systems in the house.',
+    'around the clock' => 'We answer 24/7.',
+    'a time to arrive' => 'A tech can be there within 2 hours.',
+    'a size in words' => 'A three ton unit is common for that size.',
+    'grand without a number' => 'We serve Grand Rapids.',
+]);
+
 it('finds nothing in ordinary scheduling text', function (string $text) {
     expect(CodeChecks::findings($text, []))->toBe([]);
 })->with([
@@ -63,4 +87,92 @@ it('keeps the word lists in code as lists of strings', function () {
     expect(CodeChecks::PRICE_WORDS)->toContain('price', 'fee', 'quote')
         ->and(CodeChecks::DISCOUNT_PHRASES)->toContain('discount', '% off', 'free of charge')
         ->and(CodeChecks::PROMISE_PHRASES)->toContain('guarantee', 'promise', 'definitely');
+});
+
+it('reads every dollar amount in a sentence as integer cents, unique and sorted', function (string $text, array $expected) {
+    $cents = CodeChecks::dollarAmountsInCents($text);
+
+    expect($cents)->toBe($expected);
+
+    foreach ($cents as $amount) {
+        expect($amount)->toBeInt();
+    }
+})->with([
+    'the same amount twice' => ['AC repair starts with an $89 diagnostic visit, and we take the $89 off', [8900]],
+    'ranges sorted ascending and unique' => ['$2,000 to $5,000 installed for a smaller unit and $5,000 to $10,000 for a larger one', [200000, 500000, 1000000]],
+    'dollars and cents' => ['The visit is $89.50', [8950]],
+    'one decimal digit is tens of cents' => ['The visit is $89.5', [8950]],
+    'a space after the dollar sign' => ['The visit is $ 120', [12000]],
+    'an amount at the end of a sentence' => ['A new unit runs $2,000.', [200000]],
+    'k shorthand reads as the digits before it, which never equals a real amount' => ['A new unit runs $5k', [500]],
+    'no dollar sign' => ['We open at 8 tomorrow', []],
+    'dollars spelled out are not an amount' => ['That is 120 dollars', []],
+]);
+
+it('reads amounts shaped like money but written without a leading $ as integer cents (WR-05)', function (string $text, array $expected) {
+    expect(CodeChecks::unsignedAmountsInCents($text))->toBe($expected);
+})->with([
+    'digits with the $ after them' => ['$89, or 120$ after hours.', [12000]],
+    'a range end with no $ sign' => ['It runs $4,000 to 6,000 installed.', [600000]],
+    'a range end after a dash' => ['It runs $4,000-6,000 installed.', [600000]],
+    'between and' => ['It runs between $4,000 and 6,000.', [600000]],
+    'a number after plus' => ['$89 diagnostic visit plus 150 for parts.', [15000]],
+    'a number followed by extra' => ['$89, and 40 extra after hours.', [4000]],
+    'a range written with $ on both ends' => ['It runs $5,000 to $10,000 installed.', []],
+    'a sentence keyed to an option' => ['For a larger system, 3 tons and up, a replacement system typically runs $5,000 to $10,000 installed.', []],
+    'a number after plus that counts hours' => ['$89 diagnostic visit plus 2 hours on site.', []],
+    'a count after or' => ['$89 for one visit, or 2 visits for $160.', []],
+    'around the clock' => ['$89 diagnostic visit, and we answer 24/7.', []],
+    'a time to arrive' => ['$89 diagnostic visit, within 2 hours.', []],
+]);
+
+it('finds an amount shaped like money but spelled in words (WR-05)', function (string $text, ?string $expected) {
+    expect(CodeChecks::spelledAmountIn($text))->toBe($expected);
+})->with([
+    'a number word after plus' => ['$89 plus eighty more per hour.', 'eighty'],
+    'a number word joined to an amount' => ['$89, or ninety after hours.', 'ninety'],
+    'a number word followed by extra' => ['$89, and forty extra after hours.', 'forty'],
+    'two systems' => ['$89 per visit, and you have two systems.', null],
+    'a count after or' => ['$89 for one visit, or two visits for $160.', null],
+    'one alone' => ['$89, or one of our plans.', null],
+    'one more thing' => ['$89, and one more thing to know.', null],
+]);
+
+it('finds percentages as the digits written, in order', function (string $text, array $expected) {
+    expect(CodeChecks::percentsIn($text))->toBe($expected);
+})->with([
+    'a percent sign' => ['takes 15% off', ['15']],
+    'the word percent' => ['15 percent off', ['15']],
+    'a decimal percent keeps its digits' => ['12.5% off', ['12.5']],
+    'two percents in order' => ['10% and 20%', ['10', '20']],
+    'no percent' => ['no percent here', []],
+]);
+
+it('finds the earliest money word or k shorthand as written', function (string $text, ?string $expected) {
+    expect(CodeChecks::moneyWordIn($text))->toBe($expected);
+})->with([
+    'thousand' => ['runs 5 thousand', 'thousand'],
+    'grand' => ['about 5 grand', 'grand'],
+    'case is kept' => ['Five Hundred', 'Hundred'],
+    'k shorthand' => ['costs 5k', '5k'],
+    'k shorthand with a dollar sign' => ['$5k installed', '$5k'],
+    'k shorthand with a space and a capital' => ['about 5 K', '5 K'],
+    'dollars spelled out' => ['120 dollars', 'dollars'],
+    'a buck' => ['a buck', 'buck'],
+    'grandfather is not grand' => ['grandfather', null],
+    'dollar amounts written with a dollar sign are fine' => ['$2,000 to $5,000', null],
+    'tons are not money' => ['3 tons', null],
+]);
+
+it('finds a plain number near a price word through the same rule the veto uses', function (string $text, ?string $expected) {
+    expect(CodeChecks::plainNumberNearPriceWord($text))->toBe($expected);
+})->with([
+    'costs and a number' => ['It costs 4000', '4000'],
+    'a fee and a number' => ['The fee is 89', '89'],
+    'a dollar amount is not a plain number' => ['$89 diagnostic fee', null],
+    'a size far from any price word' => ['under 3 tons, a replacement system typically runs $2,000', null],
+]);
+
+it('lists the money words in code', function () {
+    expect(CodeChecks::MONEY_WORDS)->toBe(['hundred', 'thousand', 'million', 'grand', 'dollar', 'dollars', 'buck', 'bucks']);
 });

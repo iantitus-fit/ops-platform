@@ -15,7 +15,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [x] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1) (completed 2026-10-13)
-- [ ] **Phase 02.1: Owner Loop** (INSERTED) - Staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode
+- [x] **Phase 02.1: Faster Answers** (INSERTED) - Owner-written price and offer sentences sent by code, easy answers that never wait behind a hard one, and a waiting customer who always hears back (completed 2026-10-18)
+- [ ] **Phase 02.2: Owner Loop** (INSERTED) - Staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
 ## Phase Details
@@ -195,12 +196,65 @@ Plans:
 - Production deploy is not in this phase; DEPL-01 stays in v2. CI on Postgres is.
 - Per the SPEC, a cartographer map starts in this sprint.
 
-### Phase 02.1: Owner Loop (INSERTED)
+### Phase 02.1: Faster Answers (INSERTED)
+
+**Goal:** Routine questions finish without the owner: a price or offer the owner wrote goes out at once, sent by code and never written by the model; an easy answer never waits behind a hard question already with the owner; and a customer who is waiting always hears back, in the owner's words, with only promises the hours can keep.
+**Depends on:** Phase 2
+**Requirements**: ANSR-01, ANSR-02, ANSR-03, ANSR-04
+**Scope** (inserted ahead of the Owner Loop on 2026-10-14 from Phase 2 UAT round 2; see `docs/phase-2.1-owner-input.md` and `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md`):
+- Owner-written price sentences per service, keyed to intake answers with a default sentence, picked and sent by code and checked at sync against the file's prices; a price the model writes still holds (02-CONTEXT D-08 stands for model-written replies).
+- Owner-written conditional offer sentences, sent while live by date; a warm discount deferral when none is.
+- A safe answer sends while a hard draft waits (touches flag, split, label guard); a price draft that a price sentence answers closes as `answered`.
+- The partial holding, check-in, added-info and complaint replies; new holding-reply time fill-ins from `hours.md` and an optional check-in time; the example folder's holding reply rewritten customer-first.
+- The prompt fix: never mention a question already with the owner.
+
+**Success Criteria** (what must be TRUE):
+  1. A customer who asks a price for a service with price sentences is asked the keying intake questions, then gets the owner's sentence for their answers (or the default sentence) sent by code; a corrected answer re-sends with the owner's same, higher, lower or changed lead; a price the model writes, or a service with `price_policy: none`, still holds; a price sentence whose amounts do not match its file fails the sync in plain words.
+  2. A discount question gets every live offer's conditional sentence (dates in the business time zone, end date inclusive) or, with none live, the owner's discount reply and an owner alert; the Business Folder page warns about an offer live over 90 days with no end date.
+  3. While a draft waits, an easy answer that does not touch it sends on its own and the draft stays live with "The customer wrote again since this draft"; a message that touches it replaces the draft, with any split-off FAQ or intake answer sent alongside the partial holding line; scheduling never sends while a scheduling draft waits.
+  4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
+  5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
+
+**Plans:** 28/28 plans complete; 12 gap-closure plans (02.1-17 to 02.1-28) to run
+
+Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
+- [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
+- [x] 02.1-02-PLAN.md — Wave 2: Amounts as integer cents, percentages, money words and bare numbers in owner sentences (ANSR-01, ANSR-02)
+- [x] 02.1-03-PLAN.md — Wave 3: Time fill-ins from hours.md and the optional check-in time (ANSR-04)
+- [x] 02.1-04-PLAN.md — Wave 4: New owner replies at sync (partial holding, check-in, added-info, complaint, discount, price leads), the example replies rewritten customer-first, check-in as an alert reason (ANSR-04, ANSR-02)
+- [x] 02.1-05-PLAN.md — Wave 5: The model hears about the question already with the owner; six new structured fields (ANSR-01 to ANSR-04)
+- [x] 02.1-06-PLAN.md — Wave 6: Price sentences on service files, checked at sync; the Replacement system example (ANSR-01)
+- [x] 02.1-07-PLAN.md — Wave 7: Offers as a folder file type, checked at sync (ANSR-02)
+- [x] 02.1-08-PLAN.md — Wave 8: The owner's price sentence sent by code; mixed questions; what still holds (ANSR-01)
+- [x] 02.1-09-PLAN.md — Wave 9: Intake first, the keyed sentence or the default, re-ask once, and the change leads (ANSR-01)
+- [x] 02.1-10-PLAN.md — Wave 10: "The customer wrote again since this draft" and the forgotten-offer warning (ANSR-02, ANSR-03)
+- [x] 02.1-11-PLAN.md — Wave 11: Live offers answer a discount question; the discount and complaint holding replies (ANSR-02, ANSR-04)
+- [x] 02.1-12-PLAN.md — Wave 12: While a draft waits: answer what does not touch it, the label guard, and one owner-written line every time (ANSR-03, ANSR-04)
+- [x] 02.1-13-PLAN.md — Wave 13: A price sentence closes the price draft it answers; split the easy part off (ANSR-03, ANSR-01)
+- [x] 02.1-14-PLAN.md — Wave 14: A held unrelated reply becomes one whole-thread draft, inside the time budget (ANSR-03)
+- [x] 02.1-15-PLAN.md — Wave 15: Map re-check, once, after the code (ANSR-01 to ANSR-04)
+- [x] 02.1-16-PLAN.md — Wave 16: Sprint 1.1 delivered-by lines, 02.2 hand-off notes, Principle 6, and the phase gate on both databases (ANSR-01 to ANSR-04)
+
+**Gap closure** (02.1-VERIFICATION.md gaps 1 to 3, with CONTEXT "Settled after verification" and "Gap plan scope", D-42 to D-51, and review items WR-01, WR-04, WR-07; one plan per wave, run in order)
+- [x] 02.1-17-PLAN.md — Wave 1: Jev reads the customer's text on every run; its safety, complaint and person readings act on every path (gap 3, D-42, D-45; ANSR-01 to ANSR-04)
+- [x] 02.1-18-PLAN.md — Wave 2: a complaint stops owner sentences; held code answers pre-fill the draft; a refused closing send keeps the waiting draft's words (CR-01, D-43, D-44, D-47; ANSR-01, ANSR-02, ANSR-04)
+- [x] 02.1-19-PLAN.md — Wave 3: Jev reads vetoed words; a draft closes as answered only on evidence (CR-02; ANSR-03)
+- [x] 02.1-20-PLAN.md — Wave 4: no second holding reply after a close-plus-partial run; a touching blank-words answer gets a whole-thread draft; split tests (WR-01, WR-04, WR-07; ANSR-03, ANSR-04)
+- [x] 02.1-21-PLAN.md — Wave 5: the agent's possible_danger sends the safety line; the holding reply when every model is down (D-45, D-51; ANSR-04)
+- [x] 02.1-22-PLAN.md — Wave 6: owner alerts about the whole business and the safety_check_down reason (D-50; ANSR-04)
+- [x] 02.1-23-PLAN.md — Wave 7: Jev outage mode: failed calls and a health ping mark it down, one down alert, one back-up alert with the count (D-50; ANSR-01, ANSR-02, ANSR-04)
+- [x] 02.1-24-PLAN.md — Wave 8: the sender refuses an automated text without a reading, what each kind of text needs, and while Jev is down (D-45, D-49, D-50; ANSR-01, ANSR-02, ANSR-04)
+- [x] 02.1-25-PLAN.md — Wave 9: Send anyway, buttons disabled while sending, Discard asks first, the newest text quoted (D-48; ANSR-03)
+- [x] 02.1-26-PLAN.md — Wave 10: the D-46 invariant test over every combination (ANSR-01 to ANSR-04)
+- [x] 02.1-27-PLAN.md — Wave 11: map re-check, once, after the gap code (ANSR-01 to ANSR-04)
+- [x] 02.1-28-PLAN.md — Wave 12: sprint notes, Principle 6, review disposition, and the phase gate on both databases (ANSR-01 to ANSR-04)
+
+### Phase 02.2: Owner Loop (INSERTED)
 
 **Goal:** The owner and the people they trust can act on the front desk from wherever they are: more than one person can approve drafts, a draft can be approved by replying to the alert text, the office hears by email, nothing waits unseen, and the agent steps back without going silent when a person joins the conversation.
-**Depends on:** Phase 2
-**Requirements**: TBD (define new IDs in REQUIREMENTS.md during `/gsd-discuss-phase 02.1`)
-**Scope** (split out of Phase 2 on 2026-10-11; see `.planning/phases/02-text-front-desk/02-CONTEXT.md` § Deferred Ideas and `docs/phase-2-owner-input.md`):
+**Depends on:** Phase 02.1
+**Requirements**: TBD (define new IDs in REQUIREMENTS.md during `/gsd-discuss-phase 02.2`)
+**Scope** (split out of Phase 2 on 2026-10-11; renumbered from 02.1 to 02.2 on 2026-10-14 when Faster Answers went first; see `.planning/phases/02-text-front-desk/02-CONTEXT.md` § Deferred Ideas and `docs/phase-2-owner-input.md`):
 - Staff users invited by the owner, each with a phone, an email, alert choices and a "can approve drafts" switch; user management and Sync Now stay owner-only (the first role split); sign out everywhere and remove a user.
 - Approve by replying to the alert with a short code (K7 sends the draft as written, K7 plus words sends those words); only a registered phone can approve; a code for a replaced draft is refused with "The customer wrote again".
 - Email alerts; the "handled" follow-up on the other channel names who acted and how.
@@ -208,13 +262,18 @@ Plans:
 - Assist mode: an owner reply stops the agent sending on its own but it keeps drafting suggestions; it returns after a per-business quiet period (replaces Phase 2's owner-reply takeover).
 - The after-hours on-call switch per business (urgent service requests such as plain flooding).
 - `escalate_to` may name a staff user.
+- Complaint alerts can go to a person the owner names (for example an office manager), chosen at setup and changeable later, with the owner as backup when that person cannot be reached; a complaint always reaches someone (Ian, 2026-10-16).
+- When alerts route to different people, revisit whether the check-in person also needs an alert for a check-in held as a complaint; in 02.1 one customer text raises one alert, the more serious one, so that text raises only the complaint alert (Ian, 2026-10-18, `02.1-CONTEXT.md` D-34, G-02.1-1).
 - The LLM fallback classifier driver on a ZDR route.
 - A user's own phone texting the business. Phase 2 treats it as a customer (02-CONTEXT D-53), so an owner who replies to an alert text gets an agent answer as if they were a customer; the reply-code parser has to recognise a registered phone first.
-- Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW-DISPOSITION.md` WR-03, WR-04; 2.1 rebuilds alerts).
+- Carried from Phase 2 review (2026-10-12): owner alerts are sent exactly once, with an atomic send claim and a unique de-duplication key (`02-REVIEW-DISPOSITION.md` WR-03, WR-04; 02.2 rebuilds alerts).
 - Carried from the Phase 2 review fix (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-22): a front-desk run that claims texts newer than the one that queued it can still alert the owner twice when it fails. Fix with a claim token stored on the claimed rows, so `ProcessInbound::failed()` reports exactly the burst its run claimed; not with a time window in `ReportFrontDeskFailure`.
 - Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-09): `gate:export` reports failed and queued sends as what went out, and `original_text` differs by path; fix before the export feeds threshold tuning.
 - Carried from the Phase 2 review (2026-10-12, `02-REVIEW-DISPOSITION.md` WR-17 to WR-19), test hardening: the reply-cap "does not count" test cannot detect most of what it claims (WR-17); `toContain('fi-collapsed')` is always true, so the collapsed customer details are not tested (WR-18); "throws NoActiveVersion from every accessor" omits the accessors Phase 2 added (WR-19).
 - Carried from the Phase 2 UI review (`02-UI-REVIEW.md`): a held draft's Send and Discard buttons show a loading state and are disabled while running, and Discard asks for confirmation.
+
+- Carried from the 02.1 Faster Answers discussion (2026-10-14, `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md` § Deferred Ideas): a reply code for a draft with newer customer messages must not send blindly; the "handled" follow-up covers drafts auto-closed as `answered`; the customer update past the holding reply's promise ships together with the owner re-alert; WR-09 must also export the new `answered` resolution and the new fixed-reply kinds.
+- The fallback classifier (Ian, 2026-10-15, superseding the 2026-10-14 open question): a runtime fallback when Jev fails, on a route other than OpenRouter and on a ZDR route, and trigger-and-hold only: it can send the safety line, hold or hand off, never pass a send. It gets message text only (02-CONTEXT D-05). Its effect on 02-CONTEXT D-03's "fail closed" is settled in 02.2 discuss. Office admin and backup recipients get the `safety_check_down` alert (02.1-CONTEXT D-50) once 02.2 builds staff users.
 
 **Success Criteria** (what must be TRUE):
   1. The owner invites a user from the dashboard, gives them the approve switch, and every approval, edit and discard records who did it; a user without the switch cannot approve, and only the owner manages users or runs Sync Now.
@@ -226,7 +285,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
+- [ ] TBD (run /gsd-discuss-phase 02.2, then /gsd-plan-phase 02.2)
 
 ### Phase 3: Booking and the Gate
 
@@ -237,7 +296,7 @@ Plans:
   1. A customer who is texted a booking link opens a page, taps one of the offered times and ends with a confirmed appointment; only times inside `hours.md` hours, outside closures, past `booking_lead_minutes`, long enough for the service, and in the business timezone are offered.
   2. A booked appointment appears on the contact's timeline, as the next appointment on the customer card, in `records/today.md` and on a dashboard schedule; the customer is reminded before it; the owner is alerted; and a nightly full rebuild of `records/` is scheduled.
   3. The minutes from a contact's first message to their booked appointment are shown on the contact and in a dashboard summary.
-  4. Every sync runs each scripted customer in `tests/*.md` against the candidate version; after a change that breaks one (for example the agent would now quote a price, or the expected time is no longer offered) the sync fails, names the test and the check that failed in plain words, keeps the previous version live, writes the attempt to `changelog.md` and shows it on the Business Folder page.
+  4. Every sync runs each scripted customer in `tests/*.md` against the candidate version; after a change that breaks one (for example the agent would now quote a price that is not in the folder, or the expected time is no longer offered) the sync fails, names the test and the check that failed in plain words, keeps the previous version live, writes the attempt to `changelog.md` and shows it on the Business Folder page.
   5. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted and the card and records updated.
 
 **Plans**: TBD
@@ -252,12 +311,14 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 02.1 → 02.2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
+| 02.1. Faster Answers | 28/28 | Complete    | 2026-10-18 |
+| 02.2. Owner Loop | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog

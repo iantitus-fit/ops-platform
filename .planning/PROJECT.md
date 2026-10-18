@@ -29,12 +29,15 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying — Phase 1
 - ✓ A text front desk built from `agents/*.md` replies, asks intake questions, discloses it is an AI, and obeys a send-or-draft gate enforced in code (code checks, the Jev classifier, a stored verdict per message) — Phase 2
 - ✓ Owner takeover and draft review from the dashboard; a phone-friendly Needs you card opened from a text alert; Twilio driver behind the same channel interface; suite green on Postgres in CI — Phase 2
+- ✓ A price or offer the owner wrote goes out at once, picked and sent by code from the customer's intake answers and checked at sync against the file's amounts; a price the model writes still holds — Phase 02.1
+- ✓ An easy answer never waits behind a hard question already with the owner, and a customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in, added-info, complaint or discount) with only promises `hours.md` can keep — Phase 02.1
+- ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1
 
 ### Active
 
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
-- [ ] Owner loop: staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode (Phase 02.1, inserted; requirement IDs come from its discussion)
+- [ ] Owner loop: staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode (Phase 02.2, inserted; requirement IDs come from its discussion)
 - [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (Phase 3)
 - [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (Phase 3)
 
@@ -105,7 +108,19 @@ Phase 2 decisions (full log: `.planning/phases/02-text-front-desk/02-CONTEXT.md`
 - **D-03, D-45, D-56** Fail closed: a Jev failure or low certainty holds the draft. Yes/no bars are per question in `config/gate.php`: price and discount 0.075, promise and complaint 0.15 (D-56 amends D-45 after UAT).
 - **D-28/D-54** At most one live draft per conversation; an approved draft becomes the sent message (same row, `sent_at` records when it went out).
 - **D-37** Before a real client goes live, every provider an agent file names gets a no-retained-copy (ZDR) route.
-- Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11.
+- Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11, renumbered to Phase 02.2 on 2026-10-14 when Faster Answers went first.
+
+Phase 02.1 decisions (full log: `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md`, D-01 to D-51; UAT fixes in quick task 261018-dxy). The ones later phases lean on:
+
+- **D-04/D-10** A price goes out on its own only as an owner-written sentence that code picks and sends, its amounts checked at sync against the file's prices; the model never writes a price that sends.
+- **D-34** One owner-written line every time a customer writes while a draft waits, in a fixed order; the complaint reply goes out at most once per wait, and one customer text raises one owner alert, the more serious one (UAT, 2026-10-18).
+- **D-42/D-45** Jev reads the customer's text on every run, and its safety, complaint and person readings act on every path.
+- **D-49/D-50** The sender refuses an automated text without the reading its kind needs; a Jev outage sends one down alert and one back-up alert with the count of texts that arrived meanwhile.
+- **D-46** One invariant test runs every combination of the waiting, complaint, hazard, price, check-in, pause, cap and failure cases.
+
+Principle for closing phases (Ian, 2026-10-17, Phase 02.1 UAT):
+
+- **02.1 closes on wiring, not business specifics.** A phase is done when the paths work: what is read, what is held, what is sent and who is alerted. Wording, which replies get a warm wrapper, where the AI notice sits, and what goes on the promise list get settled once the full workflow exists (first contact to finished job). Items held this way are listed in `docs/phase-2.2-owner-input.md` under "Held from the 2026-10-17 role play".
 
 Open decisions (not locked; each has a trigger for deciding):
 
@@ -116,6 +131,33 @@ Open decisions (not locked; each has a trigger for deciding):
 | Voice vendor (Vapi, Retell, ElevenLabs) | With the first client that needs phones | Backlog 999.2 |
 | Hosting (Laravel Cloud or Forge) | At first deploy | One instance per client |
 | Which legal entity registers A2P for Ian's own test number | Before Twilio goes live | DEC-05 says Ian registers; the entity is not stated. Does not gate the build |
+
+Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the first deploy:
+
+- **Run the queue worker under a supervisor that restarts it.** In UAT the worker crashed overnight when the Mac slept (ProcessTimedOutException), and while it was down no health ping ran, so the owner was not told. The ping runs on the same worker, so it cannot report the worker itself being down.
+- **Restart the worker after any `.env` or key change.** `queue:listen` keeps the `.env` values it started with: a restored `JEV_API_KEY` only took effect after the restart.
+- **Owner-alert delivery to a real phone is untested.** The Twilio account is still a trial and A2P can't be registered. Check it at Twilio go-live.
+
+## Frontend
+
+Decided:
+
+- Filament 5 for the back office, Livewire for customer pages (DEC-08, `docs/DECISIONS.md` 2026-10-10).
+- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11).
+- No styling changes until Ian's phone walk (02.1 D-48, `.planning/WINDOWS.md` entry 13).
+- The Needs you card shows the customer's last message above the draft, and the thread runs oldest first (Phase 2 G-02-1.1).
+- Customer-facing strings: no exclamation points and no em dashes (02.1 D-41).
+
+Open (Ian, 2026-10-16). Decide each before its first use; never improvise:
+
+1. How custom views get styled: a Filament theme CSS file so Tailwind classes compile, or Filament components only. Either way, no new inline style attributes.
+2. Color: Filament semantic colors only (danger, warning, success, gray), never hex. Amber primary is a placeholder until the brand pass.
+3. One small text size and one spacing scale, taken from Filament.
+4. Phone layout, decided at the phone walk: which table columns hide below tablet width, and the thread's own scroll box versus page scroll. Checked at 375 and 390 wide.
+5. Accessibility baseline: every input has a label, visible or aria-label; WCAG AA contrast in light and dark mode; whether dark mode stays on.
+6. Errors the owner must fix show inline under the field. Decide whether channel failures stay toasts.
+7. The thread's polling interval (5 s now), and whether long threads load in pages.
+8. What "/" shows before Phase 3 (the stock Laravel page today).
 
 ## Evolution
 
@@ -136,4 +178,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-13 after Phase 2*
+*Last updated: 2026-10-18 after Phase 02.1*

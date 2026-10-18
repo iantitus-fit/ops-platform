@@ -65,6 +65,13 @@ class FrontDeskAgent implements Agent, Conversational, HasStructuredOutput
                 ])->withoutAdditionalProperties()
             )->required(),
             'customer_name' => $schema->string()->nullable()->required(),
+            'price_services' => $schema->array()->items($schema->string())->required(),
+            'asks_discount' => $schema->boolean()->required(),
+            'touches_waiting' => $schema->boolean()->nullable()->required(),
+            'waiting_note' => $schema->string()->nullable()->required(),
+            'easy_reply' => $schema->string()->nullable()->required(),
+            'easy_label' => $schema->string()->nullable()->required(),
+            'possible_danger' => $schema->boolean()->required(),
         ];
     }
 }

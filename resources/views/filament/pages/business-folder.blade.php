@@ -5,6 +5,7 @@
         $timezone = $this->timezone();
         $alertWarning = $this->alertWarning();
         $failedAlert = $this->lastFailedAlert();
+        $offerWarnings = $this->staleOfferWarnings();
     @endphp
 
     <x-filament::section heading="Live version">
@@ -42,6 +43,16 @@
                     @if ($failedAlert !== null)
                         <p>The last alert was not sent: {{ $failedAlert->failure }} · {{ $failedAlert->failed_at->setTimezone($timezone)->format('M j, g:i a') }}</p>
                     @endif
+                </div>
+            </x-filament::section>
+        @endif
+
+        @if ($offerWarnings !== [])
+            <x-filament::section heading="Offers">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    @foreach ($offerWarnings as $offerWarning)
+                        <p wire:key="offer-warning-{{ $loop->index }}" style="color: #dc2626;">{{ $offerWarning }}</p>
+                    @endforeach
                 </div>
             </x-filament::section>
         @endif

@@ -72,6 +72,68 @@ class BusinessClock
         return 'when we open at '.$this->timeWords($opening).' '.$this->dayWords($local, $opening);
     }
 
+    /**
+     * The words that fill {today_or_next_open} in a fixed reply (D-25): "today if possible, or after we
+     * open at 8 am tomorrow" while the shop is open with the margin left, otherwise just "after we open
+     * at 8 am tomorrow", and "when we reopen" when the shop does not open within two weeks.
+     */
+    public function todayOrNextOpenPhrase(CarbonInterface $moment): string
+    {
+        $local = $this->inBusinessZone($moment);
+        $window = $this->windowOn($local);
+        $opening = $this->nextOpening($local);
+
+        $afterOpening = $opening === null
+            ? 'when we reopen'
+            : 'after we open at '.$this->timeWords($opening).' '.$this->dayWords($local, $opening);
+
+        if ($window !== null && $this->isOpenAt($local) && $this->hasMarginBeforeClose($local, $window['close'])) {
+            return 'today if possible, or '.$afterOpening;
+        }
+
+        return $afterOpening;
+    }
+
+    /**
+     * The words that fill {next_opening} in a fixed reply (D-25): the next opening alone, such as
+     * "8 am tomorrow" or "9 am Saturday", or "the next time we open" when there is none.
+     */
+    public function nextOpeningPhrase(CarbonInterface $moment): string
+    {
+        $local = $this->inBusinessZone($moment);
+        $opening = $this->nextOpening($local);
+
+        if ($opening === null) {
+            return 'the next time we open';
+        }
+
+        return $this->timeWords($opening).' '.$this->dayWords($local, $opening);
+    }
+
+    /**
+     * The words that fill {check_in_time} in a fixed reply (D-26): the next opening after the moment
+     * plus the owner's check_in_hours, never later than that day's closing time. Closures are skipped
+     * because the opening is. Falls back to "the next time we open" when the shop does not open.
+     */
+    public function checkInPhrase(CarbonInterface $moment, int $hours): string
+    {
+        $local = $this->inBusinessZone($moment);
+        $opening = $this->nextOpening($local);
+
+        if ($opening === null) {
+            return 'the next time we open';
+        }
+
+        $checkIn = $opening->addHours($hours);
+        $close = $this->windowOn($opening)['close'] ?? $checkIn;
+
+        if ($checkIn > $close) {
+            $checkIn = $close;
+        }
+
+        return $this->timeWords($checkIn).' '.$this->dayWords($local, $checkIn);
+    }
+
     private function inBusinessZone(CarbonInterface $moment): CarbonImmutable
     {
         return CarbonImmutable::instance($moment)->setTimezone($this->config->timezone());

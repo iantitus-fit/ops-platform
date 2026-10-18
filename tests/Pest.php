@@ -115,8 +115,10 @@ function something()
 }
 
 /**
- * The scripted classifier every Feature test runs with: `answer()` sets what it says, `failWith()` makes it fail
- * like Jev down, and `calls()` lists the texts it was asked about.
+ * The scripted classifier every Feature test runs with: `answer()` sets what it says to a words check,
+ * `answerReading()` what it says when reading the customer's text alone, `failWith()` makes every call fail like Jev
+ * down (`failReadingWith()` only the readings), and `calls()` lists the words checks, `readingCalls()` the readings
+ * and `allCalls()` both.
  */
 function fakeClassifier(): FakeClassifier
 {
@@ -138,6 +140,13 @@ function scriptFrontDeskReplies(array ...$replies): void
         'service_slug' => null,
         'intake_answers' => [],
         'customer_name' => null,
+        'price_services' => [],
+        'asks_discount' => false,
+        'touches_waiting' => null,
+        'waiting_note' => null,
+        'easy_reply' => null,
+        'easy_label' => null,
+        'possible_danger' => false,
     ];
 
     FrontDeskAgent::fake(array_map(fn (array $reply) => [...$defaults, ...$reply], $replies))->preventStrayPrompts();
@@ -196,31 +205,53 @@ function composedFirstReply(string $words): string
 }
 
 /**
+ * Whether the message is a fixed line or a text code put together without the model's own words: a holding reply, the
+ * safety line, or a code-assembled kind whose meta.parts does not list model_words. The meta is read in PHP, not with
+ * a JSON path in SQL, because the suite runs on SQLite and PostgreSQL.
+ */
+function carriesNoModelWords(Message $message): bool
+{
+    if (in_array($message->kind, [MessageKind::HoldingReply, MessageKind::LifeSafety], true)) {
+        return true;
+    }
+
+    return in_array($message->kind, MessageKind::assembledByCode(), true)
+        && ! in_array('model_words', $message->meta['parts'] ?? [], true);
+}
+
+/**
  * The texts the fake channel sent that carry the agent's own words, leaving out the holding reply that goes out
- * beside a held draft (D-12) and the safety line, which is fixed in code (D-16). A test that says "nothing the agent
- * wrote reached the customer" reads this.
+ * beside a held draft (D-12), the safety line, which is fixed in code (D-16), and the texts code assembled from owner
+ * sentences and fixed lines without any model words inside (D-30). A test that says "nothing the agent wrote reached
+ * the customer" reads this.
  *
  * @return list<array{to: string, body: string, provider_message_id: string}>
  */
 function textsSentForAgentReplies(): array
 {
-    $holdingBodies = Message::query()->whereIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value])->pluck('body')->all();
+    $fixedBodies = Message::query()
+        ->whereNotNull('kind')
+        ->get()
+        ->filter(fn (Message $message): bool => carriesNoModelWords($message))
+        ->pluck('body')
+        ->all();
 
     return array_values(array_filter(
         textsSentToCustomers(),
-        fn (array $text): bool => ! in_array($text['body'], $holdingBodies, true),
+        fn (array $text): bool => ! in_array($text['body'], $fixedBodies, true),
     ));
 }
 
 /**
  * The one message the front desk wrote, whether it was sent or kept as a draft. A holding reply sent beside a held
- * draft and a safety line are different messages and are left out.
+ * draft, a safety line and a text code assembled without model words are different messages and are left out.
  */
 function theAgentMessage(): Message
 {
     return Message::query()
         ->where('direction', MessageDirection::Out)
-        ->where(fn ($query) => $query->whereNull('kind')->orWhereNotIn('kind', [MessageKind::HoldingReply->value, MessageKind::LifeSafety->value]))
+        ->get()
+        ->reject(fn (Message $message): bool => carriesNoModelWords($message))
         ->sole();
 }
 
@@ -245,11 +276,11 @@ function resetRecordsToTrackedFiles(string $records): void
 
 /**
  * How many typed files examples/example-hvac holds. A plan that adds a typed file to the example
- * folder changes this one number (plans 02-02, 02-03 and 02-06 do), not every test that counts.
+ * folder changes this one number (plans 02-02, 02-03, 02-06, 02.1-06 and 02.1-07 do), not every test that counts.
  */
 function exampleFolderFileCount(): int
 {
-    return 12;
+    return 14;
 }
 
 /**

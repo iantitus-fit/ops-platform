@@ -8,7 +8,13 @@
                 @if ($this->draftNotAlerted !== null)
                     <p><x-filament::badge color="warning">{{ $this->draftNotAlerted }}</x-filament::badge></p>
                 @endif
-                @if ($this->lastCustomerMessage !== null)
+                @if ($this->customerWroteAgain && $this->lastCustomerMessage !== null)
+                    <p style="font-size: 0.875rem;">
+                        <x-filament::badge color="warning">The customer wrote again since this draft</x-filament::badge>
+                        <strong>{{ $this->lastCustomerMessage->happenedAt()->setTimezone($timezone)->format('M j, g:i a') }}:</strong>
+                        <span>{{ Str::limit(Str::squish($this->lastCustomerMessage->body), 160) ?: '(no words)' }}</span>
+                    </p>
+                @elseif ($this->lastCustomerMessage !== null)
                     <p style="font-size: 0.875rem;">
                         <strong>Customer wrote, {{ $this->lastCustomerMessage->happenedAt()->setTimezone($timezone)->format('M j, g:i a') }}:</strong>
                         <span>{{ Str::limit(Str::squish($this->lastCustomerMessage->body), 160) ?: '(no words)' }}</span>
@@ -22,15 +28,15 @@
                 @endif
                 <form wire:submit="approveDraft" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <x-filament::input.wrapper>
-                        <textarea wire:model="draftBody" rows="4" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
+                        <textarea wire:model="draftBody" rows="4" aria-label="Draft reply to the customer" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
                     </x-filament::input.wrapper>
                     @error('draftBody')
                         <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
                     @enderror
                     <p style="font-size: 0.875rem;">The sign-off (and the AI note on a first text) is added when it sends.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <x-filament::button type="submit">Send</x-filament::button>
-                        <x-filament::button type="button" color="gray" wire:click="discardDraft">Discard</x-filament::button>
+                        <x-filament::button type="submit" wire:target="approveDraft" wire:loading.attr="disabled">{{ $this->customerWroteAgain ? 'Send anyway' : 'Send' }}</x-filament::button>
+                        <x-filament::button type="button" color="gray" wire:click="discardDraft" wire:target="discardDraft" wire:loading.attr="disabled" wire:confirm="Discard this draft? Nothing will be sent to the customer.">Discard</x-filament::button>
                     </div>
                 </form>
             </div>
@@ -76,7 +82,7 @@
         <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <p>{{ $this->replyBlockedReason }}</p>
             <x-filament::input.wrapper disabled>
-                <textarea rows="3" disabled class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
+                <textarea rows="3" disabled aria-label="Reply to the customer" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
             </x-filament::input.wrapper>
             <div>
                 <x-filament::button type="button" disabled>Send</x-filament::button>
@@ -85,13 +91,13 @@
     @else
         <form wire:submit="sendReply" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <x-filament::input.wrapper>
-                <textarea wire:model="body" rows="3" placeholder="Type a reply" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
+                <textarea wire:model="body" rows="3" placeholder="Type a reply" aria-label="Reply to the customer" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
             </x-filament::input.wrapper>
             @error('body')
                 <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
             @enderror
             <div>
-                <x-filament::button type="submit">Send</x-filament::button>
+                <x-filament::button type="submit" wire:target="sendReply" wire:loading.attr="disabled">Send</x-filament::button>
             </div>
         </form>
     @endif

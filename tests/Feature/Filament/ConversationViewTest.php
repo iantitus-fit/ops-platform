@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ConversationStatus;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Livewire\ConversationThread;
 use App\Models\Contact;
@@ -238,4 +239,236 @@ it('shows no Customer wrote line without a held draft (G-02-1.1)', function () {
         ->assertOk()
         ->assertSee(CONVERSATION_VIEW_FIRST_TEXT)
         ->assertDontSee('Customer wrote');
+});
+
+/**
+ * Dana's thread with the draft marked as the answer to her first text, the way the front desk records it. Returns the
+ * conversation.
+ */
+function conversationViewWithDraftAnsweringFirstText(): Conversation
+{
+    $conversation = conversationViewWithLiveDraft();
+    $firstText = Message::query()->where('conversation_id', $conversation->id)->where('direction', 'in')->sole();
+
+    Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->sole()
+        ->update(['meta' => ['in_reply_to' => [$firstText->id]]]);
+
+    return $conversation;
+}
+
+it('says the customer wrote again since the draft, above Send (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => 'Also, it is leaking', 'created_at' => now()->subMinute()]);
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSeeInOrder([
+            'Needs you',
+            'The customer wrote again since this draft',
+            'Also, it is leaking',
+            'wire:model="draftBody"',
+            'Send anyway',
+        ], escape: false);
+
+    expect(conversationViewNeedsYouCard($response->getContent()))->toContain('The customer wrote again since this draft');
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation]);
+
+    expect($thread->instance()->customerWroteAgain)->toBeTrue();
+});
+
+it('shows no wrote-again line when the customer has said nothing since the draft (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('Needs you')
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+it('counts a text that arrived while the run was in flight, with an id below the draft (D-22)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    $draft = Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->sole();
+
+    // Made after the draft's burst was read but before the draft was saved: its id is between the two. Created first
+    // by id order, then the draft is pushed after it so the draft keeps the highest id.
+    $lateText = Message::factory()->for($conversation)->create(['body' => 'One more thing', 'created_at' => now()->subMinutes(6)]);
+    $newDraft = $draft->replicate();
+    $draft->delete();
+    $newDraft->save();
+
+    expect($lateText->id)->toBeLessThan($newDraft->id);
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeTrue();
+});
+
+it('shows no wrote-again line on a draft that does not record what it answered (D-22)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::factory()->for($conversation)->create(['body' => 'Hello again', 'created_at' => now()->subMinute()]);
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertSee('Needs you')
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+it('shows no wrote-again line without a held draft (D-22)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    Message::query()->where('conversation_id', $conversation->id)->where('status', 'draft')->delete();
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => $conversation])
+        ->assertDontSee('The customer wrote again since this draft');
+
+    expect($thread->instance()->customerWroteAgain)->toBeFalse();
+});
+
+/**
+ * The first button on the page that runs the given Livewire action, as written in the page, or an empty string.
+ */
+function conversationViewButtonRunning(string $html, string $action): string
+{
+    preg_match('/<button[^>]*wire:target="'.$action.'"[^>]*>.*?<\/button>/s', $html, $matches);
+
+    return $matches[0] ?? '';
+}
+
+/**
+ * The words on a button, with the markup and the extra spaces taken out.
+ */
+function conversationViewButtonWords(string $button): string
+{
+    return Str::squish(strip_tags($button));
+}
+
+it('reads Send on the draft when the customer has not written again (D-48)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonWords(conversationViewButtonRunning($html, 'approveDraft')))->toBe('Send')
+        ->and($html)->not->toContain('Send anyway');
+});
+
+it('reads Send anyway on the draft when the customer wrote again, and approving it still sends (D-48)', function () {
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => 'Also, it is leaking', 'created_at' => now()->subMinute()]);
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonWords(conversationViewButtonRunning($html, 'approveDraft')))->toBe('Send anyway');
+});
+
+it('disables the draft Send, the reply Send and Discard while their own action runs (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    foreach (['approveDraft', 'sendReply', 'discardDraft'] as $action) {
+        expect(conversationViewButtonRunning($html, $action))->toContain('wire:loading.attr="disabled"');
+    }
+});
+
+it('asks before Discard does anything (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(conversationViewButtonRunning($html, 'discardDraft'))
+        ->toContain('wire:confirm="Discard this draft? Nothing will be sent to the customer."');
+});
+
+it('labels the draft box and the reply box for a screen reader (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect(substr_count($html, 'aria-label="Draft reply to the customer"'))->toBe(1)
+        ->and(substr_count($html, 'aria-label="Reply to the customer"'))->toBe(1)
+        ->and($html)->toMatch('/<textarea[^>]*wire:model="draftBody"[^>]*aria-label="Draft reply to the customer"/')
+        ->and($html)->toMatch('/<textarea[^>]*wire:model="body"[^>]*aria-label="Reply to the customer"/');
+});
+
+it('labels the disabled reply box too when replies are blocked (D-48)', function () {
+    $conversation = conversationViewWithLiveDraft();
+    $conversation->forceFill(['status' => ConversationStatus::Closed])->save();
+
+    $html = Livewire::test(ConversationThread::class, ['conversation' => $conversation])->html();
+
+    expect($html)->toContain('This conversation is closed. Reopen it to reply.')
+        ->and($html)->toMatch('/<textarea[^>]*disabled[^>]*aria-label="Reply to the customer"/')
+        ->and($html)->not->toContain('wire:model="body"');
+});
+
+/**
+ * Dana's thread, the draft answering her first text, and a newer text from her at 4:29 pm on Oct 13 (the business zone).
+ * Returns the conversation.
+ */
+function conversationViewWithNewerText(string $body): Conversation
+{
+    activateExampleFolder();
+    test()->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+    Message::factory()->for($conversation)->create(['body' => $body, 'created_at' => now()->subMinute()]);
+
+    return $conversation;
+}
+
+it("quotes the customer's newest text with its time on the wrote-again line, above Send anyway (D-48)", function () {
+    $conversation = conversationViewWithNewerText('Actually it started making a grinding noise too');
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))
+        ->assertOk()
+        ->assertSeeInOrder([
+            'Needs you',
+            'The customer wrote again since this draft',
+            'Oct 13, 4:29 pm',
+            'Actually it started making a grinding noise too',
+            'wire:model="draftBody"',
+            'Send anyway',
+        ], escape: false);
+
+    expect(conversationViewNeedsYouCard($response->getContent()))
+        ->not->toContain('Customer wrote,')
+        ->and(substr_count($response->getContent(), 'Actually it started making a grinding noise too'))->toBe(2);
+});
+
+it('keeps the Customer wrote line and no wrote-again line when nothing is newer than the draft (D-48)', function () {
+    activateExampleFolder();
+    $this->travelTo(Carbon::parse('2026-10-13 16:30', 'America/Chicago'));
+    $conversation = conversationViewWithDraftAnsweringFirstText();
+
+    $response = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->assertOk();
+    $card = conversationViewNeedsYouCard($response->getContent());
+
+    expect($card)->toContain('Customer wrote, Oct 13, 4:20 pm:')
+        ->and($card)->toContain(CONVERSATION_VIEW_FIRST_TEXT)
+        ->and($card)->not->toContain('The customer wrote again since this draft');
+});
+
+it('squishes and cuts the quoted newest text to 160 characters, multibyte letters included (D-48, ANSR-03)', function () {
+    $longText = "ça  ne marche pas\n\n".str_repeat('é', 200);
+    $conversation = conversationViewWithNewerText($longText);
+
+    $card = conversationViewNeedsYouCard($this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent());
+    $cut = Str::limit(Str::squish($longText), 160);
+
+    expect(mb_strlen($cut))->toBeLessThanOrEqual(163)
+        ->and($cut)->toEndWith('...')
+        ->and($card)->toContain(e($cut))
+        ->and($card)->not->toContain(str_repeat('é', 161));
+});
+
+it("escapes the customer's newest text on the wrote-again line (T-02.1-56)", function () {
+    $conversation = conversationViewWithNewerText('<b>bold</b> <script>alert(4)</script>');
+
+    $html = $this->get(ConversationResource::getUrl('view', ['record' => $conversation]))->getContent();
+
+    expect(conversationViewNeedsYouCard($html))->toContain('&lt;b&gt;bold&lt;/b&gt; &lt;script&gt;alert(4)&lt;/script&gt;')
+        ->and($html)->not->toContain('<script>alert(4)')
+        ->and($html)->not->toContain('<b>bold</b>');
 });

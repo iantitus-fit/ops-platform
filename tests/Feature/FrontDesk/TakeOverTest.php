@@ -204,6 +204,7 @@ it('holds a reply composed before Take over as a refused draft and sends nothing
             'service_slug' => null,
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     })->preventStrayPrompts();
 

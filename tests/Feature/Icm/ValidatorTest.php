@@ -29,7 +29,7 @@ dataset('broken fields', [
     'service: slug with capitals and a space' => ['business/services/ac-repair.md', 'slug: ac-repair', 'slug: AC Repair', 'business/services/ac-repair.md: slug must use only lowercase letters, numbers, dashes or underscores (you wrote AC Repair)'],
     'service: the same intake key twice' => ['business/services/ac-repair.md', 'key: system_age', 'key: symptom', 'business/services/ac-repair.md: intake has more than one question with key symptom'],
     'voice: never_say deleted' => ['voice/how-we-talk.md', "never_say: [guaranteed, cheapest, no problem]\n", '', 'voice/how-we-talk.md: never_say is missing, and it is required'],
-    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap]\n  after_hours: next_opening\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
+    'sending rules: owner_alert deleted' => ['rules/sending.md', "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, check_in]\n  after_hours: next_opening\n", '', 'rules/sending.md: owner_alert is missing, and it is required'],
 ]);
 
 it('rejects a broken field with a sentence that names the file, the field and what was written', function (string $file, string $search, string $replace, string $line) {
@@ -64,7 +64,7 @@ it('rejects a file whose type or front matter cannot be understood', function (s
 
     expect(rejectedErrors())->toBe([$line]);
 })->with([
-    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage (you wrote recipe)'],
+    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer (you wrote recipe)'],
     'front matter without a type' => ['notes/x.md', "---\nname: Notes\n---\nBody", 'notes/x.md: type is missing, and it is required'],
     'no front matter at all' => ['notes/y.md', 'Just some words.', 'notes/y.md: the file must start with front matter (a --- line, then type: and its fields, then another --- line)'],
     'empty front matter' => ['notes/z.md', "---\n---\nBody", 'notes/z.md: the front matter is empty; add type: and the fields for that type'],
@@ -98,7 +98,7 @@ it('requires each of the five single-instance types to exist exactly once', func
 });
 
 it('names every missing single-instance type when the folder has no typed files', function () {
-    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-repair.md', 'business/services/furnace-tune-up.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
+    foreach (['business/profile.md', 'business/hours.md', 'business/lead-sources.md', 'business/faq.md', 'business/services/ac-repair.md', 'business/services/furnace-repair.md', 'business/services/furnace-tune-up.md', 'business/services/system-replacement.md', 'voice/how-we-talk.md', 'rules/sending.md'] as $file) {
         File::delete(icmPath($file));
     }
 

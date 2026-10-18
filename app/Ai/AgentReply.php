@@ -13,6 +13,10 @@ readonly class AgentReply
 {
     /**
      * @param  list<array{question_key: string, option: ?string, raw_text: string}>  $intakeAnswers
+     * @param  list<string>  $priceServices  Slugs of the services whose price the customer asked about.
+     * @param  ?bool  $touchesWaiting  Whether the text touches the question already with the owner; null when unknown.
+     * @param  ?string  $waitingNote  check_in or added_info; null when unknown.
+     * @param  bool  $possibleDanger  Whether the text could describe a danger to people or the home; the third danger net (D-45). The model must give a true or false: a missing or non-boolean value is rejected like wants_person, so the chain tries the next model.
      */
     public function __construct(
         public string $reply,
@@ -21,12 +25,23 @@ readonly class AgentReply
         public ?string $serviceSlug,
         public array $intakeAnswers,
         public ?string $customerName,
+        public array $priceServices = [],
+        public bool $asksDiscount = false,
+        public ?bool $touchesWaiting = null,
+        public ?string $waitingNote = null,
+        public ?string $easyReply = null,
+        public ?ReplyLabel $easyLabel = null,
+        public bool $possibleDanger = false,
     ) {}
 
     /**
      * Build a reply from the structured answer, or throw when it is empty or malformed.
      *
      * The reply's length is not checked here: the hard limit belongs to the send rule.
+     *
+     * A blank reply is accepted only when the model also names a service whose price the customer asked about or flags
+     * a discount ask: a pure price or discount ask has no other words, and asking Jev about filler words would hold them
+     * on the customer's question. Anything else with a blank reply is still malformed.
      *
      * @param  array<string, mixed>  $data
      *
@@ -35,8 +50,10 @@ readonly class AgentReply
     public static function fromStructured(array $data): self
     {
         $reply = $data['reply'] ?? null;
+        $priceServices = self::priceServices($data['price_services'] ?? null);
+        $asksDiscount = ($data['asks_discount'] ?? null) === true;
 
-        if (! is_string($reply) || trim($reply) === '') {
+        if (! is_string($reply) || (trim($reply) === '' && $priceServices === [] && ! $asksDiscount)) {
             throw new UnexpectedValueException('The answer has no reply text.');
         }
 
@@ -50,6 +67,10 @@ readonly class AgentReply
             throw new UnexpectedValueException('The answer has no true or false for wants_person.');
         }
 
+        if (! is_bool($data['possible_danger'] ?? null)) {
+            throw new UnexpectedValueException('The answer has no true or false for possible_danger.');
+        }
+
         return new self(
             reply: trim($reply),
             label: $label,
@@ -57,11 +78,41 @@ readonly class AgentReply
             serviceSlug: self::optionalText($data, 'service_slug'),
             intakeAnswers: self::intakeAnswers($data['intake_answers'] ?? []),
             customerName: self::optionalText($data, 'customer_name'),
+            priceServices: $priceServices,
+            asksDiscount: $asksDiscount,
+            touchesWaiting: is_bool($data['touches_waiting'] ?? null) ? $data['touches_waiting'] : null,
+            waitingNote: in_array($data['waiting_note'] ?? null, self::WAITING_NOTES, true) ? $data['waiting_note'] : null,
+            easyReply: self::tolerantText($data['easy_reply'] ?? null),
+            easyLabel: is_string($data['easy_label'] ?? null) ? ReplyLabel::tryFrom($data['easy_label']) : null,
+            possibleDanger: $data['possible_danger'],
         );
     }
 
     /**
-     * @return array{reply: string, label: string, wants_person: bool, service_slug: ?string, intake_answers: list<array{question_key: string, option: ?string, raw_text: string}>, customer_name: ?string}
+     * The easy part of a text that also touches the question waiting with the owner (D-19): a copy that carries only the
+     * easy answer and its label, so it can be checked by the send rule like any reply of its own. Null unless the model
+     * says the text touches the waiting question (exactly true), gives easy words, and gives an easy label from the
+     * vocabulary. The model's wants_person and every other field are left out on purpose: the split part never asks for
+     * a person, names a service or records an answer.
+     */
+    public function easyPart(): ?self
+    {
+        if ($this->touchesWaiting !== true || $this->easyReply === null || $this->easyLabel === null) {
+            return null;
+        }
+
+        return new self(
+            reply: $this->easyReply,
+            label: $this->easyLabel,
+            wantsPerson: false,
+            serviceSlug: null,
+            intakeAnswers: [],
+            customerName: null,
+        );
+    }
+
+    /**
+     * @return array{reply: string, label: string, wants_person: bool, service_slug: ?string, intake_answers: list<array{question_key: string, option: ?string, raw_text: string}>, customer_name: ?string, price_services: list<string>, asks_discount: bool, touches_waiting: ?bool, waiting_note: ?string, easy_reply: ?string, easy_label: ?string, possible_danger: bool}
      */
     public function toArray(): array
     {
@@ -72,7 +123,55 @@ readonly class AgentReply
             'service_slug' => $this->serviceSlug,
             'intake_answers' => $this->intakeAnswers,
             'customer_name' => $this->customerName,
+            'price_services' => $this->priceServices,
+            'asks_discount' => $this->asksDiscount,
+            'touches_waiting' => $this->touchesWaiting,
+            'waiting_note' => $this->waitingNote,
+            'easy_reply' => $this->easyReply,
+            'easy_label' => $this->easyLabel?->value,
+            'possible_danger' => $this->possibleDanger,
         ];
+    }
+
+    /**
+     * The two things the model may say about a text that arrives while a question is with the owner.
+     */
+    private const array WAITING_NOTES = ['check_in', 'added_info'];
+
+    /**
+     * The service slugs the customer asked a price for: text entries only, trimmed, non-empty, each once, in order.
+     * Anything that is not a list gives an empty one, which is a held price draft, today's behavior.
+     *
+     * @return list<string>
+     */
+    private static function priceServices(mixed $services): array
+    {
+        if (! is_array($services)) {
+            return [];
+        }
+
+        $kept = [];
+
+        foreach ($services as $service) {
+            $slug = is_string($service) ? trim($service) : '';
+
+            if ($slug !== '' && ! in_array($slug, $kept, true)) {
+                $kept[] = $slug;
+            }
+        }
+
+        return $kept;
+    }
+
+    /**
+     * A new field's text, trimmed; anything that is not non-empty text gives null instead of throwing, so a
+     * malformed value never costs a provider attempt.
+     */
+    private static function tolerantText(mixed $value): ?string
+    {
+        $value = is_string($value) ? trim($value) : '';
+
+        return $value === '' ? null : $value;
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\SendRule\CustomerReading;
 use App\SendRule\LifeSafety;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
@@ -29,6 +30,9 @@ use Throwable;
  * at all, or another run holds the send past the wait, the owner is still alerted, with the reason, because a customer
  * in danger who got no answer is exactly what the owner must know. The line is sent, or the owner is told; never
  * neither.
+ *
+ * Every safety line that Jev triggered keeps the reading that sent it, in gate.customer_reading beside
+ * gate.life_safety, so each line has a record of why it went out (Ian, 2026-10-17, G-02.1-3).
  */
 class SendLifeSafetyLine
 {
@@ -52,10 +56,11 @@ class SendLifeSafetyLine
      *
      * @param  string  $hazard  gas, general or water
      * @param  string  $trigger  keyword when the words matched in code, classifier when Jev found the danger
+     * @param  CustomerReading|null  $reading  the run's reading of the customer's text when Jev's reading or a words check found the danger; null on the keyword path, which sends before any Jev call (D-45)
      * @return Message|null the stored safety line, or null when this text was already answered, the send failed or
      *                      another run held the lock
      */
-    public function handle(Message $inbound, string $hazard, string $trigger): ?Message
+    public function handle(Message $inbound, string $hazard, string $trigger, ?CustomerReading $reading = null): ?Message
     {
         $lock = Cache::lock("life-safety:{$inbound->id}", 30);
 
@@ -71,13 +76,13 @@ class SendLifeSafetyLine
         }
 
         try {
-            return $this->answer($inbound, $hazard, $trigger);
+            return $this->answer($inbound, $hazard, $trigger, $reading);
         } finally {
             $lock->release();
         }
     }
 
-    private function answer(Message $inbound, string $hazard, string $trigger): ?Message
+    private function answer(Message $inbound, string $hazard, string $trigger, ?CustomerReading $reading): ?Message
     {
         $conversation = $inbound->conversation;
 
@@ -101,6 +106,7 @@ class SendLifeSafetyLine
                     'fixed' => true,
                     'life_safety' => ['hazard' => $hazard, 'trigger' => $trigger],
                     'reason' => ['code' => 'life_safety', 'plain' => null],
+                    ...($reading === null ? [] : ['customer_reading' => $reading->toArray()]),
                 ],
                 'meta' => ['in_reply_to' => [$inbound->id]],
             ]);

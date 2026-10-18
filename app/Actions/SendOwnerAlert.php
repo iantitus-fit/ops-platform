@@ -114,10 +114,16 @@ class SendOwnerAlert
 
     /**
      * Add the owner_alerted entry to the contact of the alert's conversation and have their
-     * card re-rendered. A timeline that cannot be written is logged, never thrown.
+     * card re-rendered. An alert about the whole business has no conversation and so no
+     * customer timeline to write to (D-50). A timeline that cannot be written is logged, never
+     * thrown.
      */
     private function addToTimeline(OwnerAlert $alert, string $summary): void
     {
+        if ($alert->conversation_id === null) {
+            return;
+        }
+
         try {
             $contact = $alert->conversation->contact;
 

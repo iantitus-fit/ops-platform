@@ -14,6 +14,16 @@
       "status": "complete"
     },
     {
+      "number": "02.1",
+      "name": "Faster Answers",
+      "status": "complete"
+    },
+    {
+      "number": "02.2",
+      "name": "Owner Loop",
+      "status": "pending"
+    },
+    {
       "number": "3",
       "name": "Booking and the Gate",
       "status": "pending"
@@ -21,8 +31,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 02.1)",
-    "reason": "Phase 02.1 of 4 — needs a plan"
+    "label": "Advance to the next step (plan phase 02.2)",
+    "reason": "Phase 02.2 of 5 — needs a plan"
   },
-  "updated_at": "2026-10-13T20:22:49.846Z"
+  "updated_at": "2026-10-18T20:51:39.791Z"
 }

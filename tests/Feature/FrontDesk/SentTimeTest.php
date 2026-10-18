@@ -212,7 +212,7 @@ it('lists the sent draft after the holding reply in /dev/chat', function () {
 
     Livewire::test(DevChat::class)
         ->set('from', '+12025550123')
-        ->assertSeeInOrder(['Mike answers questions like this himself', SENT_TIME_DRAFT_WORDS])
+        ->assertSeeInOrder(['on his list', SENT_TIME_DRAFT_WORDS])
         ->tap(fn ($chat) => expect($chat->instance()->thread->pluck('id')->all())->toBe([$customerText->id, $holdingReply->id, $draft->id]));
 });
 

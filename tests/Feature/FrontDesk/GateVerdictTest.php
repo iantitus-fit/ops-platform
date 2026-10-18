@@ -45,6 +45,7 @@ it('records the failed provider and the fallback model that answered', function 
             'service_slug' => null,
             'intake_answers' => [],
             'customer_name' => null,
+            'possible_danger' => false,
         ];
     })->preventStrayPrompts();
 
@@ -104,7 +105,37 @@ it('says in plain words why a reply was held (D-07)', function (string $code, st
     'asks for a person' => ['classifier:asks_for_person', 'Held: may want to talk to a person'],
     'sender refused' => ['send_refused', 'Held: could not send right now'],
     'a code nobody listed' => ['something_new', 'Held: needs your judgment'],
+    'no owner price sentence on file' => ['price:no_sentence', 'Held: no price on file for this question'],
+    'any other price detail' => ['price:anything_else', 'Held: asks about price'],
+    'no offer running today' => ['discount:no_live_offer', 'Held: no offer running today'],
+    'any other discount detail' => ['discount:anything_else', 'Held: mentions a discount'],
+    'touches a waiting question' => ['touches_waiting', 'Held: adds to a question you already have'],
+    'waiting guard on scheduling' => ['waiting_guard:scheduling', 'Held: waits behind a question you already have'],
+    'waiting guard on other' => ['waiting_guard:other', 'Held: waits behind a question you already have'],
 ]);
+
+it('lets a verdict carry owner-facing words that name why it holds while the reason code stays the same (D-40)', function () {
+    $words = 'Held: no price on file for AC repair';
+
+    $held = Verdict::hold('price:no_sentence', [], plainReason: $words);
+    $sending = Verdict::send(['version' => 1])->heldFor('price:no_sentence', $words);
+
+    expect($held->reasonCode)->toBe('price:no_sentence')
+        ->and($held->plainReason)->toBe($words)
+        ->and($held->details['reason'])->toBe(['code' => 'price:no_sentence', 'plain' => $words])
+        ->and($sending->reasonCode)->toBe('price:no_sentence')
+        ->and($sending->plainReason)->toBe($words)
+        ->and($sending->details['reason'])->toBe(['code' => 'price:no_sentence', 'plain' => $words]);
+});
+
+it('keeps the code-to-words reading when no owner-facing words are given (D-40)', function () {
+    $held = Verdict::hold('price:no_sentence', []);
+    $sending = Verdict::send([])->heldFor('price:no_sentence');
+
+    expect($held->plainReason)->toBe('Held: no price on file for this question')
+        ->and($held->details['reason']['plain'])->toBe('Held: no price on file for this question')
+        ->and($sending->plainReason)->toBe('Held: no price on file for this question');
+});
 
 it('stores the plain reason on a held draft', function () {
     frontDeskCustomerTexts('How much is a diagnostic?');

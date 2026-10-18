@@ -99,7 +99,7 @@ it('asks Jev once, about the burst text and the words the agent wrote, not the d
     ]]);
 });
 
-it('keeps a price reply as a draft even when the agent labels it a faq answer, and never asks Jev (GATE-01, D-02)', function () {
+it('keeps a price reply as a draft even when the agent labels it a faq answer, and the veto stays its reason (GATE-01, D-02, D-45)', function () {
     frontDeskCustomerTexts('How much is a diagnostic?');
     scriptFrontDeskReplies(['reply' => 'A diagnostic visit is $89.', 'label' => 'faq_answer']);
 
@@ -116,7 +116,7 @@ it('keeps a price reply as a draft even when the agent labels it a faq answer, a
         ->and($draft->gate_outcome)->toBe(GateOutcome::Hold)
         ->and($draft->gate_reason)->toBe('code:price')
         ->and($draft->provider_message_id)->toBeNull()
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['A diagnostic visit is $89.']);
 });
 
 it('never sends a reply the agent labels price, promise, discount or complaint, or other', function (string $label) {
@@ -129,7 +129,8 @@ it('never sends a reply the agent labels price, promise, discount or complaint, 
         ->and(theAgentMessage()->status)->toBe(MessageStatus::Draft)
         ->and(theAgentMessage()->gate_outcome)->toBe(GateOutcome::Hold)
         ->and(theAgentMessage()->gate_reason)->toBe("label:{$label}")
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(theAgentMessage()->gate['checks']['classifier']['ran'])->toBeTrue()
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['The owner will follow up with you.']);
 })->with(['price', 'promise', 'discount', 'complaint', 'other']);
 
 it('keeps the floor in code: a stored rule that lists price as sendable still holds a price reply (D-08)', function () {
@@ -148,7 +149,7 @@ it('keeps the floor in code: a stored rule that lists price as sendable still ho
 
     expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('label:price')
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['The owner will follow up with you.']);
 });
 
 it('holds a reply that uses a phrase the voice file says never to use', function () {
@@ -159,7 +160,7 @@ it('holds a reply that uses a phrase the voice file says never to use', function
 
     expect(textsSentForAgentReplies())->toBe([])
         ->and(theAgentMessage()->gate_reason)->toBe('code:never_say')
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['Sure, no problem at all.']);
 });
 
 it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)', function () {
@@ -178,7 +179,7 @@ it('holds a final text over 1,600 characters instead of cutting it (Pitfall 10)'
         ->and($draft->body)->toBe($words)
         ->and($draft->gate_reason)->toBe('too_long')
         ->and($draft->gate['checks']['length'])->toMatchArray(['characters' => mb_strlen(composedFirstReply($words)), 'limit' => 1600])
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe([$words]);
 });
 
 it('holds the reply when Jev is down', function () {
@@ -256,7 +257,7 @@ it('stores the rule that held a reply and a plain reason on the verdict', functi
 
     expect($gate['checks']['code']['passed'])->toBeFalse()
         ->and($gate['checks']['code']['findings'][0])->toBe(['rule' => 'price', 'match' => '$89'])
-        ->and($gate['checks']['classifier']['ran'])->toBeFalse()
+        ->and($gate['checks']['classifier']['ran'])->toBeTrue()
         ->and($gate['reason']['code'])->toBe('code:price')
         ->and($gate['reason']['plain'])->toBeString()->not->toBe('');
 });
@@ -292,7 +293,7 @@ it('keeps the reply as a draft when the sender refuses it, such as a conversatio
         ->and($draft->gate_reason)->toBe('send_refused');
 });
 
-it('writes a note and sends nothing when every model failed', function () {
+it('writes a note and sends only the holding reply when every model failed (D-51)', function () {
     frontDeskCustomerTexts();
     FrontDeskAgent::fake(fn () => throw new RuntimeException('down'))->preventStrayPrompts();
 
@@ -300,8 +301,8 @@ it('writes a note and sends nothing when every model failed', function () {
 
     $note = Contact::sole()->activities()->where('type', ActivityType::Note)->sole();
 
-    expect(textsSentToCustomers())->toBe([])
-        ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0)
+    expect(textsSentToCustomers())->toHaveCount(1)
+        ->and(Message::query()->where('direction', MessageDirection::Out)->sole()->kind)->toBe(MessageKind::HoldingReply)
         ->and($note->summary)->toBe('Front desk could not answer: every model failed');
 });
 
@@ -359,7 +360,9 @@ it('keeps a failed send on the record and raises it, when the channel will not t
         $channel->shouldReceive('send')->andThrow(new RuntimeException('carrier down'));
     });
 
-    expect(fn () => app(OutboundSender::class)->send($conversation, 'Hello', MessageAuthor::Agent, SendOrigin::Automated))
+    $gate = ['version' => 1, 'fixed' => true, 'customer_reading' => ['ran' => true, 'failed' => false]];
+
+    expect(fn () => app(OutboundSender::class)->send($conversation, 'Hello', MessageAuthor::Agent, SendOrigin::Automated, ['kind' => MessageKind::HoldingReply, 'gate' => $gate]))
         ->toThrow(DomainException::class, 'The reply was not sent: carrier down');
 
     $failed = Message::query()->sole();

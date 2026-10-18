@@ -7,9 +7,11 @@ use App\Enums\IcmFileKind;
 use App\Enums\ReplyLabel;
 use App\SendRule\CodeChecks;
 use App\Support\PhoneNumber;
+use DateTimeImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as LaravelValidator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Laravel\Ai\Ai;
@@ -43,18 +45,27 @@ class Validator
     private const int MAX_CENTS = 100_000_000;
 
     /**
-     * The only fill-ins a fixed reply may use; the send path fills each one in.
+     * The only fill-ins a fixed reply may use; the send path fills each one in. Every time in them is
+     * computed from business/hours.md at the moment of sending. This one list builds the sync's
+     * "the only fill-ins are" sentence, so the message and the list cannot drift.
      *
      * @var list<string>
      */
-    private const REPLY_FILL_INS = ['owner_name', 'business_name', 'next_open'];
+    private const REPLY_FILL_INS = ['owner_name', 'business_name', 'next_open', 'today_or_next_open', 'next_opening', 'check_in_time'];
 
     /**
      * The reply fields that go out without the owner.
      *
      * @var list<string>
      */
-    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply'];
+    private const REPLY_FIELDS = ['holding_reply', 'handoff_reply', 'complaint_reply', 'partial_holding_reply', 'check_in_reply', 'added_info_reply', 'discount_reply'];
+
+    /**
+     * The four ways a re-sent price can differ from the one before it; each needs a lead in price_leads.
+     *
+     * @var list<string>
+     */
+    private const PRICE_LEAD_KEYS = ['same', 'higher', 'lower', 'changed'];
 
     /**
      * @var list<string>
@@ -107,7 +118,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -185,6 +196,13 @@ class Validator
                 'intake.*.ask' => 'bail|required|string',
                 'intake.*.options' => 'bail|sometimes|array',
                 'intake.*.options.*' => 'bail|string',
+                'price_sentences' => 'bail|sometimes|array|min:1',
+                'price_sentences.*.sentence' => 'bail|required|string',
+                'price_sentences.*.amounts_cents' => 'bail|sometimes|array|min:1',
+                'price_sentences.*.amounts_cents.*' => 'bail|integer:strict|min:0|max:'.self::MAX_CENTS,
+                'price_default' => 'bail|sometimes|array',
+                'price_default.amounts_cents' => 'bail|sometimes|array|min:1',
+                'price_default.amounts_cents.*' => 'bail|integer:strict|min:0|max:'.self::MAX_CENTS,
             ],
             'voice' => [
                 'ai_disclosure' => 'bail|required|string',
@@ -216,6 +234,22 @@ class Validator
                 'utility_phone' => 'bail|nullable|string',
                 'holding_reply' => 'bail|required|string',
                 'handoff_reply' => 'bail|required|string',
+                'complaint_reply' => 'bail|required|string',
+                'partial_holding_reply' => 'bail|required|string',
+                'check_in_reply' => 'bail|required|string',
+                'added_info_reply' => 'bail|required|string',
+                'discount_reply' => 'bail|sometimes|string',
+                'price_leads' => 'bail|sometimes|array',
+                'check_in_hours' => 'bail|sometimes|integer:strict|min:1|max:12',
+            ],
+            'offer' => [
+                'name' => 'bail|required|string',
+                'slug' => ['bail', 'required', 'string', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/'],
+                'sentence' => 'bail|required|string',
+                'amount_cents' => 'bail|sometimes|integer:strict|min:1|max:'.self::MAX_CENTS,
+                'percent' => 'bail|sometimes|integer:strict|min:1|max:100',
+                'start_date' => 'bail|required|date_format:Y-m-d',
+                'end_date' => 'bail|sometimes|date_format:Y-m-d',
             ],
             'triage' => [
                 'intent_question' => 'bail|required|string',
@@ -497,20 +531,26 @@ class Validator
 
     /**
      * The first code-check finding in a text that goes out without the owner, as a plain sentence, or null
-     * when the text is clean. `$kind` names the text in the sentence: "reply" or "text".
+     * when the text is clean. `$kind` names the text in the sentence: "reply" or "text". `$skipRules` lists
+     * code-check rules that do not apply to this text (only the discount reply skips "discount"), and
+     * `$label` is the name the owner reads when it differs from the field path.
      *
      * @param  array<array-key, mixed>  $neverSay
+     * @param  list<string>  $skipRules
      * @return array{file: string, field: ?string, message: string}|null
      */
-    private function fixedTextError(IcmFile $file, string $field, string $text, array $neverSay, string $kind): ?array
+    private function fixedTextError(IcmFile $file, string $field, string $text, array $neverSay, string $kind, array $skipRules = [], ?string $label = null): ?array
     {
-        $finding = CodeChecks::findings($text, $neverSay)[0] ?? null;
+        $finding = array_values(array_filter(
+            CodeChecks::findings($text, $neverSay),
+            fn (array $found) => ! in_array($found['rule'], $skipRules, true),
+        ))[0] ?? null;
 
         if ($finding === null) {
             return null;
         }
 
-        $sentence = "{$field} ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+        $sentence = ($label ?? $field).' '.CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
 
         return $this->error($file->path, $field, $finding['rule'] === 'never_say'
             ? $sentence
@@ -696,7 +736,8 @@ class Validator
     }
 
     /**
-     * What is wrong with the fixed replies: a fill-in this app does not know, a price, discount, promise or
+     * What is wrong with the fixed replies: a fill-in this app does not know, a check-in time while the owner's
+     * check_in_hours setting is off (it is off by default, D-26), a price, discount, promise or
      * never_say phrase in a text that goes out without the owner (D-12), and a utility phone nobody can dial.
      * The never_say list comes from the voice file in the same folder, never from ActiveConfig, because the
      * folder is not live yet. A folder with no readable voice file has no never_say list, and the other checks still run.
@@ -706,8 +747,7 @@ class Validator
      */
     private function repliesErrors(Collection $files): array
     {
-        $voice = $files->first(fn (IcmFile $file) => $file->kind === IcmFileKind::Typed && $file->type === 'voice');
-        $neverSay = is_array($voice?->frontMatter['never_say'] ?? null) ? array_values($voice->frontMatter['never_say']) : [];
+        $neverSay = $this->neverSayList($files);
         $errors = [];
 
         foreach ($files as $file) {
@@ -718,22 +758,12 @@ class Validator
             foreach (self::REPLY_FIELDS as $field) {
                 $text = $file->frontMatter[$field] ?? null;
 
-                if (! is_string($text)) {
-                    continue;
-                }
-
-                $unknownFillIn = $this->unknownFillIn($text);
-
-                if ($unknownFillIn !== null) {
-                    $errors[] = $this->error($file->path, $field, $field.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are {owner_name}, {business_name} and {next_open}');
-                }
-
-                $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply');
-
-                if ($error !== null) {
-                    $errors[] = $error;
+                if (is_string($text)) {
+                    array_push($errors, ...$this->replyTextErrors($file, $field, $field, $text, $neverSay, $field === 'discount_reply' ? ['discount'] : []));
                 }
             }
+
+            array_push($errors, ...$this->priceLeadErrors($file, $files, $neverSay));
 
             $phone = $file->frontMatter['utility_phone'] ?? null;
 
@@ -746,7 +776,640 @@ class Validator
     }
 
     /**
-     * The first {name} in a reply that is not one of the three fill-ins, or null when every fill-in is known.
+     * What is wrong with one fixed text the owner wrote: a fill-in this app does not know, a check-in time
+     * while check_in_hours is off, and the first code-check finding. `$field` is the error's field path and
+     * `$label` the name the owner reads.
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @param  list<string>  $skipRules
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function replyTextErrors(IcmFile $file, string $field, string $label, string $text, array $neverSay, array $skipRules = []): array
+    {
+        $errors = [];
+        $unknownFillIn = $this->unknownFillIn($text);
+
+        if ($unknownFillIn !== null) {
+            $errors[] = $this->error($file->path, $field, $label.' uses {'.PlainWords::oneLine($unknownFillIn).'}; the only fill-ins are '.$this->fillInList());
+        }
+
+        if (str_contains($text, '{check_in_time}') && ($file->frontMatter['check_in_hours'] ?? null) === null) {
+            $errors[] = $this->error($file->path, $field, $label.' uses {check_in_time}, but check_in_hours is not set; set it or take the fill-in out');
+        }
+
+        $error = $this->fixedTextError($file, $field, preg_replace('/\{[^{}]*\}/u', ' ', $text) ?? $text, $neverSay, 'reply', $skipRules, $label);
+
+        if ($error !== null) {
+            $errors[] = $error;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * What is wrong with the offer files. An offer sentence goes out in one text when a customer asks for a
+     * discount, sent by code with no model and no Jev behind it, so this sync is the only check it ever gets:
+     * the sentence's $ amounts must equal the offer's amount_cents and its percentages must equal its percent,
+     * in both directions (D-15); money is written as $ and digits so the amounts can be compared at all
+     * (D-37); and the promise and never_say checks stay, because an offer sentence must not become a binding
+     * promise. The discount-phrase check is skipped on purpose, since "$50 off" is the whole point of an offer.
+     * The never_say list comes from the voice file in the same folder, never from ActiveConfig.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function offerErrors(Collection $files): array
+    {
+        $neverSay = $this->neverSayList($files);
+        $errors = [];
+
+        foreach ($files as $file) {
+            if ($file->kind === IcmFileKind::Typed && $file->type === 'offer') {
+                array_push($errors, ...$this->offerFileErrors($file, $neverSay));
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The problems of one offer file: both or neither of amount_cents and percent, then the sentence, then the
+     * dates. The sentence is compared with its field only when the file names exactly one and that one is a
+     * usable number, because the other cases are already reported.
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function offerFileErrors(IcmFile $file, array $neverSay): array
+    {
+        $errors = [];
+        $hasAmount = array_key_exists('amount_cents', $file->frontMatter);
+        $hasPercent = array_key_exists('percent', $file->frontMatter);
+
+        if ($hasAmount && $hasPercent) {
+            $errors[] = $this->error($file->path, null, 'write either amount_cents or percent, not both');
+        } elseif (! $hasAmount && ! $hasPercent) {
+            $errors[] = $this->error($file->path, null, 'amount_cents or percent is missing, and the offer needs one');
+        }
+
+        $sentence = $file->frontMatter['sentence'] ?? null;
+
+        if (is_string($sentence)) {
+            $amount = $file->frontMatter['amount_cents'] ?? null;
+            $percent = $file->frontMatter['percent'] ?? null;
+            $fieldIsUsable = $hasAmount ? (is_int($amount) && $amount >= 1) : (is_int($percent) && $percent >= 1 && $percent <= 100);
+            $declared = $hasAmount === $hasPercent || ! $fieldIsUsable ? null : [
+                'cents' => is_int($amount) ? [$amount] : [],
+                'percents' => is_int($percent) ? [(string) $percent] : [],
+            ];
+
+            $error = $this->offerSentenceError($file, $sentence, $declared, $neverSay);
+
+            if ($error !== null) {
+                $errors[] = $error;
+            }
+        }
+
+        $start = $file->frontMatter['start_date'] ?? null;
+        $end = $file->frontMatter['end_date'] ?? null;
+
+        if ($this->isCalendarDate($start) && $this->isCalendarDate($end) && $end < $start) {
+            $errors[] = $this->error($file->path, 'end_date', "end_date ({$end}) is before start_date ({$start})");
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first thing wrong with an offer sentence, or null when it is fine, checked in the order the owner
+     * would fix them: fill-ins, money written in words, a bare number, no amount or percentage at all, amounts
+     * that do not match the offer, percentages that do not match the offer, then the promise and never_say
+     * checks. `$declared` is what the offer's one field backs the sentence with (null when there is nothing to
+     * compare, because that is reported elsewhere).
+     *
+     * @param  array{cents: list<int>, percents: list<string>}|null  $declared
+     * @param  array<array-key, mixed>  $neverSay
+     * @return array{file: string, field: ?string, message: string}|null
+     */
+    private function offerSentenceError(IcmFile $file, string $sentence, ?array $declared, array $neverSay): ?array
+    {
+        preg_match_all('/\{[^{}]*\}/u', $sentence, $fillIns);
+
+        if ($fillIns[0] !== []) {
+            return $this->error($file->path, 'sentence', 'sentence: an offer sentence cannot use fill-ins ('.PlainWords::oneLine(implode(', ', array_unique($fillIns[0]))).')');
+        }
+
+        $moneyWord = CodeChecks::moneyWordIn($sentence);
+
+        if ($moneyWord !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount as $ and digits, such as $5,000, not '.PlainWords::oneLine($moneyWord));
+        }
+
+        $bareNumber = CodeChecks::plainNumberNearPriceWord($sentence);
+
+        if ($bareNumber !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount with a $ sign ('.PlainWords::oneLine($bareNumber).')');
+        }
+
+        $spelled = CodeChecks::spelledAmountIn($sentence);
+
+        if ($spelled !== null) {
+            return $this->error($file->path, 'sentence', 'sentence: write every amount as $ and digits, such as $5,000, not '.PlainWords::oneLine($spelled));
+        }
+
+        $amounts = $this->amountsInCents($sentence);
+        $percents = array_values(array_unique(CodeChecks::percentsIn($sentence)));
+
+        if ($amounts === [] && $percents === []) {
+            return $this->error($file->path, 'sentence', 'sentence: the sentence needs at least one amount written as $ and digits, or a percentage');
+        }
+
+        if ($declared !== null && $amounts !== $declared['cents']) {
+            return $this->error($file->path, 'sentence', "sentence: the sentence's amounts (".$this->dollarList($amounts).') do not match amount_cents ('.($declared['cents'] === [] ? 'none' : $this->dollarList($declared['cents'])).')');
+        }
+
+        if ($declared !== null && $percents !== $declared['percents']) {
+            return $this->error($file->path, 'sentence', "sentence: the sentence's percentages (".$this->percentList($percents).') do not match percent ('.($declared['percents'] === [] ? 'none' : $this->percentList($declared['percents'])).')');
+        }
+
+        $finding = array_values(array_filter(
+            CodeChecks::findings($sentence, $neverSay),
+            fn (array $found) => in_array($found['rule'], ['promise', 'never_say'], true),
+        ))[0] ?? null;
+
+        if ($finding === null) {
+            return null;
+        }
+
+        $message = 'sentence: '.CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+
+        return $this->error($file->path, 'sentence', $finding['rule'] === 'promise'
+            ? "{$message}; an offer sentence goes out without you, so it cannot make a promise"
+            : $message);
+    }
+
+    /**
+     * Every amount a price or offer sentence names, as integer cents, unique and ascending: its "$" amounts and
+     * the amounts shaped like money but written without a leading "$" ("$89 plus 150", "120$"), so each one is
+     * compared with the file (WR-05, D-37).
+     *
+     * @return list<int>
+     */
+    private function amountsInCents(string $sentence): array
+    {
+        $cents = array_values(array_unique([...CodeChecks::dollarAmountsInCents($sentence), ...CodeChecks::unsignedAmountsInCents($sentence)]));
+        sort($cents);
+
+        return $cents;
+    }
+
+    /**
+     * Percentages as the owner writes them: "10%, 15%".
+     *
+     * @param  list<string>  $percents
+     */
+    private function percentList(array $percents): string
+    {
+        return implode(', ', array_map(fn (string $percent) => $percent.'%', $percents));
+    }
+
+    /**
+     * Whether a front matter value is a date written as Y-m-d that names a real day. Dates in that form
+     * compare in date order as plain text.
+     */
+    private function isCalendarDate(mixed $value): bool
+    {
+        if (! is_string($value)) {
+            return false;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date !== false && $date->format('Y-m-d') === $value;
+    }
+
+    /**
+     * What is wrong with the price sentences on a service file. A price sentence is sent by code with no
+     * model and no Jev behind it, so this sync is the only check it ever gets (D-04): every amount in the
+     * sentence must be one the file declares, in both directions (D-10); the sentence must name its service so
+     * a wrong pick shows to the customer (D-08); money is written as $ and digits so the amounts can be
+     * compared at all (D-37); and the promise and never_say checks stay, because a price sentence must not
+     * become a binding promise. The price and discount-phrase checks are skipped on purpose, since the owner's
+     * own terms ("take the $89 off", "waived") would trip them. The never_say list comes from the voice file in
+     * the same folder, never from ActiveConfig, exactly as repliesErrors() does.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function priceSentenceErrors(Collection $files): array
+    {
+        $neverSay = $this->neverSayList($files);
+        $errors = [];
+
+        foreach ($files as $file) {
+            if ($file->kind === IcmFileKind::Typed && $file->type === 'service') {
+                array_push($errors, ...$this->servicePriceSentenceErrors($file, $neverSay));
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The price sentence problems of one service file: a price_policy of none with any sentence, then each
+     * sentence's own answers and text, then what only the whole list can show (answers repeated, mixed
+     * questions, an unkeyed sentence that is not alone), then the default.
+     *
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function servicePriceSentenceErrors(IcmFile $file, array $neverSay): array
+    {
+        $listed = $file->frontMatter['price_sentences'] ?? null;
+        $items = is_array($listed) ? array_values($listed) : [];
+        $default = $file->frontMatter['price_default'] ?? null;
+
+        if ($items === [] && ! is_array($default)) {
+            return [];
+        }
+
+        if (($file->frontMatter['price_policy'] ?? null) === 'none') {
+            $name = $file->frontMatter['name'] ?? null;
+
+            return [$this->error($file->path, 'price_sentences', 'price_sentences: '.(is_string($name) && $name !== '' ? PlainWords::oneLine($name) : 'This service').' has price_policy none, so you quote it yourself; remove the price sentences')];
+        }
+
+        $errors = [];
+        $questions = $this->intakeOptions($file);
+        $unkeyed = [];
+        $keyedSignatures = [];
+        $firstKeys = null;
+        $firstKeyedNumber = null;
+
+        foreach ($items as $index => $item) {
+            $number = $index + 1;
+            $label = "price_sentences item {$number}";
+            $item = is_array($item) ? $item : [];
+            $answers = $item['answers'] ?? null;
+
+            if ($answers === null) {
+                $unkeyed[] = $number;
+            } else {
+                $problem = $this->answersProblem($answers, $questions);
+
+                if ($problem !== null) {
+                    $errors[] = $this->error($file->path, "price_sentences.{$index}.answers", "{$label}: {$problem}");
+                } else {
+                    $keys = array_map('strval', array_keys($answers));
+                    sort($keys);
+                    $signature = implode('&', array_map(fn (string $key) => $key.'='.$answers[$key], $keys));
+
+                    if ($firstKeys === null) {
+                        $firstKeys = $keys;
+                        $firstKeyedNumber = $number;
+                    } elseif ($keys !== $firstKeys) {
+                        $errors[] = $this->error($file->path, "price_sentences.{$index}.answers", "{$label}: answers must use the same questions as item {$firstKeyedNumber}");
+                    }
+
+                    if (isset($keyedSignatures[$signature])) {
+                        $errors[] = $this->error($file->path, "price_sentences.{$index}.answers", "{$label}: answers repeats item {$keyedSignatures[$signature]}");
+                    } else {
+                        $keyedSignatures[$signature] = $number;
+                    }
+                }
+
+                if (! array_key_exists('amounts_cents', $item)) {
+                    $errors[] = $this->error($file->path, "price_sentences.{$index}.amounts_cents", "{$label}: amounts_cents is missing, and a sentence keyed to answers needs it");
+                }
+            }
+
+            if (is_string($item['sentence'] ?? null)) {
+                $error = $this->priceSentenceError($file, $label, "price_sentences.{$index}.sentence", $item['sentence'], $this->declaredAmounts($file, $item), $neverSay);
+
+                if ($error !== null) {
+                    $errors[] = $error;
+                }
+            }
+        }
+
+        if (count($items) > 1 && $unkeyed !== []) {
+            $blamed = count($unkeyed) > 1 ? array_slice($unkeyed, 1) : $unkeyed;
+
+            foreach ($blamed as $number) {
+                $errors[] = $this->error($file->path, 'price_sentences.'.($number - 1), "price_sentences item {$number}: a sentence without answers must be the only price sentence");
+            }
+        }
+
+        if (is_array($default)) {
+            array_push($errors, ...$this->priceDefaultErrors($file, $default, $keyedSignatures !== [] || $this->anyKeyed($items), $neverSay));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Whether any price sentence in the list carries answers, valid or not.
+     *
+     * @param  list<mixed>  $items
+     */
+    private function anyKeyed(array $items): bool
+    {
+        foreach ($items as $item) {
+            if (is_array($item) && ($item['answers'] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * What is wrong with the default price sentence: it needs keyed sentences beside it (a default stands in for
+     * an unanswered key), a sentence and the amounts that back it, and then the same checks as any sentence.
+     *
+     * @param  array<array-key, mixed>  $default
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function priceDefaultErrors(IcmFile $file, array $default, bool $hasKeyedSentences, array $neverSay): array
+    {
+        $errors = [];
+        $sentence = $default['sentence'] ?? null;
+
+        if (! $hasKeyedSentences) {
+            $errors[] = $this->error($file->path, 'price_default', 'price_default: a default sentence needs price sentences keyed to answers');
+        }
+
+        if (! is_string($sentence) || trim($sentence) === '') {
+            $errors[] = $this->error($file->path, 'price_default.sentence', 'price_default: sentence is missing, and it is required');
+        }
+
+        if (! array_key_exists('amounts_cents', $default)) {
+            $errors[] = $this->error($file->path, 'price_default.amounts_cents', 'price_default: amounts_cents is missing, and it is required');
+        }
+
+        if (is_string($sentence) && trim($sentence) !== '') {
+            $error = $this->priceSentenceError($file, 'price_default', 'price_default.sentence', $sentence, $this->declaredAmounts($file, $default, false), $neverSay);
+
+            if ($error !== null) {
+                $errors[] = $error;
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The first thing wrong with one price sentence, or null when the sentence is fine, checked in the order
+     * the owner would fix them: fill-ins, money written in words, a bare number, no $ amount at all, amounts
+     * that do not match the file, the service name, then the promise and never_say checks. `$declared` is the
+     * amounts the file backs the sentence with (null when there is nothing to compare, because that is
+     * reported elsewhere).
+     *
+     * @param  array{source: string, cents: list<int>}|null  $declared
+     * @param  array<array-key, mixed>  $neverSay
+     * @return array{file: string, field: ?string, message: string}|null
+     */
+    private function priceSentenceError(IcmFile $file, string $label, string $field, string $sentence, ?array $declared, array $neverSay): ?array
+    {
+        preg_match_all('/\{[^{}]*\}/u', $sentence, $fillIns);
+
+        if ($fillIns[0] !== []) {
+            return $this->error($file->path, $field, "{$label}: a price sentence cannot use fill-ins (".PlainWords::oneLine(implode(', ', array_unique($fillIns[0]))).')');
+        }
+
+        $moneyWord = CodeChecks::moneyWordIn($sentence);
+
+        if ($moneyWord !== null) {
+            return $this->error($file->path, $field, "{$label}: write every amount as \$ and digits, such as \$5,000, not ".PlainWords::oneLine($moneyWord));
+        }
+
+        $bareNumber = CodeChecks::plainNumberNearPriceWord($sentence);
+
+        if ($bareNumber !== null) {
+            return $this->error($file->path, $field, "{$label}: write every amount with a \$ sign (".PlainWords::oneLine($bareNumber).')');
+        }
+
+        $spelled = CodeChecks::spelledAmountIn($sentence);
+
+        if ($spelled !== null) {
+            return $this->error($file->path, $field, "{$label}: write every amount as \$ and digits, such as \$5,000, not ".PlainWords::oneLine($spelled));
+        }
+
+        $found = $this->amountsInCents($sentence);
+
+        if ($found === []) {
+            return $this->error($file->path, $field, "{$label}: the sentence needs at least one amount written as \$ and digits");
+        }
+
+        if ($declared !== null && $found !== $declared['cents']) {
+            return $this->error($file->path, $field, "{$label}: the sentence's amounts (".$this->dollarList($found).") do not match {$declared['source']} (".$this->dollarList($declared['cents']).')');
+        }
+
+        $name = $file->frontMatter['name'] ?? null;
+
+        if (is_string($name) && $name !== '' && ! str_contains(mb_strtolower(Str::squish($sentence)), mb_strtolower(Str::squish($name)))) {
+            return $this->error($file->path, $field, "{$label}: the sentence must name the service ({$name}) so a wrong pick shows");
+        }
+
+        $finding = array_values(array_filter(
+            CodeChecks::findings($sentence, $neverSay),
+            fn (array $found) => in_array($found['rule'], ['promise', 'never_say'], true),
+        ))[0] ?? null;
+
+        if ($finding === null) {
+            return null;
+        }
+
+        $message = "{$label}: ".CodeChecks::describe($finding['rule']).' ('.PlainWords::oneLine($finding['match']).')';
+
+        return $this->error($file->path, $field, $finding['rule'] === 'promise'
+            ? "{$message}; a price sentence goes out without you, so it cannot make a promise"
+            : $message);
+    }
+
+    /**
+     * The amounts a price sentence is backed by: its amounts_cents (unique, ascending), or for a sentence keyed to
+     * nothing that leaves them out, the file's price_cents. Null when the file declares nothing to compare with.
+     *
+     * @param  array<array-key, mixed>  $item
+     * @param  bool  $mayUsePrice  False for the default, which always lists its own amounts.
+     * @return array{source: string, cents: list<int>}|null
+     */
+    private function declaredAmounts(IcmFile $file, array $item, bool $mayUsePrice = true): ?array
+    {
+        $amounts = $item['amounts_cents'] ?? null;
+
+        if (is_array($amounts) && $amounts !== [] && array_filter($amounts, is_int(...)) === $amounts) {
+            $cents = array_values(array_unique($amounts));
+            sort($cents);
+
+            return ['source' => 'amounts_cents', 'cents' => $cents];
+        }
+
+        $price = $file->frontMatter['price_cents'] ?? null;
+
+        if ($mayUsePrice && $amounts === null && ! isset($item['answers']) && is_int($price)) {
+            return ['source' => 'price_cents', 'cents' => [$price]];
+        }
+
+        return null;
+    }
+
+    /**
+     * Each intake question's key with the options the owner gave it, in the order written.
+     *
+     * @return array<string, list<string>>
+     */
+    private function intakeOptions(IcmFile $file): array
+    {
+        $intake = $file->frontMatter['intake'] ?? null;
+        $questions = [];
+
+        foreach (is_array($intake) ? $intake : [] as $question) {
+            $key = is_array($question) ? ($question['key'] ?? null) : null;
+
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
+
+            $options = is_array($question['options'] ?? null) ? $question['options'] : [];
+            $questions[$key] = array_values(array_filter($options, is_string(...)));
+        }
+
+        return $questions;
+    }
+
+    /**
+     * Why a sentence's answers cannot pick it, or null when each key is an intake question of this service and
+     * each value is exactly one of that question's options.
+     *
+     * @param  array<string, list<string>>  $questions
+     */
+    private function answersProblem(mixed $answers, array $questions): ?string
+    {
+        if (! is_array($answers) || $answers === [] || array_is_list($answers)) {
+            return 'answers must be intake questions, each with one of its options (you wrote '.PlainWords::value($answers).')';
+        }
+
+        foreach ($answers as $key => $option) {
+            $key = (string) $key;
+
+            if (! array_key_exists($key, $questions)) {
+                return 'answers uses '.PlainWords::oneLine($key).", which is not one of this service's intake questions";
+            }
+
+            if (! is_string($option) || ! in_array($option, $questions[$key], true)) {
+                return 'answers gives '.PlainWords::oneLine($key).' the option '.PlainWords::value($option).", which is not one of that question's options";
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The voice file's never_say phrases from the folder being checked (never ActiveConfig, because the folder
+     * is not live yet). A folder with no readable voice file has none, and the other checks still run.
+     *
+     * @param  Collection<int, IcmFile>  $files
+     * @return list<mixed>
+     */
+    private function neverSayList(Collection $files): array
+    {
+        $voice = $files->first(fn (IcmFile $file) => $file->kind === IcmFileKind::Typed && $file->type === 'voice');
+
+        return is_array($voice?->frontMatter['never_say'] ?? null) ? array_values($voice->frontMatter['never_say']) : [];
+    }
+
+    /**
+     * Amounts in cents as the owner writes them: "$2,000, $89.50". Whole numbers only, no floats.
+     *
+     * @param  list<int>  $cents
+     */
+    private function dollarList(array $cents): string
+    {
+        return implode(', ', array_map($this->dollars(...), $cents));
+    }
+
+    /**
+     * One amount in cents as dollars: $2,000 for whole dollars, $89.50 otherwise.
+     */
+    private function dollars(int $cents): string
+    {
+        $whole = number_format(intdiv($cents, 100));
+        $rest = $cents % 100;
+
+        return $rest === 0 ? "\${$whole}" : sprintf('$%s.%02d', $whole, $rest);
+    }
+
+    /**
+     * What is wrong with price_leads: missing while a service has price sentences (the first one in path
+     * order is named), a direction without a lead, and any lead that breaks the code checks every fixed reply
+     * must pass. Leads go in front of a re-sent price sentence, so they are held to the same rules.
+     *
+     * @param  Collection<int, IcmFile>  $files  Sorted by path.
+     * @param  array<array-key, mixed>  $neverSay
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function priceLeadErrors(IcmFile $file, Collection $files, array $neverSay): array
+    {
+        $leads = $file->frontMatter['price_leads'] ?? null;
+
+        if ($leads === null) {
+            $service = $files->first(fn (IcmFile $candidate) => $candidate->kind === IcmFileKind::Typed
+                && $candidate->type === 'service'
+                && (! empty($candidate->frontMatter['price_sentences']) || ! empty($candidate->frontMatter['price_default'])));
+
+            return $service === null
+                ? []
+                : [$this->error($file->path, 'price_leads', "price_leads is missing, and it is required because {$service->path} has price sentences")];
+        }
+
+        if (! is_array($leads)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach (self::PRICE_LEAD_KEYS as $key) {
+            $text = $leads[$key] ?? null;
+
+            if (! is_string($text) || trim($text) === '') {
+                $errors[] = $this->error($file->path, "price_leads.{$key}", 'price_leads needs '.$this->priceLeadKeyList()."; {$key} is missing");
+
+                continue;
+            }
+
+            array_push($errors, ...$this->replyTextErrors($file, "price_leads.{$key}", "price_leads {$key}", $text, $neverSay));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The four price lead keys for the owner to read: "same, higher, lower and changed".
+     */
+    private function priceLeadKeyList(): string
+    {
+        $keys = self::PRICE_LEAD_KEYS;
+        $last = array_pop($keys);
+
+        return implode(', ', $keys).' and '.$last;
+    }
+
+    /**
+     * Every fill-in in braces for the owner to read: "{a}, {b} and {c}".
+     */
+    private function fillInList(): string
+    {
+        $names = array_map(fn (string $name) => '{'.$name.'}', self::REPLY_FILL_INS);
+        $last = array_pop($names);
+
+        return implode(', ', $names).' and '.$last;
+    }
+
+    /**
+     * The first {name} in a reply that is not one of the known fill-ins, or null when every fill-in is known.
      */
     private function unknownFillIn(string $text): ?string
     {
@@ -762,7 +1425,8 @@ class Validator
     }
 
     /**
-     * Two service files may not share a slug; the file later in path order gets the error.
+     * Two files of the same slugged type (services, offers) may not share a slug; the file later in path order
+     * gets the error. Each type keeps its own slugs, so an offer and a service may use the same one.
      *
      * @param  Collection<int, IcmFile>  $files  Sorted by path.
      * @return list<array{file: string, field: ?string, message: string}>
@@ -775,14 +1439,14 @@ class Validator
         foreach ($files as $file) {
             $slug = $file->frontMatter['slug'] ?? null;
 
-            if ($file->kind !== IcmFileKind::Typed || $file->type !== 'service' || ! is_string($slug) || $slug === '') {
+            if ($file->kind !== IcmFileKind::Typed || ! in_array($file->type, ['service', 'offer'], true) || ! is_string($slug) || $slug === '') {
                 continue;
             }
 
-            if (isset($owners[$slug])) {
-                $errors[] = $this->error($file->path, 'slug', 'slug '.PlainWords::oneLine($slug)." is already used by {$owners[$slug]}");
+            if (isset($owners[$file->type][$slug])) {
+                $errors[] = $this->error($file->path, 'slug', 'slug '.PlainWords::oneLine($slug)." is already used by {$owners[$file->type][$slug]}");
             } else {
-                $owners[$slug] = $file->path;
+                $owners[$file->type][$slug] = $file->path;
             }
         }
 

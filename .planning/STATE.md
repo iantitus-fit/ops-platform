@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "02.1"
+current_phase: "02.2"
 current_phase_name: Owner Loop
 status: planning
-stopped_at: Phase 02 complete, ready to plan Phase 02.1
-last_updated: "2026-10-13T20:22:49.822Z"
-last_activity: 2026-10-13
-last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
-state_head: 0d460dd081f90b718c7ddd85640edcbab11a4f07
+stopped_at: Phase 02.1 complete, ready to plan Phase 02.2
+last_updated: "2026-10-18T20:51:39.772Z"
+last_activity: 2026-10-18
+last_activity_desc: Phase 02.1 complete, transitioned to Phase 02.2
+state_head: 26e0dbd07044046c944cc8968dda7e88a0dc5b71
 progress:
-  total_phases: 4
-  completed_phases: 2
-  total_plans: 48
-  completed_plans: 48
-  percent: 67
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 76
+  completed_plans: 76
+  percent: 60
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-13)
+See: .planning/PROJECT.md (updated 2026-10-18)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 02.1 — Owner Loop
+**Current focus:** Phase 02.2 — Owner Loop
 
 ## Current Position
 
-Phase: 02.1 — Owner Loop
+Phase: 02.2 — Owner Loop
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
+Last activity: 2026-10-18 — Phase 02.1 complete, transitioned to Phase 02.2
 
-Progress: [███████░░░] 67%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 48
+- Total plans completed: 76
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -47,6 +47,7 @@ Progress: [███████░░░] 67%
 |-------|-------|-------|----------|
 | 01 | 7 | - | - |
 | 02 | 41 | - | - |
+| 02.1 | 28 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -105,6 +106,34 @@ Progress: [███████░░░] 67%
 | Phase 02 P39 | 4 min | 3 tasks | 10 files |
 | Phase 02 P40 | 4 min | 2 tasks | 5 files |
 | Phase 02 P41 | 30 min | 3 tasks | 7 files |
+| Phase 02.1 P01 | 5 min | 3 tasks | 13 files |
+| Phase 02.1 P02 | 10 min | 2 tasks | 2 files |
+| Phase 02.1 P03 | 25 min | 2 tasks | 8 files |
+| Phase 02.1 P04 | 7 min | 3 tasks | 13 files |
+| Phase 02.1 P05 | 12 min | 2 tasks | 10 files |
+| Phase 02.1 P06 | 7 min | 2 tasks | 15 files |
+| Phase 02.1 P07 | 6 min | 2 tasks | 13 files |
+| Phase 02.1 P08 | 35 min | 3 tasks | 10 files |
+| Phase 02.1 P09 | 8 min | 3 tasks | 6 files |
+| Phase 02.1 P10 | 15 min | 2 tasks | 8 files |
+| Phase 02.1 P11 | 6 min | 3 tasks | 7 files |
+| Phase 02.1 P12 | 8 min | 3 tasks | 7 files |
+| Phase 02.1 P13 | 16 min | 3 tasks | 7 files |
+| Phase 02.1 P14 | 6 min | 2 tasks | 7 files |
+| Phase 02.1 P15 | 12 min | 3 tasks | 8 files |
+| Phase 02.1 P16 | 9 min | 3 tasks | 3 files |
+| Phase 02.1 P17 | 8 min | 3 tasks | 10 files |
+| Phase 02.1 P18 | 14 min | 3 tasks | 6 files |
+| Phase 02.1 P19 | 25 min | 2 tasks | 11 files |
+| Phase 02.1 P20 | 15 min | 3 tasks | 6 files |
+| Phase 02.1 P21 | 8 min | 3 tasks | 11 files |
+| Phase 02.1 P22 | 6 min | 2 tasks | 8 files |
+| Phase 02.1 P23 | 9 min | 3 tasks | 14 files |
+| Phase 02.1 P24 | 11 min | 3 tasks | 13 files |
+| Phase 02.1 P25 | 22 min | 2 tasks | 5 files |
+| Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
+| Phase 02.1 P27 | 41 min | 2 tasks | 8 files |
+| Phase 02.1 P28 | 100 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -196,10 +225,56 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 02]: 02-39: history() skips the burst's own texts and newer customer texts instead of stopping at the burst, so replies sent while the burst waited stay in the history at their send time
 - [Phase 02]: 02-40: the Needs you card finds the customer's last message by id like OwnerAlertText, shows it squished and cut to 160 characters, escaped; the thread box is untouched
 - [Phase 02]: 02-41: map/CLAUDE.md left unedited; no catalog line changed. Shorthand :N citations name their file wherever they would continue the wrong one.
+- [Phase 02.1]: A wait ends only on an owner text or a draft the owner approved, edited, discarded, or code closed as answered; automated texts never end it
+- [Phase 02.1]: closeAsAnswered returns false for a gone draft instead of throwing (code calls it, not the owner)
+- [Phase 02.1]: Plan 02: "$5k" reads as 500 cents (the "$5" it starts with), so shorthand amounts fail closed against any declared amount; percents compare as digits written
+- [Phase 02.1]: 02.1-03: {check_in_time} falls back to the next-opening words when the live version has no check_in_hours, so braces never reach a customer
+- [Phase 02.1]: 02.1-04: Only discount_reply skips the discount code check; check_in is a plain owner_alert reason that follows the folder's right_away list (RaiseOwnerAlert unchanged, D-38)
+- [Phase 02.1]: 02.1-05: the Already with the owner section quotes the customer's texts (cleaned, cut to 300), never the held draft's words
+- [Phase 02.1]: 02.1-05: reply stays required and non-blank; new AgentReply fields are tolerant and fall back (touches null = touches, waiting_note null = added-info, bad easy_label = no split)
+- [Phase 02.1]: Price sentence sync: first failing check per sentence in fixed order; price_policy none gives one line; default never falls back to price_cents
+- [Phase 02.1]: Offer sentences are compared with amount_cents or percent only when exactly one is named and it passed its own rule; duplicate slugs are checked per type
+- [Phase 02.1]: 02.1-08: code checks run on the model's words alone, never the owner's sentence; combined length measured separately
+- [Phase 02.1]: 02.1-08: a refused code-only send becomes an empty send_refused draft, never silence
+- [Phase 02.1]: 02.1-09: a pick that still needs answers, with no model words to ask them, is held like a price with no sentence naming the service
+- [Phase 02.1]: 02.1-09: identical amount sets read as same even when the sentence key differs; ranges that only touch are higher or lower (D-39)
+- [Phase 02.1]: 02.1-09: price_pending rides on each run's own message meta; newest-first lookups on Conversation::messages() must reorder()
+- [Phase 02.1]: 02.1-10: customerWroteAgain compares inbound ids with max(meta.in_reply_to), never the draft's id or time; staleOfferWarnings warns when start_date + 90 days is before today (business time zone), so day 91 warns and day 90 does not
+- [Phase 02.1]: 02.1-11: offers are date-checked only, in the business zone, end date inclusive; code never judges eligibility
+- [Phase 02.1]: 02.1-11: when a price and an offer both cannot be answered the hold reason is price:no_sentence; a missing discount_reply sends the holding words as kind discount_holding
+- [Phase 02.1]: 02.1-12: a check-in held only by the scheduling guard or an unlisted label (other) is dropped and the waiting draft stays live; a fresh draft that keeps the waiting body keeps its label too
+- [Phase 02.1]: The close keys on price_open (services code recorded), so a sentence for a draft's own service closes it whatever touches_waiting says and a sentence for another service never does
+- [Phase 02.1]: A price draft whose run named no service closes only when touches_waiting is exactly true; on false or null it stays live and the thread warns the owner
+- [Phase 02.1]: A closing run is handled as a run with no waiting draft: send first, close only after a text went out, then store held words as a first draft with no holding reply, no alert
+- [Phase 02.1]: A split needs touches_waiting true, easy_reply, a valid easy_label and non-blank touching words; the faq/intake guard and all three checks always run on the easy part; easy words that overflow one text are dropped
+- [Phase 02.1]: 02.1-14: whole-thread draft (D-35) is always stored under the first reply's hold reason; alert is complaint when either reply held as a complaint; the cover-both override of the never-mention rule lives in its own prompt section, RULES untouched
+- [Phase 02.1]: escalate_to and the owner-alert stub in the map now point at Phase 02.2 (Owner Loop); Phase 2.1 was renumbered to Faster Answers
+- [Phase 02.1]: Map process steps 9 to 14 were added rather than steps 8 to 11 rewritten; cross-references in the intake, agent, conversation and opt-out cards were updated to match
+- [Phase 02.1]: 02.1-16: Phase 02.2 hand-off lives in sprint-1.1.md Notes for Phase 02.2; SPEC Principle 6 gains the owner-words exception; suite 1455 green on SQLite and PostgreSQL 17
+- [Phase 02.1]: 02.1-17: Jev's reading of the customer's text runs once per handle() call after the opt-out check and before the paused check; a reading life_safety sends the safety line first unless the burst already has one
+- [Phase 02.1]: 02.1-17: complaint and asked_for_person alerts on paused, reply-cap and handoff paths follow the folder's owner_alert timing with no right-away override; a complaint reading holds the main reply as classifier:complaint except a life_safety hold
+- [Phase 02.1]: 02.1-18: a complaint (Jev reading or agent label), a failed or unsure reading, or a promise label on blank words moves the run's price and offer sentences into held sentences before any send is built; the draft is pre-filled with them and meta.held_sentences lists them (D-43, D-44)
+- [Phase 02.1]: 02.1-18: a refused code send stores a send_refused draft with the sentence and the waiting draft's words, never an empty body (D-44, D-47); the complaint alert follows the folder's owner_alert timing with no right-away override
+- [Phase 02.1]: 02.1-19: Jev reads every set of model words, vetoed or not; a veto keeps its reason and Jev can only add a hold, safety line or hand-off (CR-02)
+- [Phase 02.1]: 02.1-19: priceAlone() closes a draft only on evidence: a stored clean customer reading and, for model words, a words check that ran with price-only reasons; an unrun, failed or missing check is disagreement
+- [Phase 02.1]: 02.1-20: an answered draft with no answered_by still ends the wait; only a recorded id at or below the latest wait-starter's id is ignored (WR-01)
+- [Phase 02.1]: 02.1-20: a blank-words answer with touches_waiting true sends the sentences with the partial line then asks for one whole-thread draft; a failed or blank second call leaves the waiting draft live (WR-04)
+- [Phase 02.1]: 02.1-21: possible_danger is the lowest-priority code hold reason, so a complaint, failed or unsure reading or promise label keeps its own reason; the safety line for it is sent once, right after the agent answers
+- [Phase 02.1]: 02.1-21 D-51: on the no-agent and every-model-failed returns the customer gets the holding reply once (complaint reply plus a complaint alert on the folder's timing when the reading found a complaint); the crash path stays alert-only
+- [Phase 02.1]: 02.1-22: safety_check_down is urgent in code like life_safety, so rules/sending.md may list it or leave it off; forBusiness() never dedupes (plan 02.1-23 decides when to call it); a business alert has a null conversation_id and writes no customer timeline entry
+- [Phase 02.1]: Plan 23 (Ian, 2026-10-16): a reading that never ran is marked missing, never failed (the reading() fallback and no live business folder); it holds the model's words, never calls recordFailure, and fromStored() reads it back as missing; plan 02.1-24 raises safety_check_missing
+- [Phase 02.1]: Plan 23: Jev outage status is a safety_check_outages table row changed under Cache::lock('safety-check-status'); a held missing reading keeps hold reason code classifier_failed
+- [Phase 02.1]: Plan 24 (Ian, 2026-10-16): a reading marked missing counts as no reading at all; RunFrontDesk raises safety_check_missing at once before any send, OutboundSender refuses every automated text without a reading (a stored missing reading counts as absent) and a text with no kind is held to the model-words rule
+- [Phase 02.1]: Plan 25: the wrote-again line replaces the Customer wrote line, so the newest customer text is quoted once above Send anyway; no styling change before Ian's phone walk
+- [Phase 02.1]: Plan 26: the D-46 matrix reads D-46 'never silent' beside D-51: a customer whose earlier wait is still current, who writes while every model is down, gets no new text (the holding reply stands, the owner gets front_desk_failed); every other unpaused, uncapped combination must send a text
+- [Phase 02.1]: Plan 26: the agent's complaint label is a detector like Jev's reading, so a handoff on the agent's wants_person raises the complaint alert; the agent's possible_danger on the second call of a cover-both run is read and sends the safety line; a complaint only the second reply finds holds the owner's sentences in the draft
+- [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
+- [Phase 02.1]: Map cards are stamped 2026-10-16 @ cd1bc79, the last commit that touched app code; process card steps renumbered (reading is step 7, sender's check step 19) and other cards' step references updated
+- [Phase 02.1]: 02.1-28: the D-46 matrix test runs in eight slices of 180 combinations, one transaction each, so PostgreSQL finishes it (one 1,440-combination transaction did not finish in over an hour)
 
 ### Pending Todos
 
-None yet.
+- [2026-10-17] [ui] Phone design pass for the dashboard, the Needs you card and the Business Folder page — [todo file](.planning/todos/pending/2026-10-17-phone-design-pass.md) — Needs Ian's layout call in the design pass.
 
 ### Blockers/Concerns
 
@@ -208,12 +283,24 @@ None yet.
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
-- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.1 scope.
+- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.2 (Owner Loop) scope.
+- [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
+- [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved. The close-out fixes ran on SQLite only, so their first Postgres run is CI.
+- [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261016-t5v | Phase 02.1 review fixes: back-up alert headline (WR-01), possible_danger must be a boolean (WR-02), blank-words hold reasons kept (WR-03), added-info reply when every model is down during a wait (item 6) | 2026-10-16 | b254c33 | [261016-t5v-phase-02-1-review-fixes-back-up-alert-he](./quick/261016-t5v-phase-02-1-review-fixes-back-up-alert-he/) |
+| 261017-bz2 | Phase 02.1 fixed-reply order on the waiting paths (open items 6, 7) and map card refresh | 2026-10-17 | d49b883 | [261017-bz2-phase-02-1-fixed-reply-order-on-the-wait](./quick/261017-bz2-phase-02-1-fixed-reply-order-on-the-wait/) |
+| 261018-dxy | Phase 02.1 UAT gap fixes: complaint reply once per wait (G-02.1-1), one price_services rule for both models with live check passed 8/8 (G-02.1-2), reading stored on the safety line (G-02.1-3), WINDOWS 11 to 17, map re-check | 2026-10-18 | a616fc5 | [261018-dxy-phase-02-1-uat-gap-fixes](./quick/261018-dxy-phase-02-1-uat-gap-fixes/) |
 
 ### Roadmap Evolution
 
 - Phase 02.1 inserted after Phase 2: Owner Loop: owner-input additions split out of Phase 2 during discuss (02-CONTEXT.md)
+- 2026-10-14, Phase 02.1 discuss (Ian): 02.1 becomes Faster Answers (price and offer sentences, easy answers not waiting behind a hard one, a waiting customer always hears back; ANSR-01 to ANSR-04); the Owner Loop moves unchanged to Phase 02.2 with its own discuss, plus carry notes and WR-09. Phase folder renamed to `02.1-faster-answers`. Phase 3 walk-test example now means a price not in the folder.
 
 ## Deferred Items
 
@@ -228,6 +315,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-13T20:23:31Z
-Stopped at: Phase 02 complete, ready to plan Phase 02.1
+Last session: 2026-10-18T20:51:39Z
+Stopped at: Phase 02.1 complete, ready to plan Phase 02.2
 Resume file: None

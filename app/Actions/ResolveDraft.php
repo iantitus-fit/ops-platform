@@ -25,15 +25,21 @@ class ResolveDraft
 
     public const string ALREADY_HANDLED = 'This draft was already handled.';
 
+    public const string ALREADY_ANSWERED = 'Already answered';
+
     public function __construct(private readonly SendOwnerReply $sendOwnerReply) {}
 
     /**
-     * The sentence for a draft that can no longer be acted on: a newer draft replaced it (D-28), or it was already
-     * sent or discarded.
+     * The sentence for a draft that can no longer be acted on: a newer draft replaced it (D-28), a price sentence
+     * already answered it (D-21), or it was already sent or discarded.
      */
     public static function whyGone(Message $draft): string
     {
-        return $draft->resolution === DraftResolution::Replaced ? self::REPLACED : self::ALREADY_HANDLED;
+        return match ($draft->resolution) {
+            DraftResolution::Replaced => self::REPLACED,
+            DraftResolution::Answered => self::ALREADY_ANSWERED,
+            default => self::ALREADY_HANDLED,
+        };
     }
 
     /**
@@ -100,5 +106,59 @@ class ResolveDraft
         });
 
         CustomerRecordChanged::dispatch($contactId);
+    }
+
+    /**
+     * Close a held draft because a text that went out to the customer already answered it (D-21).
+     *
+     * The draft is kept as it is, with its words and its verdict, and marked answered with the id of the answering
+     * text. No owner is recorded, because code closed it, and no owner alert is raised. It never throws for a draft
+     * that is gone: code calls this, not the owner, so a draft already replaced, approved or discarded is left alone
+     * and false comes back. The draft is read again under a row lock, because a newer text or the owner may have
+     * dealt with it since the caller looked.
+     *
+     * Call it only after the answering text went out.
+     *
+     * @return bool true when the draft was closed, false when it was no longer a draft
+     */
+    public function closeAsAnswered(Message $draft, Message $answer): bool
+    {
+        $contactId = DB::transaction(function () use ($draft, $answer): ?int {
+            $locked = Message::query()->lockForUpdate()->findOrFail($draft->id);
+
+            if ($locked->status !== MessageStatus::Draft) {
+                return null;
+            }
+
+            $answeredAt = now();
+
+            $locked->update([
+                'status' => MessageStatus::Withdrawn,
+                'resolution' => DraftResolution::Answered,
+                'resolved_by' => null,
+                'resolved_at' => $answeredAt,
+                'meta' => [...($locked->meta ?? []), 'answered_by' => $answer->id],
+            ]);
+
+            $contact = $locked->conversation->contact;
+
+            $contact->activities()->create([
+                'type' => ActivityType::DraftAnswered,
+                'summary' => 'Draft closed: a price sentence answered it',
+                'subject_type' => $locked->getMorphClass(),
+                'subject_id' => $locked->id,
+                'occurred_at' => $answeredAt,
+            ]);
+
+            return $contact->id;
+        });
+
+        if ($contactId === null) {
+            return false;
+        }
+
+        CustomerRecordChanged::dispatch($contactId);
+
+        return true;
     }
 }

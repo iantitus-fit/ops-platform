@@ -80,5 +80,6 @@ it('drafts a scheduling reply when the folder lets only intake questions send on
     expect($message->status)->toBe(MessageStatus::Draft)
         ->and($message->gate_outcome)->toBe(GateOutcome::Hold)
         ->and($message->gate_reason)->toBe('label:scheduling')
-        ->and(fakeClassifier()->calls())->toBe([]);
+        ->and(array_column(fakeClassifier()->calls(), 'draft_reply'))->toBe(['We have 9 am Thursday open. Does that work?'])
+        ->and($message->gate['checks']['classifier']['ran'])->toBeTrue();
 });
