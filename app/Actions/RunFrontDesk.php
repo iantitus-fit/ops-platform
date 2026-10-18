@@ -497,7 +497,8 @@ class RunFrontDesk
      * text already ended the wait, a new holding reply (D-34, D-36). The complaint reply goes out at most once per wait
      * (SendFixedReply::complaintReplyAlreadySent()): a later complaint in the same wait gets the next line, the check-in
      * reply when it is a check-in, otherwise the added-info reply, and the owner's alerts are unchanged (Ian,
-     * 2026-10-17, G-02.1-1). Only a check-in alerts the owner (D-29).
+     * 2026-10-17, G-02.1-1). Only a check-in alerts the owner (D-29), and not one held as a complaint, whose complaint
+     * alert is the one alert its text raises (Ian, 2026-10-18).
      *
      * When the text touches W and also asks something easy (D-19), the easy part has already been checked on its own
      * with the label guard. If it passed, its words ride in the same text as the owner's sentences, in front of whichever
@@ -591,7 +592,7 @@ class RunFrontDesk
         if ($complaintLineDue || (($parts->codeSentences !== [] || $easy !== null) && ! $checkIn)) {
             $this->sendPartialHolding($conversation, $parts, $sentMeta, $complaintLineDue ? $verdict->reasonCode : null, $easy);
         } elseif ($checkIn) {
-            $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy);
+            $this->sendCheckInReply($conversation, $burst, $parts, $sentMeta, $easy, alertsOwner: ! in_array($verdict->reasonCode, SendFixedReply::COMPLAINT_CODES, true));
         } elseif ($this->sendFixedReply->holdingAlreadySent($conversation)) {
             $this->sendAddedInfoReply($conversation, $sentMeta);
         } else {
@@ -794,14 +795,16 @@ class RunFrontDesk
     /**
      * Tell a customer who checked in on a waiting question that the owner still has it, with any owner sentences in front
      * of the line, and alert the owner that the customer checked in (D-28). The alert follows only a text that went out,
-     * and its timing is the owner's: RaiseOwnerAlert follows the right_away list (D-38). A text that cannot go out is
-     * reported to the log; the draft and its own alert already exist.
+     * and its timing is the owner's: RaiseOwnerAlert follows the right_away list (D-38). A check-in held as a complaint
+     * raises no check-in alert, because one customer text raises one alert, the more serious one, and the complaint's
+     * alert covers it (Ian, 2026-10-18, G-02.1-1, amends D-28). A text that cannot go out is reported to the log; the
+     * draft and its own alert already exist.
      *
      * @param  Collection<int, Message>  $burst
      * @param  array{meta: array<string, mixed>}  $attributes
      * @param  ?array{words: string, attributes: array<string, mixed>}  $easy  Split-off easy words that passed every check; they follow the sentences.
      */
-    private function sendCheckInReply(Conversation $conversation, Collection $burst, ReplyParts $parts, array $attributes, ?array $easy = null): void
+    private function sendCheckInReply(Conversation $conversation, Collection $burst, ReplyParts $parts, array $attributes, ?array $easy = null, bool $alertsOwner = true): void
     {
         [$text, $attributes] = $this->withEasyWords($conversation, new ReplyParts(
             codeSentences: $parts->codeSentences,
@@ -819,7 +822,9 @@ class RunFrontDesk
             return;
         }
 
-        $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+        if ($alertsOwner) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+        }
     }
 
     /**

@@ -205,7 +205,7 @@ it('sends the answer and then the check-in reply as one text when a check-in rid
         ->and(waitingRepliesLiveDraft()->id)->toBe($waiting->id);
 });
 
-it('answers the first complaint in a wait with the complaint reply, and a later complaint that checks in with the check-in reply (D-34, G-02.1-1)', function () {
+it('answers the first complaint in a wait with the complaint reply, and a later complaint that checks in with the check-in reply and only the complaint alert (D-34, G-02.1-1)', function () {
     waitingRepliesDraftHeld();
 
     $waiting = waitingRepliesLiveDraft();
@@ -232,8 +232,8 @@ it('answers the first complaint in a wait with the complaint reply, and a later 
         ->and(waitingRepliesTextsToDana()[2]['body'])->toBe(waitingRepliesLater(WAITING_REPLIES_CHECK_IN_LINE))
         ->and(Message::query()->where('kind', MessageKind::CheckInReply->value)->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
-        ->and(waitingRepliesCheckInAlerts())->toHaveCount(1)
-        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->exists())->toBeTrue();
+        ->and(waitingRepliesCheckInAlerts())->toBe([])
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->count())->toBe(1);
 });
 
 it('gives a later complaint in the same wait the next line in D-34\'s order, never a second complaint reply (G-02.1-1)', function (bool $jevReadsComplaint, array $script, string $body, string $line, MessageKind $kind, string $reason) {
@@ -258,6 +258,7 @@ it('gives a later complaint in the same wait the next line in D-34\'s order, nev
         ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
         ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
         ->and(waitingRepliesLiveDraft()->gate_reason)->toBe($reason)
+        ->and(waitingRepliesCheckInAlerts())->toBe([])
         ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->exists())->toBeTrue();
 })->with([
     'a check-in Jev reads as a complaint' => [true, ['reply' => 'Mike still has your question.', 'label' => 'other', 'touches_waiting' => true, 'waiting_note' => 'check_in'], 'Hello? Is anyone going to answer me?', WAITING_REPLIES_CHECK_IN_LINE, MessageKind::CheckInReply, 'classifier:complaint'],
