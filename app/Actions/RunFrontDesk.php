@@ -60,8 +60,9 @@ use Illuminate\Support\Str;
  * The run's order is: the keyword safety line, the opt-out check, then Jev's reading of the customer's text, then
  * everything else. A reading that is missing, such as when no business folder is live, counts as no reading at all: the
  * owner is alerted at once with safety_check_missing, before any send is tried (Ian, 2026-10-16), and the outbound
- * path refuses every automated text that has no reading, so nothing the front desk writes goes out. The reading is one Jev call per run, made before any early return, and when it finds a danger the
- * safety line goes first, before the paused check, the reply cap, a handoff or any price sentence (D-42, D-45). After
+ * path refuses every automated text that has no reading, so nothing the front desk writes goes out. The reading is one
+ * Jev call per run, made before any early return, and when it finds a danger the safety line goes first, before the
+ * paused check, the reply cap, a handoff or any price sentence (D-42, D-45). After
  * it, in order: the paused check, the reply cap, the request for a person (a keyword phrase or Jev's reading), then the
  * agent. A text no reply will answer, paused or capped, still alerts the owner to a complaint or a request for a person
  * the reading found, on the folder's own timing; and a handoff for any cause also raises a complaint alert when the
@@ -486,7 +487,9 @@ class RunFrontDesk
      * Only a reply the model marks as not touching W (`touches_waiting` exactly false) may send while W stays live: it
      * goes out beside W with no new alert. A reply that touches W, or says nothing about it, never sends, because a
      * stale "Thursday" draft beside a "Friday" answer would send the wrong day; it becomes the one fresh draft that
-     * replaces W.
+     * replaces W. An answer with no words of its own, only the owner's sentences, is different (IN-09): with
+     * touches_waiting false or null the sentences send beside W and W stays live with no new alert (sendCodeAnswer()),
+     * and with touches_waiting true they take the whole-thread path (answerTouchingWithWholeThreadDraft()).
      *
      * A check-in adds nothing for the owner to answer, so its words never replace W and never send beside it: when they
      * would send but touch W, are held only by the label guard, or are blank, W stays as it is, the words are dropped,
