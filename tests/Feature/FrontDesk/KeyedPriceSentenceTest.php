@@ -218,6 +218,30 @@ it('re-asks a miss that follows a match, because only misses since the last matc
         ->and(keyedPriceLastReply()->meta['price_sentences'][0]['key'])->toBe('default');
 });
 
+it('reads the pending price list only from a text that went out or a live draft, never from a failed send (IN-04)', function () {
+    keyedPriceFirstRun('Do you service heat pumps?', ['reply' => 'Yes, we service heat pumps.', 'label' => 'faq_answer']);
+
+    $conversation = Conversation::query()->sole();
+    $inbound = Message::query()->where('direction', 'in')->sole();
+
+    test()->travelTo(now()->addMinute());
+
+    Message::factory()->for($conversation)->outbound()->create([
+        'body' => KEYED_PRICE_ASK_SIZE,
+        'status' => MessageStatus::Failed,
+        'sent_at' => null,
+        'meta' => ['in_reply_to' => $inbound->id, 'price_pending' => ['system-replacement']],
+    ]);
+
+    keyedPriceNextRun('What time do you open?', ['reply' => 'We open at 8 am.', 'label' => 'faq_answer']);
+
+    $answered = Message::query()->where('kind', MessageKind::AgentReply->value)->where('status', MessageStatus::Sent->value)->orderByDesc('id')->first();
+
+    expect($answered->body)->toContain('We open at 8 am.')
+        ->and($answered->meta['price_pending'] ?? [])->toBe([])
+        ->and($answered->meta['price_slugs'] ?? [])->toBe([]);
+});
+
 it('holds the price for the owner when no option fits and the file has no default sentence (D-05)', function () {
     breakFile('business/services/system-replacement.md', fn (string $text) => preg_replace('/^price_default:\n(?:  .*\n)+/m', '', $text));
 

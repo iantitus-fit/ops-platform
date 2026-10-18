@@ -1023,7 +1023,9 @@ class RunFrontDesk
 
     /**
      * The services whose price is still waiting on the customer's answers, as the previous run left them in the meta
-     * of the message it wrote. Holding and handoff replies carry no `in_reply_to`, so they are skipped.
+     * of the message it wrote. Holding and handoff replies carry no `in_reply_to`, so they are skipped. Only a text that
+     * went out or is on its way, or a draft still live, counts: a failed send or a withdrawn draft never reached the
+     * customer, so it can neither set nor clear the list (IN-04).
      *
      * @return list<string>
      */
@@ -1031,6 +1033,7 @@ class RunFrontDesk
     {
         $previous = $conversation->messages()
             ->where('direction', MessageDirection::Out)
+            ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered, MessageStatus::Draft])
             ->reorder()
             ->orderByRaw('coalesce(sent_at, created_at) desc')
             ->orderByDesc('id')
