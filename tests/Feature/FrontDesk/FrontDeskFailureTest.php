@@ -426,6 +426,29 @@ it('sends the complaint reply once, not the added-info reply, and raises both al
         ->and(app(SendFixedReply::class)->holdingAlreadySent(Conversation::query()->sole()))->toBeTrue();
 });
 
+it('sends the added-info reply, not a second complaint reply, when a second complaint finds every model down in the same wait (G-02.1-1)', function () {
+    frontDeskFailureDanaWaitsThenTextsAgain(FRONT_DESK_FAILURE_COMPLAINT);
+    fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+
+    runQueuedFrontDeskJobs();
+
+    $this->travel(1)->minutes();
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('f', 32), 'Body' => 'Still nothing, and that tech was rude.']))->assertOk();
+
+    runQueuedFrontDeskJobs();
+
+    $newest = Message::query()->where('direction', MessageDirection::Out)->latest('id')->first();
+
+    expect(frontDeskFailureTextsToDana())->toHaveCount(3)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and($newest->kind)->toBe(MessageKind::AddedInfoReply)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->count())->toBe(2)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(2)
+        ->and(app(SendFixedReply::class)->holdingAlreadySent(Conversation::query()->sole()))->toBeTrue();
+});
+
 it('sends the complaint reply, a complaint alert and the failure alert when a complaint finds every model down (D-45, D-51)', function () {
     frontDeskFailureDanaTextsWhileEveryModelIsDown(FRONT_DESK_FAILURE_COMPLAINT);
     fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);

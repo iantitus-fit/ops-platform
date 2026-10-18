@@ -276,7 +276,7 @@ function invariantWaitingDraft(string $number): void
  * last hour. The text then arrives through the webhook and its queued job runs.
  *
  * @param  array<string, mixed>  $flags
- * @return array{flags: array<string, mixed>, number: string, conversation: ?Conversation, text: string, markerMessageId: int, markerAlertId: int, waitCurrent: bool, waitingDraftId: ?int}
+ * @return array{flags: array<string, mixed>, number: string, conversation: ?Conversation, text: string, markerMessageId: int, markerAlertId: int, waitCurrent: bool, waitingDraftId: ?int, complaintRepliesBefore: int}
  */
 function invariantRun(array $flags): array
 {
@@ -314,6 +314,7 @@ function invariantRun(array $flags): array
 
     $waitCurrent = $before !== null && app(SendFixedReply::class)->holdingAlreadySent($before);
     $waitingDraftId = $before?->messages()->where('status', MessageStatus::Draft)->value('id');
+    $complaintRepliesBefore = $before === null ? 0 : invariantComplaintRepliesSent($before);
     $markerMessageId = (int) Message::query()->max('id');
     $markerAlertId = (int) OwnerAlert::query()->max('id');
 
@@ -331,7 +332,21 @@ function invariantRun(array $flags): array
         'markerAlertId' => $markerAlertId,
         'waitCurrent' => $waitCurrent,
         'waitingDraftId' => $waitingDraftId,
+        'complaintRepliesBefore' => $complaintRepliesBefore,
     ];
+}
+
+/**
+ * How many texts that carry the owner's complaint reply already went out to the customer before the run under test.
+ */
+function invariantComplaintRepliesSent(Conversation $conversation): int
+{
+    return $conversation->messages()
+        ->where('direction', MessageDirection::Out)
+        ->whereIn('status', [MessageStatus::Queued, MessageStatus::Sent, MessageStatus::Delivered])
+        ->get()
+        ->filter(fn (Message $message): bool => invariantCarriesComplaintReply($message))
+        ->count();
 }
 
 /**
@@ -498,8 +513,8 @@ function invariantBreaches(array $flags, array $run): array
 
     /**
      * D-46: the customer is never left silent, except in a paused or capped conversation, where the owner is alerted
-     * instead. Every model down while the customer's wait is current sends one fixed line: the complaint reply when the
-     * reading found a complaint, otherwise the added-info reply (D-29, D-34, D-51).
+     * instead. Every model down while the customer's wait is current sends one fixed line: the complaint reply for the first
+     * complaint of the wait, otherwise the added-info reply (D-29, D-34, D-51).
      */
     if ($sent->isEmpty() && ! $flags['paused'] && ! $flags['cap']) {
         $breaches[] = "{$label}: the customer was left silent";
@@ -534,6 +549,17 @@ function invariantBreaches(array $flags, array $run): array
     }
 
     /**
+     * D-46 and D-34 (Ian, 2026-10-17, G-02.1-1): never two complaint replies in one wait. The matrix setup never lets the
+     * owner answer, so every complaint reply sent before the run belongs to the customer's current wait, and a run may
+     * send one only when none went out before it, or when the run's own text ended that wait.
+     */
+    $complaintReplies = $sent->filter(fn (Message $message): bool => invariantCarriesComplaintReply($message))->count();
+
+    if ($complaintReplies > 1 || ($complaintReplies === 1 && $run['complaintRepliesBefore'] > 0 && ! invariantWaitEndedByAnswer($run))) {
+        $breaches[] = "{$label}: two complaint replies went out in one wait";
+    }
+
+    /**
      * ANSR-04 ordering (D-34): where a safety line goes out, it is the run's first text to the customer.
      */
     if ($lines->isNotEmpty() && $sent->first()->kind !== MessageKind::LifeSafety) {
@@ -541,10 +567,10 @@ function invariantBreaches(array $flags, array $run): array
     }
 
     /**
-     * ANSR-04 adjacency (D-34): a check-in that carries a complaint, with no danger and no request for a person, gets
-     * the complaint reply and not the check-in reply.
+     * ANSR-04 adjacency (D-34): the first complaint of a wait, carried by a check-in with no danger and no request for a
+     * person, gets the complaint reply and not the check-in reply.
      */
-    if ($flags['checkin'] && $flags['complaint'] && ! $flags['hazard'] && $flags['person'] === 'none' && $complaintSeen && $agentAnswered && ! $flags['paused'] && ! $flags['cap']) {
+    if ($flags['checkin'] && $flags['complaint'] && ! $flags['hazard'] && $flags['person'] === 'none' && $complaintSeen && $agentAnswered && ! $flags['paused'] && ! $flags['cap'] && $run['complaintRepliesBefore'] === 0) {
         if ($sent->contains(fn (Message $message): bool => invariantCarriesCheckInReply($message))) {
             $breaches[] = "{$label}: a complaint got the check-in reply";
         }
@@ -555,10 +581,11 @@ function invariantBreaches(array $flags, array $run): array
     }
 
     /**
-     * D-34 and D-51: when the agent was asked, every model failed and Jev saw a complaint, the customer gets the
-     * complaint reply and never the added-info line, whether or not an earlier wait is current.
+     * D-34 and D-51: when the agent was asked, every model failed and Jev saw a complaint, the first complaint of a wait
+     * gets the complaint reply and never the added-info line. A later complaint in the same wait gets the added-info
+     * reply, which the once-per-wait check above covers.
      */
-    if ($agentAsked && $flags['agentFail'] && $complaintSeen) {
+    if ($agentAsked && $flags['agentFail'] && $complaintSeen && $run['complaintRepliesBefore'] === 0) {
         if (! $sent->contains(fn (Message $message): bool => invariantCarriesComplaintReply($message))) {
             $breaches[] = "{$label}: a complaint got no complaint reply when the front desk could not answer";
         }
@@ -646,7 +673,7 @@ it('tells the owner of a complaint the agent labeled when the agent also flags a
  *
  * @param  array<string, mixed>  $first
  * @param  array<string, mixed>  $second
- * @return array{flags: array<string, mixed>, number: string, conversation: ?Conversation, text: string, markerMessageId: int, markerAlertId: int, waitCurrent: bool, waitingDraftId: ?int}
+ * @return array{flags: array<string, mixed>, number: string, conversation: ?Conversation, text: string, markerMessageId: int, markerAlertId: int, waitCurrent: bool, waitingDraftId: ?int, complaintRepliesBefore: int}
  */
 function invariantCoverBothRun(string $text, array $first, array $second): array
 {
@@ -662,6 +689,7 @@ function invariantCoverBothRun(string $text, array $first, array $second): array
         'markerAlertId' => (int) OwnerAlert::query()->max('id'),
         'waitCurrent' => app(SendFixedReply::class)->holdingAlreadySent($before),
         'waitingDraftId' => $before->messages()->where('status', MessageStatus::Draft)->value('id'),
+        'complaintRepliesBefore' => 0,
     ];
 
     fakeClassifier()->answer('faq')->answerReading('faq');

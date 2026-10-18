@@ -205,7 +205,7 @@ it('sends the answer and then the check-in reply as one text when a check-in rid
         ->and(waitingRepliesLiveDraft()->id)->toBe($waiting->id);
 });
 
-it('answers a complaint with the complaint reply, and the complaint wins over a check-in with no check-in alert (D-34)', function () {
+it('answers the first complaint in a wait with the complaint reply, and a later complaint that checks in with the check-in reply (D-34, G-02.1-1)', function () {
     waitingRepliesDraftHeld();
 
     $waiting = waitingRepliesLiveDraft();
@@ -228,9 +228,56 @@ it('answers a complaint with the complaint reply, and the complaint wins over a 
     expect(waitingRepliesLiveDraft()->id)->not->toBe($complaintDraft->id)
         ->and(waitingRepliesLiveDraft()->gate_reason)->toBe('label:complaint')
         ->and(waitingRepliesLiveDraft()->body)->toBe($complaintDraft->body)
-        ->and(waitingRepliesCheckInAlerts())->toBe([])
-        ->and(Message::query()->where('kind', MessageKind::CheckInReply->value)->count())->toBe(0)
-        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(2);
+        ->and(waitingRepliesTextsToDana())->toHaveCount(3)
+        ->and(waitingRepliesTextsToDana()[2]['body'])->toBe(waitingRepliesLater(WAITING_REPLIES_CHECK_IN_LINE))
+        ->and(Message::query()->where('kind', MessageKind::CheckInReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(waitingRepliesCheckInAlerts())->toHaveCount(1)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->exists())->toBeTrue();
+});
+
+it('gives a later complaint in the same wait the next line in D-34\'s order, never a second complaint reply (G-02.1-1)', function (bool $jevReadsComplaint, array $script, string $body, string $line, MessageKind $kind, string $reason) {
+    waitingRepliesDraftHeld();
+
+    waitingRepliesCustomerTexts(['reply' => 'We are sorry to hear that.', 'label' => 'complaint', 'touches_waiting' => true], 'The technician left a mess');
+
+    expect(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1);
+
+    if ($jevReadsComplaint) {
+        fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    }
+
+    waitingRepliesCustomerTexts($script, $body);
+
+    $other = $kind === MessageKind::CheckInReply ? MessageKind::AddedInfoReply : MessageKind::CheckInReply;
+
+    expect(waitingRepliesTextsToDana())->toHaveCount(3)
+        ->and(waitingRepliesTextsToDana()[2]['body'])->toBe(waitingRepliesLater($line))
+        ->and(Message::query()->where('kind', $kind->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', $other->value)->count())->toBe(0)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and(waitingRepliesLiveDraft()->gate_reason)->toBe($reason)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->exists())->toBeTrue();
+})->with([
+    'a check-in Jev reads as a complaint' => [true, ['reply' => 'Mike still has your question.', 'label' => 'other', 'touches_waiting' => true, 'waiting_note' => 'check_in'], 'Hello? Is anyone going to answer me?', WAITING_REPLIES_CHECK_IN_LINE, MessageKind::CheckInReply, 'classifier:complaint'],
+    'an added detail the agent labels a complaint' => [false, ['reply' => 'We are sorry, we will pass that on.', 'label' => 'complaint', 'touches_waiting' => true], 'He also scratched my floor.', WAITING_REPLIES_ADDED_INFO_LINE, MessageKind::AddedInfoReply, 'label:complaint'],
+    'an added detail Jev reads as a complaint' => [true, ['reply' => 'Thanks, I will pass that on.', 'label' => 'intake_question', 'touches_waiting' => true], 'And he tracked mud on the carpet.', WAITING_REPLIES_ADDED_INFO_LINE, MessageKind::AddedInfoReply, 'classifier:complaint'],
+]);
+
+it('gives the complaint reply again once the owner has answered and a new wait starts (G-02.1-1)', function () {
+    waitingRepliesDraftHeld();
+
+    waitingRepliesCustomerTexts(['reply' => 'We are sorry to hear that.', 'label' => 'complaint', 'touches_waiting' => true], 'The technician left a mess');
+
+    Message::factory()->for(Conversation::query()->sole())->fromOwner()->create(['body' => 'Sorry about that, I will call you this afternoon.']);
+
+    waitingRepliesCustomerTexts(['reply' => 'We are sorry to hear that.', 'label' => 'complaint', 'touches_waiting' => true], 'The AC is still blowing warm air and nobody came back.');
+
+    expect(waitingRepliesTextsToDana())->toHaveCount(3)
+        ->and(waitingRepliesTextsToDana()[2]['body'])->toBe(waitingRepliesLater(WAITING_REPLIES_COMPLAINT_LINE))
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(2)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(0);
 });
 
 it('keeps the waiting draft body when a check-in whose words are held for their own reason replaces it (D-28)', function () {

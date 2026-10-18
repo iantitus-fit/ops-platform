@@ -714,6 +714,54 @@ it('answers a held complaint with the complaint reply once, not the added-info l
     'the agent labels it a complaint' => [false, 'complaint', 'label:complaint'],
 ]);
 
+it('answers a second complaint in the same wait with the added-info line, not a second complaint reply, after drafts closed with no answered_by (G-02.1-1)', function (bool $jevReadsComplaint, string $label, string $expectedReason) {
+    answeredDraftQuestionHeld('How much is a repair?', ['reply' => 'Mike will text you the repair price.', 'label' => 'price']);
+    $waiting = answeredDraftTheDraft();
+
+    $waiting->update([
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'resolved_at' => now(),
+    ]);
+
+    if ($jevReadsComplaint) {
+        fakeClassifier()->answerReading('complaint', 0.95, ['complaint' => 0.9]);
+    }
+
+    answeredDraftCustomerTexts('The last tech was rude and the AC still is not working.', [
+        'reply' => 'We are sorry to hear that.',
+        'label' => $label,
+    ]);
+
+    expect(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1);
+
+    answeredDraftTheDraft()->update([
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'resolved_at' => now(),
+    ]);
+
+    answeredDraftCustomerTexts('And nobody has called me back about it.', [
+        'reply' => 'We are sorry to hear that.',
+        'label' => $label,
+    ]);
+
+    $live = answeredDraftTheDraft();
+    $texts = answeredDraftTextsToDana();
+
+    expect($texts)->toHaveCount(3)
+        ->and($texts[2]['body'])->toBe(answeredDraftLater(app(FixedReplies::class)->addedInfoReply(now())))
+        ->and(answeredDraftNewestTextToDana()->kind)->toBe(MessageKind::AddedInfoReply)
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AddedInfoReply->value)->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::HoldingReply->value)->count())->toBe(1)
+        ->and($live->gate_reason)->toBe($expectedReason)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::Complaint->value)->where('message_id', $live->id)->exists())->toBeTrue();
+})->with([
+    'Jev reads a complaint' => [true, 'faq_answer', 'classifier:complaint'],
+    'the agent labels it a complaint' => [false, 'complaint', 'label:complaint'],
+]);
+
 /**
  * The customer reading a verdict keeps under gate.customer_reading (D-42). The defaults are a reading that ran, did not
  * fail and found nothing; a row changes only what it is about.
