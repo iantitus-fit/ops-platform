@@ -172,7 +172,7 @@ class RunFrontDesk
         $this->alertAboutMissingReading($conversation, $burst);
 
         if ($this->reading()->lifeSafety() && ! $this->safetyLineAlreadySent($burst)) {
-            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+            $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier', $this->reading());
         }
 
         if ($conversation->refresh()->isPaused()) {
@@ -295,7 +295,7 @@ class RunFrontDesk
 
         if ($verdict?->lifeSafety) {
             if (! $run->reply->possibleDanger) {
-                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier', $this->reading());
             }
 
             $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor($run->reply->possibleDanger ? 'agent:possible_danger' : 'classifier:life_safety') : $verdict;
@@ -341,7 +341,7 @@ class RunFrontDesk
             );
 
             if ($easyVerdict->lifeSafety) {
-                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier', $this->reading());
                 $verdict = $verdict->flaggedLifeSafety();
                 $verdict = $verdict->outcome === GateOutcome::Send ? $verdict->heldFor('classifier:life_safety') : $verdict;
                 $heldSentences = $sentences !== [] ? $sentences : $heldSentences;
@@ -750,7 +750,7 @@ class RunFrontDesk
 
         if ($secondVerdict->lifeSafety) {
             if (! $second->reply->possibleDanger) {
-                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier');
+                $this->sendLifeSafetyLine->handle($burst->last(), 'general', 'classifier', $this->reading());
             }
 
             $stored = $secondVerdict->outcome === GateOutcome::Send ? $secondVerdict->heldFor($second->reply->possibleDanger ? 'agent:possible_danger' : 'classifier:life_safety') : $secondVerdict;
