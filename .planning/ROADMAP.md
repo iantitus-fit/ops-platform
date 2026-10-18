@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [x] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1) (completed 2026-10-13)
-- [ ] **Phase 02.1: Faster Answers** (INSERTED) - Owner-written price and offer sentences sent by code, easy answers that never wait behind a hard one, and a waiting customer who always hears back
+- [x] **Phase 02.1: Faster Answers** (INSERTED) - Owner-written price and offer sentences sent by code, easy answers that never wait behind a hard one, and a waiting customer who always hears back (completed 2026-10-18)
 - [ ] **Phase 02.2: Owner Loop** (INSERTED) - Staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode
 - [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
@@ -215,7 +215,7 @@ Plans:
   4. A customer who writes while a draft waits always gets a reply: the check-in reply (which alerts the owner) or the added-info reply; a price draft answered by a price sentence closes as `answered` and refuses Send with "Already answered".
   5. Holding replies use only fill-ins computed from `hours.md`; the check-in time is off by default; every new reply the folder needs is required at sync, and the example folder passes with all of them.
 
-**Plans:** 28/28 plans executed; 12 gap-closure plans (02.1-17 to 02.1-28) to run
+**Plans:** 28/28 plans complete; 12 gap-closure plans (02.1-17 to 02.1-28) to run
 
 Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans share the example folder, `RunFrontDesk.php` and `Validator.php`):
 - [x] 02.1-01-PLAN.md — Wave 1: Bookkeeping: the `answered` resolution and "Already answered", the new fixed-text kinds and the wait-starting set, `holdingAlreadySent()` rewritten, plain words, Sprint 1.1 file (ANSR-03, ANSR-04)
@@ -317,7 +317,7 @@ Phases execute in numeric order: 1 → 2 → 02.1 → 02.2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
-| 02.1. Faster Answers | 28/28 | In Progress | - |
+| 02.1. Faster Answers | 28/28 | Complete    | 2026-10-18 |
 | 02.2. Owner Loop | 0/TBD | Not started | - |
 | 3. Booking and the Gate | 0/TBD | Not started | - |
 

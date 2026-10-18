@@ -29,12 +29,15 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying — Phase 1
 - ✓ A text front desk built from `agents/*.md` replies, asks intake questions, discloses it is an AI, and obeys a send-or-draft gate enforced in code (code checks, the Jev classifier, a stored verdict per message) — Phase 2
 - ✓ Owner takeover and draft review from the dashboard; a phone-friendly Needs you card opened from a text alert; Twilio driver behind the same channel interface; suite green on Postgres in CI — Phase 2
+- ✓ A price or offer the owner wrote goes out at once, picked and sent by code from the customer's intake answers and checked at sync against the file's amounts; a price the model writes still holds — Phase 02.1
+- ✓ An easy answer never waits behind a hard question already with the owner, and a customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in, added-info, complaint or discount) with only promises `hours.md` can keep — Phase 02.1
+- ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1
 
 ### Active
 
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
-- [ ] Owner loop: staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode (Phase 02.1, inserted; requirement IDs come from its discussion)
+- [ ] Owner loop: staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode (Phase 02.2, inserted; requirement IDs come from its discussion)
 - [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (Phase 3)
 - [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (Phase 3)
 
@@ -105,7 +108,15 @@ Phase 2 decisions (full log: `.planning/phases/02-text-front-desk/02-CONTEXT.md`
 - **D-03, D-45, D-56** Fail closed: a Jev failure or low certainty holds the draft. Yes/no bars are per question in `config/gate.php`: price and discount 0.075, promise and complaint 0.15 (D-56 amends D-45 after UAT).
 - **D-28/D-54** At most one live draft per conversation; an approved draft becomes the sent message (same row, `sent_at` records when it went out).
 - **D-37** Before a real client goes live, every provider an agent file names gets a no-retained-copy (ZDR) route.
-- Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11.
+- Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11, renumbered to Phase 02.2 on 2026-10-14 when Faster Answers went first.
+
+Phase 02.1 decisions (full log: `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md`, D-01 to D-51; UAT fixes in quick task 261018-dxy). The ones later phases lean on:
+
+- **D-04/D-10** A price goes out on its own only as an owner-written sentence that code picks and sends, its amounts checked at sync against the file's prices; the model never writes a price that sends.
+- **D-34** One owner-written line every time a customer writes while a draft waits, in a fixed order; the complaint reply goes out at most once per wait, and one customer text raises one owner alert, the more serious one (UAT, 2026-10-18).
+- **D-42/D-45** Jev reads the customer's text on every run, and its safety, complaint and person readings act on every path.
+- **D-49/D-50** The sender refuses an automated text without the reading its kind needs; a Jev outage sends one down alert and one back-up alert with the count of texts that arrived meanwhile.
+- **D-46** One invariant test runs every combination of the waiting, complaint, hazard, price, check-in, pause, cap and failure cases.
 
 Principle for closing phases (Ian, 2026-10-17, Phase 02.1 UAT):
 
@@ -167,4 +178,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-17, Phase 02.1 UAT (closing principle)*
+*Last updated: 2026-10-18 after Phase 02.1*
