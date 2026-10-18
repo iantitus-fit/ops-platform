@@ -699,15 +699,21 @@ class RunFrontDesk
 
     /**
      * A blank-words answer that touches the waiting draft W (WR-04, D-18): the model had no words of its own, only the
-     * owner's sentences to send, and read the text as touching W. The sentences go out at once with the partial holding
-     * line, which counts as the holding reply (D-30). Leaving W untouched would leave a stale draft beside a changed
-     * question, such as Thursday beside "Friday works better", so the agent is asked once more for one whole-thread
-     * draft that replaces W (D-35), checked like any reply with W's label guard and stored under touches_waiting.
+     * owner's sentences to send, and read the text as touching W. Leaving W untouched would leave a stale draft beside a
+     * changed question, such as Thursday beside "Friday works better", so the agent is asked once more for one
+     * whole-thread draft that replaces W (D-35), checked like any reply with W's label guard and stored under
+     * touches_waiting.
      *
-     * When the sentences could not go out, or the second call cannot answer or answers with no words, nothing is stored:
-     * W stays live as it is, so "The customer wrote again since this draft" still warns the owner. A replacement with
-     * W's old body would clear that warning while its words are stale. No new alert is raised for a replacement that
-     * does not raise urgency (D-22).
+     * The second call comes before the owner's sentences go out, so a danger or a complaint only that call finds acts
+     * first: the safety line is the run's first text (ANSR-04), and a complaint gets the complaint reply, or the next
+     * line once that went out in this wait (D-34), with the sentences held in the draft (D-43, D-44). That costs the
+     * sentences one model call on this path only (Ian, 2026-10-18, open item 4). Otherwise the sentences go out with the
+     * partial holding line, which counts as the holding reply (D-30), and the second reply replaces W.
+     *
+     * When the second call cannot answer or answers with no words, nothing is stored: W stays live as it is, so "The
+     * customer wrote again since this draft" still warns the owner. A replacement with W's old body would clear that
+     * warning while its words are stale. Owner sentences that could not go out are kept on the draft the owner sees
+     * (keepUnsentSentences()). No new alert is raised for a replacement that does not raise urgency (D-22).
      *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
@@ -715,16 +721,41 @@ class RunFrontDesk
      */
     private function answerTouchingWithWholeThreadDraft(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, ReplyParts $parts, array $attributes, array $sentMeta): void
     {
-        if ($this->sendPartialHolding($conversation, $parts, $sentMeta, null) === null) {
-            return;
-        }
-
         $firstVerdict = $this->decideSendOrDraft->holdWithoutWords($run, $this->prompt->promptText($burst), $this->reading(), 'touches_waiting');
         $asked = $this->askForWholeThreadReply($agent, $run, $conversation, $burst, $waiting, $firstVerdict);
+        $stops = $asked['stops'] ?? null;
 
         if ($asked['outcome'] !== 'checked') {
+            if ($asked['outcome'] === 'handed_off' || $stops !== null || $this->sendPartialHolding($conversation, $parts, $sentMeta, null) === null) {
+                $this->keepUnsentSentences($waiting, $parts->codeSentences);
+            }
+
             return;
         }
+
+        $alertReason = $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting;
+
+        if ($stops !== null) {
+            $stored = $stops === 'danger' ? $asked['stored'] : $asked['stored']->heldFor($stops);
+
+            $this->storeDraft($conversation, $asked['second']->reply->reply, $stored, $asked['second']->reply->label, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $parts->codeSentences);
+
+            if ($stops === 'danger' || $conversation->refresh()->isPaused()) {
+                return;
+            }
+
+            $withoutSentences = ['meta' => array_diff_key($sentMeta['meta'], ['price_sentences' => true, 'offers' => true])];
+
+            if ($this->sendFixedReply->complaintReplyAlreadySent($conversation)) {
+                $this->sendAddedInfoReply($conversation, $withoutSentences);
+            } else {
+                $this->sendPartialHolding($conversation, new ReplyParts, $withoutSentences, $stops);
+            }
+
+            return;
+        }
+
+        $sent = $this->sendPartialHolding($conversation, $parts, $sentMeta, null);
 
         $this->storeDraft(
             $conversation,
@@ -733,7 +764,8 @@ class RunFrontDesk
             $asked['second']->reply->label,
             $attributes,
             sendHolding: false,
-            alertReason: $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting,
+            alertReason: $alertReason,
+            heldSentences: $sent === null ? $parts->codeSentences : [],
         );
     }
 

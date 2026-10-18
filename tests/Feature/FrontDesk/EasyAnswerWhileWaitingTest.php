@@ -422,6 +422,37 @@ it('sends the offer with the partial line and replaces the stale draft with a wh
         ->and(OwnerAlert::query()->count())->toBe(1);
 });
 
+it('sends the safety line first and holds the owner\'s sentence when only the second reply finds a danger (open item 4, ANSR-04)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    easyAnswerFridayWithDiscountAsk(true, ['reply' => 'We have 9 am Friday open. Does that work?', 'label' => 'scheduling', 'possible_danger' => true]);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(Message::query()->where('direction', 'out')->where('status', MessageStatus::Sent->value)->orderByDesc('id')->first()->kind)->toBe(MessageKind::LifeSafety)
+        ->and(collect(easyAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$50')))->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::PartialHolding->value)->count())->toBe(0)
+        ->and($live->meta['held_sentences'] ?? null)->toBe([EASY_ANSWER_FIRST_VISIT_SENTENCE])
+        ->and($live->body)->toBe("We have 9 am Friday open. Does that work?\n\n".EASY_ANSWER_FIRST_VISIT_SENTENCE);
+});
+
+it('sends the complaint reply instead of the owner\'s sentence when only the second reply finds a complaint (open item 4, D-34, D-43)', function () {
+    easyAnswerSchedulingQuestionHeld();
+
+    easyAnswerFridayWithDiscountAsk(true, ['reply' => 'We are sorry about the wait. We have 9 am Friday open.', 'label' => 'complaint']);
+
+    $live = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+
+    expect(easyAnswerTextsToDana())->toHaveCount(2)
+        ->and(easyAnswerTextsToDana()[1]['body'])->toStartWith("I'm sorry about this.")
+        ->and(collect(easyAnswerTextsToDana())->contains(fn (array $text): bool => str_contains($text['body'], '$50')))->toBeFalse()
+        ->and(Message::query()->where('kind', MessageKind::ComplaintHolding->value)->count())->toBe(1)
+        ->and($live->gate_reason)->toBe('label:complaint')
+        ->and($live->meta['held_sentences'] ?? null)->toBe([EASY_ANSWER_FIRST_VISIT_SENTENCE])
+        ->and(OwnerAlert::query()->where('reason', 'complaint')->count())->toBe(1);
+});
+
 it('keeps the waiting draft live and untouched when the second call cannot answer (WR-04)', function () {
     easyAnswerSchedulingQuestionHeld();
 
