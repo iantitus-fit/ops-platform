@@ -37,6 +37,7 @@ readonly class ReplyParts
 
     /**
      * The kind the whole text makes: a complaint line wins, then the partial holding line, then the model's words, then
+     * a check-in or added-info line, so one sent with the owner's sentences is recorded as that reply (IN-01), then
      * code sentences, and last whatever kind the fixed line carries.
      */
     public function kind(): MessageKind
@@ -45,6 +46,7 @@ readonly class ReplyParts
             $this->has($this->complaintLine) => MessageKind::ComplaintHolding,
             $this->lineKind === MessageKind::PartialHolding && $this->has($this->line) => MessageKind::PartialHolding,
             $this->hasModelWords() => MessageKind::AgentReply,
+            in_array($this->lineKind, [MessageKind::CheckInReply, MessageKind::AddedInfoReply], true) && $this->has($this->line) => $this->lineKind,
             $this->codeSentences !== [] => MessageKind::CodeAnswer,
             default => $this->lineKind ?? MessageKind::AgentReply,
         };

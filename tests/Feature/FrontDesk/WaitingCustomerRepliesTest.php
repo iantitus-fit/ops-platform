@@ -364,6 +364,24 @@ it('keeps the new reading and the complaint reason on the kept body when Jev rea
         ->and(HeldReasons::priceAlone($live))->toBeFalse();
 });
 
+it('records a check-in line sent with the owner\'s sentence as a check-in reply, not a code answer (D-36, IN-01)', function () {
+    waitingRepliesDraftHeld();
+
+    waitingRepliesCustomerTexts([
+        'reply' => '',
+        'label' => 'price',
+        'waiting_note' => 'check_in',
+        'price_services' => ['ac-repair'],
+    ], 'Any news? And how much is the diagnostic for my AC?');
+
+    $sent = Message::query()->where('direction', 'out')->where('conversation_id', Conversation::query()->sole()->id)->orderByDesc('id')->first();
+
+    expect(waitingRepliesTextsToDana()[1]['body'])->toBe(waitingRepliesLater(WAITING_REPLIES_AC_SENTENCE.' '.WAITING_REPLIES_CHECK_IN_LINE))
+        ->and($sent->meta['parts'])->toBe(['code_sentences', 'check_in_line'])
+        ->and($sent->kind)->toBe(MessageKind::CheckInReply)
+        ->and(Message::query()->where('kind', MessageKind::CodeAnswer->value)->count())->toBe(0);
+});
+
 it('puts the owner sentence and then the partial holding line in one text when the rest is held (D-36)', function () {
     waitingRepliesDraftHeld();
 
