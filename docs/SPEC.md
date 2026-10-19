@@ -215,7 +215,7 @@ One fact, one file. If the hours change, `hours.md` changes and nothing else.
 | offer | business/offers/*.md | name, slug, sentence, amount_cents or percent (exactly one; percent a whole number 1 to 100), start_date (Y-m-d), end_date (optional Y-m-d, on or after start_date) | One offer per file, every file kept and indexed by slug. Sent by code, never by the model: every live offer's sentence goes out in one text when a customer asks for a discount. Live by date in the business time zone, end date inclusive. The sync checks the sentence against its own field: the $ amounts must equal amount_cents and the percentages must equal percent, both ways, money is written as $ and digits, and the promise and never_say checks stay. The business confirms eligibility at the visit |
 | agent | agents/*.md | name, channel, provider, model, fallback (list), loads (list of folder paths), escalate_to | Builds the agent at runtime |
 | automation | automations/*.md | trigger, wait, send, stop_when (list) | Scheduled sequences |
-| connector | connectors/*.md | system, direction (in, out, both), objects, schedule | What syncs and which way. No secrets: credentials live encrypted in the engine |
+| connector | connectors/*.md | system, direction (in, out, both), owns (list), reads (list), schedule | What syncs and which way, and which kinds of record this system owns. One owner per fact: the sync refuses two connectors owning the same kind of record (`.planning/PROJECT.md`, "One owner per fact", 2026-10-19). No secrets: credentials live encrypted in the engine |
 | walk_test | tests/*.md | persona, channel, script (list of customer turns), expect (list of checks) | The activation gate |
 
 The markdown body of every file is free text. Agents read it as knowledge: what

@@ -38,8 +38,8 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
 - Owner loop: parked to backlog 999.5 on 2026-10-19 (Ian), pulled by the first client with staff. See Key Decisions, "The model home is the next milestone".
-- [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (Phase 3)
-- [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (Phase 3)
+- [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (was Phase 3; moves into the model home milestone, v1 closed at 02.1 on 2026-10-19)
+- [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (was Phase 3; moves into the model home milestone, v1 closed at 02.1 on 2026-10-19)
 
 Pulled by a real client, one at a time (v2, Backlog in ROADMAP.md): quote/invoice/paid, voice, automations, settings by conversation and connectors.
 
@@ -147,9 +147,24 @@ The model home is the next milestone (Ian, 2026-10-19):
 - **The room standard, as proposed 2026-10-18 and settled in the milestone's requirements:** a folder in the business folder with a CONTEXT.md contract and one fictional example file (an empty room is valid); a Laravel module that registers the room's file types with the sync, its tables, its dashboard section and its timeline entries; a connector slot as an interface with a fake driver (the `TextChannel` pattern); what the room writes to `records/`; one test that the room boots empty and with the example folder.
 - **Phase 02.2 (Owner Loop) moves to backlog 999.5 unchanged,** with its scope, success criteria and carry notes, pulled by the first client with staff. `docs/phase-2.2-owner-input.md` stays as the bank of setup questions. Correctness carries that move with it and need a home in the model home's requirements or the before-first-deploy list: alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09).
 - **The text front desk is the finished default for its room.** No new front-desk depth before the other rooms exist.
+- **v1 closes at 02.1 (Ian, 2026-10-19).** Phase 3 (booking and the walk-test gate) moves into the model home: booking becomes the schedule room's basic setup, and walk tests become the gate on every folder change. Its requirements are recorded as known gaps at the v1 close, and its planning notes (walk-test determinism, reminder timing, BOOK-06 and RECS-02 scope) carry into the new milestone. The model home starts with `/gsd-new-milestone`. Why (Ian): "Better to make sure it's done now than later."
 - **Why (Ian):** make it easier to work with a business when one signs on, show a Laravel team what he can build, and get it useful enough that someone says "that's a nice house, let me put some things in it and try something."
 - **Reopens (Ian's explicit call, flagged before he answered):** the 2026-10-10 call that parked SPEC Sprints 3 to 6 until a client pulls them, and the SPEC's sprint order as the build order. DEC-01 to DEC-14 stand.
 - Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
+
+One owner per fact (Ian, 2026-10-19):
+
+- **Each kind of record has exactly one owner system,** named in that system's connector file: customers, sales activity, invoices, payments, expenses, work orders, the schedule, documents. Every other system that shows it holds a copy, and a copy never wins. A fact no connector claims belongs to the platform; projects, texts and the timeline start there.
+- **The connector front matter splits `objects` into `owns` and `reads`.** The sync refuses a folder where two connectors own the same fact and says so in plain words ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it").
+- **A copy that differs from its owner shows on the card** for a person to fix at the owner. The platform never overwrites silently and never takes a copy's change as truth. Something the platform learns about a fact it does not own (a new email from a customer text) goes to the owner if that connector may write, or to a person.
+- **Each contact and project keeps its ID in each system,** so one project shows its invoice, CRM account, folder and schedule rows without owning them.
+- **Moving a fact's owner is a change to two connector files,** checked by the sync. That is how a business leaves a tool one fact at a time.
+- Ownership is per kind of record. Per-field ownership (a CRM owns the name and phone, the accounting tool owns billing terms) is decided when a client needs it.
+- Part of the room standard's connector slot (above). Shape tested against a real six-system stack: accounting, a CRM synced to it, file sharing, linked spreadsheets as the operational record, work orders on regional drives, an expense app. No real names or data in the repo.
+- **Why (Ian):** it leaves the system less cluttered.
+- **Cost:** every connector needs a check that compares its copies with the owner; that is build work per connector.
+- Amends the connector file type in `docs/SPEC.md` (`objects` becomes `owns` and `reads`).
+- Affects: connectors and data, knowledge, sales, operations, finance, owner intelligence.
 
 Open decisions (not locked; each has a trigger for deciding):
 
