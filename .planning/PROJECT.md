@@ -37,7 +37,7 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
-- [ ] Owner loop: staff approvers, approve by text reply, email alerts with the "handled" follow-up, re-alerts and assist mode (Phase 02.2, inserted; requirement IDs come from its discussion)
+- Owner loop: parked to backlog 999.5 on 2026-10-19 (Ian), pulled by the first client with staff. See Key Decisions, "The model home is the next milestone".
 - [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (Phase 3)
 - [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (Phase 3)
 
@@ -130,6 +130,26 @@ Model roles (Ian, 2026-10-18):
 Principle for closing phases (Ian, 2026-10-17, Phase 02.1 UAT):
 
 - **02.1 closes on wiring, not business specifics.** A phase is done when the paths work: what is read, what is held, what is sent and who is alerted. Wording, which replies get a warm wrapper, where the AI notice sits, and what goes on the promise list get settled once the full workflow exists (first contact to finished job). Items held this way are listed in `docs/phase-2.2-owner-input.md` under "Held from the 2026-10-17 role play".
+
+The project is the spine (Ian, 2026-10-19):
+
+- **Every business runs on one record that carries a piece of work from first contact to paid and warranty: the project.** Estimates, appointments and payments hang off it, alongside the contact and the conversation. Not built; today's data model centers on the contact and the conversation.
+- **Code and docs call it a Project.** Laravel already uses "job" for queued jobs (`app/Jobs/`, the `jobs` table), and DEC-12 leaves Legacy's three meanings of "job" behind.
+- **The word people see is the business's own.** One field in `business/profile.md` sets it (Job for a roofer, Project for a remodeler, Matter for a law office), checked by the sync like any other field; the dashboard, the customer cards and the front desk use it.
+- **One shape covers the four trades researched:** a roofing project with an inspection and an install appointment, an HVAC call with one, a remodel with many, a landscaping maintenance contract with weekly ones. Research: `docs/research/contractor-operations-2026-10-19.md`.
+- **Why (Ian):** "It's the blueprint for XYZ company that can be adapted to ABC company."
+- Deciding the shape does not schedule it, and does not pull quotes, invoices or payments forward from backlog 999.1.
+- Affects: sales, operations, finance, customer communication, team, owner intelligence, knowledge.
+
+The model home is the next milestone (Ian, 2026-10-19):
+
+- **The next milestone builds the model home:** a cookie-cutter house that is a starting point for any business, with rooms added along the way. Every room is built to the same standard around the project (the spine above). Wording, policies, which rooms a business uses and how it runs are the business's own decisions, made at setup: the furniture and paint, not the house.
+- **The room standard, as proposed 2026-10-18 and settled in the milestone's requirements:** a folder in the business folder with a CONTEXT.md contract and one fictional example file (an empty room is valid); a Laravel module that registers the room's file types with the sync, its tables, its dashboard section and its timeline entries; a connector slot as an interface with a fake driver (the `TextChannel` pattern); what the room writes to `records/`; one test that the room boots empty and with the example folder.
+- **Phase 02.2 (Owner Loop) moves to backlog 999.5 unchanged,** with its scope, success criteria and carry notes, pulled by the first client with staff. `docs/phase-2.2-owner-input.md` stays as the bank of setup questions. Correctness carries that move with it and need a home in the model home's requirements or the before-first-deploy list: alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09).
+- **The text front desk is the finished default for its room.** No new front-desk depth before the other rooms exist.
+- **Why (Ian):** make it easier to work with a business when one signs on, show a Laravel team what he can build, and get it useful enough that someone says "that's a nice house, let me put some things in it and try something."
+- **Reopens (Ian's explicit call, flagged before he answered):** the 2026-10-10 call that parked SPEC Sprints 3 to 6 until a client pulls them, and the SPEC's sprint order as the build order. DEC-01 to DEC-14 stand.
+- Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
 
 Open decisions (not locked; each has a trigger for deciding):
 

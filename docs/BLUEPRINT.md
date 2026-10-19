@@ -12,10 +12,11 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 
 **The rule (CLAUDE.md, Rules):** any decision, plan or idea that changes an area gets an `Affects:` line naming every area it touches, and this file is updated in the same commit.
 
-**Where it stands** uses four words:
+**Where it stands** uses five words:
 
 - **Built:** a completed phase.
 - **Phase:** a phase on the roadmap.
+- **Decided:** settled in PROJECT.md, not yet on the roadmap.
 - **Backlog:** a 999.x phase, pulled by a real client.
 - **Idea:** written down somewhere, not on the roadmap.
 
@@ -23,12 +24,12 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 
 | # | Area | Where it stands |
 |---|---|---|
-| 1 | [Customer communication](#1-customer-communication) | Text built; owner loop and booking in the thread on the roadmap; voice in the backlog |
+| 1 | [Customer communication](#1-customer-communication) | Text built; booking on the roadmap; owner loop and voice in the backlog |
 | 2 | [Marketing](#2-marketing) | Lead sources and offers built; review asks and reactivation in the backlog; reputation not yet decided |
 | 3 | [Sales](#3-sales) | Handoff and owner price sentences built; quotes in the backlog; pipeline stages not yet decided |
-| 4 | [Operations](#4-operations) | Booking on the roadmap; dispatch, crews and completion not yet decided |
+| 4 | [Operations](#4-operations) | Booking on the roadmap; the project record decided; dispatch, crews and completion not yet decided |
 | 5 | [Finance](#5-finance) | Invoices, payments and books in the backlog; bills and payroll not yet decided |
-| 6 | [Team](#6-team) | Owner alerts and approvals built; staff users and routing on the roadmap |
+| 6 | [Team](#6-team) | Owner alerts and approvals built; staff users and routing in the backlog |
 | 7 | [Owner intelligence](#7-owner-intelligence) | Records files built; briefs and reports partly backlog, partly idea |
 | 8 | [Knowledge](#8-knowledge) | The folder and its sync built; walk tests on the roadmap; settings by conversation in the backlog |
 | 9 | [Connectors and data](#9-connectors-and-data) | Text channel and web form built; the rest in the backlog |
@@ -41,6 +42,17 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - Code and the owner decide money and safety.
 - Frontier models are only for slow back-office work.
 - No model reviews outbound texts as a final check.
+
+**The spine** across every area ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)):
+
+- One record carries a piece of work from first contact to paid and warranty: the project. A lead becomes a project; estimates, appointments and payments hang off it, alongside the contact and the conversation.
+- Code and docs call it a project. The word people see is the business's own, set by one field in `business/profile.md` (Job, Project, Matter).
+- Decided, not built. Research behind it: [contractor operations](research/contractor-operations-2026-10-19.md).
+
+**The build order** ([PROJECT.md, The model home is the next milestone](../.planning/PROJECT.md#key-decisions)):
+
+- The next milestone is the model home: every room built to one standard around the project, a starting point each business furnishes at setup.
+- The owner loop (Phase 02.2) is parked in backlog [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog), pulled by the first client with staff.
 
 ---
 
@@ -84,11 +96,12 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** A mid-tier model writes the reply; the agent file names the model and its fallbacks. Jev, a cheap model, reads the text. Code decides price and safety.
 
 **Where it stands.**
+- **Decided:** the front desk calls a piece of work by the business's own word for a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted).
-- **Phase:**
-  - [02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted): assist mode, and the customer update when the wait runs past the holding reply's promise.
-  - [3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate): booking.
-- **Backlog:** voice ([999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog)).
+- **Phase:** booking ([3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate)).
+- **Backlog:**
+  - Voice ([999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog)).
+  - Assist mode, and the customer update when the wait runs past the holding reply's promise ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Idea:** timed reassurance updates while a held question waits ([2.2 input §2](phase-2.2-owner-input.md#2-complaints-a-follow-up-for-a-person-not-a-held-draft)).
 
 **Depends on.** Knowledge, Safety and compliance, Team (who is alerted).
@@ -168,14 +181,15 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** A mid-tier model writes the conversation. Prices are the owner's sentences, sent by code. A price the model writes is held for the owner.
 
 **Where it stands.**
+- **Decided:** a lead becomes a project, and estimates hang off it ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:**
   - Handoff and take over ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
   - Owner price sentences ([Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted)).
   - The open-leads file ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)).
-- **Phase:** assist mode and `escalate_to` naming a staff user ([02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted)).
 - **Backlog:**
   - Quotes and the customer approval page ([999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog)).
   - The lost-lead check-in ([999.3](../.planning/ROADMAP.md#phase-9993-automations-backlog)).
+  - Assist mode and `escalate_to` naming a staff user ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Not yet decided:** pipeline stages beyond open leads.
 
 **Depends on.** Customer communication, Knowledge, Marketing (where leads come from).
@@ -213,6 +227,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Not yet decided. Availability is computed by code.
 
 **Where it stands.**
+- **Decided:** each piece of work is a project, and its appointments hang off it, one or many ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Research: [contractor operations](research/contractor-operations-2026-10-19.md).
 - **Phase:** booking, reminders, the schedule and `records/today.md` ([3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate)).
   - Booking through a link or with times offered in the thread: settle in Phase 3 discuss ([2.1 input §2](phase-2.1-owner-input.md#2-scheduling-can-you-come-thursday-morning)).
   - Booking never offers a time that has already passed ([2.2 input §3](phase-2.2-owner-input.md#3-alerts-and-routing)).
@@ -250,6 +265,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Code and the owner decide money. No model sets an amount.
 
 **Where it stands.**
+- **Decided:** payments hang off the project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not scheduled; quotes and invoices stay in the backlog.
 - **Backlog:**
   - Invoices and payments ([999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog)).
   - QuickBooks ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
@@ -284,13 +300,14 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - **Reads:** users, alert settings.
 - **Writes:** owner alerts and who sent, edited or discarded each draft.
 
-**Connectors.** The text channel for alerts. Email: [Phase 02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted).
+**Connectors.** The text channel for alerts. Email: backlog [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog).
 
 **Model role.** None; alert routing is code.
 
 **Where it stands.**
+- **Decided:** work is tracked on a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); who owns each stage of it is not yet decided.
 - **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
-- **Phase:** in [02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted):
+- **Backlog:** the owner loop, [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog):
   - staff users;
   - approve by reply;
   - email alerts and the "handled" follow-up;
@@ -329,11 +346,11 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Frontier models only for slow back-office work such as this.
 
 **Where it stands.**
+- **Decided:** the project is the record per-piece-of-work reporting will come from ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); what gets reported is not yet decided.
 - **Built:** cards, INDEX and open leads ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)); `gate:export` ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
-- **Phase:**
-  - Minutes to booked, `today.md` and the nightly rebuild ([3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate)).
-  - `gate:export` fixes ([02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted)).
+- **Phase:** minutes to booked, `today.md` and the nightly rebuild ([3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate)).
 - **Backlog:**
+  - `gate:export` fixes ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
   - `who-owes-us.md` and `this-week.md` ([999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog)).
   - The MCP server ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
 - **Idea:** a daily briefing as an alert channel ([2.2 input §3](phase-2.2-owner-input.md#3-alerts-and-routing)).
@@ -367,6 +384,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** The admin agent's model: not yet decided.
 
 **Where it stands.**
+- **Decided:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not built.
 - **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)).
 - **Phase:** walk tests gate every activation ([3](../.planning/ROADMAP.md#phase-3-booking-and-the-gate)).
 - **Backlog:** settings by conversation ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
@@ -449,7 +467,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Where it stands.**
 - **Built:** life-safety, opt-out and disclosure ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)); Jev on every text and outage mode ([Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted)).
-- **Phase:** the fallback classifier on a ZDR route ([02.2](../.planning/ROADMAP.md#phase-022-owner-loop-inserted)).
+- **Backlog:** the fallback classifier on a ZDR route ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Open:**
   - Which entity registers A2P ([PROJECT, open decisions](../.planning/PROJECT.md#key-decisions)).
   - A ZDR route for every provider before a real client (Phase 2 D-37).
