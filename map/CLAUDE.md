@@ -18,14 +18,14 @@ Fence: the nouns a cold reader must understand before changing how an inbound te
 - Contact opt-out · live · `contacts.sms_opted_out_at`, blocks every text · `objects/contacts/contact-opt-out.md`
 - Answer an inbound text (process) · live · record, claim, agent, send rule, send or draft · `processes/answer-inbound.md`
 - Contact (stub) · live · the customer record · `app/Models/Contact.php:24`
-- Owner alert (stub) · live · one text to the owner, about a conversation or about the whole business (`RaiseOwnerAlert::forBusiness()`, the safety_check_down alerts); card comes with Phase 02.2's map · `app/Actions/RaiseOwnerAlert.php:39`, `:91`
+- Owner alert (stub) · live · one text to the owner, about a conversation or about the whole business (`RaiseOwnerAlert::forBusiness()`, the safety_check_down alerts); card comes with the Owner Loop's map (backlog 999.5) · `app/Actions/RaiseOwnerAlert.php:39`, `:91`
 - Customer card (stub) · live · markdown rendered from the database for the agent; `records/` on disk is for the owner's AI, never loaded by the agent · `app/Records/CustomerCard.php`
 - Timeline entry (stub) · live · `activities` rows, written by every step · `app/Models/Activity.php`
 
 ## Ledger
 - `agent_conversations`, `agent_conversation_messages` · leftover · the SDK's memory tables, no referrer · shadows the conversation and message cards
 - "approval log" · ghost · a comment at `config/gate.php:41`; the real things are `gate:export` and the stored verdict
-- `escalate_to` · half-wired, admitted-but-unrouted, parked for Phase 02.2 · agent file card
+- `escalate_to` · half-wired, admitted-but-unrouted, parked for the Owner Loop (backlog 999.5) · agent file card
 - `intake_answers.icm_version_id` (parked for Phase 3), `.message_id` (parked, D-33) · writer-only · intake card
 - Deviations: `VERIFICATION.md`, a work list for Ian
 
