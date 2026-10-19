@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "02.2"
-current_phase_name: Owner Loop
+current_phase: "3"
+current_phase_name: Booking and the Gate
 status: planning
-stopped_at: Phase 02.1 complete, ready to plan Phase 02.2
-last_updated: "2026-10-18T20:51:39.772Z"
-last_activity: 2026-10-18
-last_activity_desc: Phase 02.1 complete, transitioned to Phase 02.2
+stopped_at: Owner Loop parked to backlog 999.5, ready to plan Phase 3
+last_updated: "2026-10-19T22:06:21Z"
+last_activity: 2026-10-19
+last_activity_desc: Phase 02.2 Owner Loop moved unchanged to backlog 999.5
 state_head: 26e0dbd07044046c944cc8968dda7e88a0dc5b71
 progress:
-  total_phases: 5
+  total_phases: 4
   completed_phases: 3
   total_plans: 76
   completed_plans: 76
-  percent: 60
+  percent: 75
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-18)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 02.2 — Owner Loop
+**Current focus:** Phase 3 — Booking and the Gate
 
 ## Current Position
 
-Phase: 02.2 — Owner Loop
+Phase: 3 — Booking and the Gate
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-18 — Phase 02.1 complete, transitioned to Phase 02.2
+Last activity: 2026-10-19 — Phase 02.2 Owner Loop moved unchanged to backlog 999.5
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -283,9 +283,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 1, carried]: A web form does not fill an empty name on a matched contact; rejected syncs consume version numbers (IN-03).
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
-- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is Phase 02.2 (Owner Loop) scope.
+- [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is in backlog 999.5 (Owner Loop).
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
 - [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved.
+- [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone").
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
 
@@ -301,6 +302,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 
 - Phase 02.1 inserted after Phase 2: Owner Loop: owner-input additions split out of Phase 2 during discuss (02-CONTEXT.md)
 - 2026-10-14, Phase 02.1 discuss (Ian): 02.1 becomes Faster Answers (price and offer sentences, easy answers not waiting behind a hard one, a waiting customer always hears back; ANSR-01 to ANSR-04); the Owner Loop moves unchanged to Phase 02.2 with its own discuss, plus carry notes and WR-09. Phase folder renamed to `02.1-faster-answers`. Phase 3 walk-test example now means a price not in the folder.
+- 2026-10-19 (Ian): Phase 02.2 Owner Loop moved unchanged to backlog 999.5, pulled by the first client with staff; folder renamed to `999.5-owner-loop`. See PROJECT.md Key Decisions, "The model home is the next milestone".
 
 ## Deferred Items
 
@@ -308,6 +310,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
+| Backlog | Owner loop (was Phase 02.2), 999.5 | Parked until the first client with staff | 2026-10-19 | v1 |
 | Backlog | Quote, invoice, paid (SPEC Sprint 3), 999.1 | Parked until a client pulls it | 2026-10-10 | v1 |
 | Backlog | Voice (SPEC Sprint 4), 999.2 | Parked until a client needs phones | 2026-10-10 | v1 |
 | Backlog | Automations (SPEC Sprint 5), 999.3 | Parked until a client pulls it | 2026-10-10 | v1 |
@@ -315,6 +318,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-18T20:51:39Z
-Stopped at: Phase 02.1 complete, ready to plan Phase 02.2
+Last session: 2026-10-19T22:06:21Z
+Stopped at: Owner Loop parked to backlog 999.5, ready to plan Phase 3
 Resume file: None
