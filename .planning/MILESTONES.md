@@ -1,6 +1,6 @@
 # Milestones
 
-## v1.0 Text Front Desk (Shipped: 2026-10-20)
+## v1.0 Front Desk (Shipped: 2026-10-20)
 
 **Delivered:** The folder drives the app, every way a lead arrives lands on one timeline, and an AI text front desk replies from an agent file behind a send-or-draft rule enforced in code, with owner-written prices and offers sent by code.
 
@@ -10,7 +10,7 @@
 - Timeline: 10 days (2026-10-10 → 2026-10-20), 652 commits
 - Git range: 84e3eae (scaffold) → 34b48bd; first feature commit 00c0325 `feat(01-01)`
 - Files changed: 554 (+89,195 / −28, docs and planning included)
-- Code: 16,327 lines of PHP in `app/`, 22,148 in `tests/`; the suite (1659 tests at 02.1-28) passes on SQLite and PostgreSQL 17
+- Code: 16,327 lines of PHP in `app/`, 22,148 in `tests/`; the suite (1750 tests at the v1.0 close) passes on SQLite and PostgreSQL 17
 
 **Key accomplishments:**
 - `icm:sync` validates, versions and activates the business folder; a broken change is refused in plain words and the live version stays; `App\Icm\ActiveConfig` is the only runtime config source.

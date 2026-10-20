@@ -19,7 +19,7 @@ Finish the customer conversation fast: minutes from first contact to a booked ap
 
 ## Current State
 
-v1.0 Text Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder drives the app, every lead lands on one timeline, and the text front desk replies behind the send-or-draft rule, with owner-written prices and offers sent by code. Booking and walk tests (RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03) are known gaps at the close. Record: `.planning/MILESTONES.md`; archives in `.planning/milestones/`.
+v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder drives the app, every lead lands on one timeline, and the text front desk replies behind the send-or-draft rule, with owner-written prices and offers sent by code. Booking and walk tests (RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03) are known gaps at the close. Record: `.planning/MILESTONES.md`; archives in `.planning/milestones/`.
 
 ## Next Milestone Goals
 
@@ -71,7 +71,7 @@ Pulled by a real client, one at a time (v2, Backlog in ROADMAP.md): quote/invoic
 - Ian is learning Laravel. Each new Laravel concept gets a short walk-through the first time it appears, logged in that sprint's file (docs/sprints/sprint-0.md "Walk-through log").
 - One build serves the job search and the practice (DEC-13).
 - Build method: spec first, then tests, then code. Claude Code builds; Ian reviews. A cartographer map starts in Sprint 1.
-- Shipped v1.0 on 2026-10-20: 16,327 lines of PHP in `app/` and 22,148 in `tests/`; the suite (1659 tests) passes on SQLite and PostgreSQL 17. Open review items, deploy notes and before-first-deploy items are carried in `.planning/STATE.md` Blockers/Concerns.
+- Shipped v1.0 on 2026-10-20: 16,327 lines of PHP in `app/` and 22,148 in `tests/`; the suite (1750 tests) passes on SQLite in the last local full run (02.1-VERIFICATION.md, after 261018-dxy) and on SQLite and PostgreSQL 17 in CI on main (runs #6 at 1aaee49 and #7 at 7328cb4; tests.yml runs both databases on every push). Open review items, deploy notes and before-first-deploy items are carried in `.planning/STATE.md` Blockers/Concerns.
 
 ## Constraints
 

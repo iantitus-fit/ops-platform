@@ -2,7 +2,7 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
-## Milestone: v1.0 — Text Front Desk
+## Milestone: v1.0 — Front Desk
 
 **Shipped:** 2026-10-20
 **Phases:** 3 (1, 2, 02.1) | **Plans:** 76 | **Sessions:** not tracked
@@ -17,7 +17,7 @@
 ### What Worked
 - Every phase verified as passed: Phase 1 7/7 must-haves, Phase 2 5/5 success criteria with 6/6 UAT gaps closed, Phase 02.1 8/8 must-haves.
 - UAT by hand found what the suite did not: Phase 2 UAT found six gaps, all diagnosed and fixed in 02-35 to 02-41; Phase 02.1 UAT found two, fixed in quick task 261018-dxy.
-- The suite ran on SQLite and PostgreSQL 17 from Phase 2 on and grew from 263 tests (end of Phase 1) to 1659 (02.1-28).
+- The suite ran on SQLite and PostgreSQL 17 from Phase 2 on and grew from 263 tests (end of Phase 1) to 1659 at 02.1-28 and 1750 at the v1.0 close.
 - The cartographer map was re-checked once after each round of code changes (02-34, 02-41, 02.1-15, 02.1-27), so its citations kept landing on the right symbols.
 
 ### What Was Inefficient
@@ -59,7 +59,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
-| v1.0 | 1659 | not measured | Twilio driver added with no SDK |
+| v1.0 | 1750 | not measured | Twilio driver added with no SDK |
 
 ### Top Lessons (Verified Across Milestones)
 

@@ -2,12 +2,12 @@
 
 ## Milestones
 
-- ✅ **v1.0 Text Front Desk** — Phases 1, 2, 02.1 (shipped 2026-10-20)
+- ✅ **v1.0 Front Desk** — Phases 1, 2, 02.1 (shipped 2026-10-20)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 Text Front Desk (Phases 1, 2, 02.1) — SHIPPED 2026-10-20</summary>
+<summary>✅ v1.0 Front Desk (Phases 1, 2, 02.1) — SHIPPED 2026-10-20</summary>
 
 - [x] Phase 1: Foundation (7/7 plans) — completed 2026-10-11
 - [x] Phase 2: Text Front Desk (41/41 plans) — completed 2026-10-13
