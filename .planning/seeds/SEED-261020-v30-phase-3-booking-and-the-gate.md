@@ -5,6 +5,10 @@ planted: 2026-10-20
 planted_during: v1.0 close-out, after Phase 02.1
 trigger_when: model home milestone
 scope: Medium
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-10-20
+  status: dormant
 ---
 
 # SEED-261020-v30: Phase 3, Booking and the Gate

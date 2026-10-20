@@ -17,17 +17,12 @@
       "number": "02.1",
       "name": "Faster Answers",
       "status": "complete"
-    },
-    {
-      "number": "3",
-      "name": "Booking and the Gate",
-      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 3)",
-    "reason": "Phase 3 of 4 — needs a plan"
+    "command": "/gsd:progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-19T22:06:21.000Z"
+  "updated_at": "2026-10-20T22:16:19.588Z"
 }

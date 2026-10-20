@@ -4,6 +4,10 @@ trigger: "Gap G-02-2.2: the front-desk agent does not know the current date and 
 created: 2026-10-12T00:00:00Z
 updated: 2026-10-12T00:00:00Z
 goal: find_root_cause_only
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-10-20
+  status: diagnosed
 ---
 
 ## Current Focus

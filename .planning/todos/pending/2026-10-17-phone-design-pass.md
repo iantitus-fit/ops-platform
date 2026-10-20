@@ -11,6 +11,9 @@ files:
   - resources/views/livewire/conversation-thread.blade.php
   - app/Filament/Pages/BusinessFolder.php
   - resources/views/filament/pages/business-folder.blade.php
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-10-20
 ---
 
 ## Problem
