@@ -39,7 +39,7 @@ reasoning_checkpoint (diagnose-only, filled for the record):
 expected: Drafts make no claims the business files don't support.
 actual: The furnace draft said "We do repair furnaces", which no business file says. (The message had no matching service and was correctly held as "other".)
 errors: none (model answered confidently; the verdict held it for label other)
-reproduction: Test 2 in .planning/phases/02-text-front-desk/02-UAT.md. Conversation 9, contact +13175550142, customer message 16 "My furnace won't turn on.", draft message 17.
+reproduction: Test 2 in .planning/milestones/v1.0-phases/02-text-front-desk/02-UAT.md. Conversation 9, contact +13175550142, customer message 16 "My furnace won't turn on.", draft message 17.
 started: found in Phase 2 UAT, 2026-10-12.
 
 ## Eliminated

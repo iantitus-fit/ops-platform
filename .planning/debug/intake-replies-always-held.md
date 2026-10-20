@@ -37,7 +37,7 @@ reasoning_checkpoint (diagnose-only, fields filled for the planner):
 expected: An ordinary intake reply with clean code checks and no real price, discount, promise or complaint content sends on its own instead of being held.
 actual: Held. Jev complaint 0.47, promise 0.30 against 0.075 bar (before triage reword); complaint 0.07, promise 0.09 after reword, still held on promise.
 errors: none (gate_reason classifier:complaint / classifier:promise; plain reason "Held: makes a promise")
-reproduction: Test 2 in .planning/phases/02-text-front-desk/02-UAT.md (live keys, icm:sync, queue worker, text "My AC is blowing warm air" from /dev/chat)
+reproduction: Test 2 in .planning/milestones/v1.0-phases/02-text-front-desk/02-UAT.md (live keys, icm:sync, queue worker, text "My AC is blowing warm air" from /dev/chat)
 started: found in Phase 2 UAT, 2026-10-12
 
 ## Eliminated
@@ -81,13 +81,13 @@ started: found in Phase 2 UAT, 2026-10-12
   implication: the behavior is deterministic and as coded; this is a calibration/design gap, not a defect in the comparison.
 
 - timestamp: 2026-10-12
-  checked: .planning/phases/02-text-front-desk/02-RESEARCH.md:415-418 and :677 (OQ-1), 02-CONTEXT.md:91 (D-45)
+  checked: .planning/milestones/v1.0-phases/02-text-front-desk/02-RESEARCH.md:415-418 and :677 (OQ-1), 02-CONTEXT.md:91 (D-45)
   found: 0.075 comes from reading D-03's "0.85" as abs(2p-1) >= 0.85. RESEARCH predicted: "Docs examples of clear 'no' answers include 0.02 and 0.07, so a 0.075 cut-off will hold some clear messages ... the looser alternative is p_max >= 0.85 and noul <= 0.15. Recommendation: ship strict, keep both numbers in config/gate.php, store them on each verdict, relax from the approval log."
   implication: 0.15 is the already-documented looser reading of D-03 (P(no) >= 0.85), not an arbitrary number, and "relax from the log" is the designed path. The amendment keeps D-03's 0.85 meaning for promise/complaint under the alternative reading and keeps the strict reading for price and discount.
 
 - timestamp: 2026-10-12
   checked: where D-45 is recorded
-  found: only .planning/phases/02-text-front-desk/02-CONTEXT.md:91 (plus quoted in 02-07-PLAN.md, 02-07-SUMMARY.md, RESEARCH OQ-1). Not in .planning/PROJECT.md (DEC-01..DEC-14 only) and not in docs/DECISIONS.md. Last Phase 2 decision id is D-55 (02-CONTEXT.md:101). map/ cards contain no threshold numbers.
+  found: only .planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md:91 (plus quoted in 02-07-PLAN.md, 02-07-SUMMARY.md, RESEARCH OQ-1). Not in .planning/PROJECT.md (DEC-01..DEC-14 only) and not in docs/DECISIONS.md. Last Phase 2 decision id is D-55 (02-CONTEXT.md:101). map/ cards contain no threshold numbers.
   implication: the amendment is recorded in 02-CONTEXT.md (new decision, next free id D-56, saying it amends D-45) and D-45's own line should get a pointer. No PROJECT.md / docs/DECISIONS.md edit is required to stay consistent.
 
 - timestamp: 2026-10-12

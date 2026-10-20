@@ -97,7 +97,7 @@ Seen: UAT conversation 23. The complaint reply went out the same minute ("I'm so
     - Affects: customer communication, sales.
   - **IN-11.** With no owner phone on file, a Jev outage adds a failed alert row every 5 minutes. Onboarding should require an owner phone; decide on capping retries after that.
     - Affects: team, knowledge, safety and compliance.
-- **Held from the 02.1 code review (Ian, 2026-10-18; `.planning/phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`):**
+- **Held from the 02.1 code review (Ian, 2026-10-18; `.planning/milestones/v1.0-phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`):**
   - IN-05: break `RunFrontDesk` up (the code-hold block and the waiting-draft branch into their own classes) and cite function names in the map instead of line numbers. Not a bug; it moves every map citation.
   - IN-06: the services README says the service name must appear "exactly", but the sync ignores capitals. Say "the service's name, in any capitals".
   - IN-08: dead code from the outage work: `CustomerReading::failed()`'s `$ran` parameter, and `SafetyCheckStatus::isDown()`, which only tests call (delete it, or show "Safety check is down since ..." on the Business Folder page).

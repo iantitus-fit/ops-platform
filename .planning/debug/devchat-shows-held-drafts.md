@@ -24,7 +24,7 @@ bug_class: Bohrbug (deterministic, no timing dependence). SBFL skipped: no faili
 expected: /dev/chat shows held drafts as held (or not at all), not as if they were sent to the customer.
 actual: "/dev/chat shows held drafts as if they were sent" (UAT test 2; the furnace draft "We do repair furnaces" sat in the page next to the real replies)
 errors: none
-reproduction: Test 2 in .planning/phases/02-text-front-desk/02-UAT.md: text from /dev/chat so a reply is held as a draft; the draft appears in the page.
+reproduction: Test 2 in .planning/milestones/v1.0-phases/02-text-front-desk/02-UAT.md: text from /dev/chat so a reply is held as a draft; the draft appears in the page.
 started: found in Phase 2 UAT, 2026-10-12. Latent since plan 02-14 (e77c2a6), the first code that writes a draft row.
 
 ## Eliminated

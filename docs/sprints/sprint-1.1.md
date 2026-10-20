@@ -90,7 +90,7 @@ What the gap closure (plans 02.1-17 to 02.1-27) added to the data, for the same 
 - Recipients. Business alerts go to every user who has a phone, as conversation alerts do today. Office admins and backup recipients for `safety_check_down` are Phase 02.2's (the fallback classifier note in `.planning/ROADMAP.md`).
 - The health ping, `PingSafetyCheck`, runs every five minutes with a fixed fictional text, so Jev traffic now includes calls that belong to no customer. A fallback classifier chosen in 02.2 has to account for it.
 
-Review findings and what was decided for each live in `.planning/phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`, the one record to read. The finding numbers this file used came from the first review (c01fa3f); the review of the gap run (422e339) numbered its findings again, so the same number can name a different finding. A finding carried from the first review says so in its title there (for example "carried from WR-02").
+Review findings and what was decided for each live in `.planning/milestones/v1.0-phases/02.1-faster-answers/02.1-REVIEW-DISPOSITION.md`, the one record to read. The finding numbers this file used came from the first review (c01fa3f); the review of the gap run (422e339) numbered its findings again, so the same number can name a different finding. A finding carried from the first review says so in its title there (for example "carried from WR-02").
 
 Open items the gap plans found and did not decide. Ian decided all four; quick tasks and the 02.1 close-out fixed them:
 

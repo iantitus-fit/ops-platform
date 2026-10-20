@@ -24,7 +24,7 @@ bug_class: Bohrbug (deterministic, no timing dependence). SBFL skipped: no faili
 expected: Outbound messages sort by when they were sent, so a held draft the owner later sends from the conversation screen appears after the holding reply in /dev/chat (and in the back-office thread).
 actual: "after Send, the sent reply is listed above the holding reply in /dev/chat because it keeps the draft's creation time"
 errors: none reported
-reproduction: Test 1 in .planning/phases/02-text-front-desk/02-UAT.md: text from /dev/chat so a draft is held (a holding reply goes out), then press Send on the conversation screen.
+reproduction: Test 1 in .planning/milestones/v1.0-phases/02-text-front-desk/02-UAT.md: text from /dev/chat so a draft is held (a holding reply goes out), then press Send on the conversation screen.
 started: found in Phase 2 UAT, 2026-10-12
 
 ## Eliminated

@@ -25,7 +25,7 @@ entity: app/Models/IntakeAnswer.php
 ## Half-wired columns
 - `icm_version_id`: written on every answer (`RecordIntakeAnswers.php:58`), read by no code (relation at `IntakeAnswer.php:50`, no caller). Direction: writer-only. Intent: **parked for Phase 3**, per its migration (`database/migrations/2026_10_12_000007_create_intake_answers_table.php:14-16`, "so Phase 3 can tell which wording of the question the customer answered") and D-33 (Ian, 2026-10-12).
 - `message_id`: written on every answer (`RecordIntakeAnswers.php:57`), read by no code (relation at `IntakeAnswer.php:40`, no caller). Direction: writer-only. Intent: **parked**, declared in D-33 ("the source message"): it is the answer's provenance, so a correction row points at the text that corrected it (Ian, 2026-10-12).
-- Source for the declaration: D-33, `.planning/phases/02-text-front-desk/02-CONTEXT.md:71`. Intended consumer, not live: Phase 3 booking reads this table (same line).
+- Source for the declaration: D-33, `.planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md:71`. Intended consumer, not live: Phase 3 booking reads this table (same line).
 
 ## Connected to
 Belongs to a conversation (`IntakeAnswer.php:30`), a message and an `icm_versions` row (nullable `message_id`, set null on delete). Looks like it but is not: the service file's `intake:` list (the questions, owner-written, in the folder) and `meta` on a message.
@@ -38,4 +38,4 @@ Belongs to a conversation (`IntakeAnswer.php:30`), a message and an `icm_version
 Writer: `RecordIntakeAnswers`. Readers: `CustomerCard` and `PriceSentencePicker`. Humans: the owner, through the card and timeline. External consumers: none today; Phase 3 booking is the intended one (D-33).
 
 ## See
-`app/Actions/RecordIntakeAnswers.php`, `app/Models/IntakeAnswer.php`, `app/SendRule/PriceSentencePicker.php`; decisions D-33, D-34 in `.planning/phases/02-text-front-desk/02-CONTEXT.md`.
+`app/Actions/RecordIntakeAnswers.php`, `app/Models/IntakeAnswer.php`, `app/SendRule/PriceSentencePicker.php`; decisions D-33, D-34 in `.planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md`.

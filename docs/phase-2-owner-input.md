@@ -84,7 +84,7 @@ Ian's answers are his stated direction. Items marked **Recommendation** are prop
 
 ## Also bring to discuss
 
-- WR-02 (dispatch after commit, leaning `dispatched_at`) and WR-13 (sending authority, SMS consent on the form). See `.planning/phases/01-foundation/01-REVIEW-DISPOSITION.md`.
+- WR-02 (dispatch after commit, leaning `dispatched_at`) and WR-13 (sending authority, SMS consent on the form). See `.planning/milestones/v1.0-phases/01-foundation/01-REVIEW-DISPOSITION.md`.
 - Confirm derived requirements AGNT-03 and GATE-04.
 - Phase 1 UAT notes, the empty-name fill and IN-03, carried in `.planning/STATE.md`.
 - If a real owner will answer, ask questions 1 and 4. If not, ship sensible defaults as settings in the business folder (alert channels, reply-by-text on or off, quiet period) and let the first client's use decide. The approve, edit and discard log is that research.

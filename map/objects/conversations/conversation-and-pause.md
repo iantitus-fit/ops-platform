@@ -36,4 +36,4 @@ Belongs to a contact (`Conversation.php:41`); has many messages, in the order th
 Writers: the eight pause call sites above (the safety line's four included), `HandBackConversation`, `CloseConversation`, `ReopenConversation`, `RecordInbound.php:379`. Readers: `OutboundSender.php:153`, `RunFrontDesk.php:179`, `ViewConversation.php`, `ConversationThread.php`. Humans: the owner. External consumers: none.
 
 ## See
-`app/Models/Conversation.php`, `app/Actions/PauseConversation.php`; decisions D-23, D-24, D-52 in `.planning/phases/02-text-front-desk/02-CONTEXT.md`.
+`app/Models/Conversation.php`, `app/Actions/PauseConversation.php`; decisions D-23, D-24, D-52 in `.planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md`.

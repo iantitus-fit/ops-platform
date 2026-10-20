@@ -111,7 +111,7 @@ Locked by docs/DECISIONS.md (all dated 2026-10-10). GSD must not reopen these. I
 
 </decisions>
 
-Phase 2 decisions (full log: `.planning/phases/02-text-front-desk/02-CONTEXT.md`, D-01 to D-56). The ones later phases lean on:
+Phase 2 decisions (full log: `.planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md`, D-01 to D-56). The ones later phases lean on:
 
 - **D-01/D-02** A reply sends on its own only when the agent's label, the code checks and Jev all agree; the code checks are a hard veto and Jev can only hold, never force a send.
 - **D-03, D-45, D-56** Fail closed: a Jev failure or low certainty holds the draft. Yes/no bars are per question in `config/gate.php`: price and discount 0.075, promise and complaint 0.15 (D-56 amends D-45 after UAT).
@@ -119,7 +119,7 @@ Phase 2 decisions (full log: `.planning/phases/02-text-front-desk/02-CONTEXT.md`
 - **D-37** Before a real client goes live, every provider an agent file names gets a no-retained-copy (ZDR) route.
 - Owner loop work (staff approvers, approve by reply, email alerts, assist mode) was split into Phase 02.1 on 2026-10-11, renumbered to Phase 02.2 on 2026-10-14 when Faster Answers went first.
 
-Phase 02.1 decisions (full log: `.planning/phases/02.1-faster-answers/02.1-CONTEXT.md`, D-01 to D-51; UAT fixes in quick task 261018-dxy). The ones later phases lean on:
+Phase 02.1 decisions (full log: `.planning/milestones/v1.0-phases/02.1-faster-answers/02.1-CONTEXT.md`, D-01 to D-51; UAT fixes in quick task 261018-dxy). The ones later phases lean on:
 
 - **D-04/D-10** A price goes out on its own only as an owner-written sentence that code picks and sends, its amounts checked at sync against the file's prices; the model never writes a price that sends.
 - **D-34** One owner-written line every time a customer writes while a draft waits, in a fixed order; the complaint reply goes out at most once per wait, and one customer text raises one owner alert, the more serious one (UAT, 2026-10-18).

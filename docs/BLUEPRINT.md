@@ -98,7 +98,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 
 **Where it stands.**
 - **Decided:** the front desk calls a piece of work by the business's own word for a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
-- **Built:** [Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted).
+- **Built:** [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted).
 - **Phase:** booking (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Backlog:**
   - Voice ([999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog)).
@@ -141,7 +141,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** Offers are sent by code, never written by a model. For automations: not yet decided.
 
 **Where it stands.**
-- **Built:** lead sources and attribution ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)), offers ([Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted)).
+- **Built:** lead sources and attribution ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)), offers ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
 - **Backlog:**
   - Review asks, reactivation and the lost-lead check-in with a referral ask ([999.3](../.planning/ROADMAP.md#phase-9993-automations-backlog)).
   - Lead emails and Zapier ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
@@ -185,9 +185,9 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - **Decided:** customers and sales activity can stay owned by an outside CRM; the platform shows copies on the project and flags any copy that differs ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** a lead becomes a project, and estimates hang off it ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:**
-  - Handoff and take over ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
-  - Owner price sentences ([Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted)).
-  - The open-leads file ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)).
+  - Handoff and take over ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
+  - Owner price sentences ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
+  - The open-leads file ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)).
 - **Backlog:**
   - Quotes and the customer approval page ([999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog)).
   - The lost-lead check-in ([999.3](../.planning/ROADMAP.md#phase-9993-automations-backlog)).
@@ -310,7 +310,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Where it stands.**
 - **Decided:** work is tracked on a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); who owns each stage of it is not yet decided.
-- **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
+- **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Backlog:** the owner loop, [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog):
   - staff users;
   - approve by reply;
@@ -352,7 +352,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Where it stands.**
 - **Decided:** a copy that differs from its owner shows on the card for a person to fix at the owner ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the project is the record per-piece-of-work reporting will come from ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); what gets reported is not yet decided.
-- **Built:** cards, INDEX and open leads ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)); `gate:export` ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)).
+- **Built:** cards, INDEX and open leads ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)); `gate:export` ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Phase:** minutes to booked, `today.md` and the nightly rebuild (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Backlog:**
   - `gate:export` fixes ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
@@ -391,7 +391,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Where it stands.**
 - **Decided:** the sync refuses a folder where two connector files own the same kind of record ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not built.
-- **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/ROADMAP.md#phase-1-foundation)).
+- **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)).
 - **Phase:** walk tests gate every activation (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Backlog:** settings by conversation ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
 - **Unscheduled:** the folder as a client-owned repo, a dashboard editor page, pgvector for big reference material ([REQUIREMENTS](../.planning/REQUIREMENTS.md), FOLD-01, FOLD-02, KNOW-01).
@@ -434,7 +434,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Where it stands.**
 - **Decided:** one owner per fact. Each kind of record has one owner system named in its connector file (`owns`), every other system holds a copy (`reads`), each contact and project keeps its ID in each system, and moving an owner is a two-file change checked by the sync ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
-- **Built:** [Phase 1](../.planning/ROADMAP.md#phase-1-foundation), [Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk).
+- **Built:** [Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation), [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk).
 - **Backlog:** [999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog), [999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog), [999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog).
 
 **Depends on.** Safety and compliance (ZDR routes, credentials).
@@ -473,7 +473,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** A cheap model reads (Jev) beside the keyword checks; code decides. No model reviews outbound texts as a final check.
 
 **Where it stands.**
-- **Built:** life-safety, opt-out and disclosure ([Phase 2](../.planning/ROADMAP.md#phase-2-text-front-desk)); Jev on every text and outage mode ([Phase 02.1](../.planning/ROADMAP.md#phase-021-faster-answers-inserted)).
+- **Built:** life-safety, opt-out and disclosure ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)); Jev on every text and outage mode ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
 - **Backlog:** the fallback classifier on a ZDR route ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Open:**
   - Which entity registers A2P ([PROJECT, open decisions](../.planning/PROJECT.md#key-decisions)).

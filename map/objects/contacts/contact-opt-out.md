@@ -34,4 +34,4 @@ Belongs to the contact record (Phase 1); timeline entries `opted_out` and `opted
 Writers: `RecordInbound`, `OutboundSender`, `TwilioStatusCallbackController`. Readers: `OutboundSender`, `RunFrontDesk`, `RecordInbound`, `TwilioStatusCallbackController`. Humans: the customer, by text; the owner, by the alert. External: Twilio calls `webhooks/text/twilio` and `webhooks/text/twilio/status` (`routes/web.php:22,26`) once the number is live; intended, not live, since the text channel is still the fake one (Ian, 2026-10-12).
 
 ## See
-`app/Models/Contact.php`, `app/Actions/OutboundSender.php`, `app/Channels/TextKeywords.php`; decisions D-39, D-40 in `.planning/phases/02-text-front-desk/02-CONTEXT.md`.
+`app/Models/Contact.php`, `app/Actions/OutboundSender.php`, `app/Channels/TextKeywords.php`; decisions D-39, D-40 in `.planning/milestones/v1.0-phases/02-text-front-desk/02-CONTEXT.md`.

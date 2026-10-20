@@ -39,7 +39,7 @@ reasoning_checkpoint (diagnose-only, filled for the record):
 expected: The front-desk agent knows the current date and time, so relative dates in the thread ("tomorrow at 9") are read correctly.
 actual: Dana's draft said her visit is "tomorrow at 9" because she wrote "tomorrow at 9" on Oct 11; that visit was this morning (Oct 12).
 errors: none (the model answered confidently with a wrong relative date)
-reproduction: Test 2 in .planning/phases/02-text-front-desk/02-UAT.md (Dana's conversation in database/database.sqlite, read-only).
+reproduction: Test 2 in .planning/milestones/v1.0-phases/02-text-front-desk/02-UAT.md (Dana's conversation in database/database.sqlite, read-only).
 started: found in Phase 2 UAT, 2026-10-12. Always broken: the prompt has never carried a date.
 
 ## Eliminated
