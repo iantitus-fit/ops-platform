@@ -17,21 +17,29 @@ Finish the customer conversation fast: minutes from first contact to a booked ap
 - **Success metric**: Minutes from first contact to a booked appointment (SPEC headline metric: "first to complete the conversation, not first to reply").
 - **Strategy notes**: docs/SPEC.md (product), docs/DECISIONS.md (locked decisions), docs/sprints/sprint-0.md (Sprint 0 plan). The 2026-10-08 practice direction is referenced by the docs but is not in the repo.
 
+## Current State
+
+v1.0 Text Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder drives the app, every lead lands on one timeline, and the text front desk replies behind the send-or-draft rule, with owner-written prices and offers sent by code. Booking and walk tests (RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03) are known gaps at the close. Record: `.planning/MILESTONES.md`; archives in `.planning/milestones/`.
+
+## Next Milestone Goals
+
+See Key Decisions, "The model home is the next milestone".
+
 ## Requirements
 
 Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`.
 
 ### Validated
 
-- ✓ The folder drives the app: sync validates, versions and activates; a broken change never goes live and the previous version stays active — Phase 1
-- ✓ Every way a lead can arrive (fake text channel, web form, dev chat) lands on one contact and one timeline, with source and cost per lead from the folder — Phase 1
-- ✓ The owner works from a Filament dashboard: contacts, conversations with a reply box, and a Business Folder page — Phase 1
-- ✓ Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying — Phase 1
-- ✓ A text front desk built from `agents/*.md` replies, asks intake questions, discloses it is an AI, and obeys a send-or-draft gate enforced in code (code checks, the Jev classifier, a stored verdict per message) — Phase 2
-- ✓ Owner takeover and draft review from the dashboard; a phone-friendly Needs you card opened from a text alert; Twilio driver behind the same channel interface; suite green on Postgres in CI — Phase 2
-- ✓ A price or offer the owner wrote goes out at once, picked and sent by code from the customer's intake answers and checked at sync against the file's amounts; a price the model writes still holds — Phase 02.1
-- ✓ An easy answer never waits behind a hard question already with the owner, and a customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in, added-info, complaint or discount) with only promises `hours.md` can keep — Phase 02.1
-- ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1
+- ✓ The folder drives the app: sync validates, versions and activates; a broken change never goes live and the previous version stays active — Phase 1, v1.0
+- ✓ Every way a lead can arrive (fake text channel, web form, dev chat) lands on one contact and one timeline, with source and cost per lead from the folder — Phase 1, v1.0
+- ✓ The owner works from a Filament dashboard: contacts, conversations with a reply box, and a Business Folder page — Phase 1, v1.0
+- ✓ Every event re-renders that customer's card in `records/` so the owner's own AI can route to a file instead of querying — Phase 1, v1.0
+- ✓ A text front desk built from `agents/*.md` replies, asks intake questions, discloses it is an AI, and obeys a send-or-draft gate enforced in code (code checks, the Jev classifier, a stored verdict per message) — Phase 2, v1.0
+- ✓ Owner takeover and draft review from the dashboard; a phone-friendly Needs you card opened from a text alert; Twilio driver behind the same channel interface; suite green on Postgres in CI — Phase 2, v1.0
+- ✓ A price or offer the owner wrote goes out at once, picked and sent by code from the customer's intake answers and checked at sync against the file's amounts; a price the model writes still holds — Phase 02.1, v1.0
+- ✓ An easy answer never waits behind a hard question already with the owner, and a customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in, added-info, complaint or discount) with only promises `hours.md` can keep — Phase 02.1, v1.0
+- ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1, v1.0
 
 ### Active
 
@@ -63,6 +71,7 @@ Pulled by a real client, one at a time (v2, Backlog in ROADMAP.md): quote/invoic
 - Ian is learning Laravel. Each new Laravel concept gets a short walk-through the first time it appears, logged in that sprint's file (docs/sprints/sprint-0.md "Walk-through log").
 - One build serves the job search and the practice (DEC-13).
 - Build method: spec first, then tests, then code. Claude Code builds; Ian reviews. A cartographer map starts in Sprint 1.
+- Shipped v1.0 on 2026-10-20: 16,327 lines of PHP in `app/` and 22,148 in `tests/`; the suite (1659 tests) passes on SQLite and PostgreSQL 17. Open review items, deploy notes and before-first-deploy items are carried in `.planning/STATE.md` Blockers/Concerns.
 
 ## Constraints
 
@@ -222,4 +231,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-18 after Phase 02.1*
+*Last updated: 2026-10-20 after v1.0 milestone*
