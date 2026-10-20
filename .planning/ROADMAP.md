@@ -16,7 +16,6 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - The folder drives the app and every way a lead can arrive lands on one timeline (SPEC Sprint 0) (completed 2026-10-11)
 - [x] **Phase 2: Text Front Desk** - An AI front desk replies by text from an agent file, behind a send-or-draft gate enforced in code (SPEC Sprint 1) (completed 2026-10-13)
 - [x] **Phase 02.1: Faster Answers** (INSERTED) - Owner-written price and offer sentences sent by code, easy answers that never wait behind a hard one, and a waiting customer who always hears back (completed 2026-10-18)
-- [ ] **Phase 3: Booking and the Gate** - Customers book from a link and every folder change is walk-tested before it goes live (SPEC Sprint 2)
 
 ## Phase Details
 
@@ -248,38 +247,16 @@ Plans (one plan per wave, run in order: DEC-01 has no worktrees, and the plans s
 - [x] 02.1-27-PLAN.md — Wave 11: map re-check, once, after the gap code (ANSR-01 to ANSR-04)
 - [x] 02.1-28-PLAN.md — Wave 12: sprint notes, Principle 6, review disposition, and the phase gate on both databases (ANSR-01 to ANSR-04)
 
-### Phase 3: Booking and the Gate
-
-**Goal**: A customer can finish the conversation by booking a time, the owner sees and is told about it, and no folder change goes live until scripted customers have walked through it.
-**Depends on**: Phase 2
-**Requirements**: BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05, BOOK-06, RECS-02, WALK-01, WALK-02, WALK-03
-**Success Criteria** (what must be TRUE):
-  1. A customer who is texted a booking link opens a page, taps one of the offered times and ends with a confirmed appointment; only times inside `hours.md` hours, outside closures, past `booking_lead_minutes`, long enough for the service, and in the business timezone are offered.
-  2. A booked appointment appears on the contact's timeline, as the next appointment on the customer card, in `records/today.md` and on a dashboard schedule; the customer is reminded before it; the owner is alerted; and a nightly full rebuild of `records/` is scheduled.
-  3. The minutes from a contact's first message to their booked appointment are shown on the contact and in a dashboard summary.
-  4. Every sync runs each scripted customer in `tests/*.md` against the candidate version; after a change that breaks one (for example the agent would now quote a price that is not in the folder, or the expected time is no longer offered) the sync fails, names the test and the check that failed in plain words, keeps the previous version live, writes the attempt to `changelog.md` and shows it on the Business Folder page.
-  5. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted and the card and records updated.
-
-**Plans**: TBD
-**UI hint**: yes
-
-**Planning notes** (settle these in discuss-phase):
-- How a walk test drives the agent deterministically (scripted model versus a live model) is not defined in the SPEC; the activation gate cannot depend on a flaky call.
-- Reminder timing and where it is configured are not defined (BOOK-04); `hours.md` only carries `booking_lead_minutes`.
-- BOOK-06 and RECS-02 are derived from the SPEC rather than named in the Sprint 2 row; confirm scope.
-- New concepts expected: scheduler, notifications, Livewire pages, time zones. Time zone handling comes from `business/profile.md`.
-
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 02.1 → 3
+Phases execute in numeric order: 1 → 2 → 02.1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Complete    | 2026-10-11 |
 | 2. Text Front Desk | 41/41 | Complete    | 2026-10-13 |
 | 02.1. Faster Answers | 28/28 | Complete    | 2026-10-18 |
-| 3. Booking and the Gate | 0/TBD | Not started | - |
 
 ## Backlog
 
