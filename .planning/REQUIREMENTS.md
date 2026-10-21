@@ -39,7 +39,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). What it owns and reads is settled in its phase discuss.
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
-- [ ] **ROOM-14**: Money room: `CONTEXT.md` and one example file only. No payment-link slot and no payment records (backlog 999.1).
+- [ ] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
 - [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. Backlog 999.5 stays unchanged.
 
 ### Connectors
@@ -80,6 +80,7 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 - [ ] **DSGN-02**: The Needs you card works on a phone: the todo's items, plus the styling 02.1 D-48 held for the phone walk (UI-REVIEW fix 2).
 - [ ] **DSGN-03**: The Business Folder page works on a phone: the todo's items, plus the Offers warning 02.1 D-48 held (UI-REVIEW fix 3).
 - [ ] **DSGN-04**: Hold reasons say what is actually held (for example "waiting on the customer's answers for X") instead of "no price on file" (02.1 review IN-02). Words only; no change to what is held, sent or alerted.
+- [ ] **DSGN-05**: Every owner-facing screen that exists by the phone design pass works on a phone at 375 and 390 wide, not only the three in DSGN-01 to DSGN-03: each room's dashboard section, the schedule screen and the minutes-to-booked summary. The customer booking page keeps its own UI-SPEC with booking, built phone-first (the part of the 2026-10-11 decision that stands), and the pass re-checks it at 375 and 390.
 
 ### Tour Deploy
 
@@ -187,51 +188,52 @@ Which phases cover which requirements. Filled in by the roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROOM-01 | — | Pending |
-| ROOM-02 | — | Pending |
-| ROOM-03 | — | Pending |
-| ROOM-04 | — | Pending |
-| ROOM-05 | — | Pending |
-| PROJ-01 | — | Pending |
-| PROJ-02 | — | Pending |
-| ROOM-06 | — | Pending |
-| ROOM-07 | — | Pending |
-| LEAD-05 | — | Pending |
-| ROOM-08 | — | Pending |
-| ROOM-09 | — | Pending |
-| ROOM-10 | — | Pending |
-| ROOM-11 | — | Pending |
-| ROOM-12 | — | Pending |
-| ROOM-13 | — | Pending |
-| ROOM-14 | — | Pending |
-| ROOM-15 | — | Pending |
-| CONN-07 | — | Pending |
-| BOOK-01 | — | Pending |
-| BOOK-02 | — | Pending |
-| BOOK-03 | — | Pending |
-| BOOK-04 | — | Pending |
-| BOOK-05 | — | Pending |
-| BOOK-06 | — | Pending |
-| WALK-01 | — | Pending |
-| WALK-02 | — | Pending |
-| WALK-03 | — | Pending |
-| RECS-02 | — | Pending |
-| ALRT-01 | — | Pending |
-| ALRT-02 | — | Pending |
-| GATE-05 | — | Pending |
-| DSGN-01 | — | Pending |
-| DSGN-02 | — | Pending |
-| DSGN-03 | — | Pending |
-| DSGN-04 | — | Pending |
-| DEPL-02 | — | Pending |
-| DEPL-03 | — | Pending |
-| DEPL-04 | — | Pending |
+| ROOM-01 | Phase 4 | Pending |
+| ROOM-02 | Phase 4 | Pending |
+| ROOM-03 | Phase 4 | Pending |
+| ROOM-04 | Phase 4 | Pending |
+| ROOM-05 | Phase 4 | Pending |
+| PROJ-01 | Phase 7 | Pending |
+| PROJ-02 | Phase 7 | Pending |
+| ROOM-06 | Phase 6 | Pending |
+| ROOM-07 | Phase 7 | Pending |
+| LEAD-05 | Phase 7 | Pending |
+| ROOM-08 | Phase 5 | Pending |
+| ROOM-09 | Phase 5 | Pending |
+| ROOM-10 | Phase 5 | Pending |
+| ROOM-11 | Phase 5 | Pending |
+| ROOM-12 | Phase 8 | Pending |
+| ROOM-13 | Phase 9 | Pending |
+| ROOM-14 | Phase 5 | Pending |
+| ROOM-15 | Phase 6 | Pending |
+| CONN-07 | Phase 4 | Pending |
+| BOOK-01 | Phase 8 | Pending |
+| BOOK-02 | Phase 8 | Pending |
+| BOOK-03 | Phase 8 | Pending |
+| BOOK-04 | Phase 8 | Pending |
+| BOOK-05 | Phase 8 | Pending |
+| BOOK-06 | Phase 9 | Pending |
+| WALK-01 | Phase 10 | Pending |
+| WALK-02 | Phase 10 | Pending |
+| WALK-03 | Phase 10 | Pending |
+| RECS-02 | Phase 9 | Pending |
+| ALRT-01 | Phase 6 | Pending |
+| ALRT-02 | Phase 6 | Pending |
+| GATE-05 | Phase 9 | Pending |
+| DSGN-01 | Phase 11 | Pending |
+| DSGN-02 | Phase 11 | Pending |
+| DSGN-03 | Phase 11 | Pending |
+| DSGN-04 | Phase 11 | Pending |
+| DSGN-05 | Phase 11 | Pending |
+| DEPL-02 | Phase 12 | Pending |
+| DEPL-03 | Phase 12 | Pending |
+| DEPL-04 | Phase 12 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 39 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 39
+- v2.0 requirements: 40 total
+- Mapped to phases: 40
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-21*
-*Last updated: 2026-10-21 at the start of milestone v2.0 Model Home*
+*Last updated: 2026-10-21 after the v2.0 roadmap (ROOM-14 to the full standard, DSGN-05 added)*

@@ -2,6 +2,7 @@
 created: 2026-10-17T16:30:00Z
 title: Phone design pass for the dashboard, the Needs you card and the Business Folder page
 area: ui
+resolves_phase: 11
 severity: major
 files:
   - app/Filament/Widgets/DraftsWaiting.php

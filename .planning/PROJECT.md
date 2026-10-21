@@ -28,11 +28,11 @@ v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder 
 **Target features:**
 - The room standard, as proposed in Key Decisions ("The model home is the next milestone"), settled in this milestone's requirements.
 - The spine: a Project record with its appointments, and one field in `business/profile.md` for the word the business uses. Estimates and payments stay in backlog 999.1 (Ian, 2026-10-21, keeping "The project is the spine" as written).
-- The floor plan, each room confirmed in the requirements scoping: front desk (built in v1.0, frozen as the default), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking (seed SEED-261020-v30), money (an empty room, no payment-link slot), team (what is built today plus alerts sent exactly once; 999.5 stays unchanged), owner intelligence. Property and subcontractors are open.
+- The floor plan, each room confirmed in the requirements scoping: front desk (built in v1.0, frozen as the default), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking (seed SEED-261020-v30), money (the full standard, with no payment-link slot and no payment records), team (what is built today plus alerts sent exactly once; 999.5 stays unchanged), owner intelligence. Property and subcontractors are open.
 - Booking and the walk-test gate: RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03, carried with their v1.0 IDs and wording.
 - Alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09).
 
-Settled in scoping (Key Decisions, 2026-10-21): the room standard and the floor plan (rooms add folders, files stay by kind), the phone design pass as a v2.0 phase, a tour deploy, and the punch-list rule. Still open: a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership, a first trade pack, and everything `docs/BLUEPRINT.md` marks "not yet decided". Requirements: `.planning/REQUIREMENTS.md` (39).
+Settled in scoping (Key Decisions, 2026-10-21): the room standard and the floor plan (rooms add folders, files stay by kind), the phone design pass as a v2.0 phase, a tour deploy, and the punch-list rule. Still open: a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership, a first trade pack, and everything `docs/BLUEPRINT.md` marks "not yet decided". Requirements: `.planning/REQUIREMENTS.md` (40).
 
 Affects: all ten areas (see Key Decisions, "The model home is the next milestone").
 
@@ -192,7 +192,7 @@ The room standard and the v2.0 floor plan (Ian, 2026-10-21, settled in `.plannin
 - **The room standard is the five parts proposed on 2026-10-18** (ROOM-01 to ROOM-05): a room folder with a `CONTEXT.md` contract and one fictional example file (an empty room is valid); a Laravel module that registers the room's file types with the sync, its tables, its dashboard section and its timeline entries; a connector slot as an interface with a fake driver, with `owns` and `reads`; what the room writes to `records/`; one test that the room boots empty and with the example folder.
 - **Rooms add folders; today's files stay where they are, by kind.** Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owning room.
 - **A room gets a connector slot only when it talks to an outside system;** otherwise its `CONTEXT.md` says it has none.
-- **The v2.0 floor plan is ten rooms:** front desk (built in v1.0, wrapped with no behavior change), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking, owner intelligence, money (`CONTEXT.md` and an example file only), team (what is built today, wrapped with no behavior change). Every new room meets the standard and nothing more, with two exceptions: the leads room opens a project when a new lead arrives, and the owner intelligence room carries the seed's records items. Marketing owns `business/lead-sources.md` and `business/offers/`; leads and the front desk read them.
+- **The v2.0 floor plan is ten rooms:** front desk (built in v1.0, wrapped with no behavior change), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking, owner intelligence, money (the full standard, with no payment-link slot and no payment records), team (what is built today, wrapped with no behavior change). Every new room meets the standard and nothing more, with two exceptions: the leads room opens a project when a new lead arrives, and the owner intelligence room carries the seed's records items. Marketing owns `business/lead-sources.md` and `business/offers/`; leads and the front desk read them.
 - **The spine in v2.0 carries appointments only.** Estimates and payments stay in backlog 999.1, and the money room has no payment-link slot; "The project is the spine" stands as written.
 - **Backlog 999.5 stays unchanged.** Alerts sent exactly once and the `gate:export` fix now live in ALRT-01, ALRT-02 and GATE-05; the 999.5 carry notes point there.
 - **Open, nothing decided:** a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership, a first trade pack.
@@ -200,8 +200,8 @@ The room standard and the v2.0 floor plan (Ian, 2026-10-21, settled in `.plannin
 
 The phone design pass is a v2.0 phase (Ian, 2026-10-21):
 
-- **The dashboard, the Needs you card and the Business Folder page get a phone layout in v2.0** (DSGN-01 to DSGN-04), from Ian's call at the pass, with the styling 02.1 D-48 held for the phone walk.
-- **Reopens (Ian's explicit call):** the 2026-10-11 Frontend decision (stock Filament with a brand pass; a UI-SPEC only for the booking page).
+- **The dashboard, the Needs you card, the Business Folder page and every other owner-facing screen that exists by then get a phone layout in v2.0** (DSGN-01 to DSGN-05), from Ian's call at the pass, with the styling 02.1 D-48 held for the phone walk.
+- **Reopens (Ian's explicit call):** the 2026-10-11 Frontend decision (stock Filament with a brand pass; a UI-SPEC only for the booking page). The part that stands: the customer booking page keeps its own UI-SPEC with booking, built phone-first, and the pass re-checks it at 375 and 390.
 - Hold-reason wording changes words only; what is held, sent or alerted does not change.
 - Affects: customer communication, team, owner intelligence, knowledge.
 
@@ -239,7 +239,7 @@ Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the firs
 Decided:
 
 - Filament 5 for the back office, Livewire for customer pages (DEC-08, `docs/DECISIONS.md` 2026-10-10).
-- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11). Reopened by the v2.0 phone design pass (Ian, 2026-10-21; Key Decisions).
+- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11). Reopened by the v2.0 phone design pass (Ian, 2026-10-21; Key Decisions), except the booking page's own UI-SPEC, built phone-first, which stands.
 - No styling changes until Ian's phone walk (02.1 D-48, `.planning/WINDOWS.md` entry 13).
 - The Needs you card shows the customer's last message above the draft, and the thread runs oldest first (Phase 2 G-02-1.1).
 - Customer-facing strings: no exclamation points and no em dashes (02.1 D-41).

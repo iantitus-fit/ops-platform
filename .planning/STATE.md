@@ -3,10 +3,10 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
 status: planning
-last_updated: "2026-10-21T16:21:04.009Z"
+last_updated: "2026-10-21T17:32:35.000Z"
 last_activity: 2026-10-21
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-20)
+See: .planning/PROJECT.md (updated 2026-10-21)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Planning next milestone
+**Current focus:** Phase 4, Room Standard (milestone v2.0 Model Home, Phases 4 to 12)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-10-21 — Milestone v2.0 started
+Phase: 4 (Room Standard), the first of 9 phases in v2.0 (Phases 4 to 12)
+Plan: Not started
+Status: Ready to discuss/plan
+Last activity: 2026-10-21 — Roadmap created for milestone v2.0 Model Home
+
+Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
@@ -161,7 +163,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
-- [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC.
+- [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
 
@@ -196,10 +198,10 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-19T22:06:21Z
-Stopped at: Milestone v1.0 completed and archived
+Last session: 2026-10-21T17:32:35Z
+Stopped at: Roadmap for milestone v2.0 Model Home written; Phase 4 is ready to discuss
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Discuss Phase 4 with /gsd-discuss-phase 4, then plan it with /gsd-plan-phase 4
