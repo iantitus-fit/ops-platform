@@ -21,9 +21,20 @@ Finish the customer conversation fast: minutes from first contact to a booked ap
 
 v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder drives the app, every lead lands on one timeline, and the text front desk replies behind the send-or-draft rule, with owner-written prices and offers sent by code. Booking and walk tests (RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03) are known gaps at the close. Record: `.planning/MILESTONES.md`; archives in `.planning/milestones/`.
 
-## Next Milestone Goals
+## Current Milestone: v2.0 Model Home
 
-See Key Decisions, "The model home is the next milestone".
+**Goal:** A cookie-cutter house that is a starting point for any business: every room built to one standard around the project, so a business is set up by walking the rooms and furnishing them at setup. Wording, policies and which rooms a business uses are the business's own decisions, not built in.
+
+**Target features:**
+- The room standard, as proposed in Key Decisions ("The model home is the next milestone"), settled in this milestone's requirements.
+- The spine: a Project record with its appointments, and one field in `business/profile.md` for the word the business uses. Estimates and payments stay in backlog 999.1 (Ian, 2026-10-21, keeping "The project is the spine" as written).
+- The floor plan, each room confirmed in the requirements scoping: front desk (built in v1.0, frozen as the default), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking (seed SEED-261020-v30), money (an empty room, no payment-link slot), team (what is built today plus alerts sent exactly once; 999.5 stays unchanged), owner intelligence. Property and subcontractors are open.
+- Booking and the walk-test gate: RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03, carried with their v1.0 IDs and wording.
+- Alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09).
+
+Open, raised in scoping and not decided by default: the business folder by room versus by kind; a multi-year contract above several projects; regions as a scope for who sees what; when the phone design pass happens (it reopens the 2026-10-11 stock Filament decision); a staging deploy for tours; a punch-list rule for test-walk findings; per-field ownership; everything `docs/BLUEPRINT.md` marks "not yet decided".
+
+Affects: all ten areas (see Key Decisions, "The model home is the next milestone").
 
 ## Requirements
 
@@ -46,8 +57,9 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
 - Owner loop: parked to backlog 999.5 on 2026-10-19 (Ian), pulled by the first client with staff. See Key Decisions, "The model home is the next milestone".
-- [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (was Phase 3; moves into the model home milestone, v1 closed at 02.1 on 2026-10-19)
-- [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (was Phase 3; moves into the model home milestone, v1 closed at 02.1 on 2026-10-19)
+- [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
+- [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
+- [ ] The rest of v2.0 Model Home: see Current Milestone above; IDs in `.planning/REQUIREMENTS.md` once defined.
 
 Pulled by a real client, one at a time (v2, Backlog in ROADMAP.md): quote/invoice/paid, voice, automations, settings by conversation and connectors.
 
@@ -231,4 +243,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-20 after v1.0 milestone*
+*Last updated: 2026-10-21 at the start of milestone v2.0 Model Home*

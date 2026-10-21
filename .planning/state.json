@@ -1,28 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": null,
-  "phases": [
-    {
-      "number": "1",
-      "name": "Foundation",
-      "status": "complete"
-    },
-    {
-      "number": "2",
-      "name": "Text Front Desk",
-      "status": "complete"
-    },
-    {
-      "number": "02.1",
-      "name": "Faster Answers",
-      "status": "complete"
-    }
-  ],
+  "milestone": "v2.0",
+  "phases": [],
   "next": {
-    "command": "/gsd:progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd:discuss-phase",
+    "label": "Discuss the first phase",
+    "reason": "Project initialized — plan your first phase"
   },
-  "updated_at": "2026-10-20T22:16:19.588Z"
+  "updated_at": "2026-10-21T16:21:04.012Z"
 }

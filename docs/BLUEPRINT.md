@@ -54,6 +54,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - The next milestone is the model home: every room built to one standard around the project, a starting point each business furnishes at setup.
 - v1 closes at 02.1. Booking and the walk-test gate (the old Phase 3) move into the model home.
 - The owner loop (Phase 02.2) is parked in backlog [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog), pulled by the first client with staff.
+- The model home milestone started as v2.0 Model Home on 2026-10-21 ([PROJECT.md, Current Milestone](../.planning/PROJECT.md#current-milestone-v20-model-home)).
 
 ---
 

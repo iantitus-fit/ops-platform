@@ -1,19 +1,16 @@
 ---
 gsd_state_version: "1.0"
-status: Awaiting next milestone
-stopped_at: Milestone v1.0 completed and archived
-last_updated: "2026-10-20T22:16:19.568Z"
-last_activity: 2026-10-20
-last_activity_desc: Milestone v1.0 completed and archived
-state_head: 34b48bd339314d70402ea963d023e38b96a2e838
+milestone: v2.0
+milestone_name: Model Home
+status: planning
+last_updated: "2026-10-21T16:21:04.009Z"
+last_activity: 2026-10-21
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 76
-  completed_plans: 76
-  percent: 100
-current_phase: 3
-current_phase_name: Booking and the Gate
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -27,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-10-20)
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-20 — Milestone v1.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-10-21 — Milestone v2.0 started
 
 ## Performance Metrics
 
