@@ -49,12 +49,22 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - Code and docs call it a project. The word people see is the business's own, set by one field in `business/profile.md` (Job, Project, Matter).
 - Decided, not built. Research behind it: [contractor operations](research/contractor-operations-2026-10-19.md).
 
+**The room standard** across every area ([PROJECT.md](../.planning/PROJECT.md#key-decisions), "The room standard and the v2.0 floor plan"; [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05):
+
+- Each room is a folder with a `CONTEXT.md` contract and one fictional example file; an empty room is valid. Today's files stay by kind; each `CONTEXT.md` names the files the room owns and reads, and every file has exactly one owning room.
+- Each room is a Laravel module that registers its file types with the sync, its tables, its dashboard section and its timeline entries.
+- A room that talks to an outside system has a connector slot (an interface with a fake driver, `owns` and `reads`).
+- Each room says what it writes to `records/`, and boots in one test, empty and with its example folder.
+- The v2.0 floor plan, by area: front desk (1), marketing, content generation and Google Business Profile (2), leads (3), schedule and booking (4), money (5), team (6), owner intelligence (7), company knowledge (8).
+- Open, no area yet: a property room (vehicles, equipment, insurance policies, inventory) and a subcontractors room.
+
 **The build order** ([PROJECT.md, The model home is the next milestone](../.planning/PROJECT.md#key-decisions)):
 
 - The next milestone is the model home: every room built to one standard around the project, a starting point each business furnishes at setup.
 - v1 closes at 02.1. Booking and the walk-test gate (the old Phase 3) move into the model home.
 - The owner loop (Phase 02.2) is parked in backlog [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog), pulled by the first client with staff.
 - The model home milestone started as v2.0 Model Home on 2026-10-21 ([PROJECT.md, Current Milestone](../.planning/PROJECT.md#current-milestone-v20-model-home)).
+- The punch-list rule: UAT findings in a room that already works go to that area's open items here, not into a new decimal phase ahead of the next room; safety and correctness bugs are fixed right away, as a quick task or a decimal phase, and Ian decides which kind a finding is ([PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 
 ---
 
@@ -98,6 +108,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** A mid-tier model writes the reply; the agent file names the model and its fallbacks. Jev, a cheap model, reads the text. Code decides price and safety.
 
 **Where it stands.**
+- **Decided:** v2.0 wraps the front desk as a room with no behavior change; the Needs you card gets a phone layout and hold reasons get clearer words, words only ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-06, DSGN-02, DSGN-04; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the front desk calls a piece of work by the business's own word for a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted).
 - **Phase:** booking (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
@@ -142,6 +153,10 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** Offers are sent by code, never written by a model. For automations: not yet decided.
 
 **Where it stands.**
+- **Decided:** three v2.0 rooms sit in this area, each at the room standard only ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-09 to ROOM-11; [PROJECT.md](../.planning/PROJECT.md#key-decisions)):
+  - marketing, which owns `business/lead-sources.md` and `business/offers/` (leads and the front desk read them);
+  - content generation, with no connector; its model role is not yet decided;
+  - Google Business Profile, a connector slot with a fake driver; what it owns and reads is not yet decided.
 - **Built:** lead sources and attribution ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)), offers ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
 - **Backlog:**
   - Review asks, reactivation and the lost-lead check-in with a referral ask ([999.3](../.planning/ROADMAP.md#phase-9993-automations-backlog)).
@@ -183,6 +198,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** A mid-tier model writes the conversation. Prices are the owner's sentences, sent by code. A price the model writes is held for the owner.
 
 **Where it stands.**
+- **Decided:** the leads room opens a project when a new lead arrives, beside the inbound path, with no front-desk change; a second job for an existing customer is settled in the leads phase discuss ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-07, LEAD-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** customers and sales activity can stay owned by an outside CRM; the platform shows copies on the project and flags any copy that differs ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** a lead becomes a project, and estimates hang off it ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:**
@@ -230,6 +246,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Not yet decided. Availability is computed by code.
 
 **Where it stands.**
+- **Decided:** the schedule and booking room holds booking; in v2.0 a project carries its appointments only ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-12, PROJ-01; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the schedule and work orders can stay owned by an outside tool (a spreadsheet, a calendar, a shared drive) until the business moves them in, one kind of record at a time ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** each piece of work is a project, and its appointments hang off it, one or many ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Research: [contractor operations](research/contractor-operations-2026-10-19.md).
 - **Phase:** booking, reminders, the schedule and `records/today.md` (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
@@ -269,6 +286,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Code and the owner decide money. No model sets an amount.
 
 **Where it stands.**
+- **Decided:** the v2.0 money room is a `CONTEXT.md` and an example file only: no payment-link slot and no payment records; estimates and payments stay in 999.1 ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-14; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** invoices, payments and expenses can stay owned by the accounting tool; the project shows copies with their IDs ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** payments hang off the project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not scheduled; quotes and invoices stay in the backlog.
 - **Backlog:**
@@ -310,6 +328,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** None; alert routing is code.
 
 **Where it stands.**
+- **Decided:** the team room wraps today's alerts, approvals and "who acted" with no behavior change; alerts are sent exactly once; the dashboard gets a phone layout; 999.5 stays unchanged ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-15, ALRT-01, ALRT-02, DSGN-01; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** work is tracked on a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); who owns each stage of it is not yet decided.
 - **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Backlog:** the owner loop, [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog):
@@ -351,12 +370,12 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Frontier models only for slow back-office work such as this.
 
 **Where it stands.**
+- **Decided:** the owner intelligence room carries minutes to booked, `today.md` and the nightly rebuild; `gate:export` reports only what went out ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-13, RECS-02, BOOK-06, GATE-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** a copy that differs from its owner shows on the card for a person to fix at the owner ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the project is the record per-piece-of-work reporting will come from ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); what gets reported is not yet decided.
 - **Built:** cards, INDEX and open leads ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)); `gate:export` ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Phase:** minutes to booked, `today.md` and the nightly rebuild (the model home milestone, roadmap pending; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Backlog:**
-  - `gate:export` fixes ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
   - `who-owes-us.md` and `this-week.md` ([999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog)).
   - The MCP server ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
 - **Idea:** a daily briefing as an alert channel ([2.2 input §3](phase-2.2-owner-input.md#3-alerts-and-routing)).
@@ -390,6 +409,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** The admin agent's model: not yet decided.
 
 **Where it stands.**
+- **Decided:** the room standard. Rooms add folders with a `CONTEXT.md` contract; today's files stay by kind, and every file has exactly one owning room. A company knowledge room; the Business Folder page gets a phone layout ([REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05, ROOM-08, DSGN-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the sync refuses a folder where two connector files own the same kind of record ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not built.
 - **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)).
@@ -434,6 +454,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** None.
 
 **Where it stands.**
+- **Decided:** connector files declare `owns` and `reads`, and the sync refuses two owners for one kind of record; a room gets a connector slot only when it talks to an outside system; the tour deploy picks hosting ([REQUIREMENTS](../.planning/REQUIREMENTS.md) CONN-07, ROOM-03, DEPL-02; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** one owner per fact. Each kind of record has one owner system named in its connector file (`owns`), every other system holds a copy (`reads`), each contact and project keeps its ID in each system, and moving an owner is a two-file change checked by the sync ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation), [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk).
 - **Backlog:** [999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog), [999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog), [999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog).
@@ -474,6 +495,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** A cheap model reads (Jev) beside the keyword checks; code decides. No model reviews outbound texts as a final check.
 
 **Where it stands.**
+- **Decided:** the tour deploy runs the fictional example business on the fake text channel behind an invite-only login, with no real customer data; ZDR routes, consent wording, A2P and Twilio go-live and the attorney list stay before the first client ([REQUIREMENTS](../.planning/REQUIREMENTS.md) DEPL-02; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Built:** life-safety, opt-out and disclosure ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)); Jev on every text and outage mode ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
 - **Backlog:** the fallback classifier on a ZDR route ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Open:**

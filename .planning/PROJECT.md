@@ -32,7 +32,7 @@ v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder 
 - Booking and the walk-test gate: RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03, carried with their v1.0 IDs and wording.
 - Alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09).
 
-Open, raised in scoping and not decided by default: the business folder by room versus by kind; a multi-year contract above several projects; regions as a scope for who sees what; when the phone design pass happens (it reopens the 2026-10-11 stock Filament decision); a staging deploy for tours; a punch-list rule for test-walk findings; per-field ownership; everything `docs/BLUEPRINT.md` marks "not yet decided".
+Settled in scoping (Key Decisions, 2026-10-21): the room standard and the floor plan (rooms add folders, files stay by kind), the phone design pass as a v2.0 phase, a tour deploy, and the punch-list rule. Still open: a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership, a first trade pack, and everything `docs/BLUEPRINT.md` marks "not yet decided". Requirements: `.planning/REQUIREMENTS.md` (39).
 
 Affects: all ten areas (see Key Decisions, "The model home is the next milestone").
 
@@ -59,7 +59,7 @@ Committed scope (SPEC: Sprints 0 to 2), v1:
 - Owner loop: parked to backlog 999.5 on 2026-10-19 (Ian), pulled by the first client with staff. See Key Decisions, "The model home is the next milestone".
 - [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
 - [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
-- [ ] The rest of v2.0 Model Home: see Current Milestone above; IDs in `.planning/REQUIREMENTS.md` once defined.
+- [ ] The rest of v2.0 Model Home: see Current Milestone above; IDs in `.planning/REQUIREMENTS.md`.
 
 Pulled by a real client, one at a time (v2, Backlog in ROADMAP.md): quote/invoice/paid, voice, automations, settings by conversation and connectors.
 
@@ -187,6 +187,37 @@ One owner per fact (Ian, 2026-10-19):
 - Amends the connector file type in `docs/SPEC.md` (`objects` becomes `owns` and `reads`).
 - Affects: connectors and data, knowledge, sales, operations, finance, owner intelligence.
 
+The room standard and the v2.0 floor plan (Ian, 2026-10-21, settled in `.planning/REQUIREMENTS.md`):
+
+- **The room standard is the five parts proposed on 2026-10-18** (ROOM-01 to ROOM-05): a room folder with a `CONTEXT.md` contract and one fictional example file (an empty room is valid); a Laravel module that registers the room's file types with the sync, its tables, its dashboard section and its timeline entries; a connector slot as an interface with a fake driver, with `owns` and `reads`; what the room writes to `records/`; one test that the room boots empty and with the example folder.
+- **Rooms add folders; today's files stay where they are, by kind.** Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owning room.
+- **A room gets a connector slot only when it talks to an outside system;** otherwise its `CONTEXT.md` says it has none.
+- **The v2.0 floor plan is ten rooms:** front desk (built in v1.0, wrapped with no behavior change), leads, company knowledge, marketing, content generation, Google Business Profile (a connector slot), schedule and booking, owner intelligence, money (`CONTEXT.md` and an example file only), team (what is built today, wrapped with no behavior change). Every new room meets the standard and nothing more, with two exceptions: the leads room opens a project when a new lead arrives, and the owner intelligence room carries the seed's records items. Marketing owns `business/lead-sources.md` and `business/offers/`; leads and the front desk read them.
+- **The spine in v2.0 carries appointments only.** Estimates and payments stay in backlog 999.1, and the money room has no payment-link slot; "The project is the spine" stands as written.
+- **Backlog 999.5 stays unchanged.** Alerts sent exactly once and the `gate:export` fix now live in ALRT-01, ALRT-02 and GATE-05; the 999.5 carry notes point there.
+- **Open, nothing decided:** a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership, a first trade pack.
+- Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
+
+The phone design pass is a v2.0 phase (Ian, 2026-10-21):
+
+- **The dashboard, the Needs you card and the Business Folder page get a phone layout in v2.0** (DSGN-01 to DSGN-04), from Ian's call at the pass, with the styling 02.1 D-48 held for the phone walk.
+- **Reopens (Ian's explicit call):** the 2026-10-11 Frontend decision (stock Filament with a brand pass; a UI-SPEC only for the booking page).
+- Hold-reason wording changes words only; what is held, sent or alerted does not change.
+- Affects: customer communication, team, owner intelligence, knowledge.
+
+A tour deploy in v2.0 (Ian, 2026-10-21):
+
+- **A staging instance runs the fictional example business on the fake text channel, behind an invite-only login, with no real customer data** (DEPL-02), after the phone design pass. It brings the hosting decision forward (Laravel Cloud or Forge) and the "/" page and queue supervisor items (DEPL-03, DEPL-04). DEPL-01 is unchanged.
+- The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list.
+- Affects: connectors and data, safety and compliance, knowledge, customer communication.
+
+The punch-list rule (Ian, 2026-10-21):
+
+- **UAT findings in a room that already works go to that area's open items in `docs/BLUEPRINT.md`, not into a new decimal phase ahead of the next room.**
+- **Exception:** safety and correctness bugs are fixed right away, as a quick task or, if they need one, a decimal phase. Ian decides which kind a finding is at the UAT.
+- Say "UAT findings", not "test-walk findings", so the rule does not collide with the walk tests in WALK-01 to WALK-03.
+- Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
+
 Open decisions (not locked; each has a trigger for deciding):
 
 | Decision | Decide when | Notes |
@@ -194,7 +225,7 @@ Open decisions (not locked; each has a trigger for deciding):
 | Product name | Before anything client-facing | Working name: ops-platform |
 | Where client folders sync from (git repo, Dropbox, Drive) | With the first client | Sprint 0 uses a path on disk via `ICM_PATH` |
 | Voice vendor (Vapi, Retell, ElevenLabs) | With the first client that needs phones | Backlog 999.2 |
-| Hosting (Laravel Cloud or Forge) | At first deploy | One instance per client |
+| Hosting (Laravel Cloud or Forge) | At first deploy (the v2.0 tour deploy, DEPL-02) | One instance per client |
 | Which legal entity registers A2P for Ian's own test number | Before Twilio goes live | DEC-05 says Ian registers; the entity is not stated. Does not gate the build |
 
 Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the first deploy:
@@ -208,7 +239,7 @@ Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the firs
 Decided:
 
 - Filament 5 for the back office, Livewire for customer pages (DEC-08, `docs/DECISIONS.md` 2026-10-10).
-- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11).
+- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11). Reopened by the v2.0 phone design pass (Ian, 2026-10-21; Key Decisions).
 - No styling changes until Ian's phone walk (02.1 D-48, `.planning/WINDOWS.md` entry 13).
 - The Needs you card shows the customer's last message above the draft, and the thread runs oldest first (Phase 2 G-02-1.1).
 - Customer-facing strings: no exclamation points and no em dashes (02.1 D-41).
