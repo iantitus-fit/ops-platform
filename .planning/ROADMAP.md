@@ -44,13 +44,14 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 ### Phase 4: Room Standard
 **Goal**: Any room can be added to the business folder and be checked, registered and tested the same way, and two systems can never both own the same kind of record.
 **Depends on**: Nothing (first phase of v2.0; v1.0 shipped)
-**Requirements**: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07
+**Requirements**: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07, A11Y-01
 **Success Criteria** (what must be TRUE):
   1. A room folder that holds only its `CONTEXT.md` passes `icm:sync`. When the room's fictional example file is added, the sync validates it, and a broken example is refused in plain words that name the file and the field while the previous version stays live.
   2. A room's `CONTEXT.md` names the files the room owns and the ones it reads, says what the room writes to `records/` (which may be nothing), and says whether it has an outside system. Today's files stay where they are, by kind.
   3. A room is one Laravel module that registers its file types with the sync, its tables, its dashboard section and its timeline entries, and one test boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
   4. A room that talks to an outside system declares a connector slot (an interface with a fake driver, the `TextChannel` pattern), and connector files say `owns` and `reads` instead of `objects`.
   5. A folder where two connectors own the same kind of record is refused with a plain-words message ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it") and the previous version stays live.
+  6. Each room's dashboard section, including the empty line (04-CONTEXT D-21), passes an automated accessibility check (axe rules, WCAG 2.2 Level AA) that runs with the room's boot test in CI, and the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
 **Plans**: TBD
 
 **Planning notes** (settle these in discuss-phase):
@@ -123,13 +124,14 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 ### Phase 8: Schedule and Booking
 **Goal**: A customer can finish the conversation by booking a time, and the owner sees it and is told about it.
 **Depends on**: Phase 6 (alerts sent exactly once), Phase 7 (an appointment attaches to the project the lead opened)
-**Requirements**: ROOM-12, BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05
+**Requirements**: ROOM-12, BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05, A11Y-02
 **Success Criteria** (what must be TRUE):
   1. A customer who is texted a booking link opens a page, taps one of the offered times and ends with a confirmed appointment, without typing. Only times inside `hours.md` hours, outside closures, past `booking_lead_minutes`, long enough for the service, and in the business timezone are offered.
   2. A booked appointment attaches to the project the lead opened and appears on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen. A project with two appointments shows both.
   3. The customer is reminded before the appointment, sent by the scheduler.
   4. The owner is alerted, once, when an appointment is booked and when a conversation needs a human, per `owner_alert` in `rules/sending.md`.
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
+  6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 **Plans**: TBD
 **UI hint**: yes
 
@@ -180,13 +182,14 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 ### Phase 11: Phone Design Pass
 **Goal**: The dashboard, the Needs you card and the Business Folder page work on a phone, so an owner knows what to tap first. Checked at 375 and 390 wide.
 **Depends on**: Phase 10 (the screens the pass covers now exist)
-**Requirements**: DSGN-01, DSGN-02, DSGN-03, DSGN-04, DSGN-05
+**Requirements**: DSGN-01, DSGN-02, DSGN-03, DSGN-04, DSGN-05, A11Y-03
 **Success Criteria** (what must be TRUE):
   1. On a phone the dashboard is one urgency-ordered list, safety and complaints first. Each item shows who, what they asked, how long they have waited, and one clear tap.
   2. The Needs you card works on a phone: the draft box shows the whole text, the "Customer wrote" label and the "wrote again" badge read apart, Take over is no longer the biggest button, and a reply a person approved shows that person's name instead of "Front desk". The styling 02.1 D-48 held is applied.
   3. The Business Folder page works on a phone: the Offers warning has an icon and points to the file to fix, the Front desk card does not repeat its label or show model IDs, and developer detail (the fingerprint, "Not a git repository", file types such as "router") is out of the owner's way.
   4. A held draft says what is actually held (for example "waiting on the customer's answers for X") instead of "no price on file". Only words change: what is held, sent or alerted does not.
   5. Every other owner-facing screen that exists by now works on a phone at 375 and 390 wide: each room's dashboard section, the schedule screen and the minutes-to-booked summary. The customer booking page, built phone-first in Phase 8, is re-checked at 375 and 390.
+  6. Every owner-facing screen passes the automated accessibility check and a keyboard-only and VoiceOver walk at 375 and 390 wide. The front desk and team rooms' dashboard sections join the automated check here (A11Y-01). PROJECT.md Frontend open item 5 is settled here.
 **Plans**: TBD
 **UI hint**: yes
 

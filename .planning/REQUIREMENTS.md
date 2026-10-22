@@ -82,6 +82,14 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 - [ ] **DSGN-04**: Hold reasons say what is actually held (for example "waiting on the customer's answers for X") instead of "no price on file" (02.1 review IN-02). Words only; no change to what is held, sent or alerted.
 - [ ] **DSGN-05**: Every owner-facing screen that exists by the phone design pass works on a phone at 375 and 390 wide, not only the three in DSGN-01 to DSGN-03: each room's dashboard section, the schedule screen and the minutes-to-booked summary. The customer booking page keeps its own UI-SPEC with booking, built phone-first (the part of the 2026-10-11 decision that stands), and the pass re-checks it at 375 and 390.
 
+### Accessibility
+
+Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup, never by an overlay widget. Automated checks catch only part of WCAG, so customer pages and owner screens also get a keyboard-only and screen reader walk at UAT (PROJECT.md Frontend; Ian, 2026-10-22).
+
+- [ ] **A11Y-01**: The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI; the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
+- [ ] **A11Y-02**: The customer booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
+- [ ] **A11Y-03**: Every owner-facing screen passes the automated check and a keyboard-only and VoiceOver walk at 375 and 390 wide. PROJECT.md Frontend open item 5 is settled here.
+
 ### Tour Deploy
 
 - [ ] **DEPL-02**: A staging instance for tours runs the fictional example business on the fake text channel, behind an invite-only login, with no real customer data; hosting (Laravel Cloud or Forge) is chosen in that phase. It comes after the phone design pass. Which other before-first-deploy items a tour needs (T-01-36, T-01-37, WR-08, WR-10 to WR-15, error tracking, backups) and how a visitor tries the front desk (`/dev/chat` is local-only today) are settled in that phase's discuss. The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list.
@@ -225,15 +233,18 @@ Which phases cover which requirements. Filled in by the roadmap.
 | DSGN-03 | Phase 11 | Pending |
 | DSGN-04 | Phase 11 | Pending |
 | DSGN-05 | Phase 11 | Pending |
+| A11Y-01 | Phase 4 | Pending |
+| A11Y-02 | Phase 8 | Pending |
+| A11Y-03 | Phase 11 | Pending |
 | DEPL-02 | Phase 12 | Pending |
 | DEPL-03 | Phase 12 | Pending |
 | DEPL-04 | Phase 12 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 40 total
-- Mapped to phases: 40
+- v2.0 requirements: 43 total
+- Mapped to phases: 43
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-21*
-*Last updated: 2026-10-22 after the Phase 4 discuss (ROOM-01 owner is a room or the house; file-count exception on ROOM-06 and ROOM-15)*
+*Last updated: 2026-10-22 after adding accessibility (A11Y-01 to A11Y-03, Ian)*

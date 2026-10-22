@@ -10,7 +10,7 @@ The standard every room is built to, proven end to end before any real room uses
 
 No real room is built here. The first real rooms land in Phase 5 (company knowledge, marketing, content generation, Google Business Profile, money), the front desk and team wraps in Phase 6. Phase 4 proves the standard with a pretend room that lives only under `tests/`.
 
-Requirements: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07.
+Requirements: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07, A11Y-01.
 
 </domain>
 
@@ -68,6 +68,9 @@ Requirements: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07.
 - **D-24:** `connector` moves from a later-sprint type to a checked type. Phase 4 checks `owns`, `reads` and `slot` only (CONN-07), with plain-words errors. `system`, `direction` and `schedule` are allowed and passed through unchecked; SPEC's connector row says which fields Phase 4 checks and which wait for CONN-01. CONN-01 stays unchanged in Future Requirements and checks `system`, `direction`, `schedule` and the no-secrets scan together, with the first real connector. `schedule` has no defined format yet, so Phase 4 doesn't invent one. Affects: connectors and data.
 - **D-25:** The slot link: the room's `CONTEXT.md` connector field names its slot (or none); the connector file's `slot` field says which slot it fills; slot names are registered by room code. That is the only link: the room's `CONTEXT.md` does not also list its connector file under `owns`, so ownership is stated once (the SPEC table row reads "the connector file filling the slot"). The sync refuses, in plain words naming the file: a slot no present room has, a slot name no room registers, and two files filling one slot. A room with a slot and no connector file is a valid empty room. `slot` is checked from Phase 4 alongside `owns` and `reads`, because ROOM-01 ownership depends on it. The front desk's text slot runs from `.env` today (`channels.text.driver`) with no connector file, which this allows; Phase 6 decides whether to add one. Affects: connectors and data.
 - **D-26:** The two-owner refusal uses the success-criterion wording: "customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it". The previous version stays live. Affects: connectors and data.
+
+### Accessibility (Ian, 2026-10-22)
+- **D-27:** The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI (A11Y-01). The pretend room (D-20) proves it in Phase 4. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk. Which tool runs the check is a research question; any new composer or npm package it needs goes back to Ian before it is added (D-18). Affects: all ten areas (every room's dashboard section), led by safety and compliance.
 
 ### Claude's Discretion
 - How rooms add timeline entries, given `App\Enums\ActivityType` is one fixed list today; researched and planned.

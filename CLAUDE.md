@@ -60,6 +60,10 @@ Full picture: `docs/SPEC.md`.
 - No secrets in the repo or in ICM folders. Credentials live in `.env` or
   encrypted settings.
 - Examples and test data are fictional. No real client data anywhere in the repo.
+- Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup,
+  never by an overlay widget. Every image carries alt text. Automated checks
+  catch only part of WCAG, so customer pages and owner screens also get a
+  keyboard-only and screen reader walk at UAT.
 - `docs/BLUEPRINT.md` maps the whole business by area. Any decision, plan or
   idea that changes an area gets an "Affects:" line naming every area it
   touches, and `docs/BLUEPRINT.md` is updated in the same commit.

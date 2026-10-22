@@ -33,7 +33,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 | 7 | [Owner intelligence](#7-owner-intelligence) | Records files built; the owner intelligence room on the roadmap (Phase 9); briefs and reports partly backlog, partly idea |
 | 8 | [Knowledge](#8-knowledge) | The folder and its sync built; the room standard, company knowledge and walk tests on the roadmap (Phases 4, 5, 10); settings by conversation in the backlog |
 | 9 | [Connectors and data](#9-connectors-and-data) | Text channel and web form built; owns and reads, and the tour deploy, on the roadmap (Phases 4, 12); the rest in the backlog |
-| 10 | [Safety and compliance](#10-safety-and-compliance) | Life-safety, opt-out and disclosure built; the tour deploy on the roadmap (Phase 12); A2P and the attorney list open |
+| 10 | [Safety and compliance](#10-safety-and-compliance) | Life-safety, opt-out and disclosure built; accessibility on the roadmap (Phases 4, 8, 11); the tour deploy on the roadmap (Phase 12); A2P and the attorney list open |
 
 **Model roles** across every area ([PROJECT.md, Key Decisions](../.planning/PROJECT.md#key-decisions)):
 
@@ -55,6 +55,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - An absent room folder means the business doesn't use that room: its section is hidden and its module is idle. The front desk, team, company knowledge and marketing can never be left out, nor owner intelligence if the customer card is rendered there ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-08, D-09).
 - Each room is a Laravel module that registers its file types with the sync, its tables, its dashboard section and its timeline entries.
 - An empty room's dashboard section names the files that furnish it ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-21).
+- Each room's dashboard section, the empty line included, passes an automated accessibility check (axe rules, WCAG 2.2 Level AA) run with the room's boot test in CI; for the front desk and team rooms the check starts in Phase 11 ([REQUIREMENTS](../.planning/REQUIREMENTS.md) A11Y-01; [Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-27).
 - A room that talks to an outside system has a connector slot (an interface with a fake driver); the connector file names the slot it fills and declares `owns` and `reads`.
 - Each room says what it writes to `records/`, and boots in one test, empty and with its example folder.
 - The v2.0 floor plan, by area: front desk (1), marketing, content generation and Google Business Profile (2), leads (3), schedule and booking (4), money (5), team (6), owner intelligence (7), company knowledge (8).
@@ -113,7 +114,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 - **Phase:** v2.0 wraps the front desk as a room with no behavior change; the Needs you card gets a phone layout and hold reasons get clearer words, words only ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-06, DSGN-02, DSGN-04; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). The front desk owns `rules/sending.md`, `rules/replies.md`, `rules/triage.md` and `agents/front-desk.md` ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-12).
 - **Phase:** the business's own word for a project shows on the customer card the front desk loads; the front desk's code, prompt and rules stay frozen ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-02; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted).
-- **Phase:** booking ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking)).
+- **Phase:** booking; the booking page meets WCAG 2.2 Level AA and gets a keyboard-only and VoiceOver walk at UAT ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking); [REQUIREMENTS](../.planning/REQUIREMENTS.md) A11Y-02).
 - **Backlog:**
   - Voice ([999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog)).
   - Assist mode, and the customer update when the wait runs past the holding reply's promise ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
@@ -251,7 +252,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - **Phase:** the schedule and booking room holds booking; in v2.0 a project carries its appointments only ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads), [Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-12, PROJ-01; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the schedule and work orders can stay owned by an outside tool (a spreadsheet, a calendar, a shared drive) until the business moves them in, one kind of record at a time ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Phase:** each piece of work is a project, and its appointments hang off it, zero, one or many ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-01; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Research: [contractor operations](research/contractor-operations-2026-10-19.md).
-- **Phase:** booking, reminders and the schedule ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking)); `records/today.md` ([Phase 9](../.planning/ROADMAP.md#phase-9-owner-intelligence)).
+- **Phase:** booking, reminders and the schedule, with a booking page that meets WCAG 2.2 Level AA ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking); [REQUIREMENTS](../.planning/REQUIREMENTS.md) A11Y-02); `records/today.md` ([Phase 9](../.planning/ROADMAP.md#phase-9-owner-intelligence)).
   - Booking through a link or with times offered in the thread: settle when booking is discussed in the model home ([2.1 input §2](phase-2.1-owner-input.md#2-scheduling-can-you-come-thursday-morning)).
   - Booking never offers a time that has already passed ([2.2 input §3](phase-2.2-owner-input.md#3-alerts-and-routing)).
 - **Idea:** the front desk sees job history ([2.2 input §7](phase-2.2-owner-input.md#7-held-from-the-2026-10-17-role-play-decide-when-the-full-workflow-exists)).
@@ -330,7 +331,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** None; alert routing is code.
 
 **Where it stands.**
-- **Phase:** the team room wraps today's alerts, approvals and "who acted" with no behavior change; alerts are sent exactly once; the dashboard and every other owner-facing screen get a phone layout; 999.5 stays unchanged ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-15, ALRT-01, ALRT-02, DSGN-01, DSGN-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). Team reads `owner_alert` in `rules/sending.md`, which the front desk owns and which stays unsplit ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-13).
+- **Phase:** the team room wraps today's alerts, approvals and "who acted" with no behavior change; alerts are sent exactly once; the dashboard and every other owner-facing screen get a phone layout and pass the accessibility check and a keyboard-only and VoiceOver walk at 375 and 390 wide; 999.5 stays unchanged ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-15, ALRT-01, ALRT-02, DSGN-01, DSGN-05, A11Y-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). Team reads `owner_alert` in `rules/sending.md`, which the front desk owns and which stays unsplit ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-13).
 - **Decided:** work is tracked on a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); who owns each stage of it is not yet decided.
 - **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Backlog:** the owner loop, [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog):
@@ -411,7 +412,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** The admin agent's model: not yet decided.
 
 **Where it stands.**
-- **Phase:** the room standard. Rooms add folders under `rooms/` with a `CONTEXT.md` contract; today's files stay by kind, and every file has exactly one owner, a room or the house. Company knowledge owns `business/profile.md`, `business/hours.md`, `business/services/`, `business/faq.md` and `voice/how-we-talk.md` ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-12). A company knowledge room; the Business Folder page gets a phone layout ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05, ROOM-08, DSGN-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** the room standard. Rooms add folders under `rooms/` with a `CONTEXT.md` contract; today's files stay by kind, and every file has exactly one owner, a room or the house. Company knowledge owns `business/profile.md`, `business/hours.md`, `business/services/`, `business/faq.md` and `voice/how-we-talk.md` ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-12). A company knowledge room; the Business Folder page gets a phone layout and passes the accessibility check and a keyboard-only and VoiceOver walk at 375 and 390 wide ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05, ROOM-08, DSGN-03, A11Y-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Phase:** the sync refuses a folder where two connector files own the same kind of record ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard); [REQUIREMENTS](../.planning/REQUIREMENTS.md) CONN-07; [PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Phase:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-02; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)).
@@ -500,6 +501,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Where it stands.**
 - **Phase:** the tour deploy runs the fictional example business on the fake text channel behind an invite-only login, with no real customer data; ZDR routes, consent wording, A2P and Twilio go-live and the attorney list stay before the first client ([Phase 12](../.planning/ROADMAP.md#phase-12-tour-deploy); [REQUIREMENTS](../.planning/REQUIREMENTS.md) DEPL-02; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup, never by an overlay widget, and every image carries alt text. Automated checks catch only part of WCAG, so customer pages and owner screens also get a keyboard-only and screen reader walk at UAT ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) A11Y-01 to A11Y-03; [PROJECT.md, Frontend](../.planning/PROJECT.md#frontend)).
 - **Built:** life-safety, opt-out and disclosure ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)); Jev on every text and outage mode ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
 - **Backlog:** the fallback classifier on a ZDR route ([999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog)).
 - **Open:**
@@ -508,7 +510,11 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - **The attorney list, before a real client:**
   - the client agreement's safety and liability terms ([STATE](../.planning/STATE.md));
   - where the AI notice sits, if message shape (B) is adopted;
-  - timed updates and overnight texts (recommendation, [2.2 input §2](phase-2.2-owner-input.md#2-complaints-a-follow-up-for-a-person-not-a-held-draft)).
+  - timed updates and overnight texts (recommendation, [2.2 input §2](phase-2.2-owner-input.md#2-complaints-a-follow-up-for-a-person-not-a-held-draft));
+  - an accessibility statement, with a way for a customer to report a barrier;
+  - who answers for accessibility in the client agreement;
+  - a privacy notice on the booking page;
+  - the hours booking reminders may go out.
 
 **Depends on.** Knowledge, Connectors and data.
 
