@@ -2,9 +2,14 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
+current_phase: 4
+current_phase_name: Room Standard
 status: planning
-last_updated: "2026-10-21T17:32:35.000Z"
+stopped_at: Phase 4 context gathered
+last_updated: "2026-10-22T17:15:01.643Z"
 last_activity: 2026-10-21
+last_activity_desc: Roadmap created for milestone v2.0 Model Home
+state_head: 76f9c4093a1a749cf116bc00466d3e52155465d7
 progress:
   total_phases: 9
   completed_phases: 0
@@ -198,9 +203,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-21T17:32:35Z
-Stopped at: Roadmap for milestone v2.0 Model Home written; Phase 4 is ready to discuss
-Resume file: None
+Last session: 2026-10-22T17:15:01.622Z
+Stopped at: Phase 4 context gathered
+Resume file: .planning/phases/04-room-standard/04-CONTEXT.md
 
 ## Operator Next Steps
 
