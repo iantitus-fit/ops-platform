@@ -99,6 +99,8 @@ class Validator
      */
     private ?array $usableProviders = null;
 
+    public function __construct(private RoomChecks $roomChecks) {}
+
     /**
      * Every problem in the folder. A folder with no problems may go live.
      */
@@ -118,7 +120,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files), ...$this->roomChecks->errors($files));
 
         return new ValidationReport($errors);
     }
@@ -149,6 +151,7 @@ class Validator
             'sending_rules' => $this->sendingRulesErrors($file),
             'voice' => $this->voiceErrors($file),
             'triage' => $this->triageErrors($file),
+            'room' => $this->roomChecks->contractErrors($file),
             default => [],
         });
 
@@ -250,6 +253,15 @@ class Validator
                 'percent' => 'bail|sometimes|integer:strict|min:1|max:100',
                 'start_date' => 'bail|required|date_format:Y-m-d',
                 'end_date' => 'bail|sometimes|date_format:Y-m-d',
+            ],
+            'room' => [
+                'owns' => 'bail|present|array',
+                'owns.*' => 'bail|string',
+                'reads' => 'bail|present|array',
+                'reads.*' => 'bail|string',
+                'writes_records' => 'bail|present|array',
+                'writes_records.*' => 'bail|string',
+                'connector' => 'bail|required|string',
             ],
             'triage' => [
                 'intent_question' => 'bail|required|string',

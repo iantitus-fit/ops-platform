@@ -43,6 +43,14 @@ class Loader
     public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md$#';
 
     /**
+     * The list fields of each file type that accept the word none for an empty list (D-02, "or none"). The word must
+     * be the whole value and lower case; a list holding it, [none], is one entry like any other.
+     *
+     * @var array<string, list<string>>
+     */
+    private const NONE_MEANS_EMPTY = ['room' => ['owns', 'reads', 'writes_records']];
+
+    /**
      * Read every markdown file under $root and split it into front matter and body.
      *
      * @throws IcmFolderMissing
@@ -120,6 +128,8 @@ class Loader
             return $this->unrecognized($path, $raw, 'missing_type', $body, $frontMatter);
         }
 
+        $frontMatter = $this->emptyWhereNone($type, $frontMatter);
+
         $kind = match (true) {
             in_array($type, self::TYPED, true) => IcmFileKind::Typed,
             in_array($type, self::LATER_SPRINT, true) => IcmFileKind::LaterSprint,
@@ -161,5 +171,25 @@ class Loader
                 default => $value,
             };
         }, $values);
+    }
+
+    /**
+     * Turn the word none into an empty list in the fields of this type that accept it, so everything after the Loader
+     * (the Validator, the compiled version, ActiveConfig) sees one empty value and never tests for the word. Only the
+     * whole value counts, and only in lower case: None, nothing and [none] are left as written, and an absent field stays
+     * absent. The raw text, and so the fingerprint, is untouched.
+     *
+     * @param  array<array-key, mixed>  $frontMatter
+     * @return array<array-key, mixed>
+     */
+    private function emptyWhereNone(string $type, array $frontMatter): array
+    {
+        foreach (self::NONE_MEANS_EMPTY[$type] ?? [] as $field) {
+            if (($frontMatter[$field] ?? null) === 'none') {
+                $frontMatter[$field] = [];
+            }
+        }
+
+        return $frontMatter;
     }
 }
