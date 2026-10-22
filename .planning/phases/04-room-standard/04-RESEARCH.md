@@ -660,19 +660,24 @@ The pretend room binds its own interface to its own fake the same way, inside it
 | A11 | `canView()` hides a widget in the dashboard but does not authorise Livewire update requests to it | Security | A signed-in user could call a hidden widget's methods; fine for a single-owner panel, so keep widget data reads behind `hasRoom()` too |
 | A12 | `pestphp/pest-plugin-browser` is the genuine Pest package (name from pestphp.com docs, but the seam does not cover Packagist) | Package Legitimacy | Slopsquat risk is low (official docs name it) and Ian approves the install |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does D-08 mean old timeline rows of a removed room are hidden?**
    - What we know: D-08 says an absent room's "timeline entries" do not appear.
    - What's unclear: whether that means stop writing, or also hide rows already written while the room was on.
    - Recommendation: hide at read with one scope on `Activity` used by `Contact::timeline()` and `CustomerCard`; ask Ian when reviewing the plan.
+   - RESOLVED: Ian's 2026-10-22 decision 3. A removed room's rows are hidden when read and never deleted, and rows with room null always show. Plan 04-05 Task 2 builds it as `Activity::visibleOnTimeline()`, used by `Contact::timeline()` and `CustomerCard`, and has the sync queue a re-render of each stored card that holds entries of a room that went off or on.
 2. **Type-level versus file-level owner for `agents/*.md` and `connectors/*.md`.**
    - What we know: D-12 gives owners per file for these two (the room an agent serves; the room whose slot a connector fills); D-10 and D-17 are type-level in the registry.
    - What's unclear: how D-10 names the owner room for an `agent` file in Phase 6.
    - Recommendation: Phase 4 only needs connector ownership by slot (D-25), which is file-level and built here. Leave `agent` ownership for the front desk room's phase; the `Room::handles` list can name `agent` then, with an optional per-file resolver added at that point.
+   - RESOLVED: Ian's 2026-10-22 decision 4, with D-15. The owner room for `agents/*.md` is left to the front desk room's phase. Plan 04-03 prohibits `agent` in any Phase 4 `handles` list, plan 04-04 builds connector ownership by slot only, and plan 04-01 Task 2 leaves `Room::handles` as the place Phase 6 names it.
 3. **Does the Pest browser plugin work with `SESSION_DRIVER=array` and `actingAs` under Filament/Livewire?** Not run. First spike task.
+   - RESOLVED by spike, plan 04-09 Task 1. The first browser test signs in with `actingAs()`. If the page lands on the login form, it signs in through the real form at `/admin/login` instead, and the SUMMARY records which way worked.
 4. **Where do the wording placeholders for the new refusals live?** They are placeholders (2026-10-17 principle); keep the sentences in `RoomChecks` so they can be reworded in one place.
+   - RESOLVED: the room refusal sentences live in `app/Icm/RoomChecks.php` (plan 04-02 Task 1, extended by plan 04-03 Task 2). The connector refusal sentences live in `app/Icm/ConnectorChecks.php` (plan 04-04). So each set is reworded in one class. Ian's accepted sentences (D-15, D-25, D-26) are used exactly as written, and D-21's empty line is built in `RoomSection::emptyLine()` (plan 04-06).
 5. **Required-room check (D-09).** Not built in Phase 4; the descriptor leaves room for a `requiredBecause` field.
+   - RESOLVED: deferred to each room's phase by D-09, since each room's never-left-out check starts in that room's phase and Phase 4 requires no room. No Phase 4 plan adds `requiredBecause`. Adding a defaulted field to the readonly `Room` descriptor later is additive, so no existing room or test changes.
 
 ## Environment Availability
 
