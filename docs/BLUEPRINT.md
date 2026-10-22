@@ -24,7 +24,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 
 | # | Area | Where it stands |
 |---|---|---|
-| 1 | [Customer communication](#1-customer-communication) | Text built; the front desk room and booking on the roadmap (Phases 6, 8); owner loop and voice in the backlog |
+| 1 | [Customer communication](#1-customer-communication) | Text built; the front desk room, the project word on the card and booking on the roadmap (Phases 6, 7, 8); owner loop and voice in the backlog |
 | 2 | [Marketing](#2-marketing) | Lead sources and offers built; marketing, content generation and Google Business Profile rooms on the roadmap (Phase 5); review asks and reactivation in the backlog; reputation not yet decided |
 | 3 | [Sales](#3-sales) | Handoff and owner price sentences built; the leads room opening a project on the roadmap (Phase 7); quotes in the backlog; pipeline stages not yet decided |
 | 4 | [Operations](#4-operations) | The project record and booking on the roadmap (Phases 7, 8); dispatch, crews and completion not yet decided |
@@ -47,13 +47,15 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 
 - One record carries a piece of work from first contact to paid and warranty: the project. A lead becomes a project; estimates, appointments and payments hang off it, alongside the contact and the conversation.
 - Code and docs call it a project. The word people see is the business's own, set by one field in `business/profile.md` (Job, Project, Matter).
-- Decided, not built. Research behind it: [contractor operations](research/contractor-operations-2026-10-19.md).
+- On the roadmap: Phase 7 builds the project record, carrying appointments only in v2.0, and the business's word for it ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-01, PROJ-02). Estimates and payments stay in [999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog). Research behind it: [contractor operations](research/contractor-operations-2026-10-19.md).
 
 **The room standard** across every area ([PROJECT.md](../.planning/PROJECT.md#key-decisions), "The room standard and the v2.0 floor plan"; [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05):
 
-- Each room is a folder with a `CONTEXT.md` contract and one fictional example file; an empty room is valid. Today's files stay by kind; each `CONTEXT.md` names the files the room owns and reads, and every file has exactly one owning room.
+- Each room is a folder under `rooms/` with a `CONTEXT.md` contract the sync checks and one fictional example file; an empty room is valid. Today's files stay by kind, and new kinds of file live in their room's folder. Each `CONTEXT.md` names the files the room owns and reads, and every file has exactly one owner: a room or the house (the routers and the walk tests). The ownership table goes in [SPEC.md](SPEC.md#the-business-folder) during Phase 4 execution ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-01 to D-17).
+- An absent room folder means the business doesn't use that room: its section is hidden and its module is idle. The front desk, team, company knowledge and marketing can never be left out, nor owner intelligence if the customer card is rendered there ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-08, D-09).
 - Each room is a Laravel module that registers its file types with the sync, its tables, its dashboard section and its timeline entries.
-- A room that talks to an outside system has a connector slot (an interface with a fake driver, `owns` and `reads`).
+- An empty room's dashboard section names the files that furnish it ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-21).
+- A room that talks to an outside system has a connector slot (an interface with a fake driver); the connector file names the slot it fills and declares `owns` and `reads`.
 - Each room says what it writes to `records/`, and boots in one test, empty and with its example folder.
 - The v2.0 floor plan, by area: front desk (1), marketing, content generation and Google Business Profile (2), leads (3), schedule and booking (4), money (5), team (6), owner intelligence (7), company knowledge (8).
 - Open, no area yet: a property room (vehicles, equipment, insurance policies, inventory) and a subcontractors room.
@@ -108,8 +110,8 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Model role.** A mid-tier model writes the reply; the agent file names the model and its fallbacks. Jev, a cheap model, reads the text. Code decides price and safety.
 
 **Where it stands.**
-- **Phase:** v2.0 wraps the front desk as a room with no behavior change; the Needs you card gets a phone layout and hold reasons get clearer words, words only ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-06, DSGN-02, DSGN-04; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** the front desk calls a piece of work by the business's own word for a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** v2.0 wraps the front desk as a room with no behavior change; the Needs you card gets a phone layout and hold reasons get clearer words, words only ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-06, DSGN-02, DSGN-04; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). The front desk owns `rules/sending.md`, `rules/replies.md`, `rules/triage.md` and `agents/front-desk.md` ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-12).
+- **Phase:** the business's own word for a project shows on the customer card the front desk loads; the front desk's code, prompt and rules stay frozen ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-02; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk) and [Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted).
 - **Phase:** booking ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking)).
 - **Backlog:**
@@ -200,7 +202,7 @@ Only what those files and the owner-input docs ([phase 2](phase-2-owner-input.md
 **Where it stands.**
 - **Phase:** the leads room opens a project when a new lead arrives, beside the inbound path, with no front-desk change; a second job for an existing customer is settled in the leads phase discuss ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-07, LEAD-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** customers and sales activity can stay owned by an outside CRM; the platform shows copies on the project and flags any copy that differs ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** a lead becomes a project, and estimates hang off it ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
+- **Decided:** estimates hang off the project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not scheduled; estimates stay in [999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog). A lead becoming a project is the Phase 7 line above.
 - **Built:**
   - Handoff and take over ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
   - Owner price sentences ([Phase 02.1](../.planning/milestones/v1.0-ROADMAP.md#phase-021-faster-answers-inserted)).
@@ -248,7 +250,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Where it stands.**
 - **Phase:** the schedule and booking room holds booking; in v2.0 a project carries its appointments only ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads), [Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-12, PROJ-01; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** the schedule and work orders can stay owned by an outside tool (a spreadsheet, a calendar, a shared drive) until the business moves them in, one kind of record at a time ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** each piece of work is a project, and its appointments hang off it, one or many ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Research: [contractor operations](research/contractor-operations-2026-10-19.md).
+- **Phase:** each piece of work is a project, and its appointments hang off it, zero, one or many ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-01; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Research: [contractor operations](research/contractor-operations-2026-10-19.md).
 - **Phase:** booking, reminders and the schedule ([Phase 8](../.planning/ROADMAP.md#phase-8-schedule-and-booking)); `records/today.md` ([Phase 9](../.planning/ROADMAP.md#phase-9-owner-intelligence)).
   - Booking through a link or with times offered in the thread: settle when booking is discussed in the model home ([2.1 input §2](phase-2.1-owner-input.md#2-scheduling-can-you-come-thursday-morning)).
   - Booking never offers a time that has already passed ([2.2 input §3](phase-2.2-owner-input.md#3-alerts-and-routing)).
@@ -286,7 +288,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** Code and the owner decide money. No model sets an amount.
 
 **Where it stands.**
-- **Phase:** the v2.0 money room meets the full room standard (module and boot test, empty and with its example folder) with no payment-link slot and no payment records; estimates and payments stay in 999.1 ([Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-14; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** the v2.0 money room meets the full room standard (module and boot test, empty and with its example folder) with no payment-link slot and no payment records; estimates and payments stay in 999.1 ([Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-14; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). Money's example is one new fictional file in `rooms/money/`, chosen in Phase 5 so it carries no money rules 999.1 would rework ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-05).
 - **Decided:** invoices, payments and expenses can stay owned by the accounting tool; the project shows copies with their IDs ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Decided:** payments hang off the project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not scheduled; quotes and invoices stay in the backlog.
 - **Backlog:**
@@ -328,7 +330,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** None; alert routing is code.
 
 **Where it stands.**
-- **Phase:** the team room wraps today's alerts, approvals and "who acted" with no behavior change; alerts are sent exactly once; the dashboard and every other owner-facing screen get a phone layout; 999.5 stays unchanged ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-15, ALRT-01, ALRT-02, DSGN-01, DSGN-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** the team room wraps today's alerts, approvals and "who acted" with no behavior change; alerts are sent exactly once; the dashboard and every other owner-facing screen get a phone layout; 999.5 stays unchanged ([Phase 6](../.planning/ROADMAP.md#phase-6-front-desk-and-team-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-15, ALRT-01, ALRT-02, DSGN-01, DSGN-05; [PROJECT.md](../.planning/PROJECT.md#key-decisions)). Team reads `owner_alert` in `rules/sending.md`, which the front desk owns and which stays unsplit ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-13).
 - **Decided:** work is tracked on a project ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)); who owns each stage of it is not yet decided.
 - **Built:** text alerts to the owner, dashboard approvals and the Needs you card ([Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk)).
 - **Backlog:** the owner loop, [999.5](../.planning/ROADMAP.md#phase-9995-owner-loop-backlog):
@@ -398,7 +400,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
   - Setup questions are collecting in [2.2 input §1 to §3 and §7](phase-2.2-owner-input.md).
   - What the installer is and how it runs: not yet decided.
 
-**Folder files.** The whole folder ([SPEC, The business folder](SPEC.md#the-business-folder)): `CLAUDE.md`, `START-HERE.md`, `business/`, `voice/`, `rules/`, `agents/`, `automations/`, `connectors/`, `tests/`.
+**Folder files.** The whole folder ([SPEC, The business folder](SPEC.md#the-business-folder)): `CLAUDE.md`, `START-HERE.md`, `business/`, `voice/`, `rules/`, `agents/`, `automations/`, `connectors/`, `tests/`, and `rooms/` from Phase 4.
 
 **Data.**
 - **Reads:** the folder, only at sync.
@@ -409,9 +411,9 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Model role.** The admin agent's model: not yet decided.
 
 **Where it stands.**
-- **Phase:** the room standard. Rooms add folders with a `CONTEXT.md` contract; today's files stay by kind, and every file has exactly one owning room. A company knowledge room; the Business Folder page gets a phone layout ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05, ROOM-08, DSGN-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** the sync refuses a folder where two connector files own the same kind of record ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)). Not built.
+- **Phase:** the room standard. Rooms add folders under `rooms/` with a `CONTEXT.md` contract; today's files stay by kind, and every file has exactly one owner, a room or the house. Company knowledge owns `business/profile.md`, `business/hours.md`, `business/services/`, `business/faq.md` and `voice/how-we-talk.md` ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-12). A company knowledge room; the Business Folder page gets a phone layout ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms), [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass); [REQUIREMENTS](../.planning/REQUIREMENTS.md) ROOM-01 to ROOM-05, ROOM-08, DSGN-03; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** the sync refuses a folder where two connector files own the same kind of record ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard); [REQUIREMENTS](../.planning/REQUIREMENTS.md) CONN-07; [PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
+- **Phase:** `business/profile.md` gets one field naming what this business calls a project (Job, Project, Matter), checked by the sync ([Phase 7](../.planning/ROADMAP.md#phase-7-the-spine-and-leads); [REQUIREMENTS](../.planning/REQUIREMENTS.md) PROJ-02; [PROJECT.md, The project is the spine](../.planning/PROJECT.md#key-decisions)).
 - **Built:** sync, versions, the Business Folder page ([Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation)).
 - **Phase:** walk tests gate every activation ([Phase 10](../.planning/ROADMAP.md#phase-10-walk-tests-and-the-gate)).
 - **Backlog:** settings by conversation ([999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog)).
@@ -455,7 +457,9 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Where it stands.**
 - **Phase:** connector files declare `owns` and `reads`, and the sync refuses two owners for one kind of record; a room gets a connector slot only when it talks to an outside system; the tour deploy picks hosting ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard), [Phase 5](../.planning/ROADMAP.md#phase-5-standard-rooms), [Phase 12](../.planning/ROADMAP.md#phase-12-tour-deploy); [REQUIREMENTS](../.planning/REQUIREMENTS.md) CONN-07, ROOM-03, DEPL-02; [PROJECT.md](../.planning/PROJECT.md#key-decisions)).
-- **Decided:** one owner per fact. Each kind of record has one owner system named in its connector file (`owns`), every other system holds a copy (`reads`), each contact and project keeps its ID in each system, and moving an owner is a two-file change checked by the sync ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
+  - Phase 4 checks `owns`, `reads` and `slot`. A connector may own only kinds on one fixed list (customers, sales activity, invoices, payments, expenses, work orders, the schedule, documents). Projects, texts and the timeline are on a second list: the platform owns them and a connector may only read them. Both lists go in SPEC beside the ownership table during Phase 4 execution (D-14). `system`, `direction` and `schedule` wait for CONN-01 ([Phase 4 context](../.planning/phases/04-room-standard/04-CONTEXT.md) D-22 to D-25).
+- **Phase:** one owner per fact. Each kind of record has one owner system named in its connector file (`owns`), every other system holds a copy (`reads`), and moving an owner is a two-file change checked by the sync ([Phase 4](../.planning/ROADMAP.md#phase-4-room-standard); [REQUIREMENTS](../.planning/REQUIREMENTS.md) CONN-07; [PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
+- **Decided:** each contact and project keeps its ID in each system ([PROJECT.md, One owner per fact](../.planning/PROJECT.md#key-decisions)).
 - **Built:** [Phase 1](../.planning/milestones/v1.0-ROADMAP.md#phase-1-foundation), [Phase 2](../.planning/milestones/v1.0-ROADMAP.md#phase-2-text-front-desk).
 - **Backlog:** [999.1](../.planning/ROADMAP.md#phase-9991-quote-invoice-paid-backlog), [999.2](../.planning/ROADMAP.md#phase-9992-voice-backlog), [999.4](../.planning/ROADMAP.md#phase-9994-settings-by-conversation-and-connectors-backlog).
 

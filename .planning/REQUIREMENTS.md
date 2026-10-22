@@ -15,7 +15,7 @@ Committed scope for v2.0 Model Home. Each maps to exactly one roadmap phase.
 
 Every room in the floor plan meets these five.
 
-- [ ] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owning room.
+- [ ] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owner: a room or the house. The house owns the routers (`CLAUDE.md`, `START-HERE.md`, the folder `CONTEXT.md` files outside `rooms/`) and the walk tests in `tests/`. *(Wording from the Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-11. Affects: knowledge.)*
 - [ ] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
 - [ ] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
 - [ ] **ROOM-04**: Each room's `CONTEXT.md` states what the room writes to `records/`, which may be nothing; anything it writes is rendered from the database and read-only (DEC-03).
@@ -30,7 +30,7 @@ Every room in the floor plan meets these five.
 
 Ten rooms. Every new room meets the room standard and nothing more, except where a requirement below says otherwise. Property and subcontractors are open (Future Requirements).
 
-- [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases.
+- [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
 - [ ] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
 - [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
 - [ ] **ROOM-08**: Company knowledge room, to the room standard.
@@ -40,7 +40,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [ ] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
-- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. Backlog 999.5 stays unchanged.
+- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
 
 ### Connectors
 
@@ -236,4 +236,4 @@ Which phases cover which requirements. Filled in by the roadmap.
 
 ---
 *Requirements defined: 2026-10-21*
-*Last updated: 2026-10-21 after the v2.0 roadmap (ROOM-14 to the full standard, DSGN-05 added)*
+*Last updated: 2026-10-22 after the Phase 4 discuss (ROOM-01 owner is a room or the house; file-count exception on ROOM-06 and ROOM-15)*

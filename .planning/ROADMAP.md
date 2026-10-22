@@ -97,7 +97,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - The wraps and the fixes are different kinds of change. The wraps land and pass the existing suite unchanged before any ALRT-01 or ALRT-02 work changes a test (criterion 1, Ian, 2026-10-21); keep the fixes out of the wrap plans.
 - The review items behind ALRT-01 and ALRT-02 (WR-03, WR-04, WR-22) are written up in `.planning/milestones/v1.0-phases/02-text-front-desk/02-REVIEW-DISPOSITION.md`.
 - The alert path fixed here is the one booking uses for BOOK-05 in Phase 8.
-- Whether a wrap moves code into the room's module or only registers what exists, given the suite must pass unchanged.
+- Settled by `.planning/phases/04-room-standard/04-CONTEXT.md` D-19 (2026-10-22): a wrap only registers what exists. Code that exists today stays where it is, by kind, and the room points at it; the one allowed test change is the example folder's file count (D-16).
 - Card tests stay unchanged here. Card tests that change because a project now appears on the card change in Phase 7.
 
 ### Phase 7: The Spine and Leads
