@@ -33,6 +33,7 @@ Full picture: `docs/SPEC.md`.
 | `app/Actions/` | Single-purpose domain actions |
 | `app/Ai/` | laravel/ai agents: the front-desk agent and its structured output (Phase 2) |
 | `app/SendRule/` | The send-or-draft rule: code checks, the Jev classifier, the stored verdict (Phase 2). Not `Gate`: that is Laravel's authorization facade |
+| `app/Rooms/` | The room standard (Phase 4): the `Room` descriptor, `RoomRegistry`, the base `RoomServiceProvider` and `RoomSection`, and the code each room phase writes in `app/Rooms/<Room>/`. Real rooms register in `bootstrap/providers.php`; the pretend room lives only in `tests/Rooms/` |
 | `app/Filament/` | Back-office screens |
 | `examples/` | Fictional business folders used in development and tests |
 | `docs/` | Spec, blueprint (the business by area), decisions, setup, sprint plans, GSD ingest manifest |

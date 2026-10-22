@@ -2,7 +2,9 @@
 
 namespace App\Rooms;
 
+use App\Icm\Loader;
 use Filament\Panel;
+use LogicException;
 
 /**
  * The one container-held list of rooms that exist in code.
@@ -11,16 +13,38 @@ use Filament\Panel;
  * fill while the app starts. Every room adds itself from its provider's register(), and the sync and the dashboard
  * read the same list. It keeps its rooms in an instance property, never a static one, so nothing leaks between
  * tests.
+ *
+ * add() refuses anything that would make two rooms collide, so a mistake shows the moment the app starts.
  */
 class RoomRegistry
 {
+    /**
+     * Lower snake case: lowercase letters and digits, with single underscores between words.
+     */
+    private const NAME_PATTERN = '/^[a-z0-9]+(_[a-z0-9]+)*$/';
+
+    /**
+     * File type words no room may define, besides the ones Loader::TYPED already lists: room contracts and the types
+     * that belong to later sprints.
+     *
+     * @var list<string>
+     */
+    private const RESERVED_TYPES = ['room', 'connector', 'automation', 'walk_test'];
+
     /**
      * @var array<string, Room>
      */
     private array $rooms = [];
 
+    /**
+     * @throws LogicException when the room would collide with one already added, or is malformed.
+     */
     public function add(Room $room): void
     {
+        $this->guardKey($room);
+        $this->guardFileTypes($room);
+        $this->guardSlot($room);
+
         $this->rooms[$room->key] = $room;
     }
 
@@ -48,6 +72,14 @@ class RoomRegistry
     }
 
     /**
+     * @return list<string>
+     */
+    public function keys(): array
+    {
+        return array_map(fn (Room $room): string => $room->key, $this->all());
+    }
+
+    /**
      * Every room's dashboard widgets, rooms in key order.
      *
      * @return list<class-string>
@@ -68,5 +100,140 @@ class RoomRegistry
             $this->widgetClasses(),
             fn (string $widget): bool => ! in_array($widget, $existing, true),
         )));
+    }
+
+    /**
+     * The new file type words rooms define, rooms in key order.
+     *
+     * @return list<string>
+     */
+    public function registeredTypes(): array
+    {
+        return array_merge(...array_map(
+            fn (Room $room): array => array_map(fn (RoomFileType $fileType): string => $fileType->type(), $room->fileTypes),
+            $this->all(),
+        ));
+    }
+
+    public function fileType(string $type): ?RoomFileType
+    {
+        foreach ($this->all() as $room) {
+            foreach ($room->fileTypes as $fileType) {
+                if ($fileType->type() === $type) {
+                    return $fileType;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The rooms that are the owner for a file type, in key order. Rooms may repeat a type another room handles.
+     *
+     * @return list<Room>
+     */
+    public function roomsHandling(string $type): array
+    {
+        return array_values(array_filter(
+            $this->all(),
+            fn (Room $room): bool => in_array($type, $room->handledTypes(), true),
+        ));
+    }
+
+    public function roomWithSlot(string $slot): ?Room
+    {
+        foreach ($this->all() as $room) {
+            if ($room->slot === $slot) {
+                return $room;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The slot names rooms offer, sorted.
+     *
+     * @return list<string>
+     */
+    public function slots(): array
+    {
+        $slots = array_values(array_filter(array_map(fn (Room $room): ?string => $room->slot, $this->all())));
+        sort($slots, SORT_STRING);
+
+        return $slots;
+    }
+
+    public function timelineEntry(string $room, string $entry): ?TimelineEntryType
+    {
+        foreach ($this->get($room)?->timelineEntries ?? [] as $timelineEntry) {
+            if ($timelineEntry->key === $entry) {
+                return $timelineEntry;
+            }
+        }
+
+        return null;
+    }
+
+    private function guardKey(Room $room): void
+    {
+        if (preg_match(self::NAME_PATTERN, $room->key) !== 1) {
+            throw new LogicException("Room key [{$room->key}] must be lower_snake_case: lowercase letters and digits, with single underscores between words.");
+        }
+
+        if ($this->has($room->key)) {
+            throw new LogicException("A room with the key [{$room->key}] is already registered. Each room key must be unique.");
+        }
+    }
+
+    private function guardFileTypes(Room $room): void
+    {
+        $seen = [];
+
+        foreach ($room->fileTypes as $fileType) {
+            $type = $fileType->type();
+
+            if (preg_match(self::NAME_PATTERN, $type) !== 1) {
+                throw new LogicException("Room [{$room->key}] defines file type [{$type}], which must be lower_snake_case.");
+            }
+
+            if (in_array($type, Loader::TYPED, true) || in_array($type, self::RESERVED_TYPES, true)) {
+                throw new LogicException("Room [{$room->key}] defines file type [{$type}], which the sync already uses. Pick another name.");
+            }
+
+            if (in_array($type, $seen, true) || in_array($type, $this->registeredTypes(), true)) {
+                throw new LogicException("Room [{$room->key}] defines file type [{$type}], which another room already defines. Pick another name.");
+            }
+
+            $seen[] = $type;
+        }
+    }
+
+    private function guardSlot(Room $room): void
+    {
+        if ($room->slot === null && $room->slotInterface === null) {
+            return;
+        }
+
+        if ($room->slot === null) {
+            throw new LogicException("Room [{$room->key}] sets slotInterface [{$room->slotInterface}] without a slot name. Set both or neither.");
+        }
+
+        if ($room->slotInterface === null) {
+            throw new LogicException("Room [{$room->key}] sets slot [{$room->slot}] without a slotInterface. Set both or neither.");
+        }
+
+        if (preg_match(self::NAME_PATTERN, $room->slot) !== 1) {
+            throw new LogicException("Room [{$room->key}] names its slot [{$room->slot}], which must be lower_snake_case.");
+        }
+
+        if ($this->roomWithSlot($room->slot) !== null) {
+            throw new LogicException("Room [{$room->key}] names its slot [{$room->slot}], which another room already uses. Pick another name.");
+        }
+
+        if (! interface_exists($room->slotInterface)) {
+            throw new LogicException("Room [{$room->key}] says its slot [{$room->slot}] is filled by [{$room->slotInterface}], but that interface does not exist.");
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Rooms;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -34,7 +35,12 @@ abstract class RoomServiceProvider extends ServiceProvider
     }
 
     /**
-     * Left empty for now. Rooms with model nicknames or scheduled work fill it in.
+     * Add the room's model nicknames to the morph map. Relation::morphMap() merges with the list AppServiceProvider
+     * enforces, so never call enforceMorphMap() here: it would replace that list. A room model used as the subject of
+     * a timeline entry must be in this map, or Laravel refuses it.
      */
-    public function boot(): void {}
+    public function boot(): void
+    {
+        Relation::morphMap($this->room()->morphMap);
+    }
 }
