@@ -218,6 +218,13 @@ The punch-list rule (Ian, 2026-10-21):
 - Say "UAT findings", not "test-walk findings", so the rule does not collide with the walk tests in WALK-01 to WALK-03.
 - Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
 
+The chokepoint rule (Ian, 2026-10-22):
+
+- **Every agent action (a send, a write, a change to a record or the folder) goes through a code chokepoint** that refuses it without the checks its kind needs and records which checks passed and who or what approved it (the OutboundSender pattern, 02.1 D-49).
+- **A room that lets an agent act declares the agent's decision rights in a rules file the sync checks,** as `rules/sending.md` does for the front desk. A plan that adds an agent action names its chokepoint.
+- **Why (Ian):** every agent can answer what it decided, how it was checked and who approved it, and the record it leaves is the business's own decision history.
+- Affects: customer communication, marketing, sales, operations, finance, team, owner intelligence, knowledge, connectors and data, safety and compliance.
+
 Open decisions (not locked; each has a trigger for deciding):
 
 | Decision | Decide when | Notes |

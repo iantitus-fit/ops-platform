@@ -64,6 +64,13 @@ Full picture: `docs/SPEC.md`.
   never by an overlay widget. Every image carries alt text. Automated checks
   catch only part of WCAG, so customer pages and owner screens also get a
   keyboard-only and screen reader walk at UAT.
+- Every agent action (a send, a write, a change to a record or the folder) goes
+  through a code chokepoint that refuses it without the checks its kind needs
+  and records which checks passed and who or what approved it (the
+  OutboundSender pattern, 02.1 D-49). A room that lets an agent act declares the
+  agent's decision rights in a rules file the sync checks, as `rules/sending.md`
+  does for the front desk. A plan that adds an agent action names its
+  chokepoint.
 - `docs/BLUEPRINT.md` maps the whole business by area. Any decision, plan or
   idea that changes an area gets an "Affects:" line naming every area it
   touches, and `docs/BLUEPRINT.md` is updated in the same commit.
