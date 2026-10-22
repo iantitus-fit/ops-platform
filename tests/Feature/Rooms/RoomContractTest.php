@@ -114,3 +114,107 @@ it('reads owns: [none] as a one-entry list, not as the word none', function () {
     expect(app(ActiveConfig::class)->hasRoom('pretend'))->toBeTrue()
         ->and(roomContractCompiledFrontMatter('rooms/pretend/CONTEXT.md')['owns'])->toBe(['none']);
 });
+
+dataset('paths outside the folder', [
+    'owns going up' => ['owns', '"../secrets.md"', 'owns item 1 must be a path inside this folder, with no .. and no leading / (you wrote ../secrets.md)'],
+    'owns from the root' => ['owns', '"/etc/passwd"', 'owns item 1 must be a path inside this folder, with no .. and no leading / (you wrote /etc/passwd)'],
+    'owns with .. in the middle' => ['owns', '"business/../x.md"', 'owns item 1 must be a path inside this folder, with no .. and no leading / (you wrote business/../x.md)'],
+    'owns with an empty entry' => ['owns', '""', 'owns item 1 is empty; write a path inside this folder'],
+    'reads going up' => ['reads', '"../secrets.md"', 'reads item 1 must be a path inside this folder, with no .. and no leading / (you wrote ../secrets.md)'],
+    'reads from the root' => ['reads', '"/etc/passwd"', 'reads item 1 must be a path inside this folder, with no .. and no leading / (you wrote /etc/passwd)'],
+    'reads with .. in the middle' => ['reads', '"business/../x.md"', 'reads item 1 must be a path inside this folder, with no .. and no leading / (you wrote business/../x.md)'],
+    'reads with an empty entry' => ['reads', '""', 'reads item 1 is empty; write a path inside this folder'],
+    'writes_records going up' => ['writes_records', '"../secrets.md"', 'writes_records item 1 must be a path inside this folder, with no .. and no leading / (you wrote ../secrets.md)'],
+    'writes_records from the root' => ['writes_records', '"/etc/passwd"', 'writes_records item 1 must be a path inside this folder, with no .. and no leading / (you wrote /etc/passwd)'],
+    'writes_records climbing out of records/' => ['writes_records', '"records/../x.md"', 'writes_records item 1 must be a path inside this folder, with no .. and no leading / (you wrote records/../x.md)'],
+    'writes_records with an empty entry' => ['writes_records', '""', 'writes_records item 1 is empty; write a path inside this folder'],
+]);
+
+it('refuses a path that leaves the folder, naming the file and the item', function (string $field, string $entry, string $message) {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith($field, "{$field}: [{$entry}]"));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: {$message}"]);
+})->with('paths outside the folder');
+
+it('names the item that is wrong when only the second entry leaves the folder', function () {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith('owns', 'owns: [rooms/pretend/notes/a.md, ../x.md]'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/pretend/CONTEXT.md: owns item 2 must be a path inside this folder, with no .. and no leading / (you wrote ../x.md)']);
+});
+
+dataset('records statements outside records', [
+    'a file outside records/' => ['notes.md', 'notes.md'],
+    'the bare word records' => ['records', 'records'],
+    'records/ with nothing after it' => ['records/', 'records/'],
+    'a one-entry list holding the word none' => ['none', 'none'],
+]);
+
+it('refuses a records statement that is not a path under records/', function (string $entry, string $wrote) {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith('writes_records', "writes_records: [{$entry}]"));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: writes_records item 1 must be a path under records/, such as records/today.md (you wrote {$wrote})"]);
+})->with('records statements outside records');
+
+it('accepts paths under records/, an empty owns and an empty writes_records', function (string $field, string $line) {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith($field, $line));
+
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->hasRoom('pretend'))->toBeTrue();
+})->with([
+    'a file under records/' => ['writes_records', 'writes_records: [records/today.md]'],
+    'a folder under records/' => ['writes_records', 'writes_records: [records/customers/]'],
+    'writes_records empty' => ['writes_records', 'writes_records: []'],
+    'owns empty' => ['owns', 'owns: []'],
+]);
+
+it('changes nothing for a rooms/<name>/ folder that holds only README files', function () {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/README.md', 'Notes for people, never read by the sync.');
+
+    $version = activateExampleFolder();
+
+    expect($version->file_count)->toBe(exampleFolderFileCount())
+        ->and(app(ActiveConfig::class)->hasRoom('pretend'))->toBeFalse();
+});
+
+it('names the missing contract of a registered room whose folder holds other files', function () {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/notes/note.md', "---\ntype: knowledge\n---\nA note.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: the pretend room's folder has files but no CONTEXT.md; add the room's contract with type: room"]);
+});
+
+it('refuses a folder for a room this engine lacks, naming the rooms that exist, and keeps the previous version live', function () {
+    enablePretendRoom();
+    $live = activateExampleFolder();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    writeIcmFile('rooms/foo/CONTEXT.md', roomContractWith('connector', 'connector: none'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room; the rooms are: pretend'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('says there are no rooms yet when a folder names a room and the engine has none', function () {
+    $live = activateExampleFolder();
+    writeIcmFile('rooms/foo/CONTEXT.md', roomContractWith('connector', 'connector: none'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room, and no rooms yet'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
