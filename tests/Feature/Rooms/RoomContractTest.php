@@ -1,7 +1,11 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Rooms\Room;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
+use Tests\Rooms\PretendRoom\FakePretendFeed;
+use Tests\Rooms\PretendRoom\PretendFeed;
 
 /**
  * The pretend room's contract as the fixture lays it, with one field line replaced by $line, or removed when $line is
@@ -217,4 +221,57 @@ it('says there are no rooms yet when a folder names a room and the engine has no
 
     expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room, and no rooms yet'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('gives the pretend room a slot whose driver is a fake that remembers every push and reaches nothing outside', function () {
+    enablePretendRoom();
+
+    $feed = app(PretendFeed::class);
+    $id = $feed->push('hello');
+
+    expect($feed)->toBeInstanceOf(FakePretendFeed::class)
+        ->and(app(PretendFeed::class))->toBe($feed)
+        ->and($feed->name())->toBe('fake')
+        ->and($id)->toStartWith('fake-')
+        ->and($feed->pushed())->toBe([['note' => 'hello', 'id' => $id]]);
+});
+
+it('picks the pretend feed driver from config each time it is asked', function () {
+    enablePretendRoom();
+    app(PretendFeed::class);
+
+    config(['pretend.feed.driver' => 'nope']);
+
+    expect(fn () => app(PretendFeed::class))->toThrow(InvalidArgumentException::class, 'Unknown pretend feed driver [nope]. Use fake.');
+});
+
+it('lets the pretend contract name its own slot and refuses any other connector', function () {
+    enablePretendRoom();
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith('connector', 'connector: pretend_feed'));
+
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->hasRoom('pretend'))->toBeTrue();
+
+    writeIcmFile('rooms/pretend/CONTEXT.md', roomContractWith('connector', 'connector: none'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: connector must be pretend_feed, the pretend room's slot (you wrote none)"]);
+});
+
+it('asks a room with no slot to write connector: none', function () {
+    enablePretendRoom();
+    app(RoomRegistry::class)->add(new Room(key: 'quiet', label: 'quiet'));
+    writeIcmFile('rooms/quiet/CONTEXT.md', roomContractWith('connector', 'connector: none'));
+
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->hasRoom('quiet'))->toBeTrue();
+
+    writeIcmFile('rooms/quiet/CONTEXT.md', roomContractWith('connector', 'connector: some_feed'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/quiet/CONTEXT.md: connector must be none, because the quiet room has no connector slot (you wrote some_feed)']);
 });
