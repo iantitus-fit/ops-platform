@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 4
+current_phase: 04
 current_phase_name: Room Standard
-status: planning
-stopped_at: Phase 4 context gathered
-last_updated: "2026-10-22T20:20:37.620Z"
-last_activity: 2026-10-21
-last_activity_desc: Roadmap created for milestone v2.0 Model Home
-state_head: a579ba2ad764ac2246923544db707a6c3d5a68ad
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-10-22T21:55:58.121Z"
+last_activity: 2026-10-22
+last_activity_desc: Phase 04 execution started
+state_head: d84f6ce0061aee468be4399886ec1f194d0d12c7
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-21)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 4, Room Standard (milestone v2.0 Model Home, Phases 4 to 12)
+**Current focus:** Phase 04 — Room Standard
 
 ## Current Position
 
-Phase: 4 (Room Standard) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to discuss/plan
-Last activity: 2026-10-21 — Roadmap created for milestone v2.0 Model Home
+Phase: 04 (Room Standard) — EXECUTING
+Plan: 2 of 9
+Status: Ready to execute
+Last activity: 2026-10-22 — Phase 04 execution started
 
 Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 
@@ -136,6 +136,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
 | Phase 02.1 P27 | 41 min | 2 tasks | 8 files |
 | Phase 02.1 P28 | 100 min | 3 tasks | 6 files |
+| Phase 04 P01 | 7 min | 2 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [DEC-05]: Fake text channel; the build does not wait on A2P
 
 - v1.0 per-plan decisions were cleared at the milestone close; they are in the phase SUMMARY and CONTEXT files under `.planning/milestones/v1.0-phases/`.
+- [Phase 04]: 04-01: Loader::ROOM_CONTRACT is the one pattern that both lets a rooms/<room>/CONTEXT.md past the router branch and names the room's folder key in FolderSync's index
+- [Phase 04]: 04-01: RoomRegistry::add() runs every guard before storing, and addWidgetsTo() skips widgets the panel already has, so the panel hook and the test helper can both call it
 
 ### Pending Todos
 
@@ -203,9 +206,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T17:15:01.622Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-room-standard/04-CONTEXT.md
+Last session: 2026-10-22T21:55:58.100Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
