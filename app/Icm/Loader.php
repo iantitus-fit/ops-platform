@@ -20,7 +20,7 @@ class Loader
      *
      * @var list<string>
      */
-    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer'];
+    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer', 'room'];
 
     /**
      * Front matter types that arrive in a later sprint. They are skipped with a notice.
@@ -35,6 +35,12 @@ class Loader
      * @var list<string>
      */
     private const ROUTERS = ['CLAUDE.md', 'CONTEXT.md', 'START-HERE.md'];
+
+    /**
+     * The one CONTEXT.md that is not a router: a room's contract, directly inside rooms/<room>/ (D-03). The match is
+     * exact and case-sensitive, so a CONTEXT.md one folder deeper, or under Rooms/, stays a router.
+     */
+    public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md$#';
 
     /**
      * Read every markdown file under $root and split it into front matter and body.
@@ -77,7 +83,7 @@ class Loader
     {
         $raw = (string) file_get_contents($file->getPathname());
 
-        if (in_array($file->getFilename(), self::ROUTERS, true)) {
+        if (in_array($file->getFilename(), self::ROUTERS, true) && preg_match(self::ROOM_CONTRACT, $path) !== 1) {
             return new IcmFile($path, IcmFileKind::Router, null, [], $raw, $raw);
         }
 

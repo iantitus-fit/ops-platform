@@ -10,7 +10,8 @@ use App\Models\IcmVersion;
  * The only way application code reads business configuration.
  *
  * It answers from the compiled copy stored with the live version, never from the folder on disk.
- * Every accessor throws NoActiveVersion when nothing is live yet.
+ * Every accessor throws NoActiveVersion when nothing is live yet, except the ones that say they never throw:
+ * displayTimezone(), hasRoom() and roomKeys().
  */
 class ActiveConfig
 {
@@ -58,6 +59,37 @@ class ActiveConfig
         } catch (NoActiveVersion) {
             return config('app.timezone');
         }
+    }
+
+    /**
+     * Whether the live version has this room: a CONTEXT.md directly inside rooms/<key>/ (D-01, D-03).
+     * It never throws. Before the first sync, or with a version compiled before rooms existed, the answer is false.
+     */
+    public function hasRoom(string $key): bool
+    {
+        try {
+            return isset($this->version()->compiled['index']['room'][$key]);
+        } catch (NoActiveVersion) {
+            return false;
+        }
+    }
+
+    /**
+     * The keys of the rooms the live version has, sorted. It never throws: an empty list before the first sync.
+     *
+     * @return list<string>
+     */
+    public function roomKeys(): array
+    {
+        try {
+            $keys = array_keys($this->version()->compiled['index']['room'] ?? []);
+        } catch (NoActiveVersion) {
+            return [];
+        }
+
+        sort($keys, SORT_STRING);
+
+        return $keys;
     }
 
     /**

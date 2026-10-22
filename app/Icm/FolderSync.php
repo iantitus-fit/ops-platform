@@ -207,7 +207,7 @@ class FolderSync
      */
     private function compile(array $files): array
     {
-        $compiled = ['files' => [], 'index' => ['service' => [], 'knowledge' => [], 'agent' => [], 'offer' => []]];
+        $compiled = ['files' => [], 'index' => ['service' => [], 'knowledge' => [], 'agent' => [], 'offer' => [], 'room' => []]];
 
         foreach ($files as $file) {
             $compiled['files'][$file->path] = [
@@ -222,6 +222,7 @@ class FolderSync
                 'offer' => $compiled['index']['offer'][$file->frontMatter['slug'] ?? $file->path] = $file->path,
                 'knowledge' => $compiled['index']['knowledge'][] = $file->path,
                 'agent' => $compiled['index']['agent'][$file->frontMatter['channel'] ?? $file->path] = $file->path,
+                'room' => preg_match(Loader::ROOM_CONTRACT, $file->path, $room) === 1 ? $compiled['index']['room'][$room[1]] = $file->path : null,
                 null => null,
                 default => $compiled['index'][$file->type] = $file->path,
             };

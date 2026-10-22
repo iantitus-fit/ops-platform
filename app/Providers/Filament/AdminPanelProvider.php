@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\EditProfileWithPhone;
 use App\Filament\Pages\Auth\RememberedLogin;
+use App\Rooms\RoomRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -21,9 +22,13 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    /**
+     * Filament builds the panel while it boots, which is after every provider's register(), so every room that
+     * registered itself at start-up already has its widgets on the panel.
+     */
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->default()
             ->id('admin')
             ->path('admin')
@@ -52,5 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        return app(RoomRegistry::class)->addWidgetsTo($panel);
     }
 }
