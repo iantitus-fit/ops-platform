@@ -39,7 +39,7 @@ class RoomChecks
             return [$this->error($file->path, 'type', 'type room belongs only in rooms/<name>/CONTEXT.md, the contract at the top of a room folder')];
         }
 
-        $errors = [];
+        $errors = $this->connectorErrors($file);
 
         foreach (self::PATH_LISTS as $field) {
             $entries = $file->frontMatter[$field] ?? null;
@@ -104,6 +104,28 @@ class RoomChecks
     public function roomKeyOf(string $path): ?string
     {
         return preg_match('#^rooms/([^/]+)/#', $path, $matches) === 1 ? $matches[1] : null;
+    }
+
+    /**
+     * The contract's connector must be the slot its room's code offers, or none for a room with no slot (D-25). A
+     * room with a slot and no connector file is fine; nothing here looks for connector files.
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function connectorErrors(IcmFile $file): array
+    {
+        $room = $this->rooms->get((string) $this->roomKeyOf($file->path));
+        $connector = $file->frontMatter['connector'] ?? null;
+
+        if ($room === null || ! is_string($connector) || $connector === ($room->slot ?? 'none')) {
+            return [];
+        }
+
+        $wrote = PlainWords::value($connector);
+
+        return [$this->error($file->path, 'connector', $room->slot === null
+            ? "connector must be none, because the {$room->label} room has no connector slot (you wrote {$wrote})"
+            : "connector must be {$room->slot}, the {$room->label} room's slot (you wrote {$wrote})")];
     }
 
     /**
