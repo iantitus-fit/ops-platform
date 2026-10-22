@@ -72,6 +72,7 @@ it('turns the room on and off at each sync in the same running app', function ()
 });
 
 it('reads only a CONTEXT.md directly inside rooms/<room>/ as a room contract', function () {
+    enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md');
     writeIcmFile('CONTEXT.md', 'Points at the folders.');
     writeIcmFile('rooms/CONTEXT.md', 'Points at the rooms.');
