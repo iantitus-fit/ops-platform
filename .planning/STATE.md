@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 04
 current_phase_name: Room Standard
 status: executing
-stopped_at: Completed 04-07-PLAN.md
-last_updated: "2026-10-22T22:00:09.004Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-10-22T22:12:27.854Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 04 execution started
-state_head: 01634fa0073b24058007cb742f3110cb3e3f84db
+state_head: bb5f6ff34ae244abfab10426f991abaed0ea9dcc
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-21)
 ## Current Position
 
 Phase: 04 (Room Standard) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 04 execution started
 
@@ -138,6 +138,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 02.1 P28 | 100 min | 3 tasks | 6 files |
 | Phase 04 P01 | 7 min | 2 tasks | 22 files |
 | Phase 04 P07 | 3 min | 2 tasks | 4 files |
+| Phase 04 P02 | 7 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: 04-01: Loader::ROOM_CONTRACT is the one pattern that both lets a rooms/<room>/CONTEXT.md past the router branch and names the room's folder key in FolderSync's index
 - [Phase 04]: 04-01: RoomRegistry::add() runs every guard before storing, and addWidgetsTo() skips widgets the panel already has, so the panel hook and the test helper can both call it
 - [Phase 04]: 04-07: pestphp/pest-plugin-browser ^5.1 installed as a dev-only dependency after Ian's approval on 2026-10-22; Playwright and Chromium stay in Plan 04-08
+- [Phase 04]: 04-02: A room contract entry earns at most one error (path-inside-folder check first, then records/); backslash counts as a separator in the .. check
+- [Phase 04]: 04-02: Loader::NONE_MEANS_EMPTY is the only place the word none is read; owns, reads and writes_records reach every other reader as []
 
 ### Pending Todos
 
@@ -208,8 +211,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T22:00:08.979Z
-Stopped at: Completed 04-07-PLAN.md
+Last session: 2026-10-22T22:12:27.832Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
