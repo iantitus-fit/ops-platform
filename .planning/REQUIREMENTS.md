@@ -15,11 +15,11 @@ Committed scope for v2.0 Model Home. Each maps to exactly one roadmap phase.
 
 Every room in the floor plan meets these five.
 
-- [ ] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owner: a room or the house. The house owns the routers (`CLAUDE.md`, `START-HERE.md`, the folder `CONTEXT.md` files outside `rooms/`) and the walk tests in `tests/`. *(Wording from the Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-11. Affects: knowledge.)*
-- [ ] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
+- [x] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owner: a room or the house. The house owns the routers (`CLAUDE.md`, `START-HERE.md`, the folder `CONTEXT.md` files outside `rooms/`) and the walk tests in `tests/`. *(Wording from the Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-11. Affects: knowledge.)*
+- [x] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
 - [x] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
 - [x] **ROOM-04**: Each room's `CONTEXT.md` states what the room writes to `records/`, which may be nothing; anything it writes is rendered from the database and read-only (DEC-03).
-- [ ] **ROOM-05**: Each room has one test that boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
+- [x] **ROOM-05**: Each room has one test that boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
 
 ### The Spine
 
@@ -194,11 +194,11 @@ Which phases cover which requirements. Filled in by the roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROOM-01 | Phase 4 | Pending |
-| ROOM-02 | Phase 4 | Pending |
+| ROOM-01 | Phase 4 | Complete |
+| ROOM-02 | Phase 4 | Complete |
 | ROOM-03 | Phase 4 | Complete |
 | ROOM-04 | Phase 4 | Complete |
-| ROOM-05 | Phase 4 | Pending |
+| ROOM-05 | Phase 4 | Complete |
 | PROJ-01 | Phase 7 | Pending |
 | PROJ-02 | Phase 7 | Pending |
 | ROOM-06 | Phase 6 | Pending |

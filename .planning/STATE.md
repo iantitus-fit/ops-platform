@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 04
 current_phase_name: Room Standard
 status: executing
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-10-23T01:29:39.928Z"
+stopped_at: Completed 04-06-PLAN.md
+last_updated: "2026-10-23T01:37:37.976Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 04 execution started
-state_head: dd0a88f0770dcc18e25f0c79c7da645ae32d48fc
+state_head: 1812fb6a719573d4308ab79c81653119a2519e35
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-21)
 ## Current Position
 
 Phase: 04 (Room Standard) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 04 execution started
 
@@ -143,6 +143,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 04 P03 | 10 min | 3 tasks | 18 files |
 | Phase 04 P04 | 9 min | 3 tasks | 19 files |
 | Phase 04 P05 | 7 min | 3 tasks | 16 files |
+| Phase 04 P06 | 4 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: 04-04: RoomChecks::isPresent() is the one public answer to whether a room is here; ConnectorChecks asks it instead of copying the rule
 - [Phase 04]: 04-05: a sync that changes the room set queues a card redraw (CustomerRecordChanged) for each contact holding entries of a room that went off or on, so the stored card follows the room (for Ian's review; alternative was waiting for the next event or records:rebuild)
 - [Phase 04]: 04-05: RecordRoomEntry is the chokepoint for a room's timeline writes; it refuses when the room is not live or the entry key is unregistered
+- [Phase 04]: 04-06: a room whose contract owns nothing is never shown as empty; RoomSection::emptyLine() returns null and the room's contentLines() shows
+- [Phase 04]: 04-06: roomOwnedFiles() excludes room contracts so a room cannot look furnished by matching its own CONTEXT.md
 
 ### Pending Todos
 
@@ -223,8 +226,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T01:29:39.906Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-10-23T01:37:37.954Z
+Stopped at: Completed 04-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
