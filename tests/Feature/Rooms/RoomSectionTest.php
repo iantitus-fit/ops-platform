@@ -1,5 +1,6 @@
 <?php
 
+use App\Icm\ActiveConfig;
 use App\Models\User;
 use App\Rooms\RoomSection;
 use Livewire\Livewire;
@@ -14,6 +15,21 @@ it('shows the empty line on the dashboard for a room whose folder holds only the
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md');
     activateExampleFolder();
+
+    $response = $this->get('/admin')->assertOk();
+
+    expect(preg_match('/<div data-room-section="pretend">(.*?)<\/div>\s*<\/div>/s', $response->getContent(), $section))->toBe(1)
+        ->and($section[1])->toContain('Pretend: nothing set up yet. Add a file to rooms/pretend/notes/ to start.');
+});
+
+it('still shows the empty line when the room\'s folder holds a router file beside the contract', function () {
+    $this->actingAs(User::factory()->create());
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    writeIcmFile('rooms/pretend/notes/CONTEXT.md', 'Points at the notes.');
+    activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->roomOwnedFiles('pretend'))->toBe([]);
 
     $response = $this->get('/admin')->assertOk();
 

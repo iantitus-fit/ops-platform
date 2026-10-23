@@ -114,8 +114,8 @@ class ActiveConfig
 
     /**
      * The paths of the live files a room's contract owns, sorted: every live file that one of its owns entries matches,
-     * room contracts left out. It never throws: an empty list when the room is not in the live version or nothing is
-     * live yet.
+     * room contracts and routers left out (a CONTEXT.md pointer inside the room's own folder is not the room's content).
+     * It never throws: an empty list when the room is not in the live version or nothing is live yet.
      *
      * @return list<string>
      */
@@ -130,7 +130,7 @@ class ActiveConfig
         $paths = [];
 
         foreach ($this->version()->compiled['files'] as $path => $file) {
-            if ($file['type'] !== 'room' && Str::is($owns, $path)) {
+            if ($file['type'] !== 'room' && $file['router'] === false && Str::is($owns, $path)) {
                 $paths[] = $path;
             }
         }
