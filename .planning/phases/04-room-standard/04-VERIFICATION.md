@@ -70,6 +70,9 @@ deferred:
   - truth: "A file path in a sync refusal is on one line, so a path containing a line break cannot break the stored error line (G-04-1)"
     addressed_in: "Phase 5 (by Ian's recorded decision in 04-UAT.md, not by Phase 5's roadmap text)"
     evidence: "04-UAT.md G-04-1: 'open item for Phase 5, no fix now', severity minor. ROADMAP Phase 5 success criteria do not name it, so it must be carried into Phase 5 planning by hand."
+  - truth: "An owner screen showing a room's dashboard section passes a keyboard-only and VoiceOver walk (CLAUDE.md WCAG rule)"
+    addressed_in: "Phase 5 UAT, on the first real room section (Ian, 2026-10-23)"
+    evidence: "The pretend room's section exists only in tests, so no owner screen shows a room section yet. The automated axe check (A11Y-01) passed here and on both CI legs."
 ---
 
 # Phase 4: Room Standard Verification Report
@@ -204,9 +207,15 @@ Open items, none of which falsifies a must-have:
 |---|------|--------------|----------|
 | 1 | G-04-1, path with a line break in a refusal line | Phase 5, by Ian's decision in `04-UAT.md` | Phase 5's ROADMAP success criteria do not mention it, so it needs to be picked up in Phase 5 discuss or plan by hand or it will be lost. |
 
+### Decisions recorded at the transition (Ian, 2026-10-23)
+
+1. **Keyboard and VoiceOver walk:** moves to Phase 5's UAT, on the first real room section. The pretend room's section exists only in tests, so there is no owner screen to walk in Phase 4. The automated axe check (A11Y-01) stays the Phase 4 evidence.
+2. **Placeholder wording:** the empty-room line (D-21) and the new placement, ownership and connector refusals keep their placeholder wording until the 2026-10-17 wording pass (closing principle, PROJECT.md). G-04-2 and G-04-3 join that pass.
+3. **Decision 3 stands as planned:** a removed room's timeline entries are hidden when read and never deleted, they come back with the folder, and a sync that turns a room off or on redraws the stored cards that hold its entries (plan 04-05, the behaviour chosen for Ian's review).
+
 ### Human Verification Required
 
-None. The three items from the earlier report were taken through UAT (3 passed, 0 issues) and I cross-checked the evidence: CI run read back with `gh`, the order test run in the full suite, and the lock and reject path read in `FolderSync`.
+None for Phase 4. The keyboard and VoiceOver walk is deferred to Phase 5's UAT (decision 1 above). The three items from the earlier report were taken through UAT (3 passed, 0 issues) and I cross-checked the evidence: CI run read back with `gh`, the order test run in the full suite, and the lock and reject path read in `FolderSync`.
 
 One caution for completeness, not a gap: `OrderIndependenceTest` (fcf66d9) was added after the green CI run and has been run on SQLite only. It carries no driver-specific code, and the next push will run it on both legs.
 
