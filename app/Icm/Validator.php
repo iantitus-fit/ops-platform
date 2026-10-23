@@ -121,7 +121,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files), ...$this->roomChecks->errors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files), ...$this->roomChecks->errors($files), ...$this->connectorChecks->folderErrors($files));
 
         return new ValidationReport($errors);
     }

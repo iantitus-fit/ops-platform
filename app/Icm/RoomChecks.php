@@ -156,8 +156,19 @@ class RoomChecks
     {
         return array_values(array_filter(
             $this->rooms->all(),
-            fn (Room $room): bool => $this->contractOf($room, $files) !== null,
+            fn (Room $room): bool => $this->isPresent($room, $files),
         ));
+    }
+
+    /**
+     * Whether a room is here: its contract loaded as a room file. ConnectorChecks asks the same question, so the answer
+     * is worked out in one place.
+     *
+     * @param  Collection<int, IcmFile>  $files
+     */
+    public function isPresent(Room $room, Collection $files): bool
+    {
+        return $this->contractOf($room, $files) !== null;
     }
 
     /**
