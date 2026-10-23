@@ -297,3 +297,15 @@ it('shows an owner-written slot on one line', function () {
 
     expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the line one line two slot, which no room has; the slots are: pretend_feed']);
 });
+
+it('refuses a connector file outside connectors/, naming the file, and keeps the previous version live', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    $live = activateExampleFolder();
+    writeIcmFile('notes/pretend-feed.md', pretendConnectorWith('slot', 'slot: pretend_feed'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toContain('notes/pretend-feed.md: type connector belongs only in connectors/, the folder for connector files')
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});

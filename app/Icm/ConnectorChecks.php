@@ -28,6 +28,10 @@ class ConnectorChecks
     {
         $errors = [];
 
+        if (! str_starts_with($file->path, 'connectors/')) {
+            $errors[] = $this->error($file->path, 'type', 'type connector belongs only in connectors/, the folder for connector files');
+        }
+
         if (array_key_exists('objects', $file->frontMatter)) {
             $errors[] = $this->error($file->path, 'objects', 'objects is replaced by owns and reads: list under owns the kinds this system is the truth for, and under reads the kinds it only copies');
         }
