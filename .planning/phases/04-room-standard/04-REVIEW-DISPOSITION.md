@@ -9,7 +9,7 @@ findings:
     title: "A room's morph map can silently replace a core alias"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A router file inside a room's folder counts as an \"owned file\" and suppresses the empty-state line"
   - id: WR-03
     severity: warning
@@ -17,7 +17,7 @@ findings:
     title: "`RoomRegistry::add()` does not validate sections, timeline entries or duplicate entry keys"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A room chooses the trust label on its timeline entries, and nothing makes it an untrusted one"
   - id: IN-01
     severity: info
@@ -33,7 +33,7 @@ findings:
     title: "`Relation::$morphMap` is static and leaks between tests"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`ReceivePing`, the template other rooms copy, writes to the outside system before the database and has no transaction"
   - id: IN-05
     severity: info
@@ -43,9 +43,9 @@ findings:
     severity: info
     disposition: fixed
     title: "`RoomChecks.php:82` puts a path-derived folder name in the message without `PlainWords::oneLine()`"
-open: 3
+open: 0
 total: 10
-recorded: 2026-10-23T17:01:43.512Z
+recorded: 2026-10-23T17:01:58.546Z
 ---
 
 # Phase 04: Code Review Disposition
@@ -53,13 +53,13 @@ recorded: 2026-10-23T17:01:43.512Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 04-REVIEW-FIX.md |
-| WR-02 | warning | open | - |
+| WR-02 | warning | fixed | 04-REVIEW-FIX.md |
 | WR-03 | warning | fixed | 04-REVIEW-FIX.md |
-| WR-04 | warning | open | - |
+| WR-04 | warning | fixed | 04-REVIEW-FIX.md |
 | IN-01 | info | fixed | 04-REVIEW-FIX.md |
 | IN-02 | info | fixed | 04-REVIEW-FIX.md |
 | IN-03 | info | fixed | 04-REVIEW-FIX.md |
-| IN-04 | info | open | - |
+| IN-04 | info | fixed | 04-REVIEW-FIX.md |
 | IN-05 | info | fixed | 04-REVIEW-FIX.md |
 | IN-06 | info | fixed | 04-REVIEW-FIX.md |
 
