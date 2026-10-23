@@ -6,6 +6,8 @@ use App\Rooms\Room;
 use App\Rooms\RoomFileType;
 use App\Rooms\RoomRegistry;
 use App\Rooms\TimelineEntryType;
+use Filament\Widgets\AccountWidget;
+use Tests\Rooms\PretendRoom\PretendRoomSection;
 
 /**
  * A room file type with the given name and no rules, for registry tests.
@@ -113,6 +115,28 @@ it('refuses a morph alias another room already declared', function () {
 
     expect(fn () => $registry->add(new Room(key: 'second', label: 'second', morphMap: ['shared_thing' => 'App\Second\Thing'])))
         ->toThrow(LogicException::class, 'shared_thing');
+});
+
+it('refuses a handled file type that is not lower snake case', function () {
+    expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', handles: ['Agent-Files'])))
+        ->toThrow(LogicException::class, 'Agent-Files');
+});
+
+it('refuses a section that is not a RoomSection, or that belongs to another room', function (string $section, string $words) {
+    expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', sections: [$section])))
+        ->toThrow(LogicException::class, $words);
+})->with([
+    'a plain widget' => [AccountWidget::class, 'not a RoomSection'],
+    'another room\'s section' => [PretendRoomSection::class, 'belongs to room [pretend]'],
+]);
+
+it('refuses two timeline entries with the same key, or an entry key that is not lower snake case', function () {
+    $duplicate = [new TimelineEntryType(key: 'noted', label: 'Note', intro: 'x:'), new TimelineEntryType(key: 'noted', label: 'Again', intro: 'x:')];
+
+    expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', timelineEntries: $duplicate)))
+        ->toThrow(LogicException::class, 'noted')
+        ->and(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', timelineEntries: [new TimelineEntryType(key: 'Not Snake', label: 'Note', intro: 'x:')])))
+        ->toThrow(LogicException::class, 'Not Snake');
 });
 
 it('accepts a slot interface from outside the room folder', function () {

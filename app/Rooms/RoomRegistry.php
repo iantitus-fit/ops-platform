@@ -45,6 +45,9 @@ class RoomRegistry
         $this->guardFileTypes($room);
         $this->guardSlot($room);
         $this->guardMorphMap($room);
+        $this->guardHandles($room);
+        $this->guardSections($room);
+        $this->guardTimelineEntries($room);
 
         $this->rooms[$room->key] = $room;
     }
@@ -255,6 +258,61 @@ class RoomRegistry
                     throw new LogicException("Room [{$room->key}] morph alias [{$alias}] is already used by room [{$other->key}]. Pick another name.");
                 }
             }
+        }
+    }
+
+    /**
+     * Every file type a room says it handles must be a lower_snake_case word, so a typo shows at start-up.
+     */
+    private function guardHandles(Room $room): void
+    {
+        foreach ($room->handles as $type) {
+            if (! is_string($type) || preg_match(self::NAME_PATTERN, $type) !== 1) {
+                throw new LogicException("Room [{$room->key}] handles file type [{$type}], which must be a lower_snake_case word.");
+            }
+        }
+    }
+
+    /**
+     * A section that exists as a class must be a RoomSection for this very room, because only a RoomSection hides
+     * itself while its room is off (D-08). A class name that does not exist yet is let through, because registry tests
+     * use placeholder names.
+     */
+    private function guardSections(Room $room): void
+    {
+        foreach ($room->sections as $section) {
+            if (! class_exists($section)) {
+                continue;
+            }
+
+            if (! is_subclass_of($section, RoomSection::class)) {
+                throw new LogicException("Room [{$room->key}] lists section [{$section}], which is not a RoomSection. Only a RoomSection hides itself while its room is off.");
+            }
+
+            if ($section::roomKey() !== $room->key) {
+                throw new LogicException("Room [{$room->key}] lists section [{$section}], which belongs to room [{$section::roomKey()}].");
+            }
+        }
+    }
+
+    /**
+     * Timeline entry keys must be lower_snake_case and unique inside the room, because timelineEntry() returns the
+     * first match and a duplicate would never be reached.
+     */
+    private function guardTimelineEntries(Room $room): void
+    {
+        $seen = [];
+
+        foreach ($room->timelineEntries as $entry) {
+            if (preg_match(self::NAME_PATTERN, $entry->key) !== 1) {
+                throw new LogicException("Room [{$room->key}] timeline entry [{$entry->key}] must be lower_snake_case.");
+            }
+
+            if (in_array($entry->key, $seen, true)) {
+                throw new LogicException("Room [{$room->key}] lists the timeline entry [{$entry->key}] more than once. Each entry key must be unique inside the room.");
+            }
+
+            $seen[] = $entry->key;
         }
     }
 }
