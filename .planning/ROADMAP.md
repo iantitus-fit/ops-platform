@@ -29,7 +29,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 **Not in any phase:** a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership and a first trade pack are open and undecided. Estimates and payments stay in backlog 999.1. The owner loop stays in backlog 999.5.
 
-- [ ] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record
+- [x] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record (completed 2026-10-23)
 - [ ] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more
 - [ ] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once
 - [ ] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard
@@ -42,16 +42,43 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 ## Phase Details
 
 ### Phase 4: Room Standard
+
 **Goal**: Any room can be added to the business folder and be checked, registered and tested the same way, and two systems can never both own the same kind of record.
 **Depends on**: Nothing (first phase of v2.0; v1.0 shipped)
-**Requirements**: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07
+**Requirements**: ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, CONN-07, A11Y-01
 **Success Criteria** (what must be TRUE):
   1. A room folder that holds only its `CONTEXT.md` passes `icm:sync`. When the room's fictional example file is added, the sync validates it, and a broken example is refused in plain words that name the file and the field while the previous version stays live.
   2. A room's `CONTEXT.md` names the files the room owns and the ones it reads, says what the room writes to `records/` (which may be nothing), and says whether it has an outside system. Today's files stay where they are, by kind.
   3. A room is one Laravel module that registers its file types with the sync, its tables, its dashboard section and its timeline entries, and one test boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
   4. A room that talks to an outside system declares a connector slot (an interface with a fake driver, the `TextChannel` pattern), and connector files say `owns` and `reads` instead of `objects`.
   5. A folder where two connectors own the same kind of record is refused with a plain-words message ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it") and the previous version stays live.
-**Plans**: TBD
+  6. Each room's dashboard section, including the empty line (04-CONTEXT D-21), passes an automated accessibility check (axe rules, WCAG 2.2 Level AA) that runs with the room's boot test in CI, and the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
+
+**Plans**: 9/9 plans complete
+
+Plans:
+**Wave 1**
+- [x] 04-01-PLAN.md — Tracer: a pretend room registers as a service provider and its contract-only folder turns it on, from the sync to the dashboard; registry contract and guards
+- [x] 04-07-PLAN.md — Ian approves, then install, the Pest browser plugin; CI gets sockets
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 04-02-PLAN.md — The room contract is checked (fields, with none or [] for an empty list; paths, records statement, unknown rooms) and the pretend room gets its connector slot
+- [x] 04-08-PLAN.md — Ian approves, then install, playwright 1.63.0 exactly; CI gets Node and Chromium; Ian installs Chromium on his Mac
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 04-03-PLAN.md — Rooms register their own file types, which must sit in the room's folder (D-04); one owner per file; the ownership table in SPEC tied to code
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 04-04-PLAN.md — Connector files say owns, reads and slot (none or [] for an empty list, the room contract's rule); the two kind lists; two owners of one kind refused
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 04-05-PLAN.md — Room timeline entries, hidden when a room is removed (stored cards redrawn at that sync) and never deleted; the pretend room's table and slot in use
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 04-06-PLAN.md — The empty room's one plain line and the room boot test, empty and with its example folder
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 04-09-PLAN.md — The room standard's accessibility check (axe, WCAG 2.2 AA), proven on the pretend room
 
 **Planning notes** (settle these in discuss-phase):
 - Which room owns each file in today's folder is not written down yet. This phase writes that table for all ten rooms across every top-level folder in the example business (`agents/`, `automations/`, `business/`, `connectors/`, `rules/`, `tests/`, `voice/`), including `business/profile.md` and `business/hours.md`. Every file has exactly one owning room (ROOM-01). Whether the sync enforces that, and from which phase (as each room lands, or once all ten exist), is open.
@@ -63,6 +90,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - New concepts expected: Laravel service providers (how a module registers itself) and boot order. Explain at first use (CLAUDE.md).
 
 ### Phase 5: Standard Rooms
+
 **Goal**: The rooms that need only the standard join the example business: marketing, content generation, Google Business Profile, company knowledge and money, each a folder the owner can open and furnish.
 **Depends on**: Phase 4
 **Requirements**: ROOM-08, ROOM-09, ROOM-10, ROOM-11, ROOM-14
@@ -71,6 +99,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. The owner sees the marketing, content generation, Google Business Profile and company knowledge rooms in the dashboard, each with its own section. The money room meets the full standard like every room (module, and a boot test empty and with its example folder), with no payment-link slot and no payment records.
   3. Marketing owns `business/lead-sources.md` and `business/offers/`, both still where they are. Source and cost per lead, offers and prices behave exactly as before, and the existing suite for them passes unchanged.
   4. The Google Business Profile room has a connector slot (an interface with a fake driver) and a connector file that declares `owns` and `reads`; with only the fake driver, nothing reaches Google. Content generation says in its `CONTEXT.md` that it has no connector.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -82,6 +111,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - This is five rooms in one phase. If discuss shows it is too much for one branch, split it at plan time along the marketing rooms (marketing, content generation, Google Business Profile) and the plain rooms (company knowledge, money).
 
 ### Phase 6: Front Desk and Team Rooms
+
 **Goal**: The two rooms that already work move into the model home without a behavior change, and every owner alert reaches the owner exactly once.
 **Depends on**: Phase 5 (marketing owns the offers and lead sources the front desk reads)
 **Requirements**: ROOM-06, ROOM-15, ALRT-01, ALRT-02
@@ -91,16 +121,18 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   3. The team room wraps today's owner alerts, approvals and "who acted" the same way, with the existing suite unchanged on both databases. Nothing from backlog 999.5 is built.
   4. Each owner alert is texted exactly once, even when the job that sends it runs twice or two workers race for it (an atomic send claim and a unique de-duplication key). The alert-timing and one-alert rules behave as before.
   5. When a front-desk run fails, the owner is alerted for exactly the burst of texts that run claimed, using a claim token stored on the claimed rows, and a text that arrives afterward is not swept into that report.
+
 **Plans**: TBD
 
 **Planning notes** (settle these in discuss-phase):
 - The wraps and the fixes are different kinds of change. The wraps land and pass the existing suite unchanged before any ALRT-01 or ALRT-02 work changes a test (criterion 1, Ian, 2026-10-21); keep the fixes out of the wrap plans.
 - The review items behind ALRT-01 and ALRT-02 (WR-03, WR-04, WR-22) are written up in `.planning/milestones/v1.0-phases/02-text-front-desk/02-REVIEW-DISPOSITION.md`.
 - The alert path fixed here is the one booking uses for BOOK-05 in Phase 8.
-- Whether a wrap moves code into the room's module or only registers what exists, given the suite must pass unchanged.
+- Settled by `.planning/phases/04-room-standard/04-CONTEXT.md` D-19 (2026-10-22): a wrap only registers what exists. Code that exists today stays where it is, by kind, and the room points at it; the one allowed test change is the example folder's file count (D-16).
 - Card tests stay unchanged here. Card tests that change because a project now appears on the card change in Phase 7.
 
 ### Phase 7: The Spine and Leads
+
 **Goal**: Every new lead opens a project, named in the business's own word, that ties the piece of work to its contact and conversation.
 **Depends on**: Phase 5 (marketing owns the lead sources and offers the leads room reads), Phase 6 (the front desk wrap lands before the card changes)
 **Requirements**: PROJ-01, PROJ-02, ROOM-07, LEAD-05
@@ -110,26 +142,31 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   3. A project is ready to carry appointments, zero, one or many. The appointment records themselves arrive with booking, which attaches them in Phase 8.
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are card tests that now show a project, and the suite is green on SQLite and Postgres.
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
+
 **Plans**: TBD
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
 - What happens when an existing customer starts a second job (LEAD-05) is open: a new project, the same project, or a question for the owner.
+- Service history by address: whether history hangs off the person, the service address or both, and how an address match under a different name is handled (`docs/BLUEPRINT.md`, Ideas inbox, "Service history by address").
 - Where the appointment table and the project-to-appointment link first appear (here or in Phase 8) is open. PROJ-01 is mapped to this phase, but its appointment clause is only proven when booking attaches an appointment in Phase 8.
 - What the card and the dashboard show for a project (a line on the card, a list, a screen of its own). Estimates and payments are not part of it (backlog 999.1).
 - Research behind the shape: `docs/research/contractor-operations-2026-10-19.md` (roofing, HVAC, remodel, landscaping contract).
 - Not decided here: a multi-year contract above several projects, a property room, subcontractors, regions.
 
 ### Phase 8: Schedule and Booking
+
 **Goal**: A customer can finish the conversation by booking a time, and the owner sees it and is told about it.
 **Depends on**: Phase 6 (alerts sent exactly once), Phase 7 (an appointment attaches to the project the lead opened)
-**Requirements**: ROOM-12, BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05
+**Requirements**: ROOM-12, BOOK-01, BOOK-02, BOOK-03, BOOK-04, BOOK-05, A11Y-02
 **Success Criteria** (what must be TRUE):
   1. A customer who is texted a booking link opens a page, taps one of the offered times and ends with a confirmed appointment, without typing. Only times inside `hours.md` hours, outside closures, past `booking_lead_minutes`, long enough for the service, and in the business timezone are offered.
   2. A booked appointment attaches to the project the lead opened and appears on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen. A project with two appointments shows both.
   3. The customer is reminded before the appointment, sent by the scheduler.
   4. The owner is alerted, once, when an appointment is booked and when a conversation needs a human, per `owner_alert` in `rules/sending.md`.
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
+  6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -143,6 +180,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - `records/today.md` and the nightly rebuild are in Phase 9.
 
 ### Phase 9: Owner Intelligence
+
 **Goal**: The owner and the owner's own AI can read how fast the business finishes a conversation and what is on today, and `gate:export` reports only what went out.
 **Depends on**: Phase 8
 **Requirements**: ROOM-13, RECS-02, BOOK-06, GATE-05
@@ -151,6 +189,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. The minutes from a contact's first message to their booked appointment are shown on the contact and in a dashboard summary.
   3. `gate:export` counts only what went out (a failed or queued send is not counted as sent), gives `original_text` the same way on every path, and exports the `answered` resolution and the 02.1 fixed-reply kinds.
   4. The owner intelligence room meets the standard (folder, `CONTEXT.md` that says it writes `today.md`, example file, module, boot test).
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -162,6 +201,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - Detail for GATE-05 is in `.planning/milestones/v1.0-phases/02-text-front-desk/02-REVIEW-DISPOSITION.md` (WR-09) and the 02.1 deferred note.
 
 ### Phase 10: Walk Tests and the Gate
+
 **Goal**: No folder change goes live until scripted customers have walked through it, and "Dana end to end" shows a customer going from first text to a booked appointment.
 **Depends on**: Phase 8, Phase 9 (Dana's records include `today.md`)
 **Requirements**: WALK-01, WALK-02, WALK-03
@@ -170,6 +210,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. Every sync runs each scripted customer in `tests/*.md` against the candidate version. After a change that breaks one (for example the agent would now quote a price that is not in the folder, or the expected time is no longer offered) the sync fails, names the test and the check that failed in plain words, keeps the previous version live, writes the attempt to `changelog.md` and shows it on the Business Folder page.
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -178,15 +219,18 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - New concepts expected: running the front desk against a scripted customer, and a sync step that can refuse activation.
 
 ### Phase 11: Phone Design Pass
+
 **Goal**: The dashboard, the Needs you card and the Business Folder page work on a phone, so an owner knows what to tap first. Checked at 375 and 390 wide.
 **Depends on**: Phase 10 (the screens the pass covers now exist)
-**Requirements**: DSGN-01, DSGN-02, DSGN-03, DSGN-04, DSGN-05
+**Requirements**: DSGN-01, DSGN-02, DSGN-03, DSGN-04, DSGN-05, A11Y-03
 **Success Criteria** (what must be TRUE):
   1. On a phone the dashboard is one urgency-ordered list, safety and complaints first. Each item shows who, what they asked, how long they have waited, and one clear tap.
   2. The Needs you card works on a phone: the draft box shows the whole text, the "Customer wrote" label and the "wrote again" badge read apart, Take over is no longer the biggest button, and a reply a person approved shows that person's name instead of "Front desk". The styling 02.1 D-48 held is applied.
   3. The Business Folder page works on a phone: the Offers warning has an icon and points to the file to fix, the Front desk card does not repeat its label or show model IDs, and developer detail (the fingerprint, "Not a git repository", file types such as "router") is out of the owner's way.
   4. A held draft says what is actually held (for example "waiting on the customer's answers for X") instead of "no price on file". Only words change: what is held, sent or alerted does not.
   5. Every other owner-facing screen that exists by now works on a phone at 375 and 390 wide: each room's dashboard section, the schedule screen and the minutes-to-booked summary. The customer booking page, built phone-first in Phase 8, is re-checked at 375 and 390.
+  6. Every owner-facing screen passes the automated accessibility check and a keyboard-only and VoiceOver walk at 375 and 390 wide. The front desk and team rooms' dashboard sections join the automated check here (A11Y-01). PROJECT.md Frontend open item 5 is settled here.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -196,6 +240,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - The hold-reason words live in `RunFrontDesk::noPriceReason()` and `Verdict::plainReasonFor()` (the todo). Tests that quote hold-reason words, walk tests included, change with them.
 
 ### Phase 12: Tour Deploy
+
 **Goal**: A staging instance runs the fictional example business on the fake text channel, behind an invite-only login, so the model home can be shown with no real customer data.
 **Depends on**: Phase 11 (DEPL-02 says the tour deploy comes after the phone design pass)
 **Requirements**: DEPL-02, DEPL-03, DEPL-04
@@ -204,6 +249,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. The instance holds only the fictional example business: no real customer data and no real client folder.
   3. "/" no longer shows the stock Laravel page.
   4. The queue worker runs under a supervisor that restarts it: stop the worker and it comes back without anyone at the keyboard.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -222,7 +268,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Room Standard | 0/TBD | Not started | - |
+| 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 0/TBD | Not started | - |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |

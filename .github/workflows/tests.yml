@@ -48,7 +48,7 @@ jobs:
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
-          extensions: mbstring, intl, dom, fileinfo, zip, pdo_sqlite, pdo_pgsql
+          extensions: mbstring, intl, dom, fileinfo, zip, pdo_sqlite, pdo_pgsql, sockets
           coverage: none
 
       - name: Create the environment file
@@ -56,6 +56,18 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install Node packages
+        run: npm ci
+
+      - name: Install the browser for the accessibility check
+        run: npx playwright install --with-deps chromium
 
       - name: Generate the application key
         run: php artisan key:generate

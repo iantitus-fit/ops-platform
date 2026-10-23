@@ -33,6 +33,7 @@ Full picture: `docs/SPEC.md`.
 | `app/Actions/` | Single-purpose domain actions |
 | `app/Ai/` | laravel/ai agents: the front-desk agent and its structured output (Phase 2) |
 | `app/SendRule/` | The send-or-draft rule: code checks, the Jev classifier, the stored verdict (Phase 2). Not `Gate`: that is Laravel's authorization facade |
+| `app/Rooms/` | The room standard (Phase 4): the `Room` descriptor, `RoomRegistry`, the base `RoomServiceProvider` and `RoomSection`, and the code each room phase writes in `app/Rooms/<Room>/`. Real rooms register in `bootstrap/providers.php`; the pretend room lives only in `tests/Rooms/` |
 | `app/Filament/` | Back-office screens |
 | `examples/` | Fictional business folders used in development and tests |
 | `docs/` | Spec, blueprint (the business by area), decisions, setup, sprint plans, GSD ingest manifest |
@@ -60,6 +61,17 @@ Full picture: `docs/SPEC.md`.
 - No secrets in the repo or in ICM folders. Credentials live in `.env` or
   encrypted settings.
 - Examples and test data are fictional. No real client data anywhere in the repo.
+- Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup,
+  never by an overlay widget. Every image carries alt text. Automated checks
+  catch only part of WCAG, so customer pages and owner screens also get a
+  keyboard-only and screen reader walk at UAT.
+- Every agent action (a send, a write, a change to a record or the folder) goes
+  through a code chokepoint that refuses it without the checks its kind needs
+  and records which checks passed and who or what approved it (the
+  OutboundSender pattern, 02.1 D-49). A room that lets an agent act declares the
+  agent's decision rights in a rules file the sync checks, as `rules/sending.md`
+  does for the front desk. A plan that adds an agent action names its
+  chokepoint.
 - `docs/BLUEPRINT.md` maps the whole business by area. Any decision, plan or
   idea that changes an area gets an "Affects:" line naming every area it
   touches, and `docs/BLUEPRINT.md` is updated in the same commit.

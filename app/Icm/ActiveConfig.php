@@ -5,12 +5,14 @@ namespace App\Icm;
 use App\Enums\VersionStatus;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\IcmVersion;
+use Illuminate\Support\Str;
 
 /**
  * The only way application code reads business configuration.
  *
  * It answers from the compiled copy stored with the live version, never from the folder on disk.
- * Every accessor throws NoActiveVersion when nothing is live yet.
+ * Every accessor throws NoActiveVersion when nothing is live yet, except the ones that say they never throw:
+ * displayTimezone(), hasRoom(), roomKeys(), roomContract() and roomOwnedFiles().
  */
 class ActiveConfig
 {
@@ -58,6 +60,84 @@ class ActiveConfig
         } catch (NoActiveVersion) {
             return config('app.timezone');
         }
+    }
+
+    /**
+     * Whether the live version has this room: a CONTEXT.md directly inside rooms/<key>/ (D-01, D-03).
+     * It never throws. Before the first sync, or with a version compiled before rooms existed, the answer is false.
+     */
+    public function hasRoom(string $key): bool
+    {
+        try {
+            return isset($this->version()->compiled['index']['room'][$key]);
+        } catch (NoActiveVersion) {
+            return false;
+        }
+    }
+
+    /**
+     * The keys of the rooms the live version has, sorted. It never throws: an empty list before the first sync.
+     *
+     * @return list<string>
+     */
+    public function roomKeys(): array
+    {
+        try {
+            $keys = array_keys($this->version()->compiled['index']['room'] ?? []);
+        } catch (NoActiveVersion) {
+            return [];
+        }
+
+        sort($keys, SORT_STRING);
+
+        return $keys;
+    }
+
+    /**
+     * The front matter of a room's contract, the live rooms/<key>/CONTEXT.md. It never throws: null when the room is
+     * not in the live version or nothing is live yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function roomContract(string $key): ?array
+    {
+        try {
+            $compiled = $this->version()->compiled;
+        } catch (NoActiveVersion) {
+            return null;
+        }
+
+        $path = $compiled['index']['room'][$key] ?? null;
+
+        return $path === null ? null : ($compiled['files'][$path]['front_matter'] ?? null);
+    }
+
+    /**
+     * The paths of the live files a room's contract owns, sorted: every live file that one of its owns entries matches,
+     * room contracts and routers left out (a CONTEXT.md pointer inside the room's own folder is not the room's content).
+     * It never throws: an empty list when the room is not in the live version or nothing is live yet.
+     *
+     * @return list<string>
+     */
+    public function roomOwnedFiles(string $key): array
+    {
+        $owns = $this->roomContract($key)['owns'] ?? [];
+
+        if ($owns === []) {
+            return [];
+        }
+
+        $paths = [];
+
+        foreach ($this->version()->compiled['files'] as $path => $file) {
+            if ($file['type'] !== 'room' && $file['router'] === false && Str::is($owns, $path)) {
+                $paths[] = $path;
+            }
+        }
+
+        sort($paths, SORT_STRING);
+
+        return $paths;
     }
 
     /**
@@ -203,6 +283,20 @@ class ActiveConfig
         $path = $this->version()->compiled['index']['offer'][$slug] ?? null;
 
         return $path === null ? null : [...$this->typedFile($path), 'path' => $path];
+    }
+
+    /**
+     * Every file of a type a room defines: its front matter plus the markdown body under "body" and its folder path
+     * under "path", in path order. A version compiled before the type existed has none.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function filesOfType(string $type): array
+    {
+        $paths = array_values($this->version()->compiled['index'][$type] ?? []);
+        sort($paths, SORT_STRING);
+
+        return array_map(fn (string $path) => [...$this->typedFile($path), 'path' => $path], $paths);
     }
 
     /**

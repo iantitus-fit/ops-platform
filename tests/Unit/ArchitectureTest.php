@@ -32,6 +32,7 @@ foreach (['file_get_contents', 'file_put_contents', 'fopen', 'file', 'glob', 'sc
             'App\Jobs',
             'App\Models',
             'App\Records',
+            'App\Rooms',
             'App\Listeners',
             'App\Events',
             'App\Support',

@@ -80,13 +80,14 @@ class Contact extends Model
     }
 
     /**
-     * The timeline entries, newest first. Timestamps have one-second resolution, so the id
-     * breaks ties between entries from the same second.
+     * The timeline entries that may be shown, newest first: entries of a room that is not in the live version are
+     * left out (Activity::visibleOnTimeline()). Timestamps have one-second resolution, so the id breaks ties between
+     * entries from the same second.
      *
      * @return HasMany<Activity, $this>
      */
     public function timeline(): HasMany
     {
-        return $this->hasMany(Activity::class)->orderByDesc('occurred_at')->orderByDesc('id');
+        return $this->hasMany(Activity::class)->visibleOnTimeline()->orderByDesc('occurred_at')->orderByDesc('id');
     }
 }

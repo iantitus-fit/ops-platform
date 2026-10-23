@@ -12,6 +12,7 @@ use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\Rooms\RoomRegistry;
 use App\SendRule\Classifier;
 use App\SendRule\JevClassifier;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -39,10 +40,16 @@ class AppServiceProvider extends ServiceProvider
      *
      * Classifier is bound to JevClassifier. Tests replace it with a FakeClassifier in tests/Pest.php,
      * so no test can reach Jev.
+     *
+     * RoomRegistry is a singleton: every class that asks for it gets the same object. Rooms add themselves to it in
+     * their providers' register(), and the sync and the dashboard read the same list. That is why AppServiceProvider
+     * stays first in bootstrap/providers.php: it must bind the registry before any room provider asks for it.
      */
     public function register(): void
     {
         $this->app->scoped(ActiveConfig::class);
+
+        $this->app->singleton(RoomRegistry::class);
 
         $this->app->bind(Classifier::class, JevClassifier::class);
 

@@ -11,13 +11,17 @@ use App\Icm\FolderSync;
 use App\Jobs\ProcessInbound;
 use App\Models\IcmVersion;
 use App\Models\Message;
+use App\Rooms\RoomRegistry;
 use App\SendRule\Classifier;
 use App\SendRule\FakeClassifier;
+use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Tests\Rooms\PretendRoom\PretendRoomServiceProvider;
 use Tests\TestCase;
 
 /*
@@ -80,6 +84,12 @@ pest()->extend(TestCase::class)
     })
     ->afterEach(function () {
         File::deleteDirectory(config('icm.path'));
+
+        /**
+         * The morph map is static, so it would outlive this test's app and carry a room's nicknames into later
+         * tests. Every test boots a fresh app whose AppServiceProvider enforces the app's own nicknames again.
+         */
+        Relation::morphMap([], false);
     })
     ->in('Feature');
 
@@ -320,6 +330,49 @@ function writeIcmFile(string $relative, string $contents): void
 {
     File::ensureDirectoryExists(dirname(icmPath($relative)));
     File::put(icmPath($relative), $contents);
+}
+
+/**
+ * Copy a folder from tests/Fixtures over this test's temporary business folder: the whole fixture when no paths are
+ * given, otherwise only the named paths, relative to the fixture. Nothing is ever written under examples/.
+ */
+function layFixtureFolder(string $fixture, string ...$paths): void
+{
+    $source = base_path('tests/Fixtures/'.$fixture);
+
+    if ($paths === []) {
+        File::copyDirectory($source, icmPath());
+
+        return;
+    }
+
+    foreach ($paths as $path) {
+        File::ensureDirectoryExists(dirname(icmPath($path)));
+        File::copy($source.'/'.$path, icmPath($path));
+    }
+}
+
+/**
+ * Lay the pretend room's folder, or only the named paths of it, into this test's temporary business folder.
+ */
+function layPretendRoomFolder(string ...$paths): void
+{
+    layFixtureFolder('pretend-room', ...$paths);
+}
+
+/**
+ * Switch the pretend room on for this test only. It is registered the way Laravel registers a provider at start-up,
+ * its pending migration runs inside this test's transaction (RefreshDatabase migrated before the room existed, and the
+ * transaction removes the table afterwards), and its widgets are added to the admin panel, which was built before the
+ * test could register the room. Its morph map is static, so the Feature afterEach in this file resets it. It is never listed in bootstrap/providers.php (D-20).
+ */
+function enablePretendRoom(): void
+{
+    app()->register(PretendRoomServiceProvider::class);
+
+    test()->artisan('migrate')->assertExitCode(0);
+
+    app(RoomRegistry::class)->addWidgetsTo(Filament::getPanel('admin'));
 }
 
 /**

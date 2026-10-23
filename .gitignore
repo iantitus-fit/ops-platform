@@ -41,3 +41,7 @@ Thumbs.db
 !/examples/*/records/README.md
 !/examples/*/records/CLAUDE.md
 /examples/*/changelog.md
+
+# Pest browser plugin output (screenshots and traces).
+tests/Browser/Screenshots
+tests/Browser/Traces

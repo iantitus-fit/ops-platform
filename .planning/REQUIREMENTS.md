@@ -15,11 +15,11 @@ Committed scope for v2.0 Model Home. Each maps to exactly one roadmap phase.
 
 Every room in the floor plan meets these five.
 
-- [ ] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owning room.
-- [ ] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
-- [ ] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
-- [ ] **ROOM-04**: Each room's `CONTEXT.md` states what the room writes to `records/`, which may be nothing; anything it writes is rendered from the database and read-only (DEC-03).
-- [ ] **ROOM-05**: Each room has one test that boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
+- [x] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owner: a room or the house. The house owns the routers (`CLAUDE.md`, `START-HERE.md`, the folder `CONTEXT.md` files outside `rooms/`) and the walk tests in `tests/`. *(Wording from the Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-11. Affects: knowledge.)*
+- [x] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
+- [x] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
+- [x] **ROOM-04**: Each room's `CONTEXT.md` states what the room writes to `records/`, which may be nothing; anything it writes is rendered from the database and read-only (DEC-03).
+- [x] **ROOM-05**: Each room has one test that boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
 
 ### The Spine
 
@@ -30,7 +30,7 @@ Every room in the floor plan meets these five.
 
 Ten rooms. Every new room meets the room standard and nothing more, except where a requirement below says otherwise. Property and subcontractors are open (Future Requirements).
 
-- [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases.
+- [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
 - [ ] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
 - [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
 - [ ] **ROOM-08**: Company knowledge room, to the room standard.
@@ -40,11 +40,11 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [ ] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
-- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. Backlog 999.5 stays unchanged.
+- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
 
 ### Connectors
 
-- [ ] **CONN-07**: Connector files declare `owns` and `reads` instead of `objects`. The sync refuses a folder where two connectors own the same kind of record and says so in plain words ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it"). *(derived from "One owner per fact"; ROOM-03 needs it. CONN-01 stays unchanged in Future Requirements)*
+- [x] **CONN-07**: Connector files declare `owns` and `reads` instead of `objects`. The sync refuses a folder where two connectors own the same kind of record and says so in plain words ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it"). *(derived from "One owner per fact"; ROOM-03 needs it. CONN-01 stays unchanged in Future Requirements)*
 
 ### Booking and the Gate
 
@@ -82,6 +82,14 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 - [ ] **DSGN-04**: Hold reasons say what is actually held (for example "waiting on the customer's answers for X") instead of "no price on file" (02.1 review IN-02). Words only; no change to what is held, sent or alerted.
 - [ ] **DSGN-05**: Every owner-facing screen that exists by the phone design pass works on a phone at 375 and 390 wide, not only the three in DSGN-01 to DSGN-03: each room's dashboard section, the schedule screen and the minutes-to-booked summary. The customer booking page keeps its own UI-SPEC with booking, built phone-first (the part of the 2026-10-11 decision that stands), and the pass re-checks it at 375 and 390.
 
+### Accessibility
+
+Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup, never by an overlay widget. Automated checks catch only part of WCAG, so customer pages and owner screens also get a keyboard-only and screen reader walk at UAT (PROJECT.md Frontend; Ian, 2026-10-22).
+
+- [x] **A11Y-01**: The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI; the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
+- [ ] **A11Y-02**: The customer booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
+- [ ] **A11Y-03**: Every owner-facing screen passes the automated check and a keyboard-only and VoiceOver walk at 375 and 390 wide. PROJECT.md Frontend open item 5 is settled here.
+
 ### Tour Deploy
 
 - [ ] **DEPL-02**: A staging instance for tours runs the fictional example business on the fake text channel, behind an invite-only login, with no real customer data; hosting (Laravel Cloud or Forge) is chosen in that phase. It comes after the phone design pass. Which other before-first-deploy items a tour needs (T-01-36, T-01-37, WR-08, WR-10 to WR-15, error tracking, backups) and how a visitor tries the front desk (`/dev/chat` is local-only today) are settled in that phase's discuss. The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list.
@@ -91,7 +99,6 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 ## Future Requirements
 
 Carried unchanged from the v1.0 "v2 Requirements" sections.
-
 
 Pulled by a real client or a job conversation, one at a time (SPEC: Sprint 3 onward). Tracked, not in the committed roadmap. Each group is parked as a Backlog phase (999.x) in ROADMAP.md and promoted with `/gsd-review-backlog` when pulled.
 
@@ -155,7 +162,6 @@ Each rule below becomes a Pest test before the code exists. All money is integer
 
 ## Out of Scope
 
-
 Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
@@ -188,11 +194,11 @@ Which phases cover which requirements. Filled in by the roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROOM-01 | Phase 4 | Pending |
-| ROOM-02 | Phase 4 | Pending |
-| ROOM-03 | Phase 4 | Pending |
-| ROOM-04 | Phase 4 | Pending |
-| ROOM-05 | Phase 4 | Pending |
+| ROOM-01 | Phase 4 | Complete |
+| ROOM-02 | Phase 4 | Complete |
+| ROOM-03 | Phase 4 | Complete |
+| ROOM-04 | Phase 4 | Complete |
+| ROOM-05 | Phase 4 | Complete |
 | PROJ-01 | Phase 7 | Pending |
 | PROJ-02 | Phase 7 | Pending |
 | ROOM-06 | Phase 6 | Pending |
@@ -206,7 +212,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-13 | Phase 9 | Pending |
 | ROOM-14 | Phase 5 | Pending |
 | ROOM-15 | Phase 6 | Pending |
-| CONN-07 | Phase 4 | Pending |
+| CONN-07 | Phase 4 | Complete |
 | BOOK-01 | Phase 8 | Pending |
 | BOOK-02 | Phase 8 | Pending |
 | BOOK-03 | Phase 8 | Pending |
@@ -225,15 +231,18 @@ Which phases cover which requirements. Filled in by the roadmap.
 | DSGN-03 | Phase 11 | Pending |
 | DSGN-04 | Phase 11 | Pending |
 | DSGN-05 | Phase 11 | Pending |
+| A11Y-01 | Phase 4 | Complete |
+| A11Y-02 | Phase 8 | Pending |
+| A11Y-03 | Phase 11 | Pending |
 | DEPL-02 | Phase 12 | Pending |
 | DEPL-03 | Phase 12 | Pending |
 | DEPL-04 | Phase 12 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 40 total
-- Mapped to phases: 40
+- v2.0 requirements: 43 total
+- Mapped to phases: 43
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-21*
-*Last updated: 2026-10-21 after the v2.0 roadmap (ROOM-14 to the full standard, DSGN-05 added)*
+*Last updated: 2026-10-22 after adding accessibility (A11Y-01 to A11Y-03, Ian)*

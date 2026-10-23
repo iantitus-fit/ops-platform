@@ -5,6 +5,7 @@ namespace App\Icm;
 use App\Enums\AlertReason;
 use App\Enums\IcmFileKind;
 use App\Enums\ReplyLabel;
+use App\Rooms\RoomRegistry;
 use App\SendRule\CodeChecks;
 use App\Support\PhoneNumber;
 use DateTimeImmutable;
@@ -99,6 +100,8 @@ class Validator
      */
     private ?array $usableProviders = null;
 
+    public function __construct(private RoomChecks $roomChecks, private RoomRegistry $rooms, private ConnectorChecks $connectorChecks) {}
+
     /**
      * Every problem in the folder. A folder with no problems may go live.
      */
@@ -118,7 +121,7 @@ class Validator
             }
         }
 
-        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files));
+        array_push($errors, ...$this->duplicateSlugErrors($files), ...$this->singletonErrors($files), ...$this->agentChannelErrors($files), ...$this->agentLoadsErrors($files), ...$this->repliesErrors($files), ...$this->priceSentenceErrors($files), ...$this->offerErrors($files), ...$this->roomChecks->errors($files), ...$this->connectorChecks->folderErrors($files));
 
         return new ValidationReport($errors);
     }
@@ -149,7 +152,9 @@ class Validator
             'sending_rules' => $this->sendingRulesErrors($file),
             'voice' => $this->voiceErrors($file),
             'triage' => $this->triageErrors($file),
-            default => [],
+            'room' => $this->roomChecks->contractErrors($file),
+            'connector' => $this->connectorChecks->fileErrors($file),
+            default => $this->rooms->fileType((string) $file->type)?->checks($file) ?? [],
         });
 
         return $errors;
@@ -251,6 +256,22 @@ class Validator
                 'start_date' => 'bail|required|date_format:Y-m-d',
                 'end_date' => 'bail|sometimes|date_format:Y-m-d',
             ],
+            'room' => [
+                'owns' => 'bail|present|array',
+                'owns.*' => 'bail|string',
+                'reads' => 'bail|present|array',
+                'reads.*' => 'bail|string',
+                'writes_records' => 'bail|present|array',
+                'writes_records.*' => 'bail|string',
+                'connector' => 'bail|required|string',
+            ],
+            'connector' => [
+                'slot' => 'bail|required|string',
+                'owns' => 'bail|present|array',
+                'owns.*' => 'bail|string',
+                'reads' => 'bail|present|array',
+                'reads.*' => 'bail|string',
+            ],
             'triage' => [
                 'intent_question' => 'bail|required|string',
                 'intents' => 'bail|required|array|min:2|max:255',
@@ -265,7 +286,7 @@ class Validator
                 'questions.life_safety' => 'bail|required|string',
                 'questions.asks_for_person' => 'bail|required|string',
             ],
-            default => [],
+            default => $this->rooms->fileType((string) $file->type)?->rules($file) ?? [],
         };
     }
 
@@ -1493,7 +1514,7 @@ class Validator
     private function problemMessage(string $problem): string
     {
         if (str_starts_with($problem, 'unknown_type:')) {
-            return PlainWords::render('In', Loader::TYPED, 'type', substr($problem, strlen('unknown_type:')));
+            return PlainWords::render('In', [...Loader::TYPED, ...$this->rooms->registeredTypes()], 'type', substr($problem, strlen('unknown_type:')));
         }
 
         if (str_starts_with($problem, 'unreadable:')) {

@@ -1,12 +1,58 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v2.0",
-  "phases": [],
+  "milestone": "v2.0 — Model Home",
+  "phases": [
+    {
+      "number": "4",
+      "name": "Room Standard",
+      "status": "complete"
+    },
+    {
+      "number": "5",
+      "name": "Standard Rooms",
+      "status": "pending"
+    },
+    {
+      "number": "6",
+      "name": "Front Desk and Team Rooms",
+      "status": "pending"
+    },
+    {
+      "number": "7",
+      "name": "The Spine and Leads",
+      "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "Schedule and Booking",
+      "status": "pending"
+    },
+    {
+      "number": "9",
+      "name": "Owner Intelligence",
+      "status": "pending"
+    },
+    {
+      "number": "10",
+      "name": "Walk Tests and the Gate",
+      "status": "pending"
+    },
+    {
+      "number": "11",
+      "name": "Phone Design Pass",
+      "status": "pending"
+    },
+    {
+      "number": "12",
+      "name": "Tour Deploy",
+      "status": "pending"
+    }
+  ],
   "next": {
-    "command": "/gsd:discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 5)",
+    "reason": "Phase 5 of 9 — needs a plan"
   },
-  "updated_at": "2026-10-21T16:21:04.012Z"
+  "updated_at": "2026-10-23T21:20:13.468Z"
 }

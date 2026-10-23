@@ -5,12 +5,16 @@ namespace App\Icm;
 use App\Enums\IcmFileKind;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
+use App\Events\CustomerRecordChanged;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Models\Activity;
 use App\Models\IcmVersion;
+use App\Rooms\RoomRegistry;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
+use Throwable;
 
 /**
  * Turns the business folder into the live version of the business.
@@ -21,6 +25,7 @@ class FolderSync
         private Loader $loader,
         private Validator $validator,
         private Changelog $changelog,
+        private RoomRegistry $rooms,
     ) {}
 
     /**
@@ -95,6 +100,8 @@ class FolderSync
 
         app()->forgetInstance(ActiveConfig::class);
 
+        $this->queueCardsForRoomChanges($active, $version);
+
         return $this->recorded(new SyncResult(
             SyncOutcome::Activated,
             $version,
@@ -103,6 +110,46 @@ class FolderSync
             $fileCount,
             "Live as {$version->label()} ({$fileCount} files)",
         ), $folder, $report);
+    }
+
+    /**
+     * When a sync turns a room off or on, redraw the cards that hold that room's entries. A card in records/ is drawn
+     * through Activity::visibleOnTimeline() only when it is rendered, so without this a removed room's entries would
+     * stay on the card the owner's AI reads until the customer's next event, and would stay missing after the folder
+     * came back. Every contact with a row of a room that went off or on is queued once (Ian, 2026-10-22).
+     *
+     * The version is already live by now, so a card that cannot be queued is reported and never fails the sync, and one
+     * failed card does not stop the cards after it.
+     */
+    private function queueCardsForRoomChanges(?IcmVersion $previous, IcmVersion $version): void
+    {
+        $before = array_keys($previous?->compiled['index']['room'] ?? []);
+        $after = array_keys($version->compiled['index']['room'] ?? []);
+        $changed = array_values(array_unique([...array_diff($before, $after), ...array_diff($after, $before)]));
+
+        if ($changed === []) {
+            return;
+        }
+
+        try {
+            $contactIds = Activity::query()
+                ->whereIn('room', $changed)
+                ->distinct()
+                ->orderBy('contact_id')
+                ->pluck('contact_id');
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return;
+        }
+
+        foreach ($contactIds as $contactId) {
+            try {
+                CustomerRecordChanged::dispatch((int) $contactId);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
     }
 
     /**
@@ -207,7 +254,7 @@ class FolderSync
      */
     private function compile(array $files): array
     {
-        $compiled = ['files' => [], 'index' => ['service' => [], 'knowledge' => [], 'agent' => [], 'offer' => []]];
+        $compiled = ['files' => [], 'index' => ['service' => [], 'knowledge' => [], 'agent' => [], 'offer' => [], 'room' => [], 'connector' => []]];
 
         foreach ($files as $file) {
             $compiled['files'][$file->path] = [
@@ -217,11 +264,19 @@ class FolderSync
                 'router' => $file->kind === IcmFileKind::Router,
             ];
 
+            if (in_array($file->type, $this->rooms->registeredTypes(), true)) {
+                $compiled['index'][$file->type][] = $file->path;
+
+                continue;
+            }
+
             match ($file->type) {
                 'service' => $compiled['index']['service'][$file->frontMatter['slug'] ?? $file->path] = $file->path,
                 'offer' => $compiled['index']['offer'][$file->frontMatter['slug'] ?? $file->path] = $file->path,
                 'knowledge' => $compiled['index']['knowledge'][] = $file->path,
                 'agent' => $compiled['index']['agent'][$file->frontMatter['channel'] ?? $file->path] = $file->path,
+                'room' => preg_match(Loader::ROOM_CONTRACT, $file->path, $room) === 1 ? $compiled['index']['room'][$room[1]] = $file->path : null,
+                'connector' => $compiled['index']['connector'][] = $file->path,
                 null => null,
                 default => $compiled['index'][$file->type] = $file->path,
             };

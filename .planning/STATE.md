@@ -2,39 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
+current_phase: 5
+current_phase_name: Standard Rooms
 status: planning
-last_updated: "2026-10-21T17:32:35.000Z"
-last_activity: 2026-10-21
+stopped_at: Phase 04 complete, ready to plan Phase 5
+last_updated: "2026-10-23T21:20:13.448Z"
+last_activity: 2026-10-23
+last_activity_desc: Phase 04 complete, transitioned to Phase 5
+state_head: 3d5ef542adfa3e919abd1c2597e635c6b80e213a
 progress:
   total_phases: 9
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 9
+  completed_plans: 9
+  percent: 11
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-21)
+See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 4, Room Standard (milestone v2.0 Model Home, Phases 4 to 12)
+**Current focus:** Phase 5 — Standard Rooms
 
 ## Current Position
 
-Phase: 4 (Room Standard), the first of 9 phases in v2.0 (Phases 4 to 12)
+Phase: 5 — Standard Rooms
 Plan: Not started
-Status: Ready to discuss/plan
-Last activity: 2026-10-21 — Roadmap created for milestone v2.0 Model Home
+Status: Ready to plan
+Last activity: 2026-10-23 — Phase 04 complete, transitioned to Phase 5
 
-Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
+Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 76
+- Total plans completed: 85
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -45,6 +50,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | 01 | 7 | - | - |
 | 02 | 41 | - | - |
 | 02.1 | 28 | - | - |
+| 04 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -131,6 +137,15 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 02.1 P26 | 29 min | 2 tasks | 3 files |
 | Phase 02.1 P27 | 41 min | 2 tasks | 8 files |
 | Phase 02.1 P28 | 100 min | 3 tasks | 6 files |
+| Phase 04 P01 | 7 min | 2 tasks | 22 files |
+| Phase 04 P07 | 3 min | 2 tasks | 4 files |
+| Phase 04 P02 | 7 min | 3 tasks | 10 files |
+| Phase 04 P08 | 154 min | 3 tasks | 3 files |
+| Phase 04 P03 | 10 min | 3 tasks | 18 files |
+| Phase 04 P04 | 9 min | 3 tasks | 19 files |
+| Phase 04 P05 | 7 min | 3 tasks | 16 files |
+| Phase 04 P06 | 4 min | 2 tasks | 7 files |
+| Phase 04 P09 | 4 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -145,6 +160,26 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [DEC-05]: Fake text channel; the build does not wait on A2P
 
 - v1.0 per-plan decisions were cleared at the milestone close; they are in the phase SUMMARY and CONTEXT files under `.planning/milestones/v1.0-phases/`.
+- [Phase 04]: 04-01: Loader::ROOM_CONTRACT is the one pattern that both lets a rooms/<room>/CONTEXT.md past the router branch and names the room's folder key in FolderSync's index
+- [Phase 04]: 04-01: RoomRegistry::add() runs every guard before storing, and addWidgetsTo() skips widgets the panel already has, so the panel hook and the test helper can both call it
+- [Phase 04]: 04-07: pestphp/pest-plugin-browser ^5.1 installed as a dev-only dependency after Ian's approval on 2026-10-22; Playwright and Chromium stay in Plan 04-08
+- [Phase 04]: 04-02: A room contract entry earns at most one error (path-inside-folder check first, then records/); backslash counts as a separator in the .. check
+- [Phase 04]: 04-02: Loader::NONE_MEANS_EMPTY is the only place the word none is read; owns, reads and writes_records reach every other reader as []
+- [Phase 04]: Registered room file types are compiled as lists of paths and served through ActiveConfig::filesOfType(); the Loader, Validator and FolderSync read RoomRegistry
+- [Phase 04]: A room counts as present when its contract loads as a typed room file, so one broken contract does not also read as an absent room
+- [Phase 04]: A file with the D-04 placement line is skipped by the unclaimed and absent-room checks, so each misplaced file gets exactly one line
+- [Phase 04]: The SPEC ownership table row for folder CONTEXT.md files is the pattern *CONTEXT.md owned by the house, beside the rooms/*/CONTEXT.md row for the room's contract
+- [Phase 04]: 04-04: A connector file counts toward the two-owner check only when every owns entry is an ownable kind, so a file already refused for its kinds never blames another file
+- [Phase 04]: 04-04: RoomChecks::isPresent() is the one public answer to whether a room is here; ConnectorChecks asks it instead of copying the rule
+- [Phase 04]: 04-05: a sync that changes the room set queues a card redraw (CustomerRecordChanged) for each contact holding entries of a room that went off or on, so the stored card follows the room (for Ian's review; alternative was waiting for the next event or records:rebuild)
+- [Phase 04]: 04-05: RecordRoomEntry is the chokepoint for a room's timeline writes; it refuses when the room is not live or the entry key is unregistered
+- [Phase 04]: 04-06: a room whose contract owns nothing is never shown as empty; RoomSection::emptyLine() returns null and the room's contentLines() shows
+- [Phase 04]: 04-06: roomOwnedFiles() excludes room contracts so a room cannot look furnished by matching its own CONTEXT.md
+- [Phase 04]: 04-09: actingAs() carries into the Pest browser test, so the accessibility check signs in with it and needs no login-form fallback
+- [Phase 04, Ian 2026-10-23]: a connector file lives only in `connectors/`; the sync refuses `type: connector` anywhere else (IN-05, D-12, D-19)
+- [Phase 04, Ian 2026-10-23]: a room's timeline entries print as customer-supplied text unless the room registers the entry type as trusted (WR-04)
+- [Phase 04, Ian 2026-10-23]: refusal lines about one file follow the contract's own entry order on purpose; order is presentation, not a check's result (UAT test 3)
+- [Phase 04, Ian 2026-10-23]: decision 3 stands as planned: a removed room's entries are hidden, never deleted, and the sync redraws the cards that hold them
 
 ### Pending Todos
 
@@ -163,6 +198,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
+- [Phase 04, carry into Phase 5]: the keyboard-only and VoiceOver walk of a room section moves to Phase 5's UAT, on the first real room section (the pretend room's section exists only in tests). G-04-1 (a path with a line break in a refusal line) is for Phase 5 but not in its roadmap criteria, so Phase 5's discuss picks it up. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -198,10 +234,10 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-21T17:32:35Z
-Stopped at: Roadmap for milestone v2.0 Model Home written; Phase 4 is ready to discuss
+Last session: 2026-10-23
+Stopped at: Phase 04 complete, ready to plan Phase 5
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss Phase 4 with /gsd-discuss-phase 4, then plan it with /gsd-plan-phase 4
+- Discuss Phase 5 with /gsd-discuss-phase 5, then plan it with /gsd-plan-phase 5
