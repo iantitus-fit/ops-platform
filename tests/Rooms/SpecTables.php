@@ -71,4 +71,26 @@ class SpecTables
             array_filter(self::ownership($markdown), fn (array $row): bool => $row['owner'] === $owner),
         ));
     }
+
+    /**
+     * The kinds a connector may own: the first backticked token of each row under "Kinds of record a connector may own",
+     * in table order. The same list is OwnableKind in code.
+     *
+     * @return list<string>
+     */
+    public static function ownableKinds(string $markdown): array
+    {
+        return [];
+    }
+
+    /**
+     * The kinds the platform owns, from the rows under "Kinds of record the platform owns", in table order. The same
+     * list is PlatformKind in code.
+     *
+     * @return list<string>
+     */
+    public static function platformKinds(string $markdown): array
+    {
+        return [];
+    }
 }

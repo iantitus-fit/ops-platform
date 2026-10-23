@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\OwnableKind;
+use App\Enums\PlatformKind;
 use App\Icm\ActiveConfig;
 use App\Icm\Loader;
 use Illuminate\Support\Str;
@@ -129,4 +131,44 @@ it('links BLUEPRINT to the SPEC table instead of copying it', function () {
     expect($blueprint)->toContain('SPEC.md#who-owns-each-file')
         ->and($blueprint)->not->toContain('| File | Owner |')
         ->and($blueprint)->not->toContain('| `business/faq.md` |');
+});
+
+it('reads the kinds of record from the two kind tables, and only the rows under their headings', function () {
+    $markdown = <<<'MD'
+    ### Kinds of record a connector may own
+
+    | Key | Kind of record |
+    |---|---|
+    | `customers` | Customers |
+    | `sales_activity` | Sales activity |
+
+    ### Kinds of record the platform owns
+
+    | Key | Kind of record |
+    |---|---|
+    | `projects` | Projects |
+
+    ### Something else
+
+    | `decoy` | Not a kind |
+    MD;
+
+    expect(SpecTables::ownableKinds($markdown))->toBe(['customers', 'sales_activity'])
+        ->and(SpecTables::platformKinds($markdown))->toBe(['projects']);
+});
+
+it('lists in SPEC exactly the kinds a connector may own, in the order of OwnableKind', function () {
+    expect(SpecTables::ownableKinds(specMarkdown()))->toBe(array_map(fn (OwnableKind $kind): string => $kind->value, OwnableKind::cases()))
+        ->and(SpecTables::ownableKinds(specMarkdown()))->not->toBeEmpty();
+});
+
+it('lists in SPEC exactly the kinds the platform owns, in the order of PlatformKind', function () {
+    expect(SpecTables::platformKinds(specMarkdown()))->toBe(array_map(fn (PlatformKind $kind): string => $kind->value, PlatformKind::cases()))
+        ->and(SpecTables::platformKinds(specMarkdown()))->not->toBeEmpty();
+});
+
+it('never puts one kind of record on both lists', function () {
+    expect(SpecTables::ownableKinds(specMarkdown()))->not->toBeEmpty()
+        ->and(SpecTables::platformKinds(specMarkdown()))->not->toBeEmpty()
+        ->and(array_intersect(SpecTables::ownableKinds(specMarkdown()), SpecTables::platformKinds(specMarkdown())))->toBe([]);
 });
