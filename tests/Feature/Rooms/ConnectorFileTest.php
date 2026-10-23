@@ -1,7 +1,11 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Rooms\Room;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
+use Tests\Rooms\PretendRoom\AnnexRoom;
+use Tests\Rooms\PretendRoom\PretendFeed;
 
 const PRETEND_CONNECTOR_PATH = 'connectors/pretend-feed.md';
 
@@ -158,4 +162,138 @@ it('refuses a connector file that still says objects, telling the owner to use o
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: objects is replaced by owns and reads: list under owns the kinds this system is the truth for, and under reads the kinds it only copies']);
+});
+
+/**
+ * Switch the pretend and annex rooms on and lay both rooms' contracts, so each connector slot has a room that is here.
+ */
+function layTwoRoomsWithSlots(): void
+{
+    enablePretendRoom();
+    app(RoomRegistry::class)->add(AnnexRoom::room());
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    layFixtureFolder('annex-room');
+}
+
+/**
+ * A connector file for the tests that write their own: the pretend connector with its slot, system, owns and reads
+ * replaced.
+ */
+function connectorFor(string $slot, string $owns = 'owns: []', string $reads = 'reads: []', string $system = 'Another Pretend System'): string
+{
+    $connector = (string) preg_replace('/^slot:.*\R/m', "slot: {$slot}\n", pretendConnectorWithLists($owns, $reads), 1);
+
+    return (string) preg_replace('/^system:.*\R/m', "system: {$system}\n", $connector, 1);
+}
+
+it('refuses two connector files that own the same kind with the exact sentence, and keeps the previous version live', function () {
+    layTwoRoomsWithSlots();
+    $live = activateExampleFolder();
+    layFixtureFolder('connector-conflict');
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/b.md: customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('blames each later file that owns a kind an earlier one owns', function () {
+    layTwoRoomsWithSlots();
+    app(RoomRegistry::class)->add(new Room(key: 'third', label: 'third', slot: 'third_feed', slotInterface: PretendFeed::class));
+    writeIcmFile('rooms/third/CONTEXT.md', "---\ntype: room\nowns: []\nreads: []\nwrites_records: []\nconnector: third_feed\n---\nA third room that exists only in this test.\n");
+    layFixtureFolder('connector-conflict');
+    writeIcmFile('connectors/c.md', connectorFor('third_feed', 'owns: [customers]'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([
+        'connectors/b.md: customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it',
+        'connectors/c.md: customers is owned by both connectors/a.md and connectors/c.md; pick one, the other can read it',
+    ]);
+});
+
+it('lets two connector files own different kinds, and one read what the other owns', function () {
+    layTwoRoomsWithSlots();
+    writeIcmFile('connectors/a.md', connectorFor('pretend_feed', 'owns: [customers]', 'reads: [documents]'));
+    writeIcmFile('connectors/b.md', connectorFor('annex_feed', 'owns: [documents]', 'reads: [customers]'));
+
+    $version = activateExampleFolder();
+
+    expect($version->compiled['index']['connector'])->toBe(['connectors/a.md', 'connectors/b.md']);
+});
+
+it('does not count a connector file whose owns already failed the kind check as an owner', function () {
+    layTwoRoomsWithSlots();
+    writeIcmFile('connectors/a.md', connectorFor('pretend_feed', 'owns: [customers]'));
+    writeIcmFile('connectors/b.md', connectorFor('annex_feed', 'owns: [customers, texts]'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/b.md: owns lists texts, which the platform owns; a connector can read it but never own it']);
+});
+
+it('refuses a slot that no room has, naming the slots that exist', function () {
+    layTwoRoomsWithSlots();
+    writeIcmFile('connectors/x.md', connectorFor('nowhere'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; the slots are: annex_feed, pretend_feed']);
+});
+
+it('says the engine has no connector slots yet when no room offers one', function () {
+    writeIcmFile('connectors/x.md', connectorFor('nowhere'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; this engine has no connector slots yet']);
+});
+
+it('treats slot: none as a slot name no room has, not as an empty value', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    writeIcmFile(PRETEND_CONNECTOR_PATH, pretendConnectorWith('slot', 'slot: none'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the none slot, which no room has; the slots are: pretend_feed']);
+});
+
+it('refuses a connector file for a slot whose room is not in the folder', function () {
+    enablePretendRoom();
+    layPretendRoomFolder(PRETEND_CONNECTOR_PATH);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the pretend_feed slot, but the pretend room is not in this folder']);
+});
+
+it('refuses a second connector file filling a slot that is already filled', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md', PRETEND_CONNECTOR_PATH);
+    writeIcmFile('connectors/z.md', connectorFor('pretend_feed'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/z.md: the pretend_feed slot is already filled by connectors/pretend-feed.md; a slot takes one connector file']);
+});
+
+it('leaves a room with a slot and no connector file as a valid empty room', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+
+    $version = activateExampleFolder();
+
+    expect($version->compiled['index']['connector'])->toBe([])
+        ->and(app(ActiveConfig::class)->hasRoom('pretend'))->toBeTrue();
+});
+
+it('shows an owner-written slot on one line', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    writeIcmFile(PRETEND_CONNECTOR_PATH, pretendConnectorWith('slot', 'slot: "line one\nline two"'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the line one line two slot, which no room has; the slots are: pretend_feed']);
 });
