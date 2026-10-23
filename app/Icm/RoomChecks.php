@@ -17,11 +17,6 @@ use Illuminate\Support\Str;
 class RoomChecks
 {
     /**
-     * The path of a room's contract: a CONTEXT.md directly inside rooms/<room>/.
-     */
-    private const CONTRACT_PATH = '#^rooms/[^/]+/CONTEXT\.md$#';
-
-    /**
      * The contract's lists of paths, each entry checked on its own so the order of a list never changes a result.
      *
      * @var list<string>
@@ -37,7 +32,7 @@ class RoomChecks
      */
     public function contractErrors(IcmFile $file): array
     {
-        if (preg_match(self::CONTRACT_PATH, $file->path) !== 1) {
+        if (preg_match(Loader::ROOM_CONTRACT, $file->path) !== 1) {
             return [$this->error($file->path, 'type', 'type room belongs only in rooms/<name>/CONTEXT.md, the contract at the top of a room folder')];
         }
 
@@ -74,11 +69,11 @@ class RoomChecks
         $errors = [];
 
         foreach ($files as $file) {
-            if ($file->kind !== IcmFileKind::Typed || $file->type === 'room' || preg_match(self::CONTRACT_PATH, $file->path) !== 1) {
+            if ($file->kind !== IcmFileKind::Typed || $file->type === 'room' || preg_match(Loader::ROOM_CONTRACT, $file->path, $contract) !== 1) {
                 continue;
             }
 
-            $key = (string) $this->roomKeyOf($file->path);
+            $key = $contract[1];
             $errors[] = $this->error($file->path, 'type', "type must be room, because this file is the {$key} room's contract (you wrote ".PlainWords::oneLine((string) $file->type).')');
         }
 
