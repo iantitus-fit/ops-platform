@@ -118,7 +118,8 @@ class FolderSync
      * stay on the card the owner's AI reads until the customer's next event, and would stay missing after the folder
      * came back. Every contact with a row of a room that went off or on is queued once (Ian, 2026-10-22).
      *
-     * The version is already live by now, so a card that cannot be queued is reported and never fails the sync.
+     * The version is already live by now, so a card that cannot be queued is reported and never fails the sync, and one
+     * failed card does not stop the cards after it.
      */
     private function queueCardsForRoomChanges(?IcmVersion $previous, IcmVersion $version): void
     {
@@ -136,12 +137,18 @@ class FolderSync
                 ->distinct()
                 ->orderBy('contact_id')
                 ->pluck('contact_id');
-
-            foreach ($contactIds as $contactId) {
-                CustomerRecordChanged::dispatch((int) $contactId);
-            }
         } catch (Throwable $exception) {
             report($exception);
+
+            return;
+        }
+
+        foreach ($contactIds as $contactId) {
+            try {
+                CustomerRecordChanged::dispatch((int) $contactId);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
     }
 

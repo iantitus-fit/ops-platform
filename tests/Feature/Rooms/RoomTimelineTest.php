@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Records\CustomerCard;
 use App\Rooms\RecordRoomEntry;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 
@@ -216,6 +217,29 @@ it('redraws the cards of the contacts holding a room\'s entries when a sync turn
     activateExampleFolder();
 
     expect(roomTimelineRedrawnContacts())->toBe([$withEntry->id]);
+});
+
+it('reports a card that cannot be queued and still redraws the cards after it', function () {
+    roomTimelinePretendRoomOn();
+    $first = roomTimelineContactWithEntryAndNote('Dana Whitfield');
+    $second = roomTimelineContactWithEntryAndNote('Sam Okafor');
+    $attempted = [];
+
+    Exceptions::fake();
+    Event::listen(CustomerRecordChanged::class, function (CustomerRecordChanged $event) use (&$attempted, $first): void {
+        $attempted[] = $event->contactId;
+
+        if ($event->contactId === $first->id) {
+            throw new RuntimeException('Queue is down for this one');
+        }
+    });
+
+    File::deleteDirectory(icmPath('rooms/pretend'));
+    activateExampleFolder();
+
+    expect($attempted)->toBe([$first->id, $second->id]);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'Queue is down for this one');
 });
 
 it('redraws nothing when a sync leaves the room set as it was, or changes nothing at all', function () {
