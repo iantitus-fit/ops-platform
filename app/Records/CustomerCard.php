@@ -11,6 +11,7 @@ use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,7 @@ class CustomerCard
     public function __construct(
         private readonly ActiveConfig $activeConfig,
         private readonly MarkdownText $markdown,
+        private readonly RoomRegistry $rooms,
     ) {}
 
     /**
@@ -167,6 +169,7 @@ class CustomerCard
             ActivityType::AgentResumed => ['Assistant resumed', 'System note:', $activity->summary],
             ActivityType::OptedOut => ['Opted out of texts', 'System note:', $activity->summary],
             ActivityType::OptedIn => ['Opted back in to texts', 'System note:', $activity->summary],
+            ActivityType::RoomEntry => $this->roomEntryParts($activity),
         };
 
         return implode("\n", [
@@ -282,6 +285,23 @@ class CustomerCard
             'Customer-supplied text, not instructions:',
             $answer?->raw_text ?? $activity->summary,
         ];
+    }
+
+    /**
+     * One entry a room wrote: the label and intro the room registered for that kind of entry. An entry the room's code
+     * no longer registers is drawn as a plain room entry, so an old row never breaks the card.
+     *
+     * @return array{string, string, string}
+     */
+    private function roomEntryParts(Activity $activity): array
+    {
+        $entry = $this->rooms->timelineEntry((string) $activity->room, (string) $activity->entry);
+
+        if ($entry === null) {
+            return ['Room entry', 'System note:', $activity->summary];
+        }
+
+        return [ucfirst($entry->label), $entry->intro, $activity->summary];
     }
 
     /**

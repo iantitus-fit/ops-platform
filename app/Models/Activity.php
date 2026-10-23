@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'lead_source_key',
     'cost_cents',
     'occurred_at',
+    'room',
+    'entry',
 ])]
 class Activity extends Model
 {

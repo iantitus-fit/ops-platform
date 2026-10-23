@@ -4,6 +4,7 @@ namespace Tests\Rooms\PretendRoom;
 
 use App\Rooms\Room;
 use App\Rooms\RoomServiceProvider;
+use App\Rooms\TimelineEntryType;
 use Illuminate\Contracts\Foundation\Application;
 use InvalidArgumentException;
 
@@ -22,6 +23,7 @@ class PretendRoomServiceProvider extends RoomServiceProvider
             slot: 'pretend_feed',
             slotInterface: PretendFeed::class,
             sections: [PretendRoomSection::class],
+            timelineEntries: [new TimelineEntryType(key: 'ping_received', label: 'pretend ping', intro: 'System note:')],
         );
     }
 
