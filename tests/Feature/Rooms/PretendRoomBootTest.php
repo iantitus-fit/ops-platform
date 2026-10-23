@@ -13,6 +13,7 @@ use App\Rooms\RecordRoomEntry;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use App\Rooms\RoomServiceProvider;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -150,6 +151,29 @@ it('refuses a room whose morph alias would replace the app\'s own nickname', fun
     };
 
     expect(fn () => $provider->boot())->toThrow(LogicException::class, 'message')
+        ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
+});
+
+it('checks a room\'s nicknames after every provider has booted, so listing order does not matter', function () {
+    $callbacks = [];
+    $app = Mockery::mock(Application::class);
+    $app->shouldReceive('booted')->once()->andReturnUsing(function (Closure $callback) use (&$callbacks): void {
+        $callbacks[] = $callback;
+    });
+    $provider = new class($app) extends RoomServiceProvider
+    {
+        protected function room(): Room
+        {
+            return new Room(key: 'early', label: 'early', morphMap: ['message' => PretendPing::class]);
+        }
+    };
+
+    Relation::morphMap([], false);
+    $provider->boot();
+    (new AppServiceProvider(app()))->boot();
+
+    expect($callbacks)->toHaveCount(1)
+        ->and(fn () => $callbacks[0]())->toThrow(LogicException::class, 'message')
         ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
 });
 

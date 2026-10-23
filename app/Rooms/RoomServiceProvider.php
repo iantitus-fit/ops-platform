@@ -18,7 +18,7 @@ use LogicException;
  * has any).
  *
  * AppServiceProvider binds the RoomRegistry singleton, so it stays first in bootstrap/providers.php. Real rooms are
- * listed after it.
+ * listed after it. The morph map check does not depend on that order (see boot()).
  */
 abstract class RoomServiceProvider extends ServiceProvider
 {
@@ -41,19 +41,25 @@ abstract class RoomServiceProvider extends ServiceProvider
      * different model is refused, because the merge would silently win over it and every stored row using the nickname
      * would then resolve to the wrong model. A room model used as the subject of a timeline entry must be in this map, or
      * Laravel refuses it.
+     *
+     * The check and the merge wait until every provider has booted, so the order of bootstrap/providers.php stops
+     * mattering: a room listed above AppServiceProvider would otherwise merge first and then lose to the app's nickname
+     * without a word. When the app has already booted, Laravel runs the callback straight away.
      */
     public function boot(): void
     {
-        $morphMap = $this->room()->morphMap;
+        $this->app->booted(function (): void {
+            $morphMap = $this->room()->morphMap;
 
-        foreach ($morphMap as $alias => $class) {
-            $existing = Relation::getMorphedModel($alias);
+            foreach ($morphMap as $alias => $class) {
+                $existing = Relation::getMorphedModel($alias);
 
-            if ($existing !== null && $existing !== $class) {
-                throw new LogicException("Room [{$this->room()->key}] morph alias [{$alias}] is already used for [{$existing}]. A room may not replace an existing nickname. Pick another name.");
+                if ($existing !== null && $existing !== $class) {
+                    throw new LogicException("Room [{$this->room()->key}] morph alias [{$alias}] is already used for [{$existing}]. A room may not replace an existing nickname. Pick another name.");
+                }
             }
-        }
 
-        Relation::morphMap($morphMap);
+            Relation::morphMap($morphMap);
+        });
     }
 }
