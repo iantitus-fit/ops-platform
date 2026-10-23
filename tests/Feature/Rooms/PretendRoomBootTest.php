@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Records\CustomerCard;
+use App\Rooms\RecordRoomEntry;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use App\Rooms\RoomServiceProvider;
@@ -203,6 +204,17 @@ it('sends a ping through the slot, stores it in the room\'s table and puts it on
         ->and($entry->subject_type)->toBe('pretend_ping')
         ->and($entry->subject_id)->toBe($ping->id)
         ->and($entry->subject)->toBeInstanceOf(PretendPing::class);
+});
+
+it('stores no ping row when the timeline entry cannot be written', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $this->mock(RecordRoomEntry::class)->shouldReceive('handle')->once()->andThrow(new LogicException('No such entry'));
+
+    expect(fn () => app(ReceivePing::class)->handle($contact, 'Hello from the feed'))->toThrow(LogicException::class, 'No such entry')
+        ->and(PretendPing::query()->count())->toBe(0);
 });
 
 it('does nothing with a ping while the pretend room is not in the live version', function () {
