@@ -39,7 +39,8 @@ abstract class RoomServiceProvider extends ServiceProvider
      * Add the room's model nicknames to the morph map. Relation::morphMap() merges with the list AppServiceProvider
      * enforces, so never call enforceMorphMap() here: it would replace that list. A nickname that already points at a
      * different model is refused, because the merge would silently win over it and every stored row using the nickname
-     * would then resolve to the wrong model. A room model used as the subject of a timeline entry must be in this map, or
+     * would then resolve to the wrong model. A model that already has a nickname is refused under a second one, because
+     * Laravel would start writing its rows under the new name. A room model used as the subject of a timeline entry must be in this map, or
      * Laravel refuses it.
      *
      * The check and the merge wait until every provider has booted, so the order of bootstrap/providers.php stops
@@ -56,6 +57,12 @@ abstract class RoomServiceProvider extends ServiceProvider
 
                 if ($existing !== null && $existing !== $class) {
                     throw new LogicException("Room [{$this->room()->key}] morph alias [{$alias}] is already used for [{$existing}]. A room may not replace an existing nickname. Pick another name.");
+                }
+
+                $currentAlias = array_search($class, Relation::morphMap(), true);
+
+                if ($currentAlias !== false && $currentAlias !== $alias) {
+                    throw new LogicException("Room [{$this->room()->key}] maps [{$class}], which already has the nickname [{$currentAlias}]. A model takes one nickname, so its stored rows keep resolving.");
                 }
             }
 

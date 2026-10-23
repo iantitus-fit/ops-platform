@@ -117,6 +117,24 @@ it('refuses a morph alias another room already declared', function () {
         ->toThrow(LogicException::class, 'shared_thing');
 });
 
+it('refuses a morph map value that is not a model class', function (mixed $class, string $words) {
+    expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', morphMap: ['quiet_thing' => $class])))
+        ->toThrow(LogicException::class, $words);
+})->with([
+    'a number' => [42, 'must point at a model class'],
+    'a class that is not a model' => [AccountWidget::class, 'is not an Eloquent model'],
+]);
+
+it('refuses a model class another room already maps, or one room maps twice', function () {
+    $registry = new RoomRegistry;
+    $registry->add(new Room(key: 'first', label: 'first', morphMap: ['first_thing' => 'App\First\Thing']));
+
+    expect(fn () => $registry->add(new Room(key: 'second', label: 'second', morphMap: ['second_thing' => 'App\First\Thing'])))
+        ->toThrow(LogicException::class, 'App\First\Thing')
+        ->and(fn () => (new RoomRegistry)->add(new Room(key: 'twice', label: 'twice', morphMap: ['one_name' => 'App\Twice\Thing', 'two_name' => 'App\Twice\Thing'])))
+        ->toThrow(LogicException::class, 'App\Twice\Thing');
+});
+
 it('refuses a handled file type that is not lower snake case', function () {
     expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', handles: ['Agent-Files'])))
         ->toThrow(LogicException::class, 'Agent-Files');

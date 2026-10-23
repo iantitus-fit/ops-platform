@@ -154,6 +154,20 @@ it('refuses a room whose morph alias would replace the app\'s own nickname', fun
         ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
 });
 
+it('refuses a room that maps a model the app already stores under another nickname', function () {
+    $provider = new class(app()) extends RoomServiceProvider
+    {
+        protected function room(): Room
+        {
+            return new Room(key: 'greedy', label: 'greedy', morphMap: ['customer' => Contact::class]);
+        }
+    };
+
+    expect(fn () => $provider->boot())->toThrow(LogicException::class, 'contact')
+        ->and(Relation::getMorphedModel('customer'))->toBeNull()
+        ->and((new Contact)->getMorphClass())->toBe('contact');
+});
+
 it('checks a room\'s nicknames after every provider has booted, so listing order does not matter', function () {
     $callbacks = [];
     $app = Mockery::mock(Application::class);

@@ -4,6 +4,7 @@ namespace App\Rooms;
 
 use App\Icm\Loader;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
 /**
@@ -242,20 +243,39 @@ class RoomRegistry
     }
 
     /**
-     * A room's model nicknames must be a map of lower_snake_case alias to model class, and no two rooms may use the
-     * same alias. Collisions with the app's own nicknames cannot be seen here, because the registry fills during
-     * register() and AppServiceProvider sets those nicknames in boot(); RoomServiceProvider::boot() checks them.
+     * A room's model nicknames must be a map of lower_snake_case alias to model class. No two rooms may use the same
+     * alias, and no model class may be mapped twice, by one room or by two, because Laravel stores a model under the
+     * first nickname it finds for the class, so a second nickname would change the name its rows are written under. A
+     * class name that does not exist yet is let through, because registry tests use placeholder names. Collisions with
+     * the app's own nicknames cannot be seen here, because the registry fills during register() and AppServiceProvider
+     * sets those nicknames in boot(); RoomServiceProvider::boot() checks them.
      */
     private function guardMorphMap(Room $room): void
     {
-        foreach (array_keys($room->morphMap) as $alias) {
+        foreach ($room->morphMap as $alias => $class) {
             if (! is_string($alias) || preg_match(self::NAME_PATTERN, $alias) !== 1) {
                 throw new LogicException("Room [{$room->key}] morph alias [{$alias}] must be a lower_snake_case name pointing at a model class, such as ['pretend_ping' => PretendPing::class].");
+            }
+
+            if (! is_string($class)) {
+                throw new LogicException("Room [{$room->key}] morph alias [{$alias}] must point at a model class, such as ['pretend_ping' => PretendPing::class].");
+            }
+
+            if (class_exists($class) && ! is_subclass_of($class, Model::class)) {
+                throw new LogicException("Room [{$room->key}] morph alias [{$alias}] points at [{$class}], which is not an Eloquent model.");
+            }
+
+            if (array_search($class, $room->morphMap, true) !== $alias) {
+                throw new LogicException("Room [{$room->key}] maps [{$class}] under more than one morph alias. A model takes one nickname.");
             }
 
             foreach ($this->rooms as $other) {
                 if (array_key_exists($alias, $other->morphMap)) {
                     throw new LogicException("Room [{$room->key}] morph alias [{$alias}] is already used by room [{$other->key}]. Pick another name.");
+                }
+
+                if (in_array($class, $other->morphMap, true)) {
+                    throw new LogicException("Room [{$room->key}] maps [{$class}], which room [{$other->key}] already maps under a nickname. A model takes one nickname.");
                 }
             }
         }
