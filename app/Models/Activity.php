@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\ActivityType;
+use App\Icm\ActiveConfig;
 use Database\Factories\ActivityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -59,5 +62,20 @@ class Activity extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Keep the rows a timeline may show: those with no room, which is every row v1.0 writes, and those of a room that
+     * is in the live version. Rows of a room that is not in the live version are hidden, never deleted, and show
+     * again when the room's folder comes back (Ian, 2026-10-22). Every timeline reader applies this one scope.
+     *
+     * @param  Builder<Activity>  $query
+     */
+    #[Scope]
+    protected function visibleOnTimeline(Builder $query): void
+    {
+        $query->where(function (Builder $query): void {
+            $query->whereNull('room')->orWhereIn('room', app(ActiveConfig::class)->roomKeys());
+        });
     }
 }

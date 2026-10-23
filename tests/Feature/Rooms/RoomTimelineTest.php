@@ -98,12 +98,12 @@ function roomTimelineContactWithEntryAndNote(string $name = 'Dana Whitfield'): C
 {
     $contact = Contact::factory()->create(['name' => $name]);
 
-    app(RecordRoomEntry::class)->handle($contact, 'pretend', 'ping_received', 'Ping from the pretend feed');
     Activity::factory()->create([
         'contact_id' => $contact->id,
         'type' => ActivityType::Note,
         'summary' => 'Called about the quote',
     ]);
+    app(RecordRoomEntry::class)->handle($contact, 'pretend', 'ping_received', 'Ping from the pretend feed');
 
     return $contact;
 }

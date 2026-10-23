@@ -2,7 +2,10 @@
 
 namespace App\Filament\Resources\Contacts\Schemas;
 
+use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
+use App\Models\Activity;
+use App\Rooms\RoomRegistry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -54,7 +57,8 @@ class ContactInfolist
                                     ->label('When')
                                     ->dateTime(timezone: $timezone),
                                 TextEntry::make('type')
-                                    ->badge(),
+                                    ->badge()
+                                    ->formatStateUsing(fn (ActivityType $state, Activity $record): string => self::activityBadge($state, $record)),
                                 TextEntry::make('summary'),
                                 TextEntry::make('subject.body')
                                     ->label('Message')
@@ -72,5 +76,20 @@ class ContactInfolist
                     ])
                     ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * The badge on a timeline entry: the room's own label for an entry a room wrote, "Room entry" when the room's code
+     * no longer registers it, and the type's own value for every other entry, as before.
+     */
+    private static function activityBadge(ActivityType $type, Activity $activity): string
+    {
+        if ($type !== ActivityType::RoomEntry) {
+            return $type->value;
+        }
+
+        $entry = app(RoomRegistry::class)->timelineEntry((string) $activity->room, (string) $activity->entry);
+
+        return $entry === null ? 'Room entry' : ucfirst($entry->label);
     }
 }

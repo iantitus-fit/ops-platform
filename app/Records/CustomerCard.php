@@ -78,6 +78,7 @@ class CustomerCard
         ];
 
         $activities = $contact->activities()
+            ->visibleOnTimeline()
             ->with('subject')
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
