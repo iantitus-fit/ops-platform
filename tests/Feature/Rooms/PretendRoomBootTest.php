@@ -152,6 +152,20 @@ it('refuses a room whose morph alias would replace the app\'s own nickname', fun
         ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
 });
 
+it('adds the pretend room\'s morph alias only inside the test that enabled the room', function () {
+    expect(Relation::getMorphedModel('pretend_ping'))->toBeNull();
+
+    enablePretendRoom();
+
+    expect(Relation::getMorphedModel('pretend_ping'))->toBe(PretendPing::class)
+        ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
+});
+
+it('does not carry the pretend room\'s morph alias into the next test', function () {
+    expect(Relation::getMorphedModel('pretend_ping'))->toBeNull()
+        ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
+});
+
 it('has the pretend room\'s table only inside the test that enabled the room', function () {
     expect(Schema::hasTable('pretend_pings'))->toBeFalse();
 
