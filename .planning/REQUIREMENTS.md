@@ -17,7 +17,7 @@ Every room in the floor plan meets these five.
 
 - [ ] **ROOM-01**: Each room is a folder in the business folder with a `CONTEXT.md` contract and one fictional example file; a room folder holding only its `CONTEXT.md` (an empty room) passes the sync. Today's files stay where they are, by kind. Each room's `CONTEXT.md` names the files it owns and the ones it reads, and every file has exactly one owner: a room or the house. The house owns the routers (`CLAUDE.md`, `START-HERE.md`, the folder `CONTEXT.md` files outside `rooms/`) and the walk tests in `tests/`. *(Wording from the Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-11. Affects: knowledge.)*
 - [ ] **ROOM-02**: Each room is a Laravel module that registers the room's file types with the sync (validated with plain-words errors like any other file), its tables, its dashboard section and its timeline entries.
-- [ ] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
+- [x] **ROOM-03**: A room that talks to an outside system has a connector slot: an interface with a fake driver (the `TextChannel` pattern), and a connector file declaring `owns` and `reads`. A room with no outside system says so in its `CONTEXT.md`.
 - [x] **ROOM-04**: Each room's `CONTEXT.md` states what the room writes to `records/`, which may be nothing; anything it writes is rendered from the database and read-only (DEC-03).
 - [ ] **ROOM-05**: Each room has one test that boots it with an empty room folder and with its example folder, passing on SQLite and Postgres.
 
@@ -44,7 +44,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 
 ### Connectors
 
-- [ ] **CONN-07**: Connector files declare `owns` and `reads` instead of `objects`. The sync refuses a folder where two connectors own the same kind of record and says so in plain words ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it"). *(derived from "One owner per fact"; ROOM-03 needs it. CONN-01 stays unchanged in Future Requirements)*
+- [x] **CONN-07**: Connector files declare `owns` and `reads` instead of `objects`. The sync refuses a folder where two connectors own the same kind of record and says so in plain words ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it"). *(derived from "One owner per fact"; ROOM-03 needs it. CONN-01 stays unchanged in Future Requirements)*
 
 ### Booking and the Gate
 
@@ -196,7 +196,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 |-------------|-------|--------|
 | ROOM-01 | Phase 4 | Pending |
 | ROOM-02 | Phase 4 | Pending |
-| ROOM-03 | Phase 4 | Pending |
+| ROOM-03 | Phase 4 | Complete |
 | ROOM-04 | Phase 4 | Complete |
 | ROOM-05 | Phase 4 | Pending |
 | PROJ-01 | Phase 7 | Pending |
@@ -212,7 +212,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-13 | Phase 9 | Pending |
 | ROOM-14 | Phase 5 | Pending |
 | ROOM-15 | Phase 6 | Pending |
-| CONN-07 | Phase 4 | Pending |
+| CONN-07 | Phase 4 | Complete |
 | BOOK-01 | Phase 8 | Pending |
 | BOOK-02 | Phase 8 | Pending |
 | BOOK-03 | Phase 8 | Pending |
