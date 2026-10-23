@@ -34,7 +34,7 @@ Every fix has its own local commit on `gsd/phase-04-room-standard`, with a test 
 
 Tests: registry cases for bad alias, list, and cross-room clash; a boot test showing a room declaring `message` is refused and `message` still resolves to `Message`.
 
-### WR-02: A router file inside a room's folder counts as an "owned file"
+### WR-02: A router file inside a room's folder counts as an "owned file" and suppresses the empty-state line
 
 **Files modified:** `app/Icm/ActiveConfig.php`, `tests/Feature/Rooms/RoomSectionTest.php`
 **Commit:** 027ef02
@@ -46,7 +46,7 @@ Tests: registry cases for bad alias, list, and cross-room clash; a boot test sho
 **Commit:** 4067bca
 **Applied fix:** Three new guards in `add()`: `handles` values must be lower_snake_case; a section class that exists must be a `RoomSection` subclass whose `roomKey()` equals the room key (placeholder class names that do not exist are let through, as the review suggested); timeline entry keys must be lower_snake_case and unique inside the room. Tests cover a plain widget, another room's section, a duplicate key, a bad key and a bad handle.
 
-### WR-04: A room chooses the trust label on its timeline entries
+### WR-04: A room chooses the trust label on its timeline entries, and nothing makes it an untrusted one
 
 **Files modified:** `app/Rooms/TimelineEntryType.php`, `app/Records/CustomerCard.php`, `tests/Rooms/PretendRoom/PretendRoomServiceProvider.php`, `tests/Feature/Rooms/RoomTimelineTest.php`, `tests/Unit/Rooms/RoomRegistryTest.php`
 **Commit:** a3602c0
@@ -72,7 +72,7 @@ Note for the owner: the status quo was "System note:" on room entries; the card 
 **Commit:** 6dbf9ef
 **Applied fix:** The Feature `afterEach` now calls `Relation::morphMap([], false)`. Every test boots a fresh app whose `AppServiceProvider` enforces the core aliases again, so the reset is safe (full suite passed with it). Added two tests in sequence: one enables the room and sees `pretend_ping`, the next sees it gone while `message` still resolves. Without the reset both fail. `enablePretendRoom()` docblock mentions the reset.
 
-### IN-04: `ReceivePing` writes to the outside system before the database and has no transaction
+### IN-04: `ReceivePing`, the template other rooms copy, writes to the outside system before the database and has no transaction
 
 **Files modified:** `tests/Rooms/PretendRoom/ReceivePing.php`, `tests/Feature/Rooms/PretendRoomBootTest.php`
 **Commit:** 813bfe5
