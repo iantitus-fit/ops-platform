@@ -425,7 +425,13 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 
 **Feeds.** Every area.
 
-**Open items affecting this area.** IN-11: onboarding should require an owner phone.
+**Open items affecting this area.**
+- IN-11: onboarding should require an owner phone.
+- G-04-1, for Phase 5 (Ian, 2026-10-23, [Phase 4 UAT](../.planning/phases/04-room-standard/04-UAT.md)): every sync refusal line starts with the raw file path (`app/Icm/ValidationReport.php:45`), so a path containing a line break carries the break into the stored error line. Fixing it needs a decision on where paths get cleaned. Phase 5's roadmap criteria don't name it, so Phase 5's discuss picks it up. Affects: knowledge.
+- G-04-2, wording (Ian, 2026-10-23, [Phase 4 UAT](../.planning/phases/04-room-standard/04-UAT.md)): after a killed sync, "A sync is already running. Try again in a moment." shows for up to 2 minutes, until the lock expires, when no sync is running. Reword it so the owner knows to wait. Wording only, under the 2026-10-17 principle: the lock does not change. Affects: knowledge.
+- G-04-3, wording (Ian, 2026-10-23, [Phase 4 UAT](../.planning/phases/04-room-standard/04-UAT.md)): a room refusal reads "business/hours.md is a hours file", because the template puts the type name straight after "a" (`app/Icm/RoomChecks.php:273-274`). Reword it so it reads naturally. Wording only, under the 2026-10-17 principle: which files are refused does not change. Affects: knowledge.
+- IN-10, test name ([Phase 4 review](../.planning/phases/04-room-standard/04-REVIEW.md)): the order-independence test for a refused room contract is titled "gives the same refusal", but it pins two line orders on purpose. Rename it to say what it checks. Affects: knowledge.
+- The CI runner pin: see [Safety and compliance](#10-safety-and-compliance).
 
 ## 9. Connectors and data
 
@@ -468,6 +474,9 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 **Depends on.** Safety and compliance (ZDR routes, credentials).
 
 **Feeds.** Marketing, Sales, Operations, Finance, Owner intelligence.
+
+**Open items affecting this area.**
+- IN-09, test coverage ([Phase 4 review](../.planning/phases/04-room-standard/04-REVIEW.md)): in the order-independence test, the connector arrangements "written first" and "written second" are the same input, because the sync reads files in name order (`app/Icm/Loader.php:77`); only the content swap changes what the checks see. Drop the duplicates, or add a comment saying why they stay. Affects: connectors and data.
 
 ## 10. Safety and compliance
 
@@ -526,6 +535,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - Jev tuning.
 - Message shape (B) (notice placement).
 - IN-11 (outage alerts with no owner phone).
+- The CI runner pin (Ian, 2026-10-23, Phase 4 transition): CI runs on `ubuntu-latest` (`.github/workflows/tests.yml:13`), which includes the browser accessibility check (Playwright's Chromium, installed with its system packages). Pin the runner to `ubuntu-24.04`, or re-check the run after GitHub moves `ubuntu-latest` to Ubuntu 26. Affects: safety and compliance, knowledge.
 
 ---
 
