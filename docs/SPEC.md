@@ -205,6 +205,32 @@ One fact, one file. If the hours change, `hours.md` changes and nothing else.
 
 A room is a part of the product a business can have or not: the engine knows its rooms in code, and a business has a room when its folder holds `rooms/<room>/CONTEXT.md`. New kinds of file a room defines live in its own folder under `rooms/<room>/` (Phase 4, D-01 and D-04), and the sync refuses one anywhere else, naming the folder it belongs in; today's kinds of file stay where they are (D-04). Only a CONTEXT.md directly inside `rooms/<room>/` is a contract; every other CONTEXT.md stays a router.
 
+### Who owns each file
+
+Every file has exactly one owner: a room or the house (D-11). This is the map; the room's own `rooms/<room>/CONTEXT.md` is what the sync enforces. A pattern may use `*` for any run of characters.
+
+| File | Owner | Readers named so far |
+|---|---|---|
+| `business/profile.md` | company knowledge | every room |
+| `business/hours.md` | company knowledge | front desk (next open), schedule and booking |
+| `business/services/*.md` | company knowledge | front desk (intake, price sentences), schedule and booking (duration, book_online) |
+| `business/faq.md` | company knowledge | front desk |
+| `voice/how-we-talk.md` | company knowledge | front desk, content generation, Google Business Profile |
+| `business/lead-sources.md` | marketing | leads, front desk (ROOM-09) |
+| `business/offers/*.md` | marketing | leads, front desk (ROOM-09) |
+| `rules/sending.md` | front desk | team (reads `owner_alert`) |
+| `rules/replies.md` | front desk | team (reads `owner_name`) |
+| `rules/triage.md` | front desk | |
+| `agents/*.md` | the room the agent serves (`agents/front-desk.md`: front desk) | team (reads `escalate_to` in `agents/front-desk.md`) |
+| `connectors/*.md` | the room whose slot the file fills (the text channel's: front desk; Google Business Profile's: its room) | |
+| `rooms/*/CONTEXT.md` | the room whose folder it is | |
+| `CLAUDE.md` | the house | |
+| `START-HERE.md` | the house | |
+| `*CONTEXT.md` | the house (every CONTEXT.md outside `rooms/`) | |
+| `tests/*.md` | the house | |
+
+`rules/sending.md` is not split: the front desk owns it and the team reads `owner_alert` (D-13). `README.md` files, `changelog.md` and `records/` are skipped by the sync and need no owner (D-11). Schedule and booking, leads, content generation, Google Business Profile, owner intelligence, money and team own none of today's files (D-12). Once a room lands, its CONTEXT.md is what the sync enforces, this table is the map, and the room's boot test fails if the two disagree (D-14). Ownership is enforced as each room lands, so a file whose room is not built yet passes (D-15). A room may claim only the kinds of file its code handles (D-17).
+
 ### File types (the front matter contract)
 
 | type | File | Required front matter | What the engine does with it |
