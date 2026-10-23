@@ -54,7 +54,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   5. A folder where two connectors own the same kind of record is refused with a plain-words message ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it") and the previous version stays live.
   6. Each room's dashboard section, including the empty line (04-CONTEXT D-21), passes an automated accessibility check (axe rules, WCAG 2.2 Level AA) that runs with the room's boot test in CI, and the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
 
-**Plans**: 8/9 plans executed
+**Plans**: 9/9 plans executed
 
 Plans:
 **Wave 1**
@@ -78,7 +78,7 @@ Plans:
 - [x] 04-06-PLAN.md — The empty room's one plain line and the room boot test, empty and with its example folder
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 04-09-PLAN.md — The room standard's accessibility check (axe, WCAG 2.2 AA), proven on the pretend room
+- [x] 04-09-PLAN.md — The room standard's accessibility check (axe, WCAG 2.2 AA), proven on the pretend room
 
 **Planning notes** (settle these in discuss-phase):
 - Which room owns each file in today's folder is not written down yet. This phase writes that table for all ten rooms across every top-level folder in the example business (`agents/`, `automations/`, `business/`, `connectors/`, `rules/`, `tests/`, `voice/`), including `business/profile.md` and `business/hours.md`. Every file has exactly one owning room (ROOM-01). Whether the sync enforces that, and from which phase (as each room lands, or once all ten exist), is open.
@@ -267,7 +267,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Room Standard | 8/9 | In Progress | - |
+| 4. Room Standard | 9/9 | In Progress | - |
 | 5. Standard Rooms | 0/TBD | Not started | - |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |

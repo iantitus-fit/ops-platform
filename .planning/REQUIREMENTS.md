@@ -86,7 +86,7 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 
 Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup, never by an overlay widget. Automated checks catch only part of WCAG, so customer pages and owner screens also get a keyboard-only and screen reader walk at UAT (PROJECT.md Frontend; Ian, 2026-10-22).
 
-- [ ] **A11Y-01**: The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI; the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
+- [x] **A11Y-01**: The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI; the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
 - [ ] **A11Y-02**: The customer booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 - [ ] **A11Y-03**: Every owner-facing screen passes the automated check and a keyboard-only and VoiceOver walk at 375 and 390 wide. PROJECT.md Frontend open item 5 is settled here.
 
@@ -231,7 +231,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | DSGN-03 | Phase 11 | Pending |
 | DSGN-04 | Phase 11 | Pending |
 | DSGN-05 | Phase 11 | Pending |
-| A11Y-01 | Phase 4 | Pending |
+| A11Y-01 | Phase 4 | Complete |
 | A11Y-02 | Phase 8 | Pending |
 | A11Y-03 | Phase 11 | Pending |
 | DEPL-02 | Phase 12 | Pending |

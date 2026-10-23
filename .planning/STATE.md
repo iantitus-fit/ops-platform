@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 04
 current_phase_name: Room Standard
-status: executing
-stopped_at: Completed 04-06-PLAN.md
-last_updated: "2026-10-23T01:37:37.976Z"
+status: verifying
+stopped_at: Completed 04-09-PLAN.md
+last_updated: "2026-10-23T01:45:26.836Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 04 execution started
-state_head: 1812fb6a719573d4308ab79c81653119a2519e35
+state_head: 2bd69193a988a33ac602a989702c4826e781f2d4
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-21)
 
 Phase: 04 (Room Standard) — EXECUTING
 Plan: 9 of 9
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-22 — Phase 04 execution started
 
 Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
@@ -144,6 +144,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 04 P04 | 9 min | 3 tasks | 19 files |
 | Phase 04 P05 | 7 min | 3 tasks | 16 files |
 | Phase 04 P06 | 4 min | 2 tasks | 7 files |
+| Phase 04 P09 | 4 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: 04-05: RecordRoomEntry is the chokepoint for a room's timeline writes; it refuses when the room is not live or the entry key is unregistered
 - [Phase 04]: 04-06: a room whose contract owns nothing is never shown as empty; RoomSection::emptyLine() returns null and the room's contentLines() shows
 - [Phase 04]: 04-06: roomOwnedFiles() excludes room contracts so a room cannot look furnished by matching its own CONTEXT.md
+- [Phase 04]: 04-09: actingAs() carries into the Pest browser test, so the accessibility check signs in with it and needs no login-form fallback
 
 ### Pending Todos
 
@@ -226,8 +228,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T01:37:37.954Z
-Stopped at: Completed 04-06-PLAN.md
+Last session: 2026-10-23T01:45:26.814Z
+Stopped at: Completed 04-09-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
