@@ -4,6 +4,7 @@ use App\Icm\ActiveConfig;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Tests\Rooms\PretendRoom\FakePretendFeed;
 use Tests\Rooms\PretendRoom\PretendFeed;
 
@@ -274,4 +275,16 @@ it('asks a room with no slot to write connector: none', function () {
     $this->artisan('icm:sync')->assertExitCode(1);
 
     expect(rejectedErrors())->toBe(['rooms/quiet/CONTEXT.md: connector must be none, because the quiet room has no connector slot (you wrote some_feed)']);
+});
+
+it('keeps a line break in a room folder name out of the contract type refusal', function () {
+    enablePretendRoom();
+    writeIcmFile("rooms/pre\n# tend/CONTEXT.md", "---\ntype: knowledge\n---\nBody");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    $refusals = collect(rejectedErrors())->filter(fn (string $line): bool => str_contains($line, 'type must be room, because this file is the'));
+
+    expect($refusals)->toHaveCount(1)
+        ->and(Str::after($refusals->first(), '/CONTEXT.md: '))->toBe("type must be room, because this file is the pre # tend room's contract (you wrote knowledge)");
 });

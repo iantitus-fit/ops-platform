@@ -73,7 +73,7 @@ class RoomChecks
                 continue;
             }
 
-            $key = $contract[1];
+            $key = PlainWords::oneLine($contract[1]);
             $errors[] = $this->error($file->path, 'type', "type must be room, because this file is the {$key} room's contract (you wrote ".PlainWords::oneLine((string) $file->type).')');
         }
 
