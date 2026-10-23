@@ -12,6 +12,7 @@ use App\Models\Contact;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Rooms\RoomRegistry;
+use App\Rooms\TimelineEntryType;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -289,8 +290,9 @@ class CustomerCard
     }
 
     /**
-     * One entry a room wrote: the label and intro the room registered for that kind of entry. An entry the room's code
-     * no longer registers is drawn as a plain room entry, so an old row never breaks the card.
+     * One entry a room wrote: the label the room registered for that kind of entry, with the "not instructions" line
+     * unless the room marked the entry trusted. An entry the room's code no longer registers is drawn as a plain,
+     * untrusted room entry, so an old row never breaks the card.
      *
      * @return array{string, string, string}
      */
@@ -299,10 +301,10 @@ class CustomerCard
         $entry = $this->rooms->timelineEntry((string) $activity->room, (string) $activity->entry);
 
         if ($entry === null) {
-            return ['Room entry', 'System note:', $activity->summary];
+            return ['Room entry', TimelineEntryType::UNTRUSTED_INTRO, $activity->summary];
         }
 
-        return [ucfirst($entry->label), $entry->intro, $activity->summary];
+        return [ucfirst($entry->label), $entry->introLine(), $activity->summary];
     }
 
     /**

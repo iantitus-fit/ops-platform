@@ -24,7 +24,7 @@ class PretendRoomServiceProvider extends RoomServiceProvider
             slotInterface: PretendFeed::class,
             sections: [PretendRoomSection::class],
             tables: ['pretend_pings'],
-            timelineEntries: [new TimelineEntryType(key: 'ping_received', label: 'pretend ping', intro: 'System note:')],
+            timelineEntries: [new TimelineEntryType(key: 'ping_received', label: 'pretend ping')],
             morphMap: ['pretend_ping' => PretendPing::class],
         );
     }
