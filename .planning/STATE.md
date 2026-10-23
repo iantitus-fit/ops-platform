@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 04
 current_phase_name: Room Standard
 status: executing
-stopped_at: Completed 04-08-PLAN.md
-last_updated: "2026-10-23T00:48:58.908Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-10-23T01:04:36.478Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 04 execution started
-state_head: c9c845764d5cbf31d80b50e1e61b805e8f30c454
+state_head: 7c352bf038fac7da08fe9d760c6481de445a2717
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-21)
 ## Current Position
 
 Phase: 04 (Room Standard) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 04 execution started
 
@@ -140,6 +140,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 04 P07 | 3 min | 2 tasks | 4 files |
 | Phase 04 P02 | 7 min | 3 tasks | 10 files |
 | Phase 04 P08 | 154 min | 3 tasks | 3 files |
+| Phase 04 P03 | 10 min | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: 04-07: pestphp/pest-plugin-browser ^5.1 installed as a dev-only dependency after Ian's approval on 2026-10-22; Playwright and Chromium stay in Plan 04-08
 - [Phase 04]: 04-02: A room contract entry earns at most one error (path-inside-folder check first, then records/); backslash counts as a separator in the .. check
 - [Phase 04]: 04-02: Loader::NONE_MEANS_EMPTY is the only place the word none is read; owns, reads and writes_records reach every other reader as []
+- [Phase 04]: Registered room file types are compiled as lists of paths and served through ActiveConfig::filesOfType(); the Loader, Validator and FolderSync read RoomRegistry
+- [Phase 04]: A room counts as present when its contract loads as a typed room file, so one broken contract does not also read as an absent room
+- [Phase 04]: A file with the D-04 placement line is skipped by the unclaimed and absent-room checks, so each misplaced file gets exactly one line
+- [Phase 04]: The SPEC ownership table row for folder CONTEXT.md files is the pattern *CONTEXT.md owned by the house, beside the rooms/*/CONTEXT.md row for the room's contract
 
 ### Pending Todos
 
@@ -212,8 +217,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T00:48:58.885Z
-Stopped at: Completed 04-08-PLAN.md
+Last session: 2026-10-23T01:04:36.456Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
