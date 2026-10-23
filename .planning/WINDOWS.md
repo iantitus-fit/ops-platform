@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 8
+open_count: 9
 waived_count: 1
 fixed_count: 9
-total_count: 18
-last_updated: 2026-10-23T01:36:56.101Z
+total_count: 19
+last_updated: 2026-10-23T01:44:47.162Z
 ---
 
 # Broken Windows Ledger
@@ -33,6 +33,7 @@ last_updated: 2026-10-23T01:36:56.101Z
 | 16 | 02.1 | unrun-verify | tests/Feature/SendRule/SafetyCheckOutageTest.php |  | Plan 02.1-23 human-check (live JEV_API_KEY with php artisan schedule:work running: confirm the health ping succeeds against OpenRouter and no outage row opens; set a wrong key, wait for the next ping, and confirm one safety_check_down text reaches the owner's phone; restore the key and confirm the back-up text) not run by the executor; left for end-of-phase UAT | fixed |  | 2026-10-16T22:06:46.795Z | 2026-10-18T15:30:24.053Z |
 | 17 | 02.1 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | Plan 02.1-25 human-check (on a phone, a Needs you card after the customer wrote again shows the quoted newest text and 'Send anyway'; tapping Send twice sends once; Discard asks first and Cancel keeps the draft) not run by the executor; left for end-of-phase UAT with entry 13's walk | fixed |  | 2026-10-16T22:29:40.293Z | 2026-10-18T15:30:24.142Z |
 | 18 | 04 | stub | resources/views/filament/rooms/section.blade.php | 3 | Room section view body is empty on purpose; plan 04-06 fills it with the room's line (D-21) | fixed |  | 2026-10-22T21:54:44.369Z | 2026-10-23T01:36:56.101Z |
+| 19 | 04 | unrun-verify | tests/Feature/Rooms/RoomAccessibilityTest.php |  | CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT) | open |  | 2026-10-23T01:44:47.162Z |  |
 
 ````json
 [
@@ -268,6 +269,19 @@ last_updated: 2026-10-23T01:36:56.101Z
     "reason": "",
     "recorded_at": "2026-10-22T21:54:44.369Z",
     "resolved_at": "2026-10-23T01:36:56.101Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 19,
+    "kind": "unrun-verify",
+    "phase": "04",
+    "file": "tests/Feature/Rooms/RoomAccessibilityTest.php",
+    "line": null,
+    "description": "CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-23T01:44:47.162Z",
+    "resolved_at": null,
     "milestone": "v2.0"
   }
 ]
