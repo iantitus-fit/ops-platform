@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 04
 current_phase_name: Room Standard
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-10-23T01:18:17.282Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-10-23T01:29:39.928Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 04 execution started
-state_head: 78f49b9ce7649dc7cf22e013039c12cb8a0ee1a6
+state_head: dd0a88f0770dcc18e25f0c79c7da645ae32d48fc
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-21)
 ## Current Position
 
 Phase: 04 (Room Standard) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 04 execution started
 
@@ -142,6 +142,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | Phase 04 P08 | 154 min | 3 tasks | 3 files |
 | Phase 04 P03 | 10 min | 3 tasks | 18 files |
 | Phase 04 P04 | 9 min | 3 tasks | 19 files |
+| Phase 04 P05 | 7 min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: The SPEC ownership table row for folder CONTEXT.md files is the pattern *CONTEXT.md owned by the house, beside the rooms/*/CONTEXT.md row for the room's contract
 - [Phase 04]: 04-04: A connector file counts toward the two-owner check only when every owns entry is an ownable kind, so a file already refused for its kinds never blames another file
 - [Phase 04]: 04-04: RoomChecks::isPresent() is the one public answer to whether a room is here; ConnectorChecks asks it instead of copying the rule
+- [Phase 04]: 04-05: a sync that changes the room set queues a card redraw (CustomerRecordChanged) for each contact holding entries of a room that went off or on, so the stored card follows the room (for Ian's review; alternative was waiting for the next event or records:rebuild)
+- [Phase 04]: 04-05: RecordRoomEntry is the chokepoint for a room's timeline writes; it refuses when the room is not live or the entry key is unregistered
 
 ### Pending Todos
 
@@ -220,8 +223,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T01:18:17.260Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-10-23T01:29:39.906Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
