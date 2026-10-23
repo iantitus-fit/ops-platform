@@ -200,9 +200,14 @@ it('adds the pretend room\'s morph alias only inside the test that enabled the r
         ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
 });
 
-it('does not carry the pretend room\'s morph alias into the next test', function () {
-    expect(Relation::getMorphedModel('pretend_ping'))->toBeNull()
-        ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
+it('drops the pretend room\'s morph alias when the morph map is reset, as tests/Pest.php does after every Feature test', function () {
+    enablePretendRoom();
+
+    expect(Relation::getMorphedModel('pretend_ping'))->toBe(PretendPing::class);
+
+    Relation::morphMap([], false);
+
+    expect(Relation::getMorphedModel('pretend_ping'))->toBeNull();
 });
 
 it('has the pretend room\'s table only inside the test that enabled the room', function () {
