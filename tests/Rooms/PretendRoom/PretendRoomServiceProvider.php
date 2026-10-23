@@ -18,6 +18,7 @@ class PretendRoomServiceProvider extends RoomServiceProvider
         return new Room(
             key: 'pretend',
             label: 'pretend',
+            fileTypes: [new PretendNoteType],
             slot: 'pretend_feed',
             slotInterface: PretendFeed::class,
             sections: [PretendRoomSection::class],

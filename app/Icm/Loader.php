@@ -4,6 +4,7 @@ namespace App\Icm;
 
 use App\Enums\IcmFileKind;
 use App\Icm\Exceptions\IcmFolderMissing;
+use App\Rooms\RoomRegistry;
 use DateTimeInterface;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
@@ -49,6 +50,8 @@ class Loader
      * @var array<string, list<string>>
      */
     private const NONE_MEANS_EMPTY = ['room' => ['owns', 'reads', 'writes_records']];
+
+    public function __construct(private RoomRegistry $rooms) {}
 
     /**
      * Read every markdown file under $root and split it into front matter and body.
@@ -132,6 +135,7 @@ class Loader
 
         $kind = match (true) {
             in_array($type, self::TYPED, true) => IcmFileKind::Typed,
+            in_array($type, $this->rooms->registeredTypes(), true) => IcmFileKind::Typed,
             in_array($type, self::LATER_SPRINT, true) => IcmFileKind::LaterSprint,
             default => IcmFileKind::Unrecognized,
         };

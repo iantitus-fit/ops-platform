@@ -5,6 +5,7 @@ namespace App\Icm;
 use App\Enums\AlertReason;
 use App\Enums\IcmFileKind;
 use App\Enums\ReplyLabel;
+use App\Rooms\RoomRegistry;
 use App\SendRule\CodeChecks;
 use App\Support\PhoneNumber;
 use DateTimeImmutable;
@@ -99,7 +100,7 @@ class Validator
      */
     private ?array $usableProviders = null;
 
-    public function __construct(private RoomChecks $roomChecks) {}
+    public function __construct(private RoomChecks $roomChecks, private RoomRegistry $rooms) {}
 
     /**
      * Every problem in the folder. A folder with no problems may go live.
@@ -152,7 +153,7 @@ class Validator
             'voice' => $this->voiceErrors($file),
             'triage' => $this->triageErrors($file),
             'room' => $this->roomChecks->contractErrors($file),
-            default => [],
+            default => $this->rooms->fileType((string) $file->type)?->checks($file) ?? [],
         });
 
         return $errors;
@@ -277,7 +278,7 @@ class Validator
                 'questions.life_safety' => 'bail|required|string',
                 'questions.asks_for_person' => 'bail|required|string',
             ],
-            default => [],
+            default => $this->rooms->fileType((string) $file->type)?->rules($file) ?? [],
         };
     }
 
@@ -1505,7 +1506,7 @@ class Validator
     private function problemMessage(string $problem): string
     {
         if (str_starts_with($problem, 'unknown_type:')) {
-            return PlainWords::render('In', Loader::TYPED, 'type', substr($problem, strlen('unknown_type:')));
+            return PlainWords::render('In', [...Loader::TYPED, ...$this->rooms->registeredTypes()], 'type', substr($problem, strlen('unknown_type:')));
         }
 
         if (str_starts_with($problem, 'unreadable:')) {

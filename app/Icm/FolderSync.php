@@ -7,6 +7,7 @@ use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\IcmVersion;
+use App\Rooms\RoomRegistry;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class FolderSync
         private Loader $loader,
         private Validator $validator,
         private Changelog $changelog,
+        private RoomRegistry $rooms,
     ) {}
 
     /**
@@ -216,6 +218,12 @@ class FolderSync
                 'body' => $file->body,
                 'router' => $file->kind === IcmFileKind::Router,
             ];
+
+            if (in_array($file->type, $this->rooms->registeredTypes(), true)) {
+                $compiled['index'][$file->type][] = $file->path;
+
+                continue;
+            }
 
             match ($file->type) {
                 'service' => $compiled['index']['service'][$file->frontMatter['slug'] ?? $file->path] = $file->path,

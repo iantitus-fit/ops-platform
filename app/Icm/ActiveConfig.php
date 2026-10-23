@@ -238,6 +238,20 @@ class ActiveConfig
     }
 
     /**
+     * Every file of a type a room defines: its front matter plus the markdown body under "body" and its folder path
+     * under "path", in path order. A version compiled before the type existed has none.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function filesOfType(string $type): array
+    {
+        $paths = array_values($this->version()->compiled['index'][$type] ?? []);
+        sort($paths, SORT_STRING);
+
+        return array_map(fn (string $path) => [...$this->typedFile($path), 'path' => $path], $paths);
+    }
+
+    /**
      * The agent that serves one channel such as "sms": its front matter plus the markdown body
      * under "body", or null when no agent file serves that channel.
      *
