@@ -118,7 +118,7 @@ dataset('connector kinds the sync refuses', [
     'projects owned' => ['owns: [projects]', 'reads: []', 'connectors/pretend-feed.md: owns lists projects, which the platform owns; a connector can read it but never own it'],
     'timeline owned' => ['owns: [timeline]', 'reads: []', 'connectors/pretend-feed.md: owns lists timeline, which the platform owns; a connector can read it but never own it'],
     'conversations owned' => ['owns: [conversations]', 'reads: []', 'connectors/pretend-feed.md: owns has conversations, which is not a kind of record; the kinds are: '.OWNABLE_KINDS_SENTENCE],
-    'none as a one-entry list owned' => ['owns: [none]', 'reads: []', 'connectors/pretend-feed.md: owns has none, which is not a kind of record; the kinds are: '.OWNABLE_KINDS_SENTENCE],
+    'none as a one-entry list owned' => ['owns: [none]', 'reads: []', 'connectors/pretend-feed.md: owns has none, which is not a kind of record; the kinds are: customers, sales_activity, invoices, payments, expenses, work_orders, schedule, documents'],
     'drafts read' => ['owns: []', 'reads: [drafts]', 'connectors/pretend-feed.md: reads has drafts, which is not a kind of record; the kinds are: '.OWNABLE_KINDS_SENTENCE.', projects, texts, timeline'],
     'a kind owned twice' => ['owns: [customers, customers]', 'reads: []', 'connectors/pretend-feed.md: owns lists customers twice'],
     'a kind read twice' => ['owns: []', 'reads: [customers, customers]', 'connectors/pretend-feed.md: reads lists customers twice'],

@@ -100,7 +100,7 @@ class Validator
      */
     private ?array $usableProviders = null;
 
-    public function __construct(private RoomChecks $roomChecks, private RoomRegistry $rooms) {}
+    public function __construct(private RoomChecks $roomChecks, private RoomRegistry $rooms, private ConnectorChecks $connectorChecks) {}
 
     /**
      * Every problem in the folder. A folder with no problems may go live.
@@ -153,6 +153,7 @@ class Validator
             'voice' => $this->voiceErrors($file),
             'triage' => $this->triageErrors($file),
             'room' => $this->roomChecks->contractErrors($file),
+            'connector' => $this->connectorChecks->fileErrors($file),
             default => $this->rooms->fileType((string) $file->type)?->checks($file) ?? [],
         });
 

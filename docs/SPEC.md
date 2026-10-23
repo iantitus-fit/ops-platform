@@ -231,6 +231,35 @@ Every file has exactly one owner: a room or the house (D-11). This is the map; t
 
 `rules/sending.md` is not split: the front desk owns it and the team reads `owner_alert` (D-13). `README.md` files, `changelog.md` and `records/` are skipped by the sync and need no owner (D-11). Schedule and booking, leads, content generation, Google Business Profile, owner intelligence, money and team own none of today's files (D-12). Once a room lands, its CONTEXT.md is what the sync enforces, this table is the map, and the room's boot test fails if the two disagree (D-14). Ownership is enforced as each room lands, so a file whose room is not built yet passes (D-15). A room may claim only the kinds of file its code handles (D-17).
 
+### Kinds of record a connector may own
+
+A connector file lists under `owns` the kinds of record its outside system is the truth for, and under `reads` the kinds it only copies. `owns` may hold only these eight keys (D-22):
+
+| Key | Kind of record |
+|---|---|
+| `customers` | The people and companies the business deals with |
+| `sales_activity` | Leads, quotes and follow-ups |
+| `invoices` | What the business has billed |
+| `payments` | What customers have paid |
+| `expenses` | What the business has spent |
+| `work_orders` | Jobs to be done and jobs done |
+| `schedule` | Who is booked where, and when |
+| `documents` | Files such as photos, permits and contracts |
+
+Owning a kind says the outside system is the truth, and the platform never treats its own copy as the truth. A kind is accepted even when the platform keeps none of it yet, such as `invoices`. Ownership is per kind, per field waits for a client (D-22). A key written twice in one list, or in both `owns` and `reads` of one file, is refused.
+
+### Kinds of record the platform owns
+
+These are the platform's own. A connector may list them under `reads` but never under `owns` (D-23):
+
+| Key | Kind of record |
+|---|---|
+| `projects` | The job a customer has asked for, from first text to paid |
+| `texts` | Every message sent or received, with who or what sent it |
+| `timeline` | The dated history of a customer or project |
+
+Texts stay the platform's because the sent message is the platform's own row and every automated send goes through `OutboundSender`. Conversations, owner alerts and drafts are on neither list, so a connector file naming one is refused like any other unknown word. Both lists are the code's lists (`OwnableKind` and `PlatformKind`), and a test fails if SPEC and the code disagree (D-14). Moving a kind from this list onto the first is its own decision with Ian.
+
 ### File types (the front matter contract)
 
 | type | File | Required front matter | What the engine does with it |

@@ -80,7 +80,7 @@ class SpecTables
      */
     public static function ownableKinds(string $markdown): array
     {
-        return [];
+        return self::keysUnder($markdown, '### Kinds of record a connector may own');
     }
 
     /**
@@ -91,6 +91,24 @@ class SpecTables
      */
     public static function platformKinds(string $markdown): array
     {
-        return [];
+        return self::keysUnder($markdown, '### Kinds of record the platform owns');
+    }
+
+    /**
+     * The first backticked token of each row under a heading, in table order.
+     *
+     * @return list<string>
+     */
+    private static function keysUnder(string $markdown, string $heading): array
+    {
+        $keys = [];
+
+        foreach (self::rows($markdown, $heading) as $cells) {
+            if (preg_match('/`([^`]+)`/', $cells[0], $key) === 1) {
+                $keys[] = $key[1];
+            }
+        }
+
+        return $keys;
     }
 }
