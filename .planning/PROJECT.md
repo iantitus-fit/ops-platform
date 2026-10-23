@@ -21,6 +21,8 @@ Finish the customer conversation fast: minutes from first contact to a booked ap
 
 v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder drives the app, every lead lands on one timeline, and the text front desk replies behind the send-or-draft rule, with owner-written prices and offers sent by code. Booking and walk tests (RECS-02, BOOK-01 to BOOK-06, WALK-01 to WALK-03) are known gaps at the close. Record: `.planning/MILESTONES.md`; archives in `.planning/milestones/`.
 
+v2.0 Model Home: Phase 4 Room Standard completed 2026-10-23 (9 plans; UAT 3 of 3 passed). The pretend room that proves the standard lives only in `tests/`; Phase 5 builds the first real rooms. Open items from its UAT and review are in `docs/BLUEPRINT.md` under the punch-list rule.
+
 ## Current Milestone: v2.0 Model Home
 
 **Goal:** A cookie-cutter house that is a starting point for any business: every room built to one standard around the project, so a business is set up by walking the rooms and furnishing them at setup. Wording, policies and which rooms a business uses are the business's own decisions, not built in.
@@ -51,6 +53,8 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ A price or offer the owner wrote goes out at once, picked and sent by code from the customer's intake answers and checked at sync against the file's amounts; a price the model writes still holds — Phase 02.1, v1.0
 - ✓ An easy answer never waits behind a hard question already with the owner, and a customer who writes while a draft waits always gets an owner-written reply (partial holding, check-in, added-info, complaint or discount) with only promises `hours.md` can keep — Phase 02.1, v1.0
 - ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1, v1.0
+- ✓ The room standard: a room is a folder under `rooms/` with a `CONTEXT.md` contract the sync checks (owns, reads, writes_records, connector), and a Laravel module that registers its file types, tables, dashboard section and timeline entries, with a connector slot only when it talks to an outside system; one test boots it empty and with its example folder on SQLite and Postgres, and its dashboard section passes an axe check (WCAG 2.2 AA) in CI (ROOM-01 to ROOM-05, A11Y-01) — Phase 4, v2.0
+- ✓ Two systems never own the same kind of record: connector files declare `owns` and `reads`, live only in `connectors/`, and a folder where two of them own one kind is refused in plain words while the previous version stays live (CONN-07) — Phase 4, v2.0
 
 ### Active
 
@@ -282,4 +286,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-22 after adding accessibility to Frontend (A11Y-01 to A11Y-03)*
+*Last updated: 2026-10-23 after Phase 4*

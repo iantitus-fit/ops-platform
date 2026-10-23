@@ -29,7 +29,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 **Not in any phase:** a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership and a first trade pack are open and undecided. Estimates and payments stay in backlog 999.1. The owner loop stays in backlog 999.5.
 
-- [ ] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record
+- [x] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record (completed 2026-10-23)
 - [ ] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more
 - [ ] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once
 - [ ] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard
@@ -54,7 +54,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   5. A folder where two connectors own the same kind of record is refused with a plain-words message ("customers is owned by both connectors/a.md and connectors/b.md; pick one, the other can read it") and the previous version stays live.
   6. Each room's dashboard section, including the empty line (04-CONTEXT D-21), passes an automated accessibility check (axe rules, WCAG 2.2 Level AA) that runs with the room's boot test in CI, and the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
 
-**Plans**: 9/9 plans executed
+**Plans**: 9/9 plans complete
 
 Plans:
 **Wave 1**
@@ -267,7 +267,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Room Standard | 9/9 | In Progress | - |
+| 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 0/TBD | Not started | - |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |

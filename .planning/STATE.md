@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 04
-current_phase_name: Room Standard
-status: verifying
-stopped_at: Completed 04-09-PLAN.md
-last_updated: "2026-10-23T01:45:26.836Z"
-last_activity: 2026-10-22
-last_activity_desc: Phase 04 execution started
-state_head: 2bd69193a988a33ac602a989702c4826e781f2d4
+current_phase: 5
+current_phase_name: Standard Rooms
+status: planning
+stopped_at: Phase 04 complete, ready to plan Phase 5
+last_updated: "2026-10-23T21:20:13.448Z"
+last_activity: 2026-10-23
+last_activity_desc: Phase 04 complete, transitioned to Phase 5
+state_head: 3d5ef542adfa3e919abd1c2597e635c6b80e213a
 progress:
   total_phases: 9
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 9
   completed_plans: 9
-  percent: 0
+  percent: 11
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-21)
+See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 04 — Room Standard
+**Current focus:** Phase 5 — Standard Rooms
 
 ## Current Position
 
-Phase: 04 (Room Standard) — EXECUTING
-Plan: 9 of 9
-Status: Phase complete — ready for verification
-Last activity: 2026-10-22 — Phase 04 execution started
+Phase: 5 — Standard Rooms
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-23 — Phase 04 complete, transitioned to Phase 5
 
-Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
+Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 76
+- Total plans completed: 85
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0% (0 of 9 v2.0 phases complete)
 | 01 | 7 | - | - |
 | 02 | 41 | - | - |
 | 02.1 | 28 | - | - |
+| 04 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -175,6 +176,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04]: 04-06: a room whose contract owns nothing is never shown as empty; RoomSection::emptyLine() returns null and the room's contentLines() shows
 - [Phase 04]: 04-06: roomOwnedFiles() excludes room contracts so a room cannot look furnished by matching its own CONTEXT.md
 - [Phase 04]: 04-09: actingAs() carries into the Pest browser test, so the accessibility check signs in with it and needs no login-form fallback
+- [Phase 04, Ian 2026-10-23]: a connector file lives only in `connectors/`; the sync refuses `type: connector` anywhere else (IN-05, D-12, D-19)
+- [Phase 04, Ian 2026-10-23]: a room's timeline entries print as customer-supplied text unless the room registers the entry type as trusted (WR-04)
+- [Phase 04, Ian 2026-10-23]: refusal lines about one file follow the contract's own entry order on purpose; order is presentation, not a check's result (UAT test 3)
+- [Phase 04, Ian 2026-10-23]: decision 3 stands as planned: a removed room's entries are hidden, never deleted, and the sync redraws the cards that hold them
 
 ### Pending Todos
 
@@ -193,6 +198,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
+- [Phase 04, carry into Phase 5]: the keyboard-only and VoiceOver walk of a room section moves to Phase 5's UAT, on the first real room section (the pretend room's section exists only in tests). G-04-1 (a path with a line break in a refusal line) is for Phase 5 but not in its roadmap criteria, so Phase 5's discuss picks it up. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -228,10 +234,10 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T01:45:26.814Z
-Stopped at: Completed 04-09-PLAN.md
+Last session: 2026-10-23
+Stopped at: Phase 04 complete, ready to plan Phase 5
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss Phase 4 with /gsd-discuss-phase 4, then plan it with /gsd-plan-phase 4
+- Discuss Phase 5 with /gsd-discuss-phase 5, then plan it with /gsd-plan-phase 5
