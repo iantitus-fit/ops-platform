@@ -203,7 +203,7 @@ index is rebuilt from the files on sync, never edited directly.
 
 One fact, one file. If the hours change, `hours.md` changes and nothing else.
 
-A room is a part of the product a business can have or not: the engine knows its rooms in code, and a business has a room when its folder holds `rooms/<room>/CONTEXT.md`. New kinds of file a room defines live in its own folder under `rooms/<room>/` (Phase 4, D-01 and D-04). Only a CONTEXT.md directly inside `rooms/<room>/` is a contract; every other CONTEXT.md stays a router.
+A room is a part of the product a business can have or not: the engine knows its rooms in code, and a business has a room when its folder holds `rooms/<room>/CONTEXT.md`. New kinds of file a room defines live in its own folder under `rooms/<room>/` (Phase 4, D-01 and D-04), and the sync refuses one anywhere else, naming the folder it belongs in; today's kinds of file stay where they are (D-04). Only a CONTEXT.md directly inside `rooms/<room>/` is a contract; every other CONTEXT.md stays a router.
 
 ### File types (the front matter contract)
 
