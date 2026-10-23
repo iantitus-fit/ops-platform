@@ -3,6 +3,14 @@ phase: 04
 review: 04-REVIEW.md
 titles: json
 findings:
+  - id: IN-09
+    severity: info
+    disposition: open
+    title: "Write-order arrangements in the connector test cannot change what the code sees"
+  - id: IN-10
+    severity: info
+    disposition: open
+    title: "Test 2's name says \"the same refusal\" but its assertions pin two different line orders"
   - id: WR-01
     severity: warning
     disposition: fixed
@@ -59,15 +67,17 @@ findings:
     severity: info
     disposition: fixed
     title: "A misplaced connector file can take the slot or kind from the correctly placed one and get it blamed"
-open: 0
-total: 14
-recorded: 2026-10-23T17:44:24.659Z
+open: 2
+total: 16
+recorded: 2026-10-23T21:06:56.640Z
 ---
 
 # Phase 04: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
+| IN-09 | info | open | - |
+| IN-10 | info | open | - |
 | WR-01 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
 | WR-02 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
 | WR-03 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
