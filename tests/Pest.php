@@ -355,12 +355,15 @@ function layPretendRoomFolder(string ...$paths): void
 
 /**
  * Switch the pretend room on for this test only. It is registered the way Laravel registers a provider at start-up,
- * and its widgets are added to the admin panel, which was built before the test could register the room. It is
- * never listed in bootstrap/providers.php (D-20).
+ * its pending migration runs inside this test's transaction (RefreshDatabase migrated before the room existed, and the
+ * transaction removes the table afterwards), and its widgets are added to the admin panel, which was built before the
+ * test could register the room. It is never listed in bootstrap/providers.php (D-20).
  */
 function enablePretendRoom(): void
 {
     app()->register(PretendRoomServiceProvider::class);
+
+    test()->artisan('migrate')->assertExitCode(0);
 
     app(RoomRegistry::class)->addWidgetsTo(Filament::getPanel('admin'));
 }

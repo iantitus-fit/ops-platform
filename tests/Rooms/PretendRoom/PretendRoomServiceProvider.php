@@ -23,7 +23,9 @@ class PretendRoomServiceProvider extends RoomServiceProvider
             slot: 'pretend_feed',
             slotInterface: PretendFeed::class,
             sections: [PretendRoomSection::class],
+            tables: ['pretend_pings'],
             timelineEntries: [new TimelineEntryType(key: 'ping_received', label: 'pretend ping', intro: 'System note:')],
+            morphMap: ['pretend_ping' => PretendPing::class],
         );
     }
 
@@ -44,5 +46,16 @@ class PretendRoomServiceProvider extends RoomServiceProvider
                 default => throw new InvalidArgumentException("Unknown pretend feed driver [{$driver}]. Use fake."),
             };
         });
+    }
+
+    /**
+     * Merge the room's model nicknames, then load the room's migrations. The pretend room's table exists only in tests,
+     * so only this test provider loads a migration path; a real room keeps its migrations in database/migrations (D-18).
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        $this->loadMigrationsFrom(__DIR__.'/migrations');
     }
 }
