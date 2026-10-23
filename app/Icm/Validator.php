@@ -264,6 +264,13 @@ class Validator
                 'writes_records.*' => 'bail|string',
                 'connector' => 'bail|required|string',
             ],
+            'connector' => [
+                'slot' => 'bail|required|string',
+                'owns' => 'bail|present|array',
+                'owns.*' => 'bail|string',
+                'reads' => 'bail|present|array',
+                'reads.*' => 'bail|string',
+            ],
             'triage' => [
                 'intent_question' => 'bail|required|string',
                 'intents' => 'bail|required|array|min:2|max:255',

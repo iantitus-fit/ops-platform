@@ -38,12 +38,12 @@ it('checks one connector file and compiles it into the live version', function (
 });
 
 dataset('connector fields the sync requires', [
-    'slot deleted' => ['slot'],
-    'owns deleted' => ['owns'],
-    'reads deleted' => ['reads'],
+    'slot deleted' => ['slot', 'connectors/pretend-feed.md: slot is missing, and it is required'],
+    'owns deleted' => ['owns', 'connectors/pretend-feed.md: owns is missing, and it is required'],
+    'reads deleted' => ['reads', 'connectors/pretend-feed.md: reads is missing, and it is required'],
 ]);
 
-it('refuses a connector file with slot, owns or reads missing, naming the file and the field, and keeps the previous version live', function (string $field) {
+it('refuses a connector file with slot, owns or reads missing, naming the file and the field, and keeps the previous version live', function (string $field, string $line) {
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md');
     $live = activateExampleFolder();
@@ -51,7 +51,7 @@ it('refuses a connector file with slot, owns or reads missing, naming the file a
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(["connectors/pretend-feed.md: {$field} is missing, and it is required"])
+    expect(rejectedErrors())->toBe([$line])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 })->with('connector fields the sync requires');
 

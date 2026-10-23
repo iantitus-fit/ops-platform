@@ -190,7 +190,7 @@ index is rebuilt from the files on sync, never edited directly.
 │   └── replies.md       type: set_replies
 ├── agents/              type: agent (Sprint 1)
 ├── automations/         type: automation (Sprint 5)
-├── connectors/          type: connector (Sprint 6)
+├── connectors/          type: connector (checked from Phase 4: slot, owns, reads)
 ├── tests/               type: walk_test (Sprint 2)
 ├── rooms/
 │   └── <room>/
@@ -247,7 +247,7 @@ Every file has exactly one owner: a room or the house (D-11). This is the map; t
 | room | rooms/<room>/CONTEXT.md | owns (list of paths or `*` patterns; `[]` or `none` when the room owns no files), reads (list of paths; `[]` or `none`), writes_records (list of paths under records/; `[]` or `none` when the room writes nothing), connector (the room's slot name, or `none`) | The contract of one room. The sync checks it from Phase 4: each list stays inside the folder, writes_records stays under records/, the connector names the slot the room's code offers, and a rooms/ folder for a room the engine does not have is refused. The word `none` and `[]` mean the same empty list; any other word where a list belongs is refused. Only a CONTEXT.md directly in rooms/<room>/ is a contract (D-03) |
 | agent | agents/*.md | name, channel, provider, model, fallback (list), loads (list of folder paths), escalate_to | Builds the agent at runtime |
 | automation | automations/*.md | trigger, wait, send, stop_when (list) | Scheduled sequences |
-| connector | connectors/*.md | system, direction (in, out, both), owns (list), reads (list), schedule | What syncs and which way, and which kinds of record this system owns. One owner per fact: the sync refuses two connectors owning the same kind of record (`.planning/PROJECT.md`, "One owner per fact", 2026-10-19). No secrets: credentials live encrypted in the engine |
+| connector | connectors/*.md | system, direction (in, out, both), slot, owns (list, or `none`), reads (list, or `none`), schedule | What syncs and which way, and which kinds of record this system owns. The sync checks `slot`, `owns` and `reads` from Phase 4; `system`, `direction` and `schedule` are passed through unchecked until CONN-01, which adds them and the no-secrets scan with the first real connector. The word `none` and `[]` mean the same empty list, as in the room contract; any other word where a list belongs is refused. One owner per fact: the sync refuses two connectors owning the same kind of record (`.planning/PROJECT.md`, "One owner per fact", 2026-10-19). No secrets: credentials live encrypted in the engine |
 | walk_test | tests/*.md | persona, channel, script (list of customer turns), expect (list of checks) | The activation gate |
 
 The markdown body of every file is free text. Agents read it as knowledge: what

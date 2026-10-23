@@ -21,14 +21,14 @@ class Loader
      *
      * @var list<string>
      */
-    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer', 'room'];
+    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer', 'room', 'connector'];
 
     /**
      * Front matter types that arrive in a later sprint. They are skipped with a notice.
      *
      * @var list<string>
      */
-    private const LATER_SPRINT = ['automation', 'connector', 'walk_test'];
+    private const LATER_SPRINT = ['automation', 'walk_test'];
 
     /**
      * Files that only point at other files. They are kept as raw text and never validated.
@@ -49,7 +49,10 @@ class Loader
      *
      * @var array<string, list<string>>
      */
-    private const NONE_MEANS_EMPTY = ['room' => ['owns', 'reads', 'writes_records']];
+    private const NONE_MEANS_EMPTY = [
+        'room' => ['owns', 'reads', 'writes_records'],
+        'connector' => ['owns', 'reads'],
+    ];
 
     public function __construct(private RoomRegistry $rooms) {}
 

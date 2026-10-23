@@ -95,7 +95,7 @@ it('adds the room\'s file types to the sentence that lists the ones the sync kno
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, pretend_note (you wrote recipe)']);
+    expect(rejectedErrors())->toBe(['notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, connector, pretend_note (you wrote recipe)']);
 });
 
 it('does not know the pretend note type while the pretend room is not registered', function () {
@@ -103,7 +103,7 @@ it('does not know the pretend note type while the pretend room is not registered
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['notes/first.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room (you wrote pretend_note)']);
+    expect(rejectedErrors())->toBe(['notes/first.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, connector (you wrote pretend_note)']);
 });
 
 it('has no files to serve before the first sync', function () {
