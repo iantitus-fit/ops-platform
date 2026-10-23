@@ -1,11 +1,18 @@
 <?php
 
+use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
+use App\Models\Activity;
+use App\Models\Contact;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Tests\Rooms\PretendRoom\FakePretendFeed;
+use Tests\Rooms\PretendRoom\PretendPing;
+use Tests\Rooms\PretendRoom\ReceivePing;
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -124,4 +131,56 @@ it('never lists the pretend room in bootstrap/providers.php', function () {
     enablePretendRoom();
 
     expect(app(RoomRegistry::class)->has('pretend'))->toBeTrue();
+});
+
+it('has the pretend room\'s table only inside the test that enabled the room', function () {
+    expect(Schema::hasTable('pretend_pings'))->toBeFalse();
+
+    enablePretendRoom();
+
+    $tables = app(RoomRegistry::class)->get('pretend')->tables;
+
+    expect($tables)->toBe(['pretend_pings']);
+
+    foreach ($tables as $table) {
+        expect(Schema::hasTable($table))->toBeTrue($table);
+    }
+});
+
+it('sends a ping through the slot, stores it in the room\'s table and puts it on the timeline', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+
+    $ping = app(ReceivePing::class)->handle($contact, 'Hello from the feed');
+    $pushed = app(FakePretendFeed::class)->pushed();
+
+    expect($ping)->toBeInstanceOf(PretendPing::class)
+        ->and($pushed)->toHaveCount(1)
+        ->and($pushed[0]['note'])->toBe('Hello from the feed')
+        ->and($ping->feed_id)->toBe($pushed[0]['id'])
+        ->and($ping->contact_id)->toBe($contact->id);
+
+    $entry = Activity::query()->sole();
+
+    expect($entry->type)->toBe(ActivityType::RoomEntry)
+        ->and($entry->room)->toBe('pretend')
+        ->and($entry->entry)->toBe('ping_received')
+        ->and($entry->subject_type)->toBe('pretend_ping')
+        ->and($entry->subject_id)->toBe($ping->id)
+        ->and($entry->subject)->toBeInstanceOf(PretendPing::class);
+});
+
+it('does nothing with a ping while the pretend room is not in the live version', function () {
+    enablePretendRoom();
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+
+    $ping = app(ReceivePing::class)->handle($contact, 'Hello from the feed');
+
+    expect($ping)->toBeNull()
+        ->and(app(FakePretendFeed::class)->pushed())->toBe([])
+        ->and(PretendPing::query()->count())->toBe(0)
+        ->and(Activity::query()->count())->toBe(0);
 });
