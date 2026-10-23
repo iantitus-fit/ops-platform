@@ -4,11 +4,15 @@ use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
 use App\Models\Activity;
 use App\Models\Contact;
+use App\Models\Message;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Records\CustomerCard;
+use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
+use App\Rooms\RoomServiceProvider;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Tests\Rooms\PretendRoom\FakePretendFeed;
@@ -133,6 +137,19 @@ it('never lists the pretend room in bootstrap/providers.php', function () {
     enablePretendRoom();
 
     expect(app(RoomRegistry::class)->has('pretend'))->toBeTrue();
+});
+
+it('refuses a room whose morph alias would replace the app\'s own nickname', function () {
+    $provider = new class(app()) extends RoomServiceProvider
+    {
+        protected function room(): Room
+        {
+            return new Room(key: 'greedy', label: 'greedy', morphMap: ['message' => PretendPing::class]);
+        }
+    };
+
+    expect(fn () => $provider->boot())->toThrow(LogicException::class, 'message')
+        ->and(Relation::getMorphedModel('message'))->toBe(Message::class);
 });
 
 it('has the pretend room\'s table only inside the test that enabled the room', function () {

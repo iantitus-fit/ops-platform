@@ -99,6 +99,22 @@ it('refuses a slot name that is not lower snake case', function () {
         ->toThrow(LogicException::class, 'Feed-Slot');
 });
 
+it('refuses a morph alias that is not lower snake case, or a list where an alias map belongs', function (array $morphMap) {
+    expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', morphMap: $morphMap)))
+        ->toThrow(LogicException::class, 'morph alias');
+})->with([
+    'wrong case' => [['Pretend-Ping' => 'App\Pretend\PretendPing']],
+    'a plain list' => [['App\\Pretend\\PretendPing']],
+]);
+
+it('refuses a morph alias another room already declared', function () {
+    $registry = new RoomRegistry;
+    $registry->add(new Room(key: 'first', label: 'first', morphMap: ['shared_thing' => 'App\First\Thing']));
+
+    expect(fn () => $registry->add(new Room(key: 'second', label: 'second', morphMap: ['shared_thing' => 'App\Second\Thing'])))
+        ->toThrow(LogicException::class, 'shared_thing');
+});
+
 it('accepts a slot interface from outside the room folder', function () {
     $registry = new RoomRegistry;
     $registry->add(new Room(key: 'front_desk', label: 'front desk', slot: 'text', slotInterface: TextChannel::class));

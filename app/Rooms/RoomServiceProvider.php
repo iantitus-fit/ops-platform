@@ -4,6 +4,7 @@ namespace App\Rooms;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
+use LogicException;
 
 /**
  * The base every room's service provider extends. A room is one provider under app/Rooms/<Room>/ that says, in
@@ -36,11 +37,23 @@ abstract class RoomServiceProvider extends ServiceProvider
 
     /**
      * Add the room's model nicknames to the morph map. Relation::morphMap() merges with the list AppServiceProvider
-     * enforces, so never call enforceMorphMap() here: it would replace that list. A room model used as the subject of
-     * a timeline entry must be in this map, or Laravel refuses it.
+     * enforces, so never call enforceMorphMap() here: it would replace that list. A nickname that already points at a
+     * different model is refused, because the merge would silently win over it and every stored row using the nickname
+     * would then resolve to the wrong model. A room model used as the subject of a timeline entry must be in this map, or
+     * Laravel refuses it.
      */
     public function boot(): void
     {
-        Relation::morphMap($this->room()->morphMap);
+        $morphMap = $this->room()->morphMap;
+
+        foreach ($morphMap as $alias => $class) {
+            $existing = Relation::getMorphedModel($alias);
+
+            if ($existing !== null && $existing !== $class) {
+                throw new LogicException("Room [{$this->room()->key}] morph alias [{$alias}] is already used for [{$existing}]. A room may not replace an existing nickname. Pick another name.");
+            }
+        }
+
+        Relation::morphMap($morphMap);
     }
 }

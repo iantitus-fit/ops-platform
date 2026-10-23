@@ -44,6 +44,7 @@ class RoomRegistry
         $this->guardKey($room);
         $this->guardFileTypes($room);
         $this->guardSlot($room);
+        $this->guardMorphMap($room);
 
         $this->rooms[$room->key] = $room;
     }
@@ -234,6 +235,26 @@ class RoomRegistry
 
         if (! interface_exists($room->slotInterface)) {
             throw new LogicException("Room [{$room->key}] says its slot [{$room->slot}] is filled by [{$room->slotInterface}], but that interface does not exist.");
+        }
+    }
+
+    /**
+     * A room's model nicknames must be a map of lower_snake_case alias to model class, and no two rooms may use the
+     * same alias. Collisions with the app's own nicknames cannot be seen here, because the registry fills during
+     * register() and AppServiceProvider sets those nicknames in boot(); RoomServiceProvider::boot() checks them.
+     */
+    private function guardMorphMap(Room $room): void
+    {
+        foreach (array_keys($room->morphMap) as $alias) {
+            if (! is_string($alias) || preg_match(self::NAME_PATTERN, $alias) !== 1) {
+                throw new LogicException("Room [{$room->key}] morph alias [{$alias}] must be a lower_snake_case name pointing at a model class, such as ['pretend_ping' => PretendPing::class].");
+            }
+
+            foreach ($this->rooms as $other) {
+                if (array_key_exists($alias, $other->morphMap)) {
+                    throw new LogicException("Room [{$room->key}] morph alias [{$alias}] is already used by room [{$other->key}]. Pick another name.");
+                }
+            }
         }
     }
 }
