@@ -309,3 +309,14 @@ it('refuses a connector file outside connectors/, naming the file, and keeps the
     expect(rejectedErrors())->toContain('notes/pretend-feed.md: type connector belongs only in connectors/, the folder for connector files')
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
+
+it('does not let a misplaced connector file take the slot or the kind from the one in connectors/', function () {
+    enablePretendRoom();
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    writeIcmFile('a/crm.md', connectorFor('pretend_feed', 'owns: [customers]'));
+    writeIcmFile('connectors/crm.md', connectorFor('pretend_feed', 'owns: [customers]'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['a/crm.md: type connector belongs only in connectors/, the folder for connector files']);
+});

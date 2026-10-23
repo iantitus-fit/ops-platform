@@ -50,14 +50,15 @@ class ConnectorChecks
     /**
      * What is wrong across the connector files of the whole folder, in path order so the later file is the one blamed
      * and a re-run gives the same lines: a slot no room has (D-25), a slot whose room is not here, a slot that already
-     * has a connector file, and a kind two files both own (D-26).
+     * has a connector file, and a kind two files both own (D-26). A connector file outside connectors/ is left out,
+     * because fileErrors() already refused it and it must not be named as another file's rival.
      *
      * @param  Collection<int, IcmFile>  $files  Sorted by path.
      * @return list<array{file: string, field: ?string, message: string}>
      */
     public function folderErrors(Collection $files): array
     {
-        $connectors = $files->filter(fn (IcmFile $file): bool => $file->kind === IcmFileKind::Typed && $file->type === 'connector')->values();
+        $connectors = $files->filter(fn (IcmFile $file): bool => $file->kind === IcmFileKind::Typed && $file->type === 'connector' && str_starts_with($file->path, 'connectors/'))->values();
 
         return [...$this->slotErrors($connectors, $files), ...$this->ownerErrors($connectors)];
     }
