@@ -43,25 +43,45 @@ findings:
     severity: info
     disposition: fixed
     title: "`RoomChecks.php:82` puts a path-derived folder name in the message without `PlainWords::oneLine()`"
+  - id: WR-05
+    severity: warning
+    disposition: fixed
+    title: "The \"room may not replace an existing nickname\" check works only when the room's provider boots after `AppServiceProvider`"
+  - id: WR-06
+    severity: warning
+    disposition: fixed
+    title: "A room can map an existing model class under a new alias, which changes the alias that model is stored under"
+  - id: IN-07
+    severity: info
+    disposition: fixed
+    title: "The \"does not carry the pretend room's morph alias into the next test\" test is only meaningful when it runs straight after its neighbour"
+  - id: IN-08
+    severity: info
+    disposition: fixed
+    title: "A misplaced connector file can take the slot or kind from the correctly placed one and get it blamed"
 open: 0
-total: 10
-recorded: 2026-10-23T17:01:58.546Z
+total: 14
+recorded: 2026-10-23T17:44:24.659Z
 ---
 
 # Phase 04: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 04-REVIEW-FIX.md |
-| WR-02 | warning | fixed | 04-REVIEW-FIX.md |
-| WR-03 | warning | fixed | 04-REVIEW-FIX.md |
-| WR-04 | warning | fixed | 04-REVIEW-FIX.md |
-| IN-01 | info | fixed | 04-REVIEW-FIX.md |
-| IN-02 | info | fixed | 04-REVIEW-FIX.md |
-| IN-03 | info | fixed | 04-REVIEW-FIX.md |
-| IN-04 | info | fixed | 04-REVIEW-FIX.md |
-| IN-05 | info | fixed | 04-REVIEW-FIX.md |
-| IN-06 | info | fixed | 04-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| WR-02 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| WR-03 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| WR-04 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-01 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-02 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-03 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-04 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-05 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-06 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| WR-05 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| WR-06 | warning | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-07 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
+| IN-08 | info | fixed | 04-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
