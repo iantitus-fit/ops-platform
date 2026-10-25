@@ -100,8 +100,32 @@ Plans:
   3. Marketing owns `business/lead-sources.md` and `business/offers/`, both still where they are. Source and cost per lead, offers and prices behave exactly as before, and the existing suite for them passes unchanged.
   4. The Google Business Profile room has a connector slot (an interface with a fake driver) and a connector file that declares `owns` and `reads`; with only the fake driver, nothing reaches Google. Content generation says in its `CONTEXT.md` that it has no connector.
 
-**Plans**: TBD
+**Plans**: 9 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+- [ ] 05-01-PLAN.md — Make the existing suite hold when real rooms land: narrow the annex test room, build the growing room, type and slot lists from code (tests only)
+- [ ] 05-02-PLAN.md — Never-left-out check (D-02) at unit level, and owns patterns pass over the house's routers (Pitfall 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 05-03-PLAN.md — Company knowledge lands: provider, contract, section, boot test with axe; D-23 rooms test to unit; D-24 counts
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 05-04-PLAN.md — G-04-1 closed: hidden characters in names refused and marked in every refusal line (D-19, D-25)
+- [ ] 05-05-PLAN.md — Marketing lands with offers live today from the front desk's code; company knowledge and marketing can never be left out, through the sync
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 05-06-PLAN.md — Content generation lands with its content brief type and no connector; SPEC rows and reads
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 05-07-PLAN.md — Money lands with its notes file, no slot or records; the check that refuses card numbers and every 9-digit number however grouped (D-16, D-22, D-26)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 05-08-PLAN.md — Google Business Profile lands: read-only slot on a fake, connector file owning and reading none, categories file; D-23 slots test to unit
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 05-09-PLAN.md — Google Business Profile categories checked for shape (D-07)
 
 **Planning notes** (settled by [05-CONTEXT.md](phases/05-standard-rooms/05-CONTEXT.md), 2026-10-25):
 - What the Google Business Profile room owns and reads (ROOM-11). Settled: D-06 to D-11.
