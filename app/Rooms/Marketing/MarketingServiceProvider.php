@@ -19,6 +19,7 @@ class MarketingServiceProvider extends RoomServiceProvider
             label: 'marketing',
             handles: ['lead_sources', 'offer'],
             sections: [MarketingSection::class],
+            neverLeftOutBecause: 'it owns the lead sources file the sync requires',
         );
     }
 }

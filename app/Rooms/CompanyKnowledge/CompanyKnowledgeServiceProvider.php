@@ -19,6 +19,7 @@ class CompanyKnowledgeServiceProvider extends RoomServiceProvider
             label: 'company knowledge',
             handles: ['business', 'hours', 'service', 'knowledge', 'voice'],
             sections: [CompanyKnowledgeSection::class],
+            neverLeftOutBecause: 'it owns the profile, hours and voice files the sync requires',
         );
     }
 }
