@@ -100,7 +100,7 @@ Plans:
   3. Marketing owns `business/lead-sources.md` and `business/offers/`, both still where they are. Source and cost per lead, offers and prices behave exactly as before, and the existing suite for them passes unchanged.
   4. The Google Business Profile room has a connector slot (an interface with a fake driver) and a connector file that declares `owns` and `reads`; with only the fake driver, nothing reaches Google. Content generation says in its `CONTEXT.md` that it has no connector.
 
-**Plans**: 2/9 plans executed
+**Plans**: 3/9 plans executed
 **UI hint**: yes
 
 Plans:
@@ -109,7 +109,7 @@ Plans:
 - [x] 05-02-PLAN.md — Never-left-out check (D-02) at unit level, and owns patterns pass over the house's routers (Pitfall 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 05-03-PLAN.md — Company knowledge lands: provider, contract, section, boot test with axe; D-23 rooms test to unit; D-24 counts
+- [x] 05-03-PLAN.md — Company knowledge lands: provider, contract, section, boot test with axe; D-23 rooms test to unit; D-24 counts
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 05-04-PLAN.md — G-04-1 closed: hidden characters in names refused and marked in every refusal line (D-19, D-25)
@@ -293,7 +293,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
-| 5. Standard Rooms | 2/9 | In Progress | - |
+| 5. Standard Rooms | 3/9 | In Progress | - |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
