@@ -205,6 +205,8 @@ One fact, one file. If the hours change, `hours.md` changes and nothing else.
 
 A room is a part of the product a business can have or not: the engine knows its rooms in code, and a business has a room when its folder holds `rooms/<room>/CONTEXT.md`. New kinds of file a room defines live in its own folder under `rooms/<room>/` (Phase 4, D-01 and D-04), and the sync refuses one anywhere else, naming the folder it belongs in; today's kinds of file stay where they are (D-04). Only a CONTEXT.md directly inside `rooms/<room>/` is a contract; every other CONTEXT.md stays a router.
 
+A file or folder name that holds a hidden character is refused in plain words, before any other check, and the previous version stays live. Hidden characters are a line break, a tab, a text-direction mark, and a zero-width, joiner or tag character (Unicode categories Cc, Cf, Zl and Zp). Every refusal line also shows such a character as `[line break]` or `[hidden character]` instead of printing it, so a name can never start a forged line in `changelog.md` or look like another name (05-CONTEXT D-19 and D-25; closes Phase 4 UAT gap G-04-1). Accented, Cyrillic and CJK names, and an emoji with its variation selector, pass. Hidden characters inside file values are not checked yet (CONTEXT Deferred Ideas).
+
 ### Who owns each file
 
 Every file has exactly one owner: a room or the house (D-11). This is the map; the room's own `rooms/<room>/CONTEXT.md` is what the sync enforces. A pattern may use `*` for any run of characters.

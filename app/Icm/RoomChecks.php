@@ -62,7 +62,8 @@ class RoomChecks
      * whose folder has files but no contract, a registered room that can never be left out whose folder is absent (one
      * line naming the room and why, 05 D-02), a rooms/<name>/ folder for a room the engine does not have, and the
      * ownership of every file: what a contract may claim, a file two contracts claim, a file nobody claims, a file whose
-     * room is not here, and a room's own kind of file outside its folder.
+     * room is not here, and a room's own kind of file outside its folder. A file the Loader refused for a hidden
+     * character in its name does not count as a file in its folder, so it earns only the name refusal (05 D-19).
      *
      * @param  Collection<int, IcmFile>  $files
      * @return list<array{file: string, field: ?string, message: string}>
@@ -80,7 +81,7 @@ class RoomChecks
             $errors[] = $this->error($file->path, 'type', "type must be room, because this file is the {$key} room's contract (you wrote ".PlainWords::oneLine((string) $file->type).')');
         }
 
-        $folders = $files->map(fn (IcmFile $file): ?string => $this->roomKeyOf($file->path))->filter()->unique()->sort()->values();
+        $folders = $files->reject(fn (IcmFile $file): bool => $file->problem === 'hidden_name')->map(fn (IcmFile $file): ?string => $this->roomKeyOf($file->path))->filter()->unique()->sort()->values();
 
         foreach ($this->rooms->all() as $room) {
             if ($folders->contains($room->key) && ! $files->contains(fn (IcmFile $file): bool => $file->path === "rooms/{$room->key}/CONTEXT.md")) {
