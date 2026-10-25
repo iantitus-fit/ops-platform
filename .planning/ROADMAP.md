@@ -103,12 +103,12 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-**Planning notes** (settle these in discuss-phase):
-- What the Google Business Profile room owns and reads (ROOM-11).
-- Content generation's model role is not decided.
-- Which of today's files company knowledge and marketing own beyond the two marketing names, taken from the ownership table written in Phase 4.
-- Which of these rooms talk to an outside system and which say they have none (ROOM-03). Only Google Business Profile (a slot) and content generation (none) are decided.
-- This is five rooms in one phase. If discuss shows it is too much for one branch, split it at plan time along the marketing rooms (marketing, content generation, Google Business Profile) and the plain rooms (company knowledge, money).
+**Planning notes** (settled by [05-CONTEXT.md](phases/05-standard-rooms/05-CONTEXT.md), 2026-10-25):
+- What the Google Business Profile room owns and reads (ROOM-11). Settled: D-06 to D-11.
+- Content generation's model role is not decided. Settled: mid-tier drafts, BLUEPRINT only, no agent file this phase (D-14).
+- Which of today's files company knowledge and marketing own beyond the two marketing names, taken from the ownership table written in Phase 4. Settled: the Phase 4 table as written; both rooms can never be left out (D-02 to D-04).
+- Which of these rooms talk to an outside system and which say they have none (ROOM-03). Only Google Business Profile (a slot) and content generation (none) are decided. Settled: only Google Business Profile has a slot; company knowledge, marketing, content generation and money have none (D-05, D-11, D-13).
+- This is five rooms in one phase. If discuss shows it is too much for one branch, split it at plan time along the marketing rooms (marketing, content generation, Google Business Profile) and the plain rooms (company knowledge, money). Settled: the planner proposes a split before writing plans and Ian approves it; a split becomes 5.1 (D-20).
 
 ### Phase 6: Front Desk and Team Rooms
 

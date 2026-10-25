@@ -36,7 +36,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-08**: Company knowledge room, to the room standard.
 - [ ] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
 - [ ] **ROOM-10**: Content generation room, to the room standard, with no connector.
-- [ ] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). What it owns and reads is settled in its phase discuss.
+- [ ] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). It owns one file in `rooms/google_business_profile/` holding the primary category and up to 9 additional categories, and reads `business/profile.md`, `business/hours.md`, `business/services/*.md` and `business/offers/*.md`. Its slot is read-only (one method fetches the listing), and its connector file declares `owns: none` and `reads: none`. *(Phase 5 discuss, 2026-10-25, `05-CONTEXT.md` D-06 to D-11. Affects: marketing, knowledge, connectors and data.)*
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [ ] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
@@ -137,7 +137,7 @@ Each rule below becomes a Pest test before the code exists. All money is integer
 
 ### Connectors (Backlog 999.4, Sprint 6)
 
-- **CONN-01**: Connector files (`connectors/*.md`: system, direction, objects, schedule) are validated; no secrets in files, credentials live encrypted in the engine.
+- **CONN-01**: Connector files (`connectors/*.md`: system, direction, objects, schedule) are validated; no secrets in files, credentials live encrypted in the engine. The no-secrets scan also covers `rooms/money/` *(Phase 5 discuss, 2026-10-25, `05-CONTEXT.md` D-15. Affects: finance, safety and compliance.)*
 - **CONN-02**: QuickBooks connector.
 - **CONN-03**: Google Calendar connector.
 - **CONN-04**: Lead emails parsed (Angi, Thumbtack) through inbound mail.
