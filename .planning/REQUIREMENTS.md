@@ -33,8 +33,8 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
 - [ ] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
 - [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
-- [ ] **ROOM-08**: Company knowledge room, to the room standard.
-- [ ] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
+- [x] **ROOM-08**: Company knowledge room, to the room standard.
+- [x] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
 - [ ] **ROOM-10**: Content generation room, to the room standard, with no connector.
 - [ ] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). It owns one file in `rooms/google_business_profile/` holding the primary category and up to 9 additional categories, and reads `business/profile.md`, `business/hours.md`, `business/services/*.md` and `business/offers/*.md`. Its slot is read-only (one method fetches the listing), and its connector file declares `owns: none` and `reads: none`. *(Phase 5 discuss, 2026-10-25, `05-CONTEXT.md` D-06 to D-11. Affects: marketing, knowledge, connectors and data.)*
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
@@ -204,8 +204,8 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-06 | Phase 6 | Pending |
 | ROOM-07 | Phase 7 | Pending |
 | LEAD-05 | Phase 7 | Pending |
-| ROOM-08 | Phase 5 | Pending |
-| ROOM-09 | Phase 5 | Pending |
+| ROOM-08 | Phase 5 | Complete |
+| ROOM-09 | Phase 5 | Complete |
 | ROOM-10 | Phase 5 | Pending |
 | ROOM-11 | Phase 5 | Pending |
 | ROOM-12 | Phase 8 | Pending |

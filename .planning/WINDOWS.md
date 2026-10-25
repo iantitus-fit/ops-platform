@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
+open_count: 11
 waived_count: 1
 fixed_count: 9
-total_count: 20
-last_updated: 2026-10-25T23:24:32.493Z
+total_count: 21
+last_updated: 2026-10-25T23:41:24.145Z
 ---
 
 # Broken Windows Ledger
@@ -35,6 +35,7 @@ last_updated: 2026-10-25T23:24:32.493Z
 | 18 | 04 | stub | resources/views/filament/rooms/section.blade.php | 3 | Room section view body is empty on purpose; plan 04-06 fills it with the room's line (D-21) | fixed |  | 2026-10-22T21:54:44.369Z | 2026-10-23T01:36:56.101Z |
 | 19 | 04 | unrun-verify | tests/Feature/Rooms/RoomAccessibilityTest.php |  | CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT) | open |  | 2026-10-23T01:44:47.162Z |  |
 | 20 | 05 | unrun-verify | app/Rooms/CompanyKnowledge/CompanyKnowledgeSection.php |  | Plan 05-03 hand check (D-18, carried from Phase 4): keyboard-only and VoiceOver walk of the company knowledge section on /admin, the first real room section; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:24:32.493Z |  |
+| 21 | 05 | unrun-verify | app/Rooms/Marketing/MarketingSection.php |  | Plan 05-05 hand check (D-18): keyboard-only and VoiceOver walk of the marketing section on /admin, and read the offers line against the front desk on the day an offer ends; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:41:24.145Z |  |
 
 ````json
 [
@@ -295,6 +296,19 @@ last_updated: 2026-10-25T23:24:32.493Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-25T23:24:32.493Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 21,
+    "kind": "unrun-verify",
+    "phase": "05",
+    "file": "app/Rooms/Marketing/MarketingSection.php",
+    "line": null,
+    "description": "Plan 05-05 hand check (D-18): keyboard-only and VoiceOver walk of the marketing section on /admin, and read the offers line against the front desk on the day an offer ends; not run by the executor, left for Phase 5 UAT",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-25T23:41:24.145Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
