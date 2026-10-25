@@ -81,8 +81,8 @@ it('gives the same refusal for a contract whatever order its owns entries are wr
     $live = activateExampleFolder();
 
     $owns = ['rooms/pretend/notes/*.md', 'business/faq.md', 'business/hours.md'];
-    $faqLine = 'rooms/pretend/CONTEXT.md: business/faq.md is a knowledge file, which no room handles yet; pretend can read it';
-    $hoursLine = 'rooms/pretend/CONTEXT.md: business/hours.md is a hours file, which no room handles yet; pretend can read it';
+    $faqLine = 'rooms/pretend/CONTEXT.md: business/faq.md is a knowledge file, which the company knowledge room handles; pretend can read it';
+    $hoursLine = 'rooms/pretend/CONTEXT.md: business/hours.md is a hours file, which the company knowledge room handles; pretend can read it';
 
     writeIcmFile('rooms/pretend/CONTEXT.md', pretendContractListing($owns, ['business/profile.md'], []));
     $written = contractSyncResult();

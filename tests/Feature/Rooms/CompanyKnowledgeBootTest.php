@@ -101,3 +101,17 @@ it('boots the company knowledge room', function (bool $empty) {
     'empty' => [true],
     'with its example folder' => [false],
 ]);
+
+/**
+ * D-04: a knowledge file the room's contract does not list is refused with a line that names the room and the file to
+ * edit, so the owner knows where to add it, and the version that was live stays live.
+ */
+it('refuses an extra knowledge file and names the company knowledge room', function () {
+    $live = activateExampleFolder();
+    writeIcmFile('business/warranty.md', "---\ntype: knowledge\n---\nParts carry a one year warranty.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['business/warranty.md: no room lists this knowledge file under owns; the company knowledge room handles it, so add it to rooms/company_knowledge/CONTEXT.md'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});

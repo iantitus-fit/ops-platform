@@ -29,6 +29,7 @@ it('activates a folder that starts out with a broken records file and a changelo
 
 it('still reads a typed file inside a nested business/records folder', function () {
     writeIcmFile('business/records/notes.md', "---\ntype: knowledge\n---\nOld job notes.");
+    breakFile('rooms/company_knowledge/CONTEXT.md', fn (string $contents): string => str_replace('voice/how-we-talk.md]', 'voice/how-we-talk.md, business/records/notes.md]', $contents));
 
     $version = activateExampleFolder();
 

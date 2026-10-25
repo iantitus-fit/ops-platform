@@ -82,7 +82,7 @@ it('reads a version compiled before offers existed as having no offers', functio
 it('syncs the example folder with every typed file, the offer included', function () {
     $version = activateExampleFolder();
 
-    expect($version->file_count)->toBe(14)
+    expect($version->file_count)->toBe(exampleFolderFileCount())
         ->and(IcmVersion::count())->toBe(1);
 });
 

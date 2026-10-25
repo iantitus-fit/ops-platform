@@ -216,7 +216,7 @@ it('refuses a folder with a registered room\'s own kind of file that its contrac
     expect(refusedOwnershipLines())->toBe(['rooms/pretend/notes/first-note.md: no room lists this pretend_note file under owns; the pretend room handles it, so add it to rooms/pretend/CONTEXT.md']);
 });
 
-it('passes the example folder untouched when no room handles any of its files', function () {
+it('passes the example folder untouched when the pretend room is registered but not in the folder', function () {
     enablePretendRoom();
 
     $version = activateExampleFolder();

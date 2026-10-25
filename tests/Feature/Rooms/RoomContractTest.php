@@ -217,16 +217,6 @@ it('refuses a folder for a room this engine lacks, naming the rooms that exist, 
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
-it('says there are no rooms yet when a folder names a room and the engine has none', function () {
-    $live = activateExampleFolder();
-    writeIcmFile('rooms/foo/CONTEXT.md', roomContractWith('connector', 'connector: none'));
-
-    $this->artisan('icm:sync')->assertExitCode(1);
-
-    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room, and no rooms yet'])
-        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
-});
-
 it('gives the pretend room a slot whose driver is a fake that remembers every push and reaches nothing outside', function () {
     enablePretendRoom();
 

@@ -98,6 +98,7 @@ it('requires each of the five single-instance types to exist exactly once', func
         'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/profile-old.md: type business is already used by business/profile.md; the folder needs exactly one',
+        'business/profile-old.md: no room lists this business file under owns; the company knowledge room handles it, so add it to rooms/company_knowledge/CONTEXT.md',
     ]);
 });
 
