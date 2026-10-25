@@ -226,6 +226,7 @@ Every file has exactly one owner: a room or the house (D-11). This is the map; t
 | `agents/*.md` | the room the agent serves (`agents/front-desk.md`: front desk) | team (reads `escalate_to` in `agents/front-desk.md`) |
 | `connectors/*.md` | the room whose slot the file fills (the text channel's: front desk; Google Business Profile's: its room) | |
 | `rooms/*/CONTEXT.md` | the room whose folder it is | |
+| `rooms/content_generation/brief.md` | content generation | |
 | `CLAUDE.md` | the house | |
 | `START-HERE.md` | the house | |
 | `*CONTEXT.md` | the house (every CONTEXT.md outside `rooms/`) | |
