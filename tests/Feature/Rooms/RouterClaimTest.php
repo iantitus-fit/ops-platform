@@ -26,11 +26,14 @@ function routerClaimRefusal(): array
     return rejectedErrors();
 }
 
+/**
+ * The pattern is quoted because a bare * at the start of a YAML value is read as an alias, not as text.
+ */
 it('lets a pattern in owns pass over a router it happens to match', function () {
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md', 'rooms/pretend/notes/first-note.md');
     writeIcmFile('business/notes/CONTEXT.md', 'Points at the notes.');
-    writeIcmFile('rooms/pretend/CONTEXT.md', routerClaimContract('[*/notes/*.md]'));
+    writeIcmFile('rooms/pretend/CONTEXT.md', routerClaimContract('["*/notes/*.md"]'));
 
     activateExampleFolder();
 
