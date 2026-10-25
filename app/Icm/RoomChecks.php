@@ -224,7 +224,10 @@ class RoomChecks
     /**
      * What each present contract claims through owns. A claim of a file the room handles is kept; any other claim is an
      * error on the contract, field owns (D-17, D-11, D-25). Room contracts and files the Loader could not use are never
-     * claimed, and a router inside the claiming room's own folder is the room's own.
+     * claimed, a router inside the claiming room's own folder is the room's own, and a router matched by a * pattern stays the
+     * house's and is simply not claimed, so a room may own business/services/*.md without taking the folder guide
+     * business/services/CONTEXT.md (04 D-11, 05 Pitfall 1). A router named exactly in owns, and a walk test however it is
+     * matched, are still refused.
      *
      * @param  Collection<int, IcmFile>  $files
      * @param  list<Room>  $present
@@ -242,6 +245,10 @@ class RoomChecks
             foreach ($this->ownsEntries($contract) as $entry) {
                 foreach ($claimable->filter(fn (IcmFile $file): bool => Str::is($entry, $file->path)) as $file) {
                     if ($file->kind === IcmFileKind::Router && str_starts_with($file->path, "rooms/{$room->key}/")) {
+                        continue;
+                    }
+
+                    if ($file->kind === IcmFileKind::Router && str_contains($entry, '*')) {
                         continue;
                     }
 
