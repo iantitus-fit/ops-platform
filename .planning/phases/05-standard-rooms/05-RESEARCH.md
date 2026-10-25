@@ -637,37 +637,47 @@ This phase adds rooms and checks; it is not a rename. Omitted as not applicable,
 | A5 | Tightening card grouping to contiguous, 4-4-4-4 or 4-6-5 is within D-16's intent | Q2 | Ian may want any spaced or dashed 13-19-digit run checked, at the cost of the false refusals described |
 | A6 | All five example rooms must stay furnished for the pretend boot test's `assertDontSee('nothing set up yet')` | Pitfall 10 | A test failure, not a behavior one |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What label does the Google Business Profile room carry?**
+   - RESOLVED: capitalized `Google Business Profile`, taken in 05-08.
    - Known: `Room::label` is documented lower case; SPEC and the owner allow-list use `Google Business Profile`; the prototype read fine with the capitalized label.
    - Unclear: whether sentences should say `the Google Business Profile room` or a lower-case form.
    - Recommendation: capitalized proper noun, and update the `Room` docblock.
 
 2. **Is changing `RoomChecks::claims()` to skip routers matched by a wildcard acceptable?**
+   - RESOLVED: taken, tests-first, in 05-02.
    - Known: required for `business/services/*.md` (Pitfall 1); exact router names stay refused.
    - Unclear: Ian's view on touching a Phase 4 check.
    - Recommendation: do it, tests-first, in the first shared plan.
 
 3. **Employer ID format `12-3456789`.**
+   - RESOLVED: Ian, CONTEXT D-22 (the 2-7 form) and D-26 (every 9-digit span, however grouped).
    - Known: D-16 lists "a tax ID" but its two forms (`123456789`, `123-45-6789`) do not match the usual 2-7 grouping.
    - Recommendation: add the 2-7 form, or reword D-16's "tax ID" claim; Ian's call, because D-16 is a locked decision.
 
 4. **Two tests become untestable by editing their expectation, and CLAUDE.md says never delete a test without approval.**
+   - RESOLVED: Ian, CONTEXT D-23 (unit test first, then removal, in 05-03 and 05-08).
    - `tests/Feature/Rooms/RoomContractTest.php:217-225` (`...and no rooms yet`) and `tests/Feature/Rooms/ConnectorFileTest.php:244-250` (`no connector slots yet`) assert branches that need an empty registry or no slots.
    - Recommendation: keep both branches covered by moving each to a unit test that builds `new RoomChecks(new RoomRegistry)` and `new ConnectorChecks(...)` with no rooms (both are pure functions of the file list), and ask Ian to approve removing the feature tests.
 
 5. **Success criterion 3 versus `OfferValidationTest.php:85`.** A hard-coded `14` there must become `exampleFolderFileCount()`; confirm that counts as "passes unchanged".
+   - RESOLVED: Ian, CONTEXT D-24 (one token changes; done in 05-03).
 
 6. **Where does the never-left-out reason text live, and what does it say?** Placeholder wording only (D-02); the prototype used `it owns the profile, hours and voice files the sync requires` and `it owns the lead sources file the sync requires`.
+   - RESOLVED: planner's discretion, in 05-05.
 
 7. **Which near-miss replaces `Rooms/pretend/CONTEXT.md` in `PretendRoomBootTest.php:115`?** Planner's choice (Pitfall 7).
+   - RESOLVED: planner's choice, in 05-01.
 
 8. **Owner experience for extra `knowledge` files.** Because D-04 gives company knowledge every `knowledge` file wherever it sits, an owner who adds `business/warranty.md` is refused with `no room lists this knowledge file under owns; the company knowledge room handles it, so add it to rooms/company_knowledge/CONTEXT.md`. Actionable, and consistent with the ownership rule; confirm it is wanted, since the alternative (an owns glob over `business/*.md`) would make SPEC's row and the boot comparison say something else.
+   - RESOLVED: kept as the ownership rule gives it, in 05-03.
 
 9. **Hidden-name files feeding the folder lines** (Pitfall 3): confirm `$folders` should ignore them.
+   - RESOLVED: `$folders` ignores them, in 05-04.
 
 10. **D-19 refuses ZWJ and ZWNJ in names** (emoji sequences; Persian, Kurdish, Indic words). Intended, but it means a client with such a file name renames it. Ian's call whether to accept that or exempt U+200C and U+200D.
+   - RESOLVED: Ian, CONTEXT D-25 (kept refused).
 
 ## Sources
 
