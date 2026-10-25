@@ -1,6 +1,7 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
 use Tests\Rooms\PretendRoom\AnnexRoom;
@@ -33,6 +34,27 @@ function pretendNoteContents(): string
 }
 
 /**
+ * Room keys in the order the sync lists them: sorted as plain strings.
+ *
+ * @param  list<string>  $keys
+ * @return list<string>
+ */
+function sortedRoomKeys(array $keys): array
+{
+    sort($keys, SORT_STRING);
+
+    return $keys;
+}
+
+/**
+ * Write a contract for a test-only room that reads nothing, writes no records and has no connector.
+ */
+function plainRoomContract(string $room, string $owns): string
+{
+    return "---\ntype: room\nowns: {$owns}\nreads: none\nwrites_records: none\nconnector: none\n---\n\n# {$room} room\n\nA room that exists only in tests.\n";
+}
+
+/**
  * Run the sync, expect the refusal, and hand back the lines it was refused with.
  *
  * @return list<string>
@@ -52,22 +74,23 @@ it('lets both test rooms into one folder when each owns what it handles', functi
     $version = activateExampleFolder();
 
     expect($version->file_count)->toBe(exampleFolderFileCount() + 3)
-        ->and(app(ActiveConfig::class)->roomKeys())->toBe(['annex', 'pretend']);
+        ->and(app(ActiveConfig::class)->roomKeys())->toBe(sortedRoomKeys([...exampleRoomKeys(), 'annex', 'pretend']));
 });
 
 it('refuses a claim of a file the claiming room does not handle, naming the room that does', function () {
-    enableAnnexRoom();
-    layFixtureFolder('annex-room');
-    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', '[rooms/pretend/notes/*.md, business/faq.md]'));
+    enablePretendRoom();
+    app(RoomRegistry::class)->add(new Room(key: 'quiet', label: 'quiet'));
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md', 'rooms/pretend/notes/first-note.md');
+    writeIcmFile('rooms/quiet/CONTEXT.md', plainRoomContract('quiet', '[rooms/pretend/notes/first-note.md]'));
 
-    expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: business/faq.md is a knowledge file, which the annex room handles; pretend can read it']);
+    expect(refusedOwnershipLines())->toBe(['rooms/quiet/CONTEXT.md: rooms/pretend/notes/first-note.md is a pretend_note file, which the pretend room handles; quiet can read it']);
 });
 
 it('refuses a claim of a file no room handles yet', function () {
     enablePretendRoom();
-    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', '[business/faq.md]'));
+    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', '[rules/triage.md]'));
 
-    expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: business/faq.md is a knowledge file, which no room handles yet; pretend can read it']);
+    expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: rules/triage.md is a triage file, which no room handles yet; pretend can read it']);
 });
 
 dataset('files that are not a room\'s to claim', [
@@ -104,7 +127,7 @@ it('refuses a file two rooms both handle and both claim, blaming the later contr
     enableAnnexRoom();
     layFixtureFolder('annex-room');
     layPretendRoomFolder('rooms/pretend/CONTEXT.md', 'rooms/pretend/notes/first-note.md');
-    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[business/faq.md, rooms/pretend/notes/*.md]'));
+    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[rooms/pretend/notes/*.md]'));
 
     expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: rooms/pretend/notes/first-note.md is claimed by both rooms/annex/CONTEXT.md and rooms/pretend/CONTEXT.md; pick one, the other can read it']);
 });
@@ -113,7 +136,7 @@ it('refuses the same owns entry in two contracts even when no file matches it ye
     enableAnnexRoom();
     layFixtureFolder('annex-room');
     layPretendRoomFolder('rooms/pretend/CONTEXT.md');
-    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[business/faq.md, rooms/pretend/notes/*.md]'));
+    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[rooms/pretend/notes/*.md]'));
 
     expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: rooms/pretend/notes/*.md is claimed by both rooms/annex/CONTEXT.md and rooms/pretend/CONTEXT.md; pick one, the other can read it']);
 });
@@ -121,15 +144,17 @@ it('refuses the same owns entry in two contracts even when no file matches it ye
 it('refuses a file nobody lists under owns while a room that handles its type is here', function () {
     enableAnnexRoom();
     layFixtureFolder('annex-room');
-    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[]'));
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md', 'rooms/pretend/notes/first-note.md');
+    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', '[]'));
 
-    expect(refusedOwnershipLines())->toBe(['business/faq.md: no room lists this knowledge file under owns; the annex room handles it, so add it to rooms/annex/CONTEXT.md']);
+    expect(refusedOwnershipLines())->toBe(['rooms/pretend/notes/first-note.md: no room lists this pretend_note file under owns; the annex room handles it, so add it to rooms/annex/CONTEXT.md']);
 });
 
 it('names the room a file belongs to when the business folder does not have that room', function () {
-    enableAnnexRoom();
+    enablePretendRoom();
+    app(RoomRegistry::class)->add(new Room(key: 'rulebook', label: 'rulebook', handles: ['triage']));
 
-    expect(refusedOwnershipLines())->toBe(["business/faq.md: this file belongs to the annex room, which this business doesn't use; add rooms/annex/ or remove the file"]);
+    expect(refusedOwnershipLines())->toBe(["rules/triage.md: this file belongs to the rulebook room, which this business doesn't use; add rooms/rulebook/ or remove the file"]);
 });
 
 it('offers both ways out for a room\'s own kind of file when that room\'s folder is not in the business folder', function () {
@@ -151,13 +176,14 @@ it('says only the missing contract and the move-it line when the room\'s folder 
 });
 
 it('keeps the previous version live when the folder is refused for its owners', function () {
-    enableAnnexRoom();
-    layFixtureFolder('annex-room');
+    enablePretendRoom();
+    app(RoomRegistry::class)->add(new Room(key: 'rulebook', label: 'rulebook', handles: ['triage']));
+    writeIcmFile('rooms/rulebook/CONTEXT.md', plainRoomContract('rulebook', '[rules/triage.md]'));
     $live = activateExampleFolder();
 
-    File::deleteDirectory(icmPath('rooms/annex'));
+    File::deleteDirectory(icmPath('rooms/rulebook'));
 
-    expect(refusedOwnershipLines())->toBe(["business/faq.md: this file belongs to the annex room, which this business doesn't use; add rooms/annex/ or remove the file"])
+    expect(refusedOwnershipLines())->toBe(["rules/triage.md: this file belongs to the rulebook room, which this business doesn't use; add rooms/rulebook/ or remove the file"])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 

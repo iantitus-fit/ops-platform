@@ -2,12 +2,14 @@
 
 use App\Ai\Agents\FrontDeskAgent;
 use App\Channels\FakeTextChannel;
+use App\Enums\IcmFileKind;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\ActiveConfig;
 use App\Icm\FolderSync;
+use App\Icm\Loader;
 use App\Jobs\ProcessInbound;
 use App\Models\IcmVersion;
 use App\Models\Message;
@@ -291,6 +293,44 @@ function resetRecordsToTrackedFiles(string $records): void
 function exampleFolderFileCount(): int
 {
     return 14;
+}
+
+/**
+ * The room keys examples/example-hvac ships, sorted, read the way the sync reads the folder. The example folder gains
+ * rooms in Phase 5, and this lets a test name exactly what the example ships without a second number to keep in step;
+ * exampleFolderFileCount() stays the one number a landing room changes (04 D-16).
+ *
+ * @return list<string>
+ */
+function exampleRoomKeys(): array
+{
+    $keys = collect(app(Loader::class)->load(base_path('examples/example-hvac'))->files)
+        ->filter(fn ($file): bool => $file->kind === IcmFileKind::Typed && $file->type === 'room' && preg_match(Loader::ROOM_CONTRACT, $file->path) === 1)
+        ->map(fn ($file): string => preg_replace(Loader::ROOM_CONTRACT, '$1', $file->path))
+        ->all();
+
+    sort($keys);
+
+    return array_values($keys);
+}
+
+/**
+ * The paths of the connector files examples/example-hvac ships under connectors/, sorted. The example folder gains a
+ * connector file in Phase 5, and this lets a test name exactly what the example ships without a second number to keep
+ * in step (04 D-16).
+ *
+ * @return list<string>
+ */
+function exampleConnectorPaths(): array
+{
+    $paths = collect(app(Loader::class)->load(base_path('examples/example-hvac'))->files)
+        ->filter(fn ($file): bool => $file->kind === IcmFileKind::Typed && $file->type === 'connector' && str_starts_with($file->path, 'connectors/'))
+        ->map(fn ($file): string => $file->path)
+        ->all();
+
+    sort($paths);
+
+    return array_values($paths);
 }
 
 /**
