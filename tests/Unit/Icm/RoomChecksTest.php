@@ -9,7 +9,8 @@ use App\Rooms\RoomRegistry;
 /**
  * These branches are reached in the running app only through a kind of file no room handles, which stops existing once
  * the front desk room handles triage in Phase 6, so this unit test keeps them covered with a registry the test builds
- * itself. Plan 05-03 adds the case for a registry with no rooms (D-23).
+ * itself. The last case covers a registry with no rooms, which stops being reachable once the first real room is
+ * registered (D-23).
  */
 
 /**
@@ -58,4 +59,16 @@ it('names the absent room when the only room that handles a type is not in the f
         'field' => null,
         'message' => "this file belongs to the keeper room, which this business doesn't use; add rooms/keeper/ or remove the file",
     ]]);
+});
+
+it('says the engine has no rooms yet when a folder names a room and the registry is empty', function () {
+    $errors = (new RoomChecks(new RoomRegistry))->errors(collect([
+        roomChecksUnitFile('rooms/foo/CONTEXT.md', 'room', ['owns' => [], 'reads' => [], 'writes_records' => [], 'connector' => 'none']),
+    ]));
+
+    expect($errors)->toContain([
+        'file' => 'rooms/foo/',
+        'field' => null,
+        'message' => 'this engine has no foo room, and no rooms yet',
+    ]);
 });
