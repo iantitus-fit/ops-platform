@@ -99,14 +99,6 @@ it('boots the content generation room', function (bool $empty) {
 ]);
 
 /**
- * The line a second content brief earns (D-27), whatever the contract's owns says: it names the file the business keeps.
- */
-function secondBriefRefusal(string $extra): string
-{
-    return $extra.': this business already has a content brief in rooms/content_generation/brief.md; keep one';
-}
-
-/**
  * D-27 under the shipped contract: a second brief in the room's folder is refused in one line naming both files, and the
  * version that was live stays live.
  */
@@ -116,7 +108,7 @@ it('refuses a second content brief under the shipped contract', function () {
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe([secondBriefRefusal('rooms/content_generation/second.md')])
+    expect(rejectedErrors())->toBe(['rooms/content_generation/second.md: this business already has a content brief in rooms/content_generation/brief.md; keep one'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
@@ -135,7 +127,7 @@ it('refuses a second content brief under a contract edited to own two paths', fu
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe([secondBriefRefusal('rooms/content_generation/second.md')])
+    expect(rejectedErrors())->toBe(['rooms/content_generation/second.md: this business already has a content brief in rooms/content_generation/brief.md; keep one'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
@@ -154,7 +146,7 @@ it('refuses a second content brief under a contract edited to own a pattern', fu
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe([secondBriefRefusal('rooms/content_generation/older.md')])
+    expect(rejectedErrors())->toBe(['rooms/content_generation/older.md: this business already has a content brief in rooms/content_generation/brief.md; keep one'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
@@ -173,4 +165,53 @@ it('accepts a contract that owns two paths while only one brief is there', funct
     $this->artisan('icm:sync')->assertExitCode(0);
 
     expect(app(ActiveConfig::class)->filesOfType('content_brief'))->toHaveCount(1);
+});
+
+/**
+ * 04 D-04: the content brief belongs in the room's folder. Outside it, the file earns the one placement line, and the
+ * single-file check does not count it.
+ */
+it('refuses a content brief outside the room folder', function () {
+    $live = activateExampleFolder();
+    writeIcmFile('business/brief.md', "---\ntype: content_brief\n---\nA brief in the wrong place.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['business/brief.md: this is a content generation file, which belongs in rooms/content_generation/; move it there'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * D-05, ROOM-10: the room has no connector slot, so a contract that names one is refused in one line.
+ */
+it('refuses a contract that names a connector', function () {
+    $live = activateExampleFolder();
+
+    breakFile('rooms/content_generation/CONTEXT.md', fn (string $contents): string => str_replace(
+        'connector: none',
+        'connector: google_business_profile',
+        $contents,
+    ));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/content_generation/CONTEXT.md: connector must be none, because the content generation room has no connector slot (you wrote google_business_profile)'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * D-14: no agent this phase. The room registers no slot, and the example folder's only agent file is the front desk's.
+ */
+it('has no content generation agent this phase', function () {
+    $room = app(RoomRegistry::class)->get('content_generation');
+
+    $agents = collect(File::files(icmPath('agents')))
+        ->map(fn (SplFileInfo $file): string => $file->getFilename())
+        ->reject(fn (string $name): bool => $name === 'README.md')
+        ->values()
+        ->all();
+
+    expect($room->slot)->toBeNull()
+        ->and($room->slotInterface)->toBeNull()
+        ->and($agents)->toBe(['front-desk.md']);
 });
