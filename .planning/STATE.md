@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 5
+current_phase: 05
 current_phase_name: Standard Rooms
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-10-25T22:03:09.674Z"
-last_activity: 2026-10-23
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
-state_head: 59a326d1f3bba77e58702759d28f97fb3963b2a6
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-10-25T23:03:44.945Z"
+last_activity: 2026-10-25
+last_activity_desc: Phase 05 execution started
+state_head: 341cb1a899f38f132ade5f8cb38de736e002f40d
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 9
+  completed_plans: 10
   percent: 11
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 5 — Standard Rooms
+**Current focus:** Phase 05 — Standard Rooms
 
 ## Current Position
 
-Phase: 5 (Standard Rooms) — READY TO EXECUTE
-Plan: Not started
+Phase: 05 (Standard Rooms) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-10-23 — Phase 04 complete, transitioned to Phase 5
+Last activity: 2026-10-25 — Phase 05 execution started
 
 Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 
@@ -146,6 +146,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 04 P05 | 7 min | 3 tasks | 16 files |
 | Phase 04 P06 | 4 min | 2 tasks | 7 files |
 | Phase 04 P09 | 4 min | 2 tasks | 3 files |
+| Phase 05 P01 | 7 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -180,6 +181,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04, Ian 2026-10-23]: a room's timeline entries print as customer-supplied text unless the room registers the entry type as trusted (WR-04)
 - [Phase 04, Ian 2026-10-23]: refusal lines about one file follow the contract's own entry order on purpose; order is presentation, not a check's result (UAT test 3)
 - [Phase 04, Ian 2026-10-23]: decision 3 stands as planned: a removed room's entries are hidden, never deleted, and the sync redraws the cards that hold them
+- [Phase 05]: 05-01: sortedRoomKeys() lives in tests/Pest.php so any room test file can use it when run alone
+- [Phase 05]: 05-01: inline test-only rooms quiet (handles nothing) and rulebook (handles triage) replace the annex wherever a case needs a second room that never collides with a real one
 
 ### Pending Todos
 
@@ -234,9 +237,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T19:43:11.885Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-standard-rooms/05-CONTEXT.md
+Last session: 2026-10-25T23:03:44.908Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
