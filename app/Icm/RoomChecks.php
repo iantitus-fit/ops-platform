@@ -12,7 +12,9 @@ use Illuminate\Support\Str;
  * The checks on a room's contract (rooms/<room>/CONTEXT.md, type: room) and on the rooms/ folder as a whole. They work
  * only from the files the Loader already read, never from disk, and every refusal sentence a room can earn is written
  * here so the wording can be changed in one place. The Validator adds what these return to its report, so a refusal
- * takes the same path as any other: the folder is stored as rejected and the previous version stays live.
+ * takes the same path as any other: the folder is stored as rejected and the previous version stays live. A room
+ * marked as one a business can never leave out (Room::$neverLeftOutBecause) is named once, with its reason, when its
+ * folder is absent, and none of its files is then told to be removed.
  */
 class RoomChecks
 {
@@ -57,7 +59,8 @@ class RoomChecks
 
     /**
      * What is wrong across the whole folder: a file at a room's contract path that is not a contract, a registered room
-     * whose folder has files but no contract, a rooms/<name>/ folder for a room the engine does not have, and the
+     * whose folder has files but no contract, a registered room that can never be left out whose folder is absent (one
+     * line naming the room and why, 05 D-02), a rooms/<name>/ folder for a room the engine does not have, and the
      * ownership of every file: what a contract may claim, a file two contracts claim, a file nobody claims, a file whose
      * room is not here, and a room's own kind of file outside its folder.
      *
@@ -82,6 +85,12 @@ class RoomChecks
         foreach ($this->rooms->all() as $room) {
             if ($folders->contains($room->key) && ! $files->contains(fn (IcmFile $file): bool => $file->path === "rooms/{$room->key}/CONTEXT.md")) {
                 $errors[] = $this->error("rooms/{$room->key}/CONTEXT.md", null, "the {$room->label} room's folder has files but no CONTEXT.md; add the room's contract with type: room");
+            }
+        }
+
+        foreach ($this->rooms->all() as $room) {
+            if ($room->neverLeftOutBecause !== null && ! $this->isPresent($room, $files) && ! $folders->contains($room->key)) {
+                $errors[] = $this->error("rooms/{$room->key}/CONTEXT.md", null, "the {$room->label} room can never be left out, because {$room->neverLeftOutBecause}; add rooms/{$room->key}/CONTEXT.md");
             }
         }
 
@@ -330,6 +339,8 @@ class RoomChecks
      * The one line for a typed file nobody validly claims: a present room handles its type but no contract lists it
      * (ROOM-01), or only rooms this business does not have handle it (D-10). A type no registered room handles passes
      * (D-15), and a file inside a registered room's folder whose contract is missing is left to the missing-contract line.
+     * When a room that can never be left out handles the type, its one never-left-out line already says what to add, so
+     * the file gets no "or remove the file" line (05 D-02).
      *
      * @param  list<Room>  $present
      * @return array{file: string, field: ?string, message: string}|null
@@ -347,6 +358,10 @@ class RoomChecks
 
         if ($here !== []) {
             return $this->error($file->path, null, "no room lists this {$file->type} file under owns; the {$here[0]->label} room handles it, so add it to rooms/{$here[0]->key}/CONTEXT.md");
+        }
+
+        if (array_filter($handlers, fn (Room $room): bool => $room->neverLeftOutBecause !== null) !== []) {
+            return null;
         }
 
         $folder = $this->roomKeyOf($file->path);

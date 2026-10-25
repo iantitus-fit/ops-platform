@@ -20,6 +20,7 @@ readonly class Room
      * @param  list<string>  $tables  The database tables the room owns.
      * @param  list<TimelineEntryType>  $timelineEntries  The kinds of entry the room writes on a customer's timeline.
      * @param  array<string, class-string>  $morphMap  Model nicknames the room adds, alias to model class.
+     * @param  ?string  $neverLeftOutBecause  Why a business can never leave this room out, a plain clause that follows "because", such as "it owns the lead sources file the sync requires". Null for a room a business may leave out (05 D-02, 04 D-09).
      */
     public function __construct(
         public string $key,
@@ -32,6 +33,7 @@ readonly class Room
         public array $tables = [],
         public array $timelineEntries = [],
         public array $morphMap = [],
+        public ?string $neverLeftOutBecause = null,
     ) {}
 
     /**
