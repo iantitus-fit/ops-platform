@@ -57,7 +57,9 @@ class Loader
     public function __construct(private RoomRegistry $rooms) {}
 
     /**
-     * Read every markdown file under $root and split it into front matter and body.
+     * Read every markdown file under $root and split it into front matter and body. A file whose path holds a hidden
+     * character (a line break, a tab, an invisible mark: HiddenCharacters) is refused before any other check, the README
+     * skip included, and is never read, so no other check ever sees such a name (05 D-19).
      *
      * @throws IcmFolderMissing
      */
@@ -77,11 +79,19 @@ class Loader
             ->sortByName();
 
         foreach ($finder as $file) {
+            $path = $this->relativePath($file);
+
+            if (HiddenCharacters::found($path)) {
+                $files[] = $this->unrecognized($path, '', 'hidden_name');
+
+                continue;
+            }
+
             if ($file->getFilename() === 'README.md') {
                 continue;
             }
 
-            $icmFile = $this->read($this->relativePath($file), $file);
+            $icmFile = $this->read($path, $file);
 
             if ($icmFile->kind === IcmFileKind::LaterSprint) {
                 $notices[] = "{$icmFile->path}: type {$icmFile->type} is not supported yet, so this file was skipped";
