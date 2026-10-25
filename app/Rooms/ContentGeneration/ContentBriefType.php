@@ -28,4 +28,12 @@ class ContentBriefType implements RoomFileType
     {
         return [];
     }
+
+    /**
+     * A business keeps one brief (05 D-12, D-27).
+     */
+    public function singleFileLabel(): ?string
+    {
+        return 'content brief';
+    }
 }

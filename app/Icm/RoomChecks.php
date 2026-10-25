@@ -62,8 +62,9 @@ class RoomChecks
      * whose folder has files but no contract, a registered room that can never be left out whose folder is absent (one
      * line naming the room and why, 05 D-02), a rooms/<name>/ folder for a room the engine does not have, and the
      * ownership of every file: what a contract may claim, a file two contracts claim, a file nobody claims, a file whose
-     * room is not here, and a room's own kind of file outside its folder. A file the Loader refused for a hidden
-     * character in its name does not count as a file in its folder, so it earns only the name refusal (05 D-19).
+     * room is not here, a room's own kind of file outside its folder, and a second file of a type a business keeps only
+     * one of (05 D-27). A file the Loader refused for a hidden character in its name does not count as a file in its
+     * folder, so it earns only the name refusal (05 D-19).
      *
      * @param  Collection<int, IcmFile>  $files
      * @return list<array{file: string, field: ?string, message: string}>
@@ -109,8 +110,10 @@ class RoomChecks
     }
 
     /**
-     * Every file has one owner (ROOM-01), and a room's own kind of file sits in the room's folder (D-04). Everything is
-     * worked out from the files already read, in path order, so a re-run of the same folder gives the same lines.
+     * Every file has one owner (ROOM-01), a room's own kind of file sits in the room's folder (D-04), and a type a
+     * business keeps only one of has one file there (D-27). A refused second file gets that one line and never the
+     * unclaimed line on top. Everything is worked out from the files already read, in path order, so a re-run of the
+     * same folder gives the same lines.
      *
      * @param  Collection<int, IcmFile>  $files
      * @param  Collection<int, string>  $folders  The room folder names that hold at least one loaded file.
@@ -135,8 +138,12 @@ class RoomChecks
 
         array_push($errors, ...$claimErrors, ...$this->doubleClaimErrors($files, $present, $claimants));
 
+        [$singleFileErrors, $refused] = $this->singleFileErrors($files, $claimants);
+
+        array_push($errors, ...$singleFileErrors);
+
         foreach ($files as $file) {
-            if ($file->kind !== IcmFileKind::Typed || in_array($file->type, ['room', 'connector'], true) || isset($misplaced[$file->path]) || isset($claimants[$file->path])) {
+            if ($file->kind !== IcmFileKind::Typed || in_array($file->type, ['room', 'connector'], true) || isset($misplaced[$file->path]) || isset($refused[$file->path]) || isset($claimants[$file->path])) {
                 continue;
             }
 
@@ -148,6 +155,52 @@ class RoomChecks
         }
 
         return $errors;
+    }
+
+    /**
+     * A type whose singleFileLabel() is not null keeps one file in its room's folder (05 D-27). The file kept is the
+     * first that a present contract validly claims, or the first in path order when none is claimed, and every other
+     * file of the type in the folder gets one line naming the kept one, field type. This does not depend on what owns
+     * says, so a contract edited to own a second brief, or every file in the folder, still keeps one. A file of the type
+     * outside the room's folder already has the placement line and is not counted. It works only from the files the
+     * Loader read, and the kept path is a loaded file's path, which the Loader's hidden-character name check has cleared.
+     *
+     * @param  Collection<int, IcmFile>  $files
+     * @param  array<string, list<string>>  $claimants
+     * @return array{0: list<array{file: string, field: ?string, message: string}>, 1: array<string, true>} The errors, and the paths refused.
+     */
+    private function singleFileErrors(Collection $files, array $claimants): array
+    {
+        $errors = [];
+        $refused = [];
+
+        foreach ($this->rooms->all() as $room) {
+            foreach ($room->fileTypes as $fileType) {
+                $label = $fileType->singleFileLabel();
+
+                if ($label === null) {
+                    continue;
+                }
+
+                $inFolder = $files
+                    ->filter(fn (IcmFile $file): bool => $file->kind === IcmFileKind::Typed && $file->type === $fileType->type() && str_starts_with($file->path, "rooms/{$room->key}/"))
+                    ->sortBy('path', SORT_STRING)
+                    ->values();
+
+                if ($inFolder->count() < 2) {
+                    continue;
+                }
+
+                $kept = $inFolder->first(fn (IcmFile $file): bool => isset($claimants[$file->path])) ?? $inFolder->first();
+
+                foreach ($inFolder->reject(fn (IcmFile $file): bool => $file->path === $kept->path) as $extra) {
+                    $errors[] = $this->error($extra->path, 'type', "this business already has a {$label} in {$kept->path}; keep one");
+                    $refused[$extra->path] = true;
+                }
+            }
+        }
+
+        return [$errors, $refused];
     }
 
     /**

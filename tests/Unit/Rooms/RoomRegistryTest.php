@@ -32,6 +32,11 @@ function registryTestFileType(string $type): RoomFileType
         {
             return [];
         }
+
+        public function singleFileLabel(): ?string
+        {
+            return null;
+        }
     };
 }
 
