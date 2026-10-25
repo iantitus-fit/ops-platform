@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 05
 current_phase_name: Standard Rooms
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-10-25T23:03:44.945Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-10-25T23:12:48.769Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 05 execution started
-state_head: 341cb1a899f38f132ade5f8cb38de736e002f40d
+state_head: 1f752f595cb2682c6ec14ef856a69456bf621100
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 10
+  completed_plans: 11
   percent: 11
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 05 (Standard Rooms) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 05 execution started
 
@@ -147,6 +147,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 04 P06 | 4 min | 2 tasks | 7 files |
 | Phase 04 P09 | 4 min | 2 tasks | 3 files |
 | Phase 05 P01 | 7 min | 2 tasks | 10 files |
+| Phase 05 P02 | 7 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04, Ian 2026-10-23]: decision 3 stands as planned: a removed room's entries are hidden, never deleted, and the sync redraws the cards that hold them
 - [Phase 05]: 05-01: sortedRoomKeys() lives in tests/Pest.php so any room test file can use it when run alone
 - [Phase 05]: 05-01: inline test-only rooms quiet (handles nothing) and rulebook (handles triage) replace the annex wherever a case needs a second room that never collides with a real one
+- [Phase 05]: 05-02: never-left-out line is written only for an absent room whose folder holds no loaded file; the per-file absent-room line is skipped for any type a marked room handles
+- [Phase 05]: 05-02: the wildcard router skip applies to routers only, so walk tests and connectors matched by a * pattern are still refused; owns patterns starting with * must be quoted in YAML
 
 ### Pending Todos
 
@@ -237,8 +240,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T23:03:44.908Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-10-25T23:12:48.733Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
