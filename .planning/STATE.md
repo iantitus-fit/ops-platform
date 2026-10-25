@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 05
 current_phase_name: Standard Rooms
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-10-25T23:25:15.653Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-10-25T23:35:59.285Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 05 execution started
-state_head: b7f4d2c794e35ef77d965ab4dd1810f09716e9a5
+state_head: 68e0bdcbdf65ca4c1f87643fbfb160e6ef436a78
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 12
+  completed_plans: 13
   percent: 11
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 05 (Standard Rooms) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 05 execution started
 
@@ -149,6 +149,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 05 P01 | 7 min | 2 tasks | 10 files |
 | Phase 05 P02 | 7 min | 2 tasks | 6 files |
 | Phase 05 P03 | 9 min | 2 tasks | 17 files |
+| Phase 05 P04 | 11 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -188,6 +189,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-02: never-left-out line is written only for an absent room whose folder holds no loaded file; the per-file absent-room line is skipped for any type a marked room handles
 - [Phase 05]: 05-02: the wildcard router skip applies to routers only, so walk tests and connectors matched by a * pattern are still refused; owns patterns starting with * must be quoted in YAML
 - [Phase 05]: 05-03: company knowledge is the first real room, key company_knowledge, listed after AdminPanelProvider; exampleFolderFileCount() is 15
+- [Phase 05]: 05-04: a hidden-named file reaches the Validator as an Unrecognized file with problem hidden_name and no raw text, so it is never read and RoomChecks leaves it out of the room-folder lines
 
 ### Pending Todos
 
@@ -242,8 +244,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T23:25:15.613Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-10-25T23:35:59.247Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
