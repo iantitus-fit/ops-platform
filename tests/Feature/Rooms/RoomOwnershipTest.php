@@ -34,19 +34,6 @@ function pretendNoteContents(): string
 }
 
 /**
- * Room keys in the order the sync lists them: sorted as plain strings.
- *
- * @param  list<string>  $keys
- * @return list<string>
- */
-function sortedRoomKeys(array $keys): array
-{
-    sort($keys, SORT_STRING);
-
-    return $keys;
-}
-
-/**
  * Write a contract for a test-only room that reads nothing, writes no records and has no connector.
  */
 function plainRoomContract(string $room, string $owns): string

@@ -2,6 +2,8 @@
 
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Icm\Loader;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
 
 const PRETEND_NOTE_PATH = 'rooms/pretend/notes/first-note.md';
@@ -95,7 +97,10 @@ it('adds the room\'s file types to the sentence that lists the ones the sync kno
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, connector, pretend_note (you wrote recipe)']);
+    $types = [...Loader::TYPED, ...app(RoomRegistry::class)->registeredTypes()];
+
+    expect(rejectedErrors())->toBe(['notes/recipe.md: type must be one of '.implode(', ', $types).' (you wrote recipe)'])
+        ->and($types)->toContain('pretend_note');
 });
 
 it('does not know the pretend note type while the pretend room is not registered', function () {
@@ -103,7 +108,10 @@ it('does not know the pretend note type while the pretend room is not registered
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['notes/first.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, connector (you wrote pretend_note)']);
+    $types = [...Loader::TYPED, ...app(RoomRegistry::class)->registeredTypes()];
+
+    expect(rejectedErrors())->toBe(['notes/first.md: type must be one of '.implode(', ', $types).' (you wrote pretend_note)'])
+        ->and($types)->not->toContain('pretend_note');
 });
 
 it('has no files to serve before the first sync', function () {

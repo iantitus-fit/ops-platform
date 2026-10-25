@@ -315,6 +315,19 @@ function exampleRoomKeys(): array
 }
 
 /**
+ * Room keys in the order the sync lists them: sorted as plain strings.
+ *
+ * @param  list<string>  $keys
+ * @return list<string>
+ */
+function sortedRoomKeys(array $keys): array
+{
+    sort($keys, SORT_STRING);
+
+    return $keys;
+}
+
+/**
  * The paths of the connector files examples/example-hvac ships under connectors/, sorted. The example folder gains a
  * connector file in Phase 5, and this lets a test name exactly what the example ships without a second number to keep
  * in step (04 D-16).

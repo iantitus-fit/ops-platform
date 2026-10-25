@@ -84,11 +84,11 @@ it('refuses a room contract anywhere but rooms/<name>/CONTEXT.md, and any other 
     expect(rejectedErrors())->toBe(['business/room.md: type room belongs only in rooms/<name>/CONTEXT.md, the contract at the top of a room folder']);
 
     File::delete(icmPath('business/room.md'));
-    writeIcmFile('rooms/pretend/CONTEXT.md', str_replace('type: room', 'type: knowledge', roomContractWith('connector', 'connector: pretend_feed')));
+    writeIcmFile('rooms/pretend/CONTEXT.md', "---\ntype: pretend_note\ntitle: Not a contract\npinned: false\n---\nA note where the contract belongs.");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: type must be room, because this file is the pretend room's contract (you wrote knowledge)"]);
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: type must be room, because this file is the pretend room's contract (you wrote pretend_note)"]);
 });
 
 dataset('empty list fields', [
@@ -195,7 +195,7 @@ it('changes nothing for a rooms/<name>/ folder that holds only README files', fu
 
 it('names the missing contract of a registered room whose folder holds other files', function () {
     enablePretendRoom();
-    writeIcmFile('rooms/pretend/notes/note.md', "---\ntype: knowledge\n---\nA note.");
+    writeIcmFile('rooms/pretend/notes/note.md', "---\ntype: pretend_note\ntitle: A note\npinned: false\n---\nA note.");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
@@ -210,7 +210,10 @@ it('refuses a folder for a room this engine lacks, naming the rooms that exist, 
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room; the rooms are: pretend'])
+    $rooms = app(RoomRegistry::class)->keys();
+
+    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room; the rooms are: '.implode(', ', $rooms)])
+        ->and($rooms)->toContain('pretend')
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
