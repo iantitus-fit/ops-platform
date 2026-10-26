@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OwnableKind;
 use App\Icm\ActiveConfig;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
@@ -116,4 +117,53 @@ it('declares exactly one method on the slot interface', function () {
         ->all();
 
     expect($methods)->toBe(['fetchListing']);
+});
+
+/**
+ * 05 D-10 and success criterion 4: the example folder's connector file fills the slot and owns and reads no kind of
+ * record, so Google is the truth for nothing the platform keeps. The bare word none compiles to an empty list. The bound
+ * driver is still the fake, so the section still says it is not connected.
+ */
+it('fills its slot with a connector file that owns and reads none', function () {
+    activateExampleFolder();
+    $config = app(ActiveConfig::class);
+
+    $connector = $config->file('connectors/google-business-profile.md');
+
+    expect($config->version()->compiled['index']['connector'])->toContain('connectors/google-business-profile.md')
+        ->and($connector['front_matter']['slot'])->toBe('google_business_profile')
+        ->and($connector['front_matter']['owns'])->toBe([])
+        ->and($connector['front_matter']['reads'])->toBe([]);
+
+    $this->get('/admin')
+        ->assertOk()
+        ->assertSee('Not connected to Google: this room runs on a stand-in and sends nothing.');
+});
+
+/**
+ * 05 D-10: owns written as [none] is a list holding the word none, which is not a kind of record, and is refused.
+ */
+it('refuses a connector file that writes owns as [none]', function () {
+    $live = activateExampleFolder();
+
+    breakFile('connectors/google-business-profile.md', fn (string $contents): string => str_replace('owns: none', 'owns: [none]', $contents));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/google-business-profile.md: owns has none, which is not a kind of record; the kinds are: '.implode(', ', OwnableKind::values())])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * 04 D-25: a connector file names a slot, and the room that offers the slot must be in the folder.
+ */
+it('refuses the connector file when the room folder is gone', function () {
+    $live = activateExampleFolder();
+
+    File::deleteDirectory(icmPath('rooms/google_business_profile'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['connectors/google-business-profile.md: this file fills the google_business_profile slot, but the Google Business Profile room is not in this folder'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
