@@ -60,7 +60,9 @@ class Loader
     /**
      * Read every markdown file under $root and split it into front matter and body. A file whose path holds a hidden
      * character (a line break, a tab, an invisible mark: HiddenCharacters) is refused before any other check, the README
-     * skip included, and is never read, so no other check ever sees such a name (05 D-19).
+     * skip included, and is never read, so no other check ever sees such a name (05 D-19). A file that is not valid
+     * UTF-8 is refused next, the same way and with none of its text kept, so no other check reads its bytes and the
+     * compiled version can always be saved (05 D-33).
      *
      * @throws IcmFolderMissing
      */
@@ -88,11 +90,19 @@ class Loader
                 continue;
             }
 
+            $raw = (string) file_get_contents($file->getPathname());
+
+            if (! mb_check_encoding($raw, 'UTF-8')) {
+                $files[] = $this->unrecognized($path, '', 'not_utf8');
+
+                continue;
+            }
+
             if ($file->getFilename() === 'README.md') {
                 continue;
             }
 
-            $icmFile = $this->read($path, $file);
+            $icmFile = $this->read($path, $file, $raw);
 
             if ($icmFile->kind === IcmFileKind::LaterSprint) {
                 $notices[] = "{$icmFile->path}: type {$icmFile->type} is not supported yet, so this file was skipped";
@@ -104,10 +114,8 @@ class Loader
         return new LoadedFolder($files, $notices);
     }
 
-    private function read(string $path, SplFileInfo $file): IcmFile
+    private function read(string $path, SplFileInfo $file, string $raw): IcmFile
     {
-        $raw = (string) file_get_contents($file->getPathname());
-
         if (in_array($file->getFilename(), self::ROUTERS, true) && preg_match(self::ROOM_CONTRACT, $path) !== 1) {
             return new IcmFile($path, IcmFileKind::Router, null, [], $raw, $raw);
         }
