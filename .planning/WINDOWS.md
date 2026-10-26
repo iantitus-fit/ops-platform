@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 13
+open_count: 14
 waived_count: 1
 fixed_count: 9
-total_count: 23
-last_updated: 2026-10-26T00:08:17.569Z
+total_count: 24
+last_updated: 2026-10-26T00:21:53.598Z
 ---
 
 # Broken Windows Ledger
@@ -38,6 +38,7 @@ last_updated: 2026-10-26T00:08:17.569Z
 | 21 | 05 | unrun-verify | app/Rooms/Marketing/MarketingSection.php |  | Plan 05-05 hand check (D-18): keyboard-only and VoiceOver walk of the marketing section on /admin, and read the offers line against the front desk on the day an offer ends; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:41:24.145Z |  |
 | 22 | 05 | unrun-verify | app/Rooms/ContentGeneration/ContentGenerationSection.php |  | Plan 05-06 hand check (D-18): keyboard-only and VoiceOver walk of the content generation section on /admin, empty and with the brief in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:55:41.982Z |  |
 | 23 | 05 | unrun-verify | app/Rooms/Money/MoneySection.php |  | Plan 05-07 hand check (D-18): keyboard-only and VoiceOver walk of the money section on /admin, empty and with the notes in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:08:17.569Z |  |
+| 24 | 05 | unrun-verify | app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php |  | Plan 05-08 hand check (D-18): keyboard-only and VoiceOver walk of the Google Business Profile section on /admin, empty and with the categories file in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:21:53.598Z |  |
 
 ````json
 [
@@ -337,6 +338,19 @@ last_updated: 2026-10-26T00:08:17.569Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-26T00:08:17.569Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 24,
+    "kind": "unrun-verify",
+    "phase": "05",
+    "file": "app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php",
+    "line": null,
+    "description": "Plan 05-08 hand check (D-18): keyboard-only and VoiceOver walk of the Google Business Profile section on /admin, empty and with the categories file in place; not run by the executor, left for Phase 5 UAT",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-26T00:21:53.598Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

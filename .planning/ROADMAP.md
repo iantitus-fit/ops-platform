@@ -100,7 +100,7 @@ Plans:
   3. Marketing owns `business/lead-sources.md` and `business/offers/`, both still where they are. Source and cost per lead, offers and prices behave exactly as before, and the existing suite for them passes unchanged.
   4. The Google Business Profile room has a connector slot (an interface with a fake driver) and a connector file that declares `owns` and `reads`; with only the fake driver, nothing reaches Google. Content generation says in its `CONTEXT.md` that it has no connector.
 
-**Plans**: 7/9 plans executed
+**Plans**: 8/9 plans executed
 **UI hint**: yes
 
 Plans:
@@ -122,7 +122,7 @@ Plans:
 - [x] 05-07-PLAN.md — Money lands with its notes file, no slot or records; the check that refuses card numbers and every 9-digit number however grouped (D-16, D-22, D-26)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 05-08-PLAN.md — Google Business Profile lands: read-only slot on a fake, connector file owning and reading none, categories file; D-23 slots test to unit
+- [x] 05-08-PLAN.md — Google Business Profile lands: read-only slot on a fake, connector file owning and reading none, categories file; D-23 slots test to unit
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 05-09-PLAN.md — Google Business Profile categories checked for shape (D-07)
@@ -293,7 +293,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
-| 5. Standard Rooms | 7/9 | In Progress | - |
+| 5. Standard Rooms | 8/9 | In Progress | - |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |

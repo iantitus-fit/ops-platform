@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 05
 current_phase_name: Standard Rooms
 status: executing
-stopped_at: Completed 05-07-PLAN.md
-last_updated: "2026-10-26T00:09:05.247Z"
+stopped_at: Completed 05-08-PLAN.md
+last_updated: "2026-10-26T00:25:22.037Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 05 execution started
-state_head: c801df0445a65a7ead10ceeeed948f605227f87a
+state_head: bf59a26f1b27a1fa0898ad82303bc820b864797c
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 11
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 05 (Standard Rooms) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 05 execution started
 
@@ -153,6 +153,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 05 P05-05 | 6 min | 2 tasks | 9 files |
 | Phase 05 P06 | 8 min | 3 tasks | 14 files |
 | Phase 05 P07 | 25 min | 2 tasks | 13 files |
+| Phase 05 P08 | 11 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-05: the marketing section asks OfferSentences::liveToday() for the offers live today and carries no date logic of its own
 - [Phase 05]: 05-06: the single-file check (RoomChecks::singleFileErrors) reads the room's folder, not the contract's owns, so a business keeps one content brief even after the owner edits owns; money and Google Business Profile reuse RoomFileType::singleFileLabel()
 - [Phase 05]: 05-07: the money room has no slot, table or payment record; its notes check refuses card numbers and every 9-digit number except a ZIP+4 written 60601-1234, in one fixed digit-free line
+- [Phase 05]: 05-08: the Google Business Profile slot is an interface in the room's namespace bound to the fake by a closure reading rooms.google_business_profile.driver with a default of fake; no config file or env key, one read method and no send method, so no chokepoint this phase
+- [Phase 05]: 05-08: a room section's own lines show only while the room is not empty, so a test of them needs the owned file in place; Task 2's not-connected assertion moved to Task 3's furnished row
 
 ### Pending Todos
 
@@ -250,8 +253,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T00:09:05.203Z
-Stopped at: Completed 05-07-PLAN.md
+Last session: 2026-10-26T00:25:21.999Z
+Stopped at: Completed 05-08-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
