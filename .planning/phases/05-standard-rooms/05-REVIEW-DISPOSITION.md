@@ -5,8 +5,16 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: fixed
-    title: "The card/ID scan can be bypassed by ordinary separators and by a preceding number"
+    disposition: open
+    title: "A file with non-UTF-8 bytes between card or ID digit groups gets past the number check"
+  - id: IN-01
+    severity: info
+    disposition: open
+    title: "`GoogleBusinessProfileSection::connectedToGoogle()` can never return true, and the live-driver list repeats a fact the provider already holds"
+  - id: IN-02
+    severity: info
+    disposition: open
+    title: "The scan reads only ASCII digits, so fullwidth and other Unicode digits are not seen"
   - id: WR-02
     severity: warning
     disposition: fixed
@@ -15,14 +23,6 @@ findings:
     severity: warning
     disposition: fixed
     title: "`RoomChecks::bothClaimError` puts the owner's raw `owns` entry in the message"
-  - id: IN-01
-    severity: info
-    disposition: fixed
-    title: "`Loader::ROOM_CONTRACT` ends in `$`, which accepts a trailing newline"
-  - id: IN-02
-    severity: info
-    disposition: fixed
-    title: "`CompanyKnowledgeSection` hardcodes the FAQ path"
   - id: IN-03
     severity: info
     disposition: open
@@ -35,23 +35,23 @@ findings:
     severity: info
     disposition: fixed
     title: "Example folder router does not mention the new folders"
-open: 1
+open: 4
 total: 8
-recorded: 2026-10-26T02:34:05.030Z
+recorded: 2026-10-26T17:56:24.560Z
 ---
 
 # Phase 05: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 05-REVIEW-FIX.md |
-| WR-02 | warning | fixed | 05-REVIEW-FIX.md |
-| WR-03 | warning | fixed | 05-REVIEW-FIX.md |
-| IN-01 | info | fixed | 05-REVIEW-FIX.md |
-| IN-02 | info | fixed | 05-REVIEW-FIX.md |
-| IN-03 | info | open | - |
-| IN-04 | info | fixed | 05-REVIEW-FIX.md |
-| IN-05 | info | fixed | 05-REVIEW-FIX.md |
+| WR-01 | warning | open | - |
+| IN-01 | info | open | - |
+| IN-02 | info | open | - |
+| WR-02 | warning | fixed | 05-REVIEW-FIX.md (not in the current review) |
+| WR-03 | warning | fixed | 05-REVIEW-FIX.md (not in the current review) |
+| IN-03 | info | open | - (not in the current review) |
+| IN-04 | info | fixed | 05-REVIEW-FIX.md (not in the current review) |
+| IN-05 | info | fixed | 05-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
