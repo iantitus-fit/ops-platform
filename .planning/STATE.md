@@ -222,7 +222,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
 - [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
-- [Phase 5, open for Ian]: the re-review (05-REVIEW.md) left one warning: a money notes file with non-UTF-8 bytes between digit groups (a Windows-1252 en dash or no-break space) gets past the card and 9-digit check, because mb_scrub turns each bad byte into `?`. Fix it (bad bytes become spaces, two test cases) or record it as an accepted miss beside D-31, before real money notes go in. Two info items (IN-01 the unreachable connected-to-Google branch, IN-02 Unicode digits) and the ledger's IN-03 row (half fixed, half waiting on the hidden-characters-in-values decision) are in 05-REVIEW-DISPOSITION.md
+- [Phase 5, review]: WR-01 fixed at close (0fef6e8): in text that is not valid UTF-8, each invalid byte joins digit groups as a space. IN-01 (the unreachable connected-to-Google branch) and IN-02 (Unicode digits) stay open as info; IN-03 is deferred to the hidden-characters-in-values decision (05-REVIEW-DISPOSITION.md)
+- [Phase 5 close, not triaged]: a folder file that is not valid UTF-8 and passes every check crashes `icm:sync` with a JsonEncodingException when the version is saved, instead of a plain-words refusal; the transaction rolls back, so the previous version stays live. Found while writing the WR-01 tests
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -264,5 +265,5 @@ Resume file: None
 
 ## Operator Next Steps
 
-- Decide on 05-REVIEW.md WR-01 (fix or accept beside D-31), then review and merge the Phase 5 branch
+- Review, push and merge the Phase 5 branch
 - Discuss Phase 6 with /gsd-discuss-phase 6, then plan it with /gsd-plan-phase 6
