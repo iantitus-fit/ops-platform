@@ -115,3 +115,24 @@ it('refuses an extra knowledge file and names the company knowledge room', funct
     expect(rejectedErrors())->toBe(['business/warranty.md: no room lists this knowledge file under owns; the company knowledge room handles it, so add it to rooms/company_knowledge/CONTEXT.md'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
+
+/**
+ * IN-02: the section decides on the FAQ by its type, not by whether any file sits at business/faq.md. A service file
+ * written to that path is not the FAQ, and the section must not say it is in place. A removed FAQ still reads as not added.
+ */
+it('says the FAQ is not added when the file at its path is not a knowledge file', function () {
+    $service = str_replace('slug: ac-repair', 'slug: faq-visit', File::get(icmPath('business/services/ac-repair.md')));
+    File::delete(icmPath('business/faq.md'));
+    breakFile('agents/front-desk.md', fn (string $contents): string => str_replace("  - business/faq.md\n", '', $contents));
+    writeIcmFile('business/faq.md', $service);
+
+    $version = activateExampleFolder();
+
+    expect($version->compiled['index']['knowledge'] ?? [])->toBe([]);
+
+    $this->get('/admin')
+        ->assertOk()
+        ->assertSee('Services: 5')
+        ->assertSee('FAQ: not added yet')
+        ->assertDontSee('FAQ: in place');
+});
