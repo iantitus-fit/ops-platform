@@ -1,6 +1,7 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Rooms\Money\AccountNumberScan;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -157,14 +158,10 @@ it('refuses a card or a 9-digit number whose groups are joined by a dot, tab, Un
     'nine digits with a non-breaking space' => "123\u{00A0}45\u{00A0}6789",
 ]);
 
-it('refuses a card or a 9-digit number whose groups are joined by a byte that is not valid UTF-8 (WR-01, D-28)', function (string $text) {
-    $live = activateExampleFolder();
-    writeMoneyNotes($text);
-
-    $this->artisan('icm:sync')->assertExitCode(1);
-
-    expect(rejectedErrors())->toBe([MONEY_NOTES_REFUSAL])
-        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+// The sync refuses a file that is not valid UTF-8 before this check reads it (D-33), so these cases call the scan
+// directly: the scan must still find the number on its own.
+it('finds a card or a 9-digit number whose groups are joined by a byte that is not valid UTF-8 (WR-01, D-28)', function (string $text) {
+    expect((new AccountNumberScan)->findsAccountNumber($text))->toBeTrue();
 })->with([
     // A file saved by an older Windows editor writes an en dash as the single byte 0x96 and a non-breaking space as 0xA0.
     'card with windows en dashes' => "4111\x961111\x961111\x961111",
