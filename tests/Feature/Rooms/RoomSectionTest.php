@@ -1,8 +1,14 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Models\Contact;
+use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 use App\Rooms\RoomSection;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\Rooms\PretendRoom\PretendRoomSection;
 
@@ -35,6 +41,32 @@ it('still shows the empty line when the room\'s folder holds a router file besid
 
     expect(preg_match('/<div data-room-section="pretend">(.*?)<\/div>\s*<\/div>/s', $response->getContent(), $section))->toBe(1)
         ->and($section[1])->toContain('Pretend: nothing set up yet. Add a file to rooms/pretend/notes/ to start.');
+});
+
+it('shows one plain line in a room section that fails, reports the error and leaves the rest of the dashboard standing', function () {
+    $this->actingAs(User::factory()->create());
+    enablePretendRoom();
+    layPretendRoomFolder();
+    activateExampleFolder();
+    Message::factory()
+        ->for(Conversation::factory()->for(Contact::factory()->create(['name' => 'Dana Whitfield'])))
+        ->draft()
+        ->create();
+
+    Exceptions::fake();
+    Schema::drop('pretend_pings');
+
+    $response = $this->get('/admin')->assertOk();
+
+    expect(preg_match('/<div data-room-section="pretend">(.*?)<\/div>\s*<\/div>/s', $response->getContent(), $section))->toBe(1)
+        ->and($section[1])->toContain('This section could not load. The rest of the dashboard is fine.')
+        ->and($section[1])->not->toContain('Pings so far');
+
+    $response->assertSee('Drafts waiting')
+        ->assertSee('Dana Whitfield')
+        ->assertSee('data-room-section="money"', escape: false);
+
+    Exceptions::assertReported(QueryException::class);
 });
 
 it('reads the empty line from the contract as the platform draws it', function (string $label, array $owns, array $ownedFiles, ?string $line) {
