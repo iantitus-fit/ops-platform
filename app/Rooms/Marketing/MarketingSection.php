@@ -26,7 +26,7 @@ class MarketingSection extends RoomSection
         $config = app(ActiveConfig::class);
 
         $names = array_map(
-            fn (array $live): string => (string) $config->offer($live['slug'])['name'],
+            fn (array $live): string => (string) ($config->offer($live['slug'])['name'] ?? $live['slug']),
             app(OfferSentences::class)->liveToday(),
         );
 
