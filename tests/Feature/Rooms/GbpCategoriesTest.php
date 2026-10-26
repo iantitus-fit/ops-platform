@@ -176,7 +176,8 @@ it('cuts a long repeated value to 80 characters', function () {
 
 it('marks a hidden character in a quoted value instead of printing it', function () {
     $live = activateExampleFolder();
-    writeGbpCategories('HVAC contractor', 'additional_categories: ["Heating​contractor", "Heating​contractor"]');
+    $hidden = "\u{200B}";
+    writeGbpCategories('HVAC contractor', "additional_categories: [\"Heating{$hidden}contractor\", \"Heating{$hidden}contractor\"]");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
@@ -209,3 +210,13 @@ it('accepts an empty list, an absent list and the example file as shipped', func
     'no list at all' => null,
     'the example as shipped' => 'shipped',
 ]);
+
+it('refuses additional categories written as a group of fields, not a list', function () {
+    $live = activateExampleFolder();
+    writeGbpCategories('HVAC contractor', 'additional_categories: {first: Heating contractor}');
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/google_business_profile/categories.md: additional_categories must be a list (you wrote a group of fields)'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
