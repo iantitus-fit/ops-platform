@@ -4,7 +4,7 @@ use App\Icm\ActiveConfig;
 use Illuminate\Support\Facades\File;
 
 /**
- * The money notes check (ROOM-14; 05 D-16, D-22, D-26): the sync refuses a notes file that holds what looks like a card
+ * The money notes check (ROOM-14; 05 D-16, D-22, D-26, D-28): the sync refuses a notes file that holds what looks like a card
  * number (13 to 19 digits passing the card check digit, phones skipped) or any 9-digit number however it is grouped
  * (bank routing, Social Security, employer ID), except a ZIP+4 written 60601-1234. The refusal is one fixed sentence that
  * never repeats a digit of what was found, and the previous version stays live.
@@ -129,4 +129,60 @@ it('catches a number written in the front matter', function () {
 
     expect(rejectedErrors())->toBe([MONEY_NOTES_REFUSAL])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('refuses a card or a 9-digit number whose groups are joined by a dot, tab, Unicode space, Unicode dash or one line break (D-28)', function (string $text) {
+    $live = activateExampleFolder();
+    writeMoneyNotes($text);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([MONEY_NOTES_REFUSAL])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+})->with([
+    'card with dots' => '4111.1111.1111.1111',
+    'card wrapped across one line break' => "4111 1111\n1111 1111",
+    'card wrapped across a windows line break' => "4111 1111\r\n1111 1111",
+    'card with non-breaking spaces' => "4111\u{00A0}1111\u{00A0}1111\u{00A0}1111",
+    'card with en dashes' => "4111\u{2013}1111\u{2013}1111\u{2013}1111",
+    'card with tabs' => "4111\t1111\t1111\t1111",
+    'nine digits with dots' => '123.45.6789',
+    'nine digits with a non-breaking space' => "123\u{00A0}45\u{00A0}6789",
+]);
+
+it('refuses a card or a 9-digit number that follows another number in the same span (D-28)', function (string $text) {
+    $live = activateExampleFolder();
+    writeMoneyNotes($text);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([MONEY_NOTES_REFUSAL])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+})->with([
+    'card after a date' => 'Paid 2026-10-25 4111 1111 1111 1111',
+    'card after a date, line break between groups' => "Paid 2026-10-25 4111 1111\n1111 1111",
+    'nine digits after two dates' => '2026-10-25 2026-10-26 123 45 6789',
+    'nine digits and a card after a date' => 'Paid 2026-10-25 123-45-6789 4111 1111 1111 1111',
+]);
+
+it('still splits spans at two separators in a row, and at a comma (D-28)', function (string $text) {
+    writeMoneyNotes($text);
+
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    expect(app(ActiveConfig::class)->filesOfType('money_notes'))->toHaveCount(1);
+})->with([
+    'two spaces inside a card' => '4111  1111  1111  1111',
+    'two spaces inside nine digits' => '123  45  6789',
+    'a space and a dot' => '4111 .1111 .1111 .1111',
+    'a blank line' => "4111 1111\n\n1111 1111",
+    'zip plus four alone' => '60601-1234',
+    'a date followed by a phone' => '2026-10-25 2026-10-26 312-555-0147',
+    'a faroese phone before two dates' => '+298 302010 2026-10-25 2026-10-26',
+]);
+
+it('lets the example money notes through the widened check', function () {
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    expect(app(ActiveConfig::class)->filesOfType('money_notes'))->toHaveCount(1);
 });
