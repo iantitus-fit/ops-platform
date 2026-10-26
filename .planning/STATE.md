@@ -6,10 +6,10 @@ current_phase: 6
 current_phase_name: Front Desk and Team Rooms
 status: planning
 stopped_at: Phase 05 complete, ready to plan Phase 6
-last_updated: "2026-10-26T19:15:41.857Z"
+last_updated: "2026-10-26T20:50:42.806Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 05 complete, transitioned to Phase 6
-state_head: eb07487fe924c349b08b975f7ee0d987694e3a96
+state_head: f9401bc37f0de95f8bd82342a58d705caaafafbb
 progress:
   total_phases: 9
   completed_phases: 2
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 Phase: 6 — Front Desk and Team Rooms
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-26 - Completed quick task 261026-jig: Make CI steadier (runner pinned to ubuntu-24.04, Chromium cache, job and browser-step timeouts)
+Last activity: 2026-10-26 - Completed quick task 261026-lrs: Stop running apt in CI (browser step only installs Chromium)
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -231,6 +231,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 261026-jig | Make CI steadier: runner pinned to ubuntu-24.04, Playwright Chromium cache keyed on its version, 30-minute job and 10-minute browser-step timeouts; BLUEPRINT runner pin closed | 2026-10-26 | eb07487 | [261026-jig-make-ci-steadier-pin-runs-on-to-ubuntu-2](./quick/261026-jig-make-ci-steadier-pin-runs-on-to-ubuntu-2/) |
+| 261026-lrs | Stop running apt in CI: the browser step only runs npx playwright install chromium (cache kept, 10-minute timeout kept); BLUEPRINT apt open item closed | 2026-10-26 | f9401bc | [261026-lrs-stop-running-apt-in-ci-replace-the-brows](./quick/261026-lrs-stop-running-apt-in-ci-replace-the-brows/) |
 
 ### Roadmap Evolution
 
