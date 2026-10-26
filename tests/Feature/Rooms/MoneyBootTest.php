@@ -106,21 +106,23 @@ it('refuses a second money notes file under the shipped contract', function () {
 });
 
 /**
- * D-27 under a contract the owner edited to own a second path: owning the file does not let a business keep two.
+ * D-27 under a contract the owner edited to own a second path: owning the file does not let a business keep two. The
+ * second file is named second.md so that it sorts after notes.md: when a contract claims both files, the sync keeps the
+ * first one in path order, and the plan's one line names notes.md as the file kept.
  */
 it('refuses a second money notes file under a contract edited to own two paths', function () {
     $live = activateExampleFolder();
 
     breakFile('rooms/money/CONTEXT.md', fn (string $contents): string => str_replace(
         'owns: [rooms/money/notes.md]',
-        'owns: [rooms/money/notes.md, rooms/money/more.md]',
+        'owns: [rooms/money/notes.md, rooms/money/second.md]',
         $contents,
     ));
-    writeIcmFile('rooms/money/more.md', "---\ntype: money_notes\n---\nMore about how we get paid.");
+    writeIcmFile('rooms/money/second.md', "---\ntype: money_notes\n---\nMore about how we get paid.");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['rooms/money/more.md: this business already has a money notes file in rooms/money/notes.md; keep one'])
+    expect(rejectedErrors())->toBe(['rooms/money/second.md: this business already has a money notes file in rooms/money/notes.md; keep one'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
@@ -132,7 +134,7 @@ it('accepts a contract that owns two paths while only one notes file is there', 
 
     breakFile('rooms/money/CONTEXT.md', fn (string $contents): string => str_replace(
         'owns: [rooms/money/notes.md]',
-        'owns: [rooms/money/notes.md, rooms/money/more.md]',
+        'owns: [rooms/money/notes.md, rooms/money/second.md]',
         $contents,
     ));
 

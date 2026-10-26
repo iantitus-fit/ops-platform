@@ -5,6 +5,7 @@ use App\Providers\Filament\AdminPanelProvider;
 use App\Rooms\CompanyKnowledge\CompanyKnowledgeServiceProvider;
 use App\Rooms\ContentGeneration\ContentGenerationServiceProvider;
 use App\Rooms\Marketing\MarketingServiceProvider;
+use App\Rooms\Money\MoneyServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -12,4 +13,5 @@ return [
     CompanyKnowledgeServiceProvider::class,
     MarketingServiceProvider::class,
     ContentGenerationServiceProvider::class,
+    MoneyServiceProvider::class,
 ];
