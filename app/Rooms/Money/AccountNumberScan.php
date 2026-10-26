@@ -21,13 +21,15 @@ class AccountNumberScan
     private const MOST_CARD_DIGITS = 19;
 
     /**
-     * A span is a maximal run of digit groups joined by exactly one separator, with an optional leading plus (D-22,
-     * D-28). A separator is a space, a hyphen, a dot, a tab, any Unicode space (the non-breaking space included), any
-     * Unicode dash, or one line break (\R, so a Windows line break is one). \R cannot sit inside a character class,
-     * hence the alternation. Two separators in a row, or a comma, keep two spans apart. Digits are written 0-9 so a
-     * Unicode digit is never read as a group.
+     * A span is a maximal run of digit groups joined by one separator each, with an optional leading plus (D-22, D-28).
+     * A separator is a dot, any one Unicode dash (the hyphen included), or any run of horizontal whitespace (spaces,
+     * tabs, non-breaking and other Unicode spaces, two spaces included) holding at most one line break (\R, so a Windows
+     * line break is one). So a markdown hard break and a list item continued on an indented line join their groups,
+     * while a blank line, a comma, or a space beside a dot keeps two spans apart. The whitespace quantifiers are
+     * possessive because whitespace never matches a digit, so giving characters back could never help. Digits are
+     * written 0-9 so a Unicode digit is never read as a group.
      */
-    private const SPAN = '/\+?[0-9]+(?:(?:[\t.\p{Zs}\p{Pd}]|\R)[0-9]+)*/u';
+    private const SPAN = '/\+?[0-9]+(?:(?:[.\p{Pd}]|\h*+\R\h*+|\h++)[0-9]+)*/u';
 
     /**
      * A ZIP+4 as it is normally written: five digits, an ASCII hyphen, four digits. The one 9-digit span that passes
