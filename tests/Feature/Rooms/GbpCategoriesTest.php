@@ -1,6 +1,9 @@
 <?php
 
+use App\Enums\IcmFileKind;
 use App\Icm\ActiveConfig;
+use App\Icm\IcmFile;
+use App\Rooms\GoogleBusinessProfile\GbpCategoriesType;
 
 /**
  * The Google Business Profile categories file's shape checks (ROOM-11; 05 D-07): the list holds at most nine more
@@ -219,4 +222,25 @@ it('refuses additional categories written as a group of fields, not a list', fun
 
     expect(rejectedErrors())->toBe(['rooms/google_business_profile/categories.md: additional_categories must be a list (you wrote a group of fields)'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * IN-03: text that is not valid UTF-8 cannot be compared, and must not be reported as an empty entry. The Loader may
+ * refuse such text first, so the type's checks() is handed a file built by hand.
+ */
+it('gives an entry that is not valid text its own line, not the empty-entry line', function () {
+    $file = new IcmFile(
+        path: GBP_CATEGORIES_FILE,
+        kind: IcmFileKind::Typed,
+        type: 'gbp_categories',
+        frontMatter: ['type' => 'gbp_categories', 'primary_category' => 'HVAC contractor', 'additional_categories' => ['Heating contractor', "Furnace \xC3\x28 repair"]],
+        body: 'The categories Google shows.',
+        raw: '',
+    );
+
+    $messages = array_column((new GbpCategoriesType)->checks($file), 'message');
+
+    expect($messages)->toHaveCount(1)
+        ->and($messages[0])->not->toContain('is empty')
+        ->and($messages[0])->toContain('additional_categories item 2');
 });
