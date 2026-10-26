@@ -25,7 +25,16 @@ class CompanyKnowledgeSection extends RoomSection
 
         return [
             'Services: '.count($config->services()),
-            $config->file('business/faq.md') !== null ? 'FAQ: in place' : 'FAQ: not added yet',
+            $this->faqIsInPlace($config) ? 'FAQ: in place' : 'FAQ: not added yet',
         ];
+    }
+
+    /**
+     * The FAQ is in place when a knowledge file sits at business/faq.md, the path the room's contract owns for it. It
+     * asks for the knowledge files by type, so a file of another type at that path does not count (IN-02).
+     */
+    private function faqIsInPlace(ActiveConfig $config): bool
+    {
+        return in_array('business/faq.md', array_column($config->filesOfType('knowledge'), 'path'), true);
     }
 }
