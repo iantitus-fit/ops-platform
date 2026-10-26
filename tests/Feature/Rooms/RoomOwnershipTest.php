@@ -1,6 +1,7 @@
 <?php
 
 use App\Icm\ActiveConfig;
+use App\Icm\PlainWords;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
@@ -126,6 +127,25 @@ it('refuses the same owns entry in two contracts even when no file matches it ye
     writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', '[rooms/pretend/notes/*.md]'));
 
     expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: rooms/pretend/notes/*.md is claimed by both rooms/annex/CONTEXT.md and rooms/pretend/CONTEXT.md; pick one, the other can read it']);
+});
+
+/**
+ * WR-03: the owns entry is the owner's own text, so it is quoted the way PlainWords quotes every owner value: one line,
+ * cut at 80 characters. The entry here matches no file, so it is not a loaded path.
+ */
+it('shortens a very long owns entry two contracts both write, as every owner value is', function () {
+    enableAnnexRoom();
+    layFixtureFolder('annex-room');
+    layPretendRoomFolder('rooms/pretend/CONTEXT.md');
+    $entry = 'rooms/pretend/notes/'.str_repeat('long-name-', 12).'*.md';
+    writeIcmFile('rooms/annex/CONTEXT.md', ownershipContract('annex', "[{$entry}]"));
+    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', "[{$entry}]"));
+
+    $lines = refusedOwnershipLines();
+
+    expect(mb_strlen($entry))->toBeGreaterThan(80)
+        ->and($lines)->toBe(['rooms/pretend/CONTEXT.md: '.PlainWords::oneLine($entry).' is claimed by both rooms/annex/CONTEXT.md and rooms/pretend/CONTEXT.md; pick one, the other can read it'])
+        ->and($lines[0])->not->toContain($entry);
 });
 
 it('refuses a file nobody lists under owns while a room that handles its type is here', function () {
