@@ -4,6 +4,7 @@ namespace App\Rooms;
 
 use App\Icm\ActiveConfig;
 use Filament\Widgets\Widget;
+use Throwable;
 
 /**
  * A room's dashboard section. Filament asks canView() each time the dashboard draws, and the section answers by asking
@@ -19,6 +20,12 @@ abstract class RoomSection extends Widget
     protected int|string|array $columnSpan = 'full';
 
     protected string $view = 'filament.rooms.section';
+
+    /**
+     * The one plain line a section shows in place of its content when building that content fails (D-32). The wording
+     * is a placeholder until the wording pass in Phase 11.
+     */
+    public const FAILED_LINE = 'This section could not load. The rest of the dashboard is fine.';
 
     /**
      * The room this section belongs to, such as "pretend".
@@ -67,22 +74,34 @@ abstract class RoomSection extends Widget
     }
 
     /**
-     * The platform draws the empty line for every room, so no room builds its own empty screen (D-21).
+     * The platform draws the empty line for every room, so no room builds its own empty screen (D-21). The section is
+     * not lazy, so it draws inside the dashboard's own page: anything that throws while the empty line or the room's
+     * lines are built is reported to the log and the section shows FAILED_LINE instead, so one room can never take down
+     * the dashboard or another section (D-32).
      *
      * @return array{key: string, heading: string, emptyLine: ?string, lines: list<string>}
      */
     protected function getViewData(): array
     {
         $key = static::roomKey();
-        $config = app(ActiveConfig::class);
         $heading = ucfirst(app(RoomRegistry::class)->get($key)?->label ?? $key);
-        $emptyLine = static::emptyLine($heading, $config->roomContract($key)['owns'] ?? [], $config->roomOwnedFiles($key));
+
+        try {
+            $config = app(ActiveConfig::class);
+            $emptyLine = static::emptyLine($heading, $config->roomContract($key)['owns'] ?? [], $config->roomOwnedFiles($key));
+            $lines = $emptyLine === null ? $this->contentLines() : [];
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $emptyLine = null;
+            $lines = [self::FAILED_LINE];
+        }
 
         return [
             'key' => $key,
             'heading' => $heading,
             'emptyLine' => $emptyLine,
-            'lines' => $emptyLine === null ? $this->contentLines() : [],
+            'lines' => $lines,
         ];
     }
 }

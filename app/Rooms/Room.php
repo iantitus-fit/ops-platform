@@ -11,7 +11,7 @@ readonly class Room
 {
     /**
      * @param  string  $key  Lower snake case, the folder name under rooms/ in the business folder.
-     * @param  string  $label  The plain name used mid-sentence, lower case, such as "pretend". Display code applies ucfirst.
+     * @param  string  $label  The plain name used mid-sentence, lower case such as "pretend", unless it is a proper noun such as "Google Business Profile". Display code applies ucfirst.
      * @param  list<string>  $handles  Hard-coded file types this room is the owner room for. No Phase 4 room lists any: the owner room for agents/*.md is left to the front desk room's phase (D-15).
      * @param  list<RoomFileType>  $fileTypes  New kinds of file the room defines (D-04).
      * @param  ?string  $slot  The name of the outside-system slot the room offers, such as "text".
@@ -20,6 +20,7 @@ readonly class Room
      * @param  list<string>  $tables  The database tables the room owns.
      * @param  list<TimelineEntryType>  $timelineEntries  The kinds of entry the room writes on a customer's timeline.
      * @param  array<string, class-string>  $morphMap  Model nicknames the room adds, alias to model class.
+     * @param  ?string  $neverLeftOutBecause  Why a business can never leave this room out, a plain clause that follows "because", such as "it owns the lead sources file the sync requires". Null for a room a business may leave out (05 D-02, 04 D-09).
      */
     public function __construct(
         public string $key,
@@ -32,6 +33,7 @@ readonly class Room
         public array $tables = [],
         public array $timelineEntries = [],
         public array $morphMap = [],
+        public ?string $neverLeftOutBecause = null,
     ) {}
 
     /**

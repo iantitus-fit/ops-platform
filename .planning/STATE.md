@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 5
-current_phase_name: Standard Rooms
+current_phase: 6
+current_phase_name: Front Desk and Team Rooms
 status: planning
-stopped_at: Phase 04 complete, ready to plan Phase 5
-last_updated: "2026-10-23T21:20:13.448Z"
-last_activity: 2026-10-23
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
-state_head: 3d5ef542adfa3e919abd1c2597e635c6b80e213a
+stopped_at: Phase 05 complete, ready to plan Phase 6
+last_updated: "2026-10-26T18:02:44.710Z"
+last_activity: 2026-10-26
+last_activity_desc: Phase 05 complete, transitioned to Phase 6
+state_head: 3a43aa4d666ec743b0a8cd8bd900eb47fba9813d
 progress:
   total_phases: 9
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 9
-  percent: 11
+  completed_phases: 2
+  total_plans: 18
+  completed_plans: 18
+  percent: 22
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-23)
+See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 5 — Standard Rooms
+**Current focus:** Phase 6 — Front Desk and Team Rooms
 
 ## Current Position
 
-Phase: 5 — Standard Rooms
+Phase: 6 — Front Desk and Team Rooms
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-23 — Phase 04 complete, transitioned to Phase 5
+Last activity: 2026-10-26 — Phase 05 complete, transitioned to Phase 6
 
-Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
+Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 85
+- Total plans completed: 94
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -51,6 +51,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | 02 | 41 | - | - |
 | 02.1 | 28 | - | - |
 | 04 | 9 | - | - |
+| 05 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -146,6 +147,15 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 04 P05 | 7 min | 3 tasks | 16 files |
 | Phase 04 P06 | 4 min | 2 tasks | 7 files |
 | Phase 04 P09 | 4 min | 2 tasks | 3 files |
+| Phase 05 P01 | 7 min | 2 tasks | 10 files |
+| Phase 05 P02 | 7 min | 2 tasks | 6 files |
+| Phase 05 P03 | 9 min | 2 tasks | 17 files |
+| Phase 05 P04 | 11 min | 2 tasks | 10 files |
+| Phase 05 P05-05 | 6 min | 2 tasks | 9 files |
+| Phase 05 P06 | 8 min | 3 tasks | 14 files |
+| Phase 05 P07 | 25 min | 2 tasks | 13 files |
+| Phase 05 P08 | 11 min | 3 tasks | 17 files |
+| Phase 05 P09 | 8 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -180,6 +190,19 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 04, Ian 2026-10-23]: a room's timeline entries print as customer-supplied text unless the room registers the entry type as trusted (WR-04)
 - [Phase 04, Ian 2026-10-23]: refusal lines about one file follow the contract's own entry order on purpose; order is presentation, not a check's result (UAT test 3)
 - [Phase 04, Ian 2026-10-23]: decision 3 stands as planned: a removed room's entries are hidden, never deleted, and the sync redraws the cards that hold them
+- [Phase 05]: 05-01: sortedRoomKeys() lives in tests/Pest.php so any room test file can use it when run alone
+- [Phase 05]: 05-01: inline test-only rooms quiet (handles nothing) and rulebook (handles triage) replace the annex wherever a case needs a second room that never collides with a real one
+- [Phase 05]: 05-02: never-left-out line is written only for an absent room whose folder holds no loaded file; the per-file absent-room line is skipped for any type a marked room handles
+- [Phase 05]: 05-02: the wildcard router skip applies to routers only, so walk tests and connectors matched by a * pattern are still refused; owns patterns starting with * must be quoted in YAML
+- [Phase 05]: 05-03: company knowledge is the first real room, key company_knowledge, listed after AdminPanelProvider; exampleFolderFileCount() is 15
+- [Phase 05]: 05-04: a hidden-named file reaches the Validator as an Unrecognized file with problem hidden_name and no raw text, so it is never read and RoomChecks leaves it out of the room-folder lines
+- [Phase 05]: 05-05: the marketing section asks OfferSentences::liveToday() for the offers live today and carries no date logic of its own
+- [Phase 05]: 05-06: the single-file check (RoomChecks::singleFileErrors) reads the room's folder, not the contract's owns, so a business keeps one content brief even after the owner edits owns; money and Google Business Profile reuse RoomFileType::singleFileLabel()
+- [Phase 05]: 05-07: the money room has no slot, table or payment record; its notes check refuses card numbers and every 9-digit number except a ZIP+4 written 60601-1234, in one fixed digit-free line
+- [Phase 05]: 05-08: the Google Business Profile slot is an interface in the room's namespace bound to the fake by a closure reading rooms.google_business_profile.driver with a default of fake; no config file or env key, one read method and no send method, so no chokepoint this phase
+- [Phase 05]: 05-08: a room section's own lines show only while the room is not empty, so a test of them needs the owned file in place; Task 2's not-connected assertion moved to Task 3's furnished row
+- [Phase 05]: 05-09: categories compared by whitespace collapse, trim and mb_strtolower; blank entries are empty, not repeats; a repeat is quoted once by its first spelling
+- [Phase 05, review]: the money notes scan joins digit groups across any horizontal whitespace run with at most one line break (D-28), refuses a file it cannot finish scanning (D-30), and accepts a 9-digit number right after another number in a span of 19 digits or fewer as a known miss (D-31); a room section that fails shows one line and leaves /admin standing (D-32)
 
 ### Pending Todos
 
@@ -198,7 +221,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
-- [Phase 04, carry into Phase 5]: the keyboard-only and VoiceOver walk of a room section moves to Phase 5's UAT, on the first real room section (the pretend room's section exists only in tests). G-04-1 (a path with a line break in a refusal line) is for Phase 5 but not in its roadmap criteria, so Phase 5's discuss picks it up. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
+- [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
+- [Phase 5, review]: WR-01 fixed at close (0fef6e8): in text that is not valid UTF-8, each invalid byte joins digit groups as a space. IN-01 (the unreachable connected-to-Google branch) and IN-02 (Unicode digits) stay open as info; IN-03 is deferred to the hidden-characters-in-values decision (05-REVIEW-DISPOSITION.md)
+- [Phase 5 close, fixed]: a folder file that is not valid UTF-8 crashed `icm:sync` with a JsonEncodingException when the version was saved. D-33 (5ccb4f8): the Loader refuses it beside the hidden-character name check, in one plain line naming the file, and the previous version stays live. Found while writing the WR-01 tests
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -234,10 +259,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23
-Stopped at: Phase 04 complete, ready to plan Phase 5
+Last session: 2026-10-26T18:03:25Z
+Stopped at: Phase 05 complete, ready to plan Phase 6
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss Phase 5 with /gsd-discuss-phase 5, then plan it with /gsd-plan-phase 5
+- Review, push and merge the Phase 5 branch
+- Discuss Phase 6 with /gsd-discuss-phase 6, then plan it with /gsd-plan-phase 6

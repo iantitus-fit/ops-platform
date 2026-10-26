@@ -39,9 +39,10 @@ class Loader
 
     /**
      * The one CONTEXT.md that is not a router: a room's contract, directly inside rooms/<room>/ (D-03). The match is
-     * exact and case-sensitive, so a CONTEXT.md one folder deeper, or under Rooms/, stays a router.
+     * exact and case-sensitive, so a CONTEXT.md one folder deeper, or under Rooms/, stays a router. It ends in \z, not $,
+     * because $ also matches before a final line break, and RoomChecks and FolderSync::compile rely on this pattern alone.
      */
-    public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md$#';
+    public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md\z#';
 
     /**
      * The list fields of each file type that accept the word none for an empty list (D-02, "or none"). The word must
@@ -57,7 +58,11 @@ class Loader
     public function __construct(private RoomRegistry $rooms) {}
 
     /**
-     * Read every markdown file under $root and split it into front matter and body.
+     * Read every markdown file under $root and split it into front matter and body. A file whose path holds a hidden
+     * character (a line break, a tab, an invisible mark: HiddenCharacters) is refused before any other check, the README
+     * skip included, and is never read, so no other check ever sees such a name (05 D-19). README files are then
+     * skipped unread (04 D-11). A file that is not valid UTF-8 is refused next, the same way and with none of its text
+     * kept, so no other check reads its bytes and the compiled version can always be saved (05 D-33).
      *
      * @throws IcmFolderMissing
      */
@@ -77,11 +82,27 @@ class Loader
             ->sortByName();
 
         foreach ($finder as $file) {
+            $path = $this->relativePath($file);
+
+            if (HiddenCharacters::found($path)) {
+                $files[] = $this->unrecognized($path, '', 'hidden_name');
+
+                continue;
+            }
+
             if ($file->getFilename() === 'README.md') {
                 continue;
             }
 
-            $icmFile = $this->read($this->relativePath($file), $file);
+            $raw = (string) file_get_contents($file->getPathname());
+
+            if (! mb_check_encoding($raw, 'UTF-8')) {
+                $files[] = $this->unrecognized($path, '', 'not_utf8');
+
+                continue;
+            }
+
+            $icmFile = $this->read($path, $file, $raw);
 
             if ($icmFile->kind === IcmFileKind::LaterSprint) {
                 $notices[] = "{$icmFile->path}: type {$icmFile->type} is not supported yet, so this file was skipped";
@@ -93,10 +114,8 @@ class Loader
         return new LoadedFolder($files, $notices);
     }
 
-    private function read(string $path, SplFileInfo $file): IcmFile
+    private function read(string $path, SplFileInfo $file, string $raw): IcmFile
     {
-        $raw = (string) file_get_contents($file->getPathname());
-
         if (in_array($file->getFilename(), self::ROUTERS, true) && preg_match(self::ROOM_CONTRACT, $path) !== 1) {
             return new IcmFile($path, IcmFileKind::Router, null, [], $raw, $raw);
         }

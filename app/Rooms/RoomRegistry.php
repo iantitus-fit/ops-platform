@@ -20,9 +20,10 @@ use LogicException;
 class RoomRegistry
 {
     /**
-     * Lower snake case: lowercase letters and digits, with single underscores between words.
+     * Lower snake case: lowercase letters and digits, with single underscores between words. It ends in \z, not $, which
+     * also matches before a final line break.
      */
-    private const NAME_PATTERN = '/^[a-z0-9]+(_[a-z0-9]+)*$/';
+    private const NAME_PATTERN = '/^[a-z0-9]+(_[a-z0-9]+)*\z/';
 
     /**
      * File type words no room may define, besides the ones Loader::TYPED already lists: room contracts and the types

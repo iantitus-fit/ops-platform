@@ -32,7 +32,9 @@ readonly class ValidationReport
     }
 
     /**
-     * One "<file>: <message>" line per error, grouped by file in path order.
+     * One "<file>: <message>" line per error, grouped by file in path order. Each finished line is passed through
+     * HiddenCharacters::marked(), after PlainWords::oneLine has done its work, so a path or a quoted owner value that never
+     * reached the Loader's name check still cannot print a line break or an invisible mark (05 D-19).
      *
      * @return list<string>
      */
@@ -42,6 +44,6 @@ readonly class ValidationReport
 
         usort($sorted, fn (array $a, array $b) => strcmp($a['file'], $b['file']));
 
-        return array_map(fn (array $error) => "{$error['file']}: {$error['message']}", $sorted);
+        return array_map(fn (array $error) => HiddenCharacters::marked("{$error['file']}: {$error['message']}"), $sorted);
     }
 }

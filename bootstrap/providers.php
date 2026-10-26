@@ -1,6 +1,19 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\Filament\AdminPanelProvider;
+use App\Rooms\CompanyKnowledge\CompanyKnowledgeServiceProvider;
+use App\Rooms\ContentGeneration\ContentGenerationServiceProvider;
+use App\Rooms\GoogleBusinessProfile\GoogleBusinessProfileServiceProvider;
+use App\Rooms\Marketing\MarketingServiceProvider;
+use App\Rooms\Money\MoneyServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Filament\AdminPanelProvider::class,
+    AppServiceProvider::class,
+    AdminPanelProvider::class,
+    CompanyKnowledgeServiceProvider::class,
+    MarketingServiceProvider::class,
+    ContentGenerationServiceProvider::class,
+    MoneyServiceProvider::class,
+    GoogleBusinessProfileServiceProvider::class,
 ];

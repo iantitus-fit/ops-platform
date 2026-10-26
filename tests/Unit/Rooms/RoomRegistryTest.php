@@ -32,6 +32,16 @@ function registryTestFileType(string $type): RoomFileType
         {
             return [];
         }
+
+        public function singleFileLabel(): ?string
+        {
+            return null;
+        }
+
+        public function singleFileDefaultPath(): ?string
+        {
+            return null;
+        }
     };
 }
 
@@ -58,6 +68,16 @@ it('refuses a key that is not lower snake case', function (string $key) {
     expect(fn () => (new RoomRegistry)->add(new Room(key: $key, label: 'x')))
         ->toThrow(LogicException::class, 'lower_snake_case');
 })->with(['Pretend', 'pretend-room', 'pretend room', 'pretend__room', '_pretend', 'pretend_', '']);
+
+/**
+ * IN-01: the name pattern ends in \z, because $ also matches before a final line break.
+ */
+it('refuses a key or a file type that ends in a line break', function () {
+    expect(fn () => (new RoomRegistry)->add(new Room(key: "pretend\n", label: 'x')))
+        ->toThrow(LogicException::class, 'lower_snake_case')
+        ->and(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', fileTypes: [registryTestFileType("pretend_note\n")])))
+        ->toThrow(LogicException::class, 'pretend_note');
+});
 
 it('refuses a new file type that clashes with a built-in type', function (string $type) {
     expect(fn () => (new RoomRegistry)->add(new Room(key: 'quiet', label: 'quiet', fileTypes: [registryTestFileType($type)])))

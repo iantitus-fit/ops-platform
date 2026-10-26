@@ -4,7 +4,6 @@ use App\Icm\ActiveConfig;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Tests\Rooms\PretendRoom\FakePretendFeed;
 use Tests\Rooms\PretendRoom\PretendFeed;
 
@@ -84,11 +83,11 @@ it('refuses a room contract anywhere but rooms/<name>/CONTEXT.md, and any other 
     expect(rejectedErrors())->toBe(['business/room.md: type room belongs only in rooms/<name>/CONTEXT.md, the contract at the top of a room folder']);
 
     File::delete(icmPath('business/room.md'));
-    writeIcmFile('rooms/pretend/CONTEXT.md', str_replace('type: room', 'type: knowledge', roomContractWith('connector', 'connector: pretend_feed')));
+    writeIcmFile('rooms/pretend/CONTEXT.md', "---\ntype: pretend_note\ntitle: Not a contract\npinned: false\n---\nA note where the contract belongs.");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: type must be room, because this file is the pretend room's contract (you wrote knowledge)"]);
+    expect(rejectedErrors())->toBe(["rooms/pretend/CONTEXT.md: type must be room, because this file is the pretend room's contract (you wrote pretend_note)"]);
 });
 
 dataset('empty list fields', [
@@ -195,7 +194,7 @@ it('changes nothing for a rooms/<name>/ folder that holds only README files', fu
 
 it('names the missing contract of a registered room whose folder holds other files', function () {
     enablePretendRoom();
-    writeIcmFile('rooms/pretend/notes/note.md', "---\ntype: knowledge\n---\nA note.");
+    writeIcmFile('rooms/pretend/notes/note.md', "---\ntype: pretend_note\ntitle: A note\npinned: false\n---\nA note.");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
@@ -210,17 +209,10 @@ it('refuses a folder for a room this engine lacks, naming the rooms that exist, 
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room; the rooms are: pretend'])
-        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
-});
+    $rooms = app(RoomRegistry::class)->keys();
 
-it('says there are no rooms yet when a folder names a room and the engine has none', function () {
-    $live = activateExampleFolder();
-    writeIcmFile('rooms/foo/CONTEXT.md', roomContractWith('connector', 'connector: none'));
-
-    $this->artisan('icm:sync')->assertExitCode(1);
-
-    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room, and no rooms yet'])
+    expect(rejectedErrors())->toBe(['rooms/foo/: this engine has no foo room; the rooms are: '.implode(', ', $rooms)])
+        ->and($rooms)->toContain('pretend')
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
@@ -277,14 +269,12 @@ it('asks a room with no slot to write connector: none', function () {
     expect(rejectedErrors())->toBe(['rooms/quiet/CONTEXT.md: connector must be none, because the quiet room has no connector slot (you wrote some_feed)']);
 });
 
-it('keeps a line break in a room folder name out of the contract type refusal', function () {
+it('refuses a line break in a room folder name once, with the mark, and stores no raw line break', function () {
     enablePretendRoom();
     writeIcmFile("rooms/pre\n# tend/CONTEXT.md", "---\ntype: knowledge\n---\nBody");
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    $refusals = collect(rejectedErrors())->filter(fn (string $line): bool => str_contains($line, 'type must be room, because this file is the'));
-
-    expect($refusals)->toHaveCount(1)
-        ->and(Str::after($refusals->first(), '/CONTEXT.md: '))->toBe("type must be room, because this file is the pre # tend room's contract (you wrote knowledge)");
+    expect(rejectedErrors())->toBe(['rooms/pre[line break]# tend/CONTEXT.md: this name has a hidden character, such as a line break, a tab or an invisible mark; rename the file or folder, because a hidden character can make one name look like another'])
+        ->and(collect(rejectedErrors())->filter(fn (string $line): bool => preg_match('/[\r\n]/', $line) === 1))->toBeEmpty();
 });

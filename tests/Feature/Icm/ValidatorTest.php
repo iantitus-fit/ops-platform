@@ -4,7 +4,9 @@ use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Icm\ActiveConfig;
 use App\Icm\FolderSync;
+use App\Icm\Loader;
 use App\Models\IcmVersion;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Facades\File;
 
 /*
@@ -56,6 +58,8 @@ it('rejects a second service file that uses the same slug and names the file tha
 });
 
 it('rejects a file whose type or front matter cannot be understood', function (string $file, string $contents, string $line) {
+    $line = str_replace('{types}', implode(', ', [...Loader::TYPED, ...app(RoomRegistry::class)->registeredTypes()]), $line);
+
     writeIcmFile($file, $contents);
 
     $this->artisan('icm:sync')
@@ -64,7 +68,7 @@ it('rejects a file whose type or front matter cannot be understood', function (s
 
     expect(rejectedErrors())->toBe([$line]);
 })->with([
-    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of business, hours, lead_sources, knowledge, service, voice, sending_rules, agent, set_replies, triage, offer, room, connector (you wrote recipe)'],
+    'a type nobody knows' => ['notes/recipe.md', "---\ntype: recipe\n---\nBody", 'notes/recipe.md: type must be one of {types} (you wrote recipe)'],
     'front matter without a type' => ['notes/x.md', "---\nname: Notes\n---\nBody", 'notes/x.md: type is missing, and it is required'],
     'no front matter at all' => ['notes/y.md', 'Just some words.', 'notes/y.md: the file must start with front matter (a --- line, then type: and its fields, then another --- line)'],
     'empty front matter' => ['notes/z.md', "---\n---\nBody", 'notes/z.md: the front matter is empty; add type: and the fields for that type'],
@@ -94,6 +98,7 @@ it('requires each of the five single-instance types to exist exactly once', func
         'agents/front-desk.md: loads item 2: business/hours.md matches no file in the folder',
         'business/hours.md: no file has type: hours, and the folder needs exactly one',
         'business/profile-old.md: type business is already used by business/profile.md; the folder needs exactly one',
+        'business/profile-old.md: no room lists this business file under owns; the company knowledge room handles it, so add it to rooms/company_knowledge/CONTEXT.md',
     ]);
 });
 

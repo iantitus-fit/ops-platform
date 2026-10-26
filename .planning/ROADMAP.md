@@ -30,7 +30,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Not in any phase:** a property room, a subcontractors room, a multi-year contract above several projects, regions as a scope for who sees what, per-field ownership and a first trade pack are open and undecided. Estimates and payments stay in backlog 999.1. The owner loop stays in backlog 999.5.
 
 - [x] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record (completed 2026-10-23)
-- [ ] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more
+- [x] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more (completed 2026-10-26)
 - [ ] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once
 - [ ] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard
 - [ ] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it
@@ -100,15 +100,39 @@ Plans:
   3. Marketing owns `business/lead-sources.md` and `business/offers/`, both still where they are. Source and cost per lead, offers and prices behave exactly as before, and the existing suite for them passes unchanged.
   4. The Google Business Profile room has a connector slot (an interface with a fake driver) and a connector file that declares `owns` and `reads`; with only the fake driver, nothing reaches Google. Content generation says in its `CONTEXT.md` that it has no connector.
 
-**Plans**: TBD
+**Plans**: 9/9 plans complete
 **UI hint**: yes
 
-**Planning notes** (settle these in discuss-phase):
-- What the Google Business Profile room owns and reads (ROOM-11).
-- Content generation's model role is not decided.
-- Which of today's files company knowledge and marketing own beyond the two marketing names, taken from the ownership table written in Phase 4.
-- Which of these rooms talk to an outside system and which say they have none (ROOM-03). Only Google Business Profile (a slot) and content generation (none) are decided.
-- This is five rooms in one phase. If discuss shows it is too much for one branch, split it at plan time along the marketing rooms (marketing, content generation, Google Business Profile) and the plain rooms (company knowledge, money).
+Plans:
+**Wave 1**
+- [x] 05-01-PLAN.md — Make the existing suite hold when real rooms land: narrow the annex test room, build the growing room, type and slot lists from code (tests only)
+- [x] 05-02-PLAN.md — Never-left-out check (D-02) at unit level, and owns patterns pass over the house's routers (Pitfall 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 05-03-PLAN.md — Company knowledge lands: provider, contract, section, boot test with axe; D-23 rooms test to unit; D-24 counts
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 05-04-PLAN.md — G-04-1 closed: hidden characters in names refused and marked in every refusal line (D-19, D-25)
+- [x] 05-05-PLAN.md — Marketing lands with offers live today from the front desk's code; company knowledge and marketing can never be left out, through the sync
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 05-06-PLAN.md — Content generation lands with its content brief type and no connector; SPEC rows and reads
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 05-07-PLAN.md — Money lands with its notes file, no slot or records; the check that refuses card numbers and every 9-digit number however grouped (D-16, D-22, D-26)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 05-08-PLAN.md — Google Business Profile lands: read-only slot on a fake, connector file owning and reading none, categories file; D-23 slots test to unit
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 05-09-PLAN.md — Google Business Profile categories checked for shape (D-07)
+
+**Planning notes** (settled by [05-CONTEXT.md](phases/05-standard-rooms/05-CONTEXT.md), 2026-10-25):
+- What the Google Business Profile room owns and reads (ROOM-11). Settled: D-06 to D-11.
+- Content generation's model role is not decided. Settled: mid-tier drafts, BLUEPRINT only, no agent file this phase (D-14).
+- Which of today's files company knowledge and marketing own beyond the two marketing names, taken from the ownership table written in Phase 4. Settled: the Phase 4 table as written; both rooms can never be left out (D-02 to D-04).
+- Which of these rooms talk to an outside system and which say they have none (ROOM-03). Only Google Business Profile (a slot) and content generation (none) are decided. Settled: only Google Business Profile has a slot; company knowledge, marketing, content generation and money have none (D-05, D-11, D-13).
+- This is five rooms in one phase. If discuss shows it is too much for one branch, split it at plan time along the marketing rooms (marketing, content generation, Google Business Profile) and the plain rooms (company knowledge, money). Settled: the planner proposes a split before writing plans and Ian approves it; a split becomes 5.1 (D-20).
 
 ### Phase 6: Front Desk and Team Rooms
 
@@ -269,7 +293,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
-| 5. Standard Rooms | 0/TBD | Not started | - |
+| 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |

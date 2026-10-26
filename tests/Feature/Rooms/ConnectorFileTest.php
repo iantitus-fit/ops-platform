@@ -40,6 +40,29 @@ function pretendConnectorCompiledFrontMatter(): array
     return app(ActiveConfig::class)->version()->compiled['files'][PRETEND_CONNECTOR_PATH]['front_matter'] ?? [];
 }
 
+/**
+ * The connector files the live version should list: the ones examples/example-hvac ships plus the ones a test laid,
+ * sorted the way the sync sorts them.
+ *
+ * @param  list<string>  $laid
+ * @return list<string>
+ */
+function expectedConnectorPaths(array $laid): array
+{
+    $paths = [...exampleConnectorPaths(), ...$laid];
+    sort($paths, SORT_STRING);
+
+    return $paths;
+}
+
+/**
+ * The sentence's list of connector slots, built from the registry the way the refusal builds it.
+ */
+function connectorSlotsSentence(): string
+{
+    return implode(', ', app(RoomRegistry::class)->slots());
+}
+
 it('checks one connector file and compiles it into the live version', function () {
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md', PRETEND_CONNECTOR_PATH);
@@ -48,7 +71,7 @@ it('checks one connector file and compiles it into the live version', function (
 
     expect($version->file_count)->toBe(exampleFolderFileCount() + 2)
         ->and($version->notices)->toBe([])
-        ->and($version->compiled['index']['connector'] ?? null)->toBe([PRETEND_CONNECTOR_PATH]);
+        ->and($version->compiled['index']['connector'] ?? null)->toBe(expectedConnectorPaths([PRETEND_CONNECTOR_PATH]));
 });
 
 dataset('connector fields the sync requires', [
@@ -85,7 +108,7 @@ it('passes system, direction and schedule through unchecked until CONN-01', func
 
     $version = activateExampleFolder();
 
-    expect($version->compiled['index']['connector'] ?? null)->toBe([PRETEND_CONNECTOR_PATH]);
+    expect($version->compiled['index']['connector'] ?? null)->toBe(expectedConnectorPaths([PRETEND_CONNECTOR_PATH]));
 })->with('connector fields the sync passes through');
 
 dataset('connector lists written as none or as an empty list', [
@@ -151,7 +174,7 @@ it('accepts a kind the platform keeps no records of yet, and reading the platfor
     $version = activateExampleFolder();
 
     expect(pretendConnectorCompiledFrontMatter())->toMatchArray(['owns' => ['invoices'], 'reads' => ['projects', 'texts', 'timeline']])
-        ->and($version->compiled['index']['connector'])->toBe([PRETEND_CONNECTOR_PATH]);
+        ->and($version->compiled['index']['connector'])->toBe(expectedConnectorPaths([PRETEND_CONNECTOR_PATH]));
 });
 
 it('refuses a connector file that still says objects, telling the owner to use owns and reads', function () {
@@ -219,7 +242,7 @@ it('lets two connector files own different kinds, and one read what the other ow
 
     $version = activateExampleFolder();
 
-    expect($version->compiled['index']['connector'])->toBe(['connectors/a.md', 'connectors/b.md']);
+    expect($version->compiled['index']['connector'])->toBe(expectedConnectorPaths(['connectors/a.md', 'connectors/b.md']));
 });
 
 it('does not count a connector file whose owns already failed the kind check as an owner', function () {
@@ -238,15 +261,8 @@ it('refuses a slot that no room has, naming the slots that exist', function () {
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; the slots are: annex_feed, pretend_feed']);
-});
-
-it('says the engine has no connector slots yet when no room offers one', function () {
-    writeIcmFile('connectors/x.md', connectorFor('nowhere'));
-
-    $this->artisan('icm:sync')->assertExitCode(1);
-
-    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; this engine has no connector slots yet']);
+    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; the slots are: '.connectorSlotsSentence()])
+        ->and(app(RoomRegistry::class)->slots())->toContain('pretend_feed', 'annex_feed');
 });
 
 it('treats slot: none as a slot name no room has, not as an empty value', function () {
@@ -256,7 +272,8 @@ it('treats slot: none as a slot name no room has, not as an empty value', functi
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the none slot, which no room has; the slots are: pretend_feed']);
+    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the none slot, which no room has; the slots are: '.connectorSlotsSentence()])
+        ->and(app(RoomRegistry::class)->slots())->toContain('pretend_feed');
 });
 
 it('refuses a connector file for a slot whose room is not in the folder', function () {
@@ -284,7 +301,7 @@ it('leaves a room with a slot and no connector file as a valid empty room', func
 
     $version = activateExampleFolder();
 
-    expect($version->compiled['index']['connector'])->toBe([])
+    expect($version->compiled['index']['connector'])->toBe(expectedConnectorPaths([]))
         ->and(app(ActiveConfig::class)->hasRoom('pretend'))->toBeTrue();
 });
 
@@ -295,7 +312,8 @@ it('shows an owner-written slot on one line', function () {
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
-    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the line one line two slot, which no room has; the slots are: pretend_feed']);
+    expect(rejectedErrors())->toBe(['connectors/pretend-feed.md: this file fills the line one line two slot, which no room has; the slots are: '.connectorSlotsSentence()])
+        ->and(app(RoomRegistry::class)->slots())->toContain('pretend_feed');
 });
 
 it('refuses a connector file outside connectors/, naming the file, and keeps the previous version live', function () {

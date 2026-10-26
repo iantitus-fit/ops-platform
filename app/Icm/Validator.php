@@ -1525,6 +1525,8 @@ class Validator
             'no_front_matter' => 'the file must start with front matter (a --- line, then type: and its fields, then another --- line)',
             'empty' => 'the front matter is empty; add type: and the fields for that type',
             'missing_type' => PlainWords::render('Required', [], 'type', null),
+            'hidden_name' => 'this name has a hidden character, such as a line break, a tab or an invisible mark; rename the file or folder, because a hidden character can make one name look like another',
+            'not_utf8' => 'this file is not saved as plain text (UTF-8); open it and save it as UTF-8',
             default => 'the file could not be used',
         };
     }

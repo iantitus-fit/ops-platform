@@ -32,4 +32,20 @@ class PretendNoteType implements RoomFileType
 
         return [['file' => $file->path, 'field' => null, 'message' => 'a pinned note needs some words under its front matter']];
     }
+
+    /**
+     * The pretend room keeps any number of notes (RoomFileTypeTest syncs two).
+     */
+    public function singleFileLabel(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * No default path, since the pretend room keeps any number of notes (05 D-29).
+     */
+    public function singleFileDefaultPath(): ?string
+    {
+        return null;
+    }
 }

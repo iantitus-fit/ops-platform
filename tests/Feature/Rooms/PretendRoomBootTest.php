@@ -2,6 +2,7 @@
 
 use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
+use App\Icm\Loader;
 use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Message;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Tests\Rooms\PretendRoom\FakePretendFeed;
 use Tests\Rooms\PretendRoom\PretendPing;
+use Tests\Rooms\PretendRoom\PretendRoomServiceProvider;
 use Tests\Rooms\PretendRoom\ReceivePing;
 use Tests\Rooms\SpecTables;
 
@@ -48,7 +50,7 @@ it('turns the pretend room on when its folder holds only the contract, from the 
     $config = app(ActiveConfig::class);
 
     expect($config->hasRoom('pretend'))->toBeTrue()
-        ->and($config->roomKeys())->toBe(['pretend']);
+        ->and($config->roomKeys())->toBe(sortedRoomKeys([...exampleRoomKeys(), 'pretend']));
 
     $this->get('/admin')
         ->assertOk()
@@ -112,13 +114,16 @@ it('reads only a CONTEXT.md directly inside rooms/<room>/ as a room contract', f
     }
 });
 
-it('matches the room folder name exactly, so Rooms/pretend/CONTEXT.md stays a router', function () {
-    writeIcmFile('Rooms/pretend/CONTEXT.md', File::get(base_path('tests/Fixtures/pretend-room/rooms/pretend/CONTEXT.md')));
+it('matches the room folder name exactly, so only rooms/<name>/CONTEXT.md is a contract', function () {
+    expect(preg_match(Loader::ROOM_CONTRACT, 'Rooms/pretend/CONTEXT.md'))->toBe(0)
+        ->and(preg_match(Loader::ROOM_CONTRACT, 'rooms/pretend/CONTEXT.md'))->toBe(1);
+
+    writeIcmFile('room/pretend/CONTEXT.md', File::get(base_path('tests/Fixtures/pretend-room/rooms/pretend/CONTEXT.md')));
 
     $version = activateExampleFolder();
 
     expect($version->file_count)->toBe(exampleFolderFileCount())
-        ->and(roomBootCompiledFile('Rooms/pretend/CONTEXT.md'))->toMatchArray(['type' => null, 'router' => true])
+        ->and(roomBootCompiledFile('room/pretend/CONTEXT.md'))->toMatchArray(['type' => null, 'router' => true])
         ->and(app(ActiveConfig::class)->hasRoom('pretend'))->toBeFalse();
 });
 
@@ -130,10 +135,11 @@ it('answers that no room is on before the first sync, without throwing', functio
 });
 
 it('never lists the pretend room in bootstrap/providers.php', function () {
-    expect(require base_path('bootstrap/providers.php'))->toBe([
-        AppServiceProvider::class,
-        AdminPanelProvider::class,
-    ])
+    $providers = require base_path('bootstrap/providers.php');
+
+    expect($providers[0])->toBe(AppServiceProvider::class)
+        ->and($providers)->toContain(AdminPanelProvider::class)
+        ->and($providers)->not->toContain(PretendRoomServiceProvider::class)
         ->and(app(RoomRegistry::class)->has('pretend'))->toBeFalse();
 
     enablePretendRoom();
@@ -306,7 +312,7 @@ it('boots the pretend room', function (array $paths, int $extraTypedFiles, bool 
     $dashboard = $this->get('/admin')->assertOk()->assertSee('data-room-section="pretend"', false);
 
     if ($furnished) {
-        $dashboard->assertSee('Pinned: First note')->assertDontSee('nothing set up yet');
+        $dashboard->assertSee('Pinned: First note')->assertDontSee('Pretend: nothing set up yet');
     } else {
         $dashboard->assertSee('Pretend: nothing set up yet. Add a file to rooms/pretend/notes/ to start.');
     }
