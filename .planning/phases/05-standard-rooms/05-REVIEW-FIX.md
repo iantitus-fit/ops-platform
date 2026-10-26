@@ -82,7 +82,7 @@ Commit pairs (RED = failing test, GREEN = fix):
 - The earlier `second.md` tests (05-07) still pass; I left them alone.
 - Side effect to know: if the contract owns only the added file and the default file also exists, the default is kept, so the default file also gets the existing "no room lists this file under owns" line. The version is refused either way.
 
-### WR-02: `GoogleBusinessProfileSection` can take down the dashboard on a bad driver setting
+### WR-02: `GoogleBusinessProfileSection` can take down the whole dashboard on a bad driver setting
 
 **Status:** fixed: requires human verification
 **Files modified:** `app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php`, `app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileServiceProvider.php`, `tests/Feature/Rooms/GoogleBusinessProfileBootTest.php`
@@ -101,7 +101,7 @@ Commit pairs (RED = failing test, GREEN = fix):
 **GREEN commit:** 5bd8bb4. **After:** `RoomOwnershipTest.php` 21 of 21.
 **Applied fix:** the entry branch now passes `PlainWords::oneLine($entry)`; the loaded-file branch keeps the loaded path as is, as the review allowed. Docblock explains why.
 
-### IN-01: `Loader::ROOM_CONTRACT` ends in `$`
+### IN-01: `Loader::ROOM_CONTRACT` ends in `$`, which accepts a trailing newline
 
 **Status:** fixed
 **Files modified:** `app/Icm/Loader.php`, `app/Rooms/RoomRegistry.php`, `tests/Unit/Icm/RoomChecksTest.php`, `tests/Unit/Rooms/RoomRegistryTest.php`
@@ -130,7 +130,7 @@ Commit pairs (RED = failing test, GREEN = fix):
 **GREEN commit:** b4a6178. **After:** `GbpCategoriesTest.php` passes.
 **Applied fix:** `normalized()` returns null when the text cannot be read, and `checks()` gives that entry the line `additional_categories item N has characters that are not valid text; retype that category`. A null primary category is skipped in the primary comparison as before.
 
-### IN-04: `MarketingSection` indexes `offer()` without a null guard
+### IN-04: `OfferSentences` usage in `MarketingSection` indexes the result of `offer()` without a null guard
 
 **Status:** fixed
 **Files modified:** `app/Rooms/Marketing/MarketingSection.php`, `tests/Feature/Rooms/MarketingBootTest.php`
