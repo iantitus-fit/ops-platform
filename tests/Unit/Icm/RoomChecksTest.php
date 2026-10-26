@@ -2,6 +2,7 @@
 
 use App\Enums\IcmFileKind;
 use App\Icm\IcmFile;
+use App\Icm\Loader;
 use App\Icm\RoomChecks;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
@@ -71,4 +72,20 @@ it('says the engine has no rooms yet when a folder names a room and the registry
         'field' => null,
         'message' => 'this engine has no foo room, and no rooms yet',
     ]);
+});
+
+/**
+ * IN-01: a path ending in a line break is not a room contract. PCRE's $ also matches before a final newline, so the
+ * pattern must end in \z. The Loader's hidden-name check refuses such a name first, but RoomChecks and FolderSync::compile
+ * rely on this pattern alone for the contract path, so it must hold by itself.
+ */
+it('does not take a path with a trailing line break for a room contract', function () {
+    expect(preg_match(Loader::ROOM_CONTRACT, "rooms/foo/CONTEXT.md\n"))->toBe(0)
+        ->and(preg_match(Loader::ROOM_CONTRACT, 'rooms/foo/CONTEXT.md'))->toBe(1);
+
+    $errors = (new RoomChecks(new RoomRegistry))->contractErrors(
+        roomChecksUnitFile("rooms/foo/CONTEXT.md\n", 'room', ['owns' => [], 'reads' => [], 'writes_records' => [], 'connector' => 'none']),
+    );
+
+    expect(array_column($errors, 'message'))->toContain('type room belongs only in rooms/<name>/CONTEXT.md, the contract at the top of a room folder');
 });
