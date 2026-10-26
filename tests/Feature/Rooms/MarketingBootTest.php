@@ -130,6 +130,24 @@ it('names the offers the front desk would send at each moment', function (string
 ]);
 
 /**
+ * IN-04: if the live list ever names a slug the config cannot find an offer for, the section falls back to the slug
+ * instead of failing the dashboard.
+ */
+it('names a live offer by its slug when the config has no offer under that slug', function () {
+    activateExampleFolder();
+
+    app()->instance(OfferSentences::class, new class(app(ActiveConfig::class)) extends OfferSentences
+    {
+        public function liveToday(): array
+        {
+            return [['slug' => 'ghost-offer', 'sentence' => 'A sentence.']];
+        }
+    });
+
+    $this->get('/admin')->assertOk()->assertSee('Offers live today: ghost-offer');
+});
+
+/**
  * 04 D-17 with a real room: marketing may not claim a knowledge file, which company knowledge handles. The line names
  * both rooms, and the version that was live stays live.
  */
