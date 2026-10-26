@@ -99,6 +99,32 @@ it('refuses a Google Business Profile driver other than the fake', function () {
 });
 
 /**
+ * WR-02: the section answers a display question, so a bad driver setting must not take the dashboard down, and must not
+ * read as connected. The provider still fails fast for a real caller (the test above and the next one).
+ */
+it('draws the dashboard and says not connected when the driver setting is bad', function (mixed $driver) {
+    activateExampleFolder();
+    config(['rooms.google_business_profile.driver' => $driver]);
+
+    $this->get('/admin')
+        ->assertOk()
+        ->assertSee('data-room-section="google_business_profile"', false)
+        ->assertSee('Not connected to Google: this room runs on a stand-in and sends nothing.');
+})->with([
+    'a name that is not the fake' => ['live'],
+    'an array' => [['live']],
+    'a number' => [5],
+    'a boolean' => [true],
+]);
+
+it('refuses a driver setting that is not a string with the same kind of error, not a conversion error', function () {
+    config(['rooms.google_business_profile.driver' => ['live']]);
+
+    expect(fn () => app(GoogleListingSource::class))
+        ->toThrow(InvalidArgumentException::class, 'array');
+});
+
+/**
  * 05 D-11: the dashboard never fetches the listing, so drawing /admin leaves the fake's fetch count at zero.
  */
 it('never fetches the listing when the dashboard is drawn', function () {
