@@ -209,9 +209,11 @@ it('declares for each single-file type the default path that SPEC gives it', fun
         }
     }
 
+    ksort($single);
+
     expect($single)->toBe([
         'content_brief' => $specFiles['content_brief'],
-        'money_notes' => $specFiles['money_notes'],
         'gbp_categories' => $specFiles['gbp_categories'],
+        'money_notes' => $specFiles['money_notes'],
     ]);
 });

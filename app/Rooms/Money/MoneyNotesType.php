@@ -48,4 +48,12 @@ class MoneyNotesType implements RoomFileType
     {
         return 'money notes file';
     }
+
+    /**
+     * Where the one notes file lives (05 D-29); the SPEC file types table gives the same path.
+     */
+    public function singleFileDefaultPath(): ?string
+    {
+        return 'rooms/money/notes.md';
+    }
 }

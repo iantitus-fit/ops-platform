@@ -7,7 +7,8 @@ use App\Icm\IcmFile;
 /**
  * A new kind of file a room defines in the business folder (D-04). The sync accepts the type, validates each file with
  * rules() and checks(), and compiles it like any other typed file. A type may also say a business keeps only one file
- * of it (singleFileLabel()), and the sync then refuses a second one wherever the room's contract owns points (05 D-27).
+ * of it (singleFileLabel()), and the sync then refuses a second one wherever the room's contract owns points (05 D-27). Such
+ * a type also names the path the one file normally has (singleFileDefaultPath(), 05 D-29).
  */
 interface RoomFileType
 {
@@ -37,4 +38,14 @@ interface RoomFileType
      * contract (05 D-27).
      */
     public function singleFileLabel(): ?string;
+
+    /**
+     * The path the one file of this type normally has (such as "rooms/money/notes.md"), or null when singleFileLabel() is
+     * null. It is the same path the SPEC file types table gives the type, the way Validator::SINGLETONS names the path of
+     * each required file. When a business holds this file and another of the type in the room's folder, the default is
+     * the one the sync keeps and the other gets the refusal line, so the line always names the file the owner added
+     * (05 D-29, refining D-27). When the default is not there, the sync picks the file kept as before. The sync still
+     * refuses the whole version either way.
+     */
+    public function singleFileDefaultPath(): ?string;
 }

@@ -40,4 +40,12 @@ class PretendNoteType implements RoomFileType
     {
         return null;
     }
+
+    /**
+     * No default path, since the pretend room keeps any number of notes (05 D-29).
+     */
+    public function singleFileDefaultPath(): ?string
+    {
+        return null;
+    }
 }

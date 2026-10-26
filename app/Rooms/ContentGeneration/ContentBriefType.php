@@ -36,4 +36,12 @@ class ContentBriefType implements RoomFileType
     {
         return 'content brief';
     }
+
+    /**
+     * Where the one brief lives (05 D-29); the SPEC file types table gives the same path.
+     */
+    public function singleFileDefaultPath(): ?string
+    {
+        return 'rooms/content_generation/brief.md';
+    }
 }

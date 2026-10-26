@@ -159,8 +159,10 @@ class RoomChecks
 
     /**
      * A type whose singleFileLabel() is not null keeps one file in its room's folder (05 D-27). The file kept is the
-     * first that a present contract validly claims, or the first in path order when none is claimed, and every other
-     * file of the type in the folder gets one line naming the kept one, field type. This does not depend on what owns
+     * type's default path (singleFileDefaultPath()) when that file is in the folder (05 D-29), so the line is always on
+     * the file the owner added. Otherwise it is the first that a present contract validly claims, or the first in path
+     * order when none is claimed. Every other file of the type in the folder gets one line naming the kept one, field
+     * type. The whole version is refused either way; this decides only which file the line names. This does not depend on what owns
      * says, so a contract edited to own a second brief, or every file in the folder, still keeps one. A file of the type
      * outside the room's folder already has the placement line and is not counted. It works only from the files the
      * Loader read, and the kept path is a loaded file's path, which the Loader's hidden-character name check has cleared.
@@ -191,7 +193,9 @@ class RoomChecks
                     continue;
                 }
 
-                $kept = $inFolder->first(fn (IcmFile $file): bool => isset($claimants[$file->path])) ?? $inFolder->first();
+                $kept = $inFolder->first(fn (IcmFile $file): bool => $file->path === $fileType->singleFileDefaultPath())
+                    ?? $inFolder->first(fn (IcmFile $file): bool => isset($claimants[$file->path]))
+                    ?? $inFolder->first();
 
                 foreach ($inFolder->reject(fn (IcmFile $file): bool => $file->path === $kept->path) as $extra) {
                     $errors[] = $this->error($extra->path, 'type', "this business already has a {$label} in {$kept->path}; keep one");

@@ -37,6 +37,11 @@ function registryTestFileType(string $type): RoomFileType
         {
             return null;
         }
+
+        public function singleFileDefaultPath(): ?string
+        {
+            return null;
+        }
     };
 }
 

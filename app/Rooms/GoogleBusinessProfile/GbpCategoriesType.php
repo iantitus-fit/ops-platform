@@ -112,6 +112,14 @@ class GbpCategoriesType implements RoomFileType
     }
 
     /**
+     * Where the one categories file lives (05 D-29); the SPEC file types table gives the same path.
+     */
+    public function singleFileDefaultPath(): ?string
+    {
+        return 'rooms/google_business_profile/categories.md';
+    }
+
+    /**
      * @return array{file: string, field: string, message: string}
      */
     private function error(IcmFile $file, string $message): array
