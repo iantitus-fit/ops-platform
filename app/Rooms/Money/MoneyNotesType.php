@@ -22,9 +22,22 @@ class MoneyNotesType implements RoomFileType
         return [];
     }
 
+    /**
+     * The one check: the file may not hold what looks like a card, bank routing, Social Security or tax ID number
+     * (05 D-16, D-22, D-26). The whole file as written is scanned, front matter included. The message is a fixed
+     * sentence and never quotes what was found, so a number can never reach a stored version or changelog.md.
+     */
     public function checks(IcmFile $file): array
     {
-        return [];
+        if (! (new AccountNumberScan)->findsAccountNumber($file->raw)) {
+            return [];
+        }
+
+        return [[
+            'file' => $file->path,
+            'field' => null,
+            'message' => 'this file has what looks like a card, bank routing, Social Security or tax ID number; account, card and ID numbers never go in the folder',
+        ]];
     }
 
     /**
