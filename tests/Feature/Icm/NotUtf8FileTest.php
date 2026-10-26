@@ -39,3 +39,16 @@ it('refuses a file that is not valid UTF-8 in one plain line naming it, and keep
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id)
         ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(1);
 })->with('example files saved by an older Windows editor');
+
+it('skips a README.md that is not valid UTF-8, as every README is skipped (04 D-11), and the new version goes live', function () {
+    $live = activateExampleFolder();
+
+    File::append(icmPath('agents/README.md'), "\nOpen Monday \x96 Friday.\n");
+    // A README never changes what the sync compiles, so one ordinary edit gives it a new version to activate.
+    File::append(icmPath('business/faq.md'), "\n## Do you sell filters?\n\nYes, at the visit.\n");
+
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    expect(app(ActiveConfig::class)->versionId())->not->toBe($live->id)
+        ->and(IcmVersion::where('status', VersionStatus::Active->value)->count())->toBe(1);
+});
