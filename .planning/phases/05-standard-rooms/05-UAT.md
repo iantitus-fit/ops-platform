@@ -40,3 +40,5 @@ blocked: 0
 <!-- Not Phase 5 gaps. Add to docs/BLUEPRINT.md open items when the phase closes. -->
 - The Drafts waiting table has 10 links with no name in its Alert column (Phase 11, A11Y-03).
 - Each room's empty line repeats the room name right under its heading (wording pass, 04 D-21).
+- Room section status lines have no affordance: "Not connected to Google" and the empty lines read like any other sentence, with no action, link or distinct treatment (not by color alone) (Phase 11 layout pass; 05-UI-REVIEW.md item 1).
+- Room section empty lines are developer-oriented, built from raw contract paths such as "Add notes/money.md to start." (Phase 11 wording pass; 05-UI-REVIEW.md item 2).
