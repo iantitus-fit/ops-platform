@@ -60,9 +60,9 @@ class Loader
     /**
      * Read every markdown file under $root and split it into front matter and body. A file whose path holds a hidden
      * character (a line break, a tab, an invisible mark: HiddenCharacters) is refused before any other check, the README
-     * skip included, and is never read, so no other check ever sees such a name (05 D-19). A file that is not valid
-     * UTF-8 is refused next, the same way and with none of its text kept, so no other check reads its bytes and the
-     * compiled version can always be saved (05 D-33).
+     * skip included, and is never read, so no other check ever sees such a name (05 D-19). README files are then
+     * skipped unread (04 D-11). A file that is not valid UTF-8 is refused next, the same way and with none of its text
+     * kept, so no other check reads its bytes and the compiled version can always be saved (05 D-33).
      *
      * @throws IcmFolderMissing
      */
@@ -90,15 +90,15 @@ class Loader
                 continue;
             }
 
+            if ($file->getFilename() === 'README.md') {
+                continue;
+            }
+
             $raw = (string) file_get_contents($file->getPathname());
 
             if (! mb_check_encoding($raw, 'UTF-8')) {
                 $files[] = $this->unrecognized($path, '', 'not_utf8');
 
-                continue;
-            }
-
-            if ($file->getFilename() === 'README.md') {
                 continue;
             }
 
