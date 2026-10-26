@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 16
+open_count: 13
 waived_count: 1
-fixed_count: 9
+fixed_count: 12
 total_count: 26
-last_updated: 2026-10-26T20:50:09.012Z
+last_updated: 2026-10-26T22:56:08.916Z
 ---
 
 # Broken Windows Ledger
@@ -33,14 +33,14 @@ last_updated: 2026-10-26T20:50:09.012Z
 | 16 | 02.1 | unrun-verify | tests/Feature/SendRule/SafetyCheckOutageTest.php |  | Plan 02.1-23 human-check (live JEV_API_KEY with php artisan schedule:work running: confirm the health ping succeeds against OpenRouter and no outage row opens; set a wrong key, wait for the next ping, and confirm one safety_check_down text reaches the owner's phone; restore the key and confirm the back-up text) not run by the executor; left for end-of-phase UAT | fixed |  | 2026-10-16T22:06:46.795Z | 2026-10-18T15:30:24.053Z |
 | 17 | 02.1 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | Plan 02.1-25 human-check (on a phone, a Needs you card after the customer wrote again shows the quoted newest text and 'Send anyway'; tapping Send twice sends once; Discard asks first and Cancel keeps the draft) not run by the executor; left for end-of-phase UAT with entry 13's walk | fixed |  | 2026-10-16T22:29:40.293Z | 2026-10-18T15:30:24.142Z |
 | 18 | 04 | stub | resources/views/filament/rooms/section.blade.php | 3 | Room section view body is empty on purpose; plan 04-06 fills it with the room's line (D-21) | fixed |  | 2026-10-22T21:54:44.369Z | 2026-10-23T01:36:56.101Z |
-| 19 | 04 | unrun-verify | tests/Feature/Rooms/RoomAccessibilityTest.php |  | CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT) | open |  | 2026-10-23T01:44:47.162Z |  |
+| 19 | 04 | unrun-verify | tests/Feature/Rooms/RoomAccessibilityTest.php |  | CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT) | fixed |  | 2026-10-23T01:44:47.162Z | 2026-10-26T22:56:08.734Z |
 | 20 | 05 | unrun-verify | app/Rooms/CompanyKnowledge/CompanyKnowledgeSection.php |  | Plan 05-03 hand check (D-18, carried from Phase 4): keyboard-only and VoiceOver walk of the company knowledge section on /admin, the first real room section; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:24:32.493Z |  |
 | 21 | 05 | unrun-verify | app/Rooms/Marketing/MarketingSection.php |  | Plan 05-05 hand check (D-18): keyboard-only and VoiceOver walk of the marketing section on /admin, and read the offers line against the front desk on the day an offer ends; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:41:24.145Z |  |
 | 22 | 05 | unrun-verify | app/Rooms/ContentGeneration/ContentGenerationSection.php |  | Plan 05-06 hand check (D-18): keyboard-only and VoiceOver walk of the content generation section on /admin, empty and with the brief in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:55:41.982Z |  |
 | 23 | 05 | unrun-verify | app/Rooms/Money/MoneySection.php |  | Plan 05-07 hand check (D-18): keyboard-only and VoiceOver walk of the money section on /admin, empty and with the notes in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:08:17.569Z |  |
 | 24 | 05 | unrun-verify | app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php |  | Plan 05-08 hand check (D-18): keyboard-only and VoiceOver walk of the Google Business Profile section on /admin, empty and with the categories file in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:21:53.598Z |  |
-| 25 | quick-261026-jig | unrun-verify | .github/workflows/tests.yml |  | CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout | open |  | 2026-10-26T19:14:54.022Z |  |
-| 26 | quick-261026-lrs | unrun-verify | .github/workflows/tests.yml |  | After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig). | open |  | 2026-10-26T20:50:09.012Z |  |
+| 25 | quick-261026-jig | unrun-verify | .github/workflows/tests.yml |  | CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout | fixed |  | 2026-10-26T19:14:54.022Z | 2026-10-26T22:56:08.825Z |
+| 26 | quick-261026-lrs | unrun-verify | .github/workflows/tests.yml |  | After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig). | fixed |  | 2026-10-26T20:50:09.012Z | 2026-10-26T22:56:08.916Z |
 
 ````json
 [
@@ -285,10 +285,10 @@ last_updated: 2026-10-26T20:50:09.012Z
     "file": "tests/Feature/Rooms/RoomAccessibilityTest.php",
     "line": null,
     "description": "CI run on the pushed phase branch: tests workflow green on both sqlite and pgsql legs, including PretendRoomBootTest and RoomAccessibilityTest (plan 04-09 human-check, for end-of-phase UAT)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-23T01:44:47.162Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-26T22:56:08.734Z",
     "milestone": "v2.0"
   },
   {
@@ -363,10 +363,10 @@ last_updated: 2026-10-26T20:50:09.012Z
     "file": ".github/workflows/tests.yml",
     "line": null,
     "description": "CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-26T19:14:54.022Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-26T22:56:08.825Z",
     "milestone": "v2.0"
   },
   {
@@ -376,10 +376,10 @@ last_updated: 2026-10-26T20:50:09.012Z
     "file": ".github/workflows/tests.yml",
     "line": null,
     "description": "After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig).",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-26T20:50:09.012Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-26T22:56:08.916Z",
     "milestone": "v2.0"
   }
 ]
