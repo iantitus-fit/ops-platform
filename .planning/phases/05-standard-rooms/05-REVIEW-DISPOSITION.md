@@ -25,7 +25,7 @@ findings:
     title: "`RoomChecks::bothClaimError` puts the owner's raw `owns` entry in the message"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: deferred
     title: "`GbpCategoriesType` comparison edge cases"
   - id: IN-04
     severity: info
@@ -35,7 +35,7 @@ findings:
     severity: info
     disposition: fixed
     title: "Example folder router does not mention the new folders"
-open: 3
+open: 2
 total: 8
 recorded: 2026-10-26T17:56:24.560Z
 ---
@@ -49,7 +49,7 @@ recorded: 2026-10-26T17:56:24.560Z
 | IN-02 | info | open | - |
 | WR-02 | warning | fixed | 05-REVIEW-FIX.md (not in the current review) |
 | WR-03 | warning | fixed | 05-REVIEW-FIX.md (not in the current review) |
-| IN-03 | info | open | - (not in the current review) |
+| IN-03 | info | deferred | the invalid-text part was fixed in b4a6178; the hidden-characters part waits for the deferred hidden-characters-in-values decision (not in the current review) |
 | IN-04 | info | fixed | 05-REVIEW-FIX.md (not in the current review) |
 | IN-05 | info | fixed | 05-REVIEW-FIX.md (not in the current review) |
 
