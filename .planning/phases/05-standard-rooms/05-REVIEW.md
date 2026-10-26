@@ -1,181 +1,118 @@
 ---
 phase: 05-standard-rooms
-reviewed: 2026-10-25T00:00:00Z
+reviewed: 2026-10-26T00:00:00Z
 depth: standard
-files_reviewed: 68
+files_reviewed: 33
 files_reviewed_list:
-  - app/Icm/HiddenCharacters.php
   - app/Icm/Loader.php
   - app/Icm/RoomChecks.php
-  - app/Icm/ValidationReport.php
-  - app/Icm/Validator.php
   - app/Rooms/CompanyKnowledge/CompanyKnowledgeSection.php
-  - app/Rooms/CompanyKnowledge/CompanyKnowledgeServiceProvider.php
   - app/Rooms/ContentGeneration/ContentBriefType.php
-  - app/Rooms/ContentGeneration/ContentGenerationSection.php
-  - app/Rooms/ContentGeneration/ContentGenerationServiceProvider.php
-  - app/Rooms/GoogleBusinessProfile/FakeGoogleListingSource.php
   - app/Rooms/GoogleBusinessProfile/GbpCategoriesType.php
   - app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php
   - app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileServiceProvider.php
-  - app/Rooms/GoogleBusinessProfile/GoogleListingSource.php
   - app/Rooms/Marketing/MarketingSection.php
-  - app/Rooms/Marketing/MarketingServiceProvider.php
   - app/Rooms/Money/AccountNumberScan.php
   - app/Rooms/Money/MoneyNotesType.php
-  - app/Rooms/Money/MoneySection.php
-  - app/Rooms/Money/MoneyServiceProvider.php
-  - app/Rooms/Room.php
+  - app/Rooms/Money/NumberCheckCouldNotFinish.php
   - app/Rooms/RoomFileType.php
-  - bootstrap/providers.php
+  - app/Rooms/RoomRegistry.php
+  - app/Rooms/RoomSection.php
   - docs/BLUEPRINT.md
   - docs/SPEC.md
   - docs/sprints/sprint-1.1.md
-  - examples/example-hvac/connectors/google-business-profile.md
-  - examples/example-hvac/rooms/company_knowledge/CONTEXT.md
-  - examples/example-hvac/rooms/content_generation/brief.md
-  - examples/example-hvac/rooms/content_generation/CONTEXT.md
-  - examples/example-hvac/rooms/google_business_profile/categories.md
-  - examples/example-hvac/rooms/google_business_profile/CONTEXT.md
-  - examples/example-hvac/rooms/marketing/CONTEXT.md
-  - examples/example-hvac/rooms/money/CONTEXT.md
-  - examples/example-hvac/rooms/money/notes.md
-  - tests/Feature/Icm/HiddenCharacterTest.php
-  - tests/Feature/Icm/OfferValidationTest.php
-  - tests/Feature/Icm/SyncIgnoresRecordsTest.php
-  - tests/Feature/Icm/ValidatorTest.php
+  - examples/example-hvac/CLAUDE.md
   - tests/Feature/Rooms/CompanyKnowledgeBootTest.php
-  - tests/Feature/Rooms/ConnectorFileTest.php
-  - tests/Feature/Rooms/ContentGenerationBootTest.php
+  - tests/Feature/Rooms/ExampleRouterTest.php
   - tests/Feature/Rooms/GbpCategoriesTest.php
   - tests/Feature/Rooms/GoogleBusinessProfileBootTest.php
   - tests/Feature/Rooms/MarketingBootTest.php
   - tests/Feature/Rooms/MoneyBootTest.php
   - tests/Feature/Rooms/MoneyNotesCheckTest.php
-  - tests/Feature/Rooms/NeverLeftOutTest.php
-  - tests/Feature/Rooms/OrderIndependenceTest.php
-  - tests/Feature/Rooms/PretendRoomBootTest.php
-  - tests/Feature/Rooms/RoomContractTest.php
-  - tests/Feature/Rooms/RoomFileTypeTest.php
   - tests/Feature/Rooms/RoomOwnershipTest.php
-  - tests/Feature/Rooms/RouterClaimTest.php
-  - tests/Feature/SendRule/JevClassifierTest.php
-  - tests/Fixtures/annex-room/rooms/annex/CONTEXT.md
-  - tests/Pest.php
-  - tests/Rooms/PretendRoom/AnnexRoom.php
+  - tests/Feature/Rooms/RoomSectionTest.php
+  - tests/Feature/Rooms/SpecTablesTest.php
   - tests/Rooms/PretendRoom/PretendNoteType.php
-  - tests/Unit/Icm/ConnectorChecksTest.php
-  - tests/Unit/Icm/HiddenCharactersTest.php
-  - tests/Unit/Icm/NeverLeftOutTest.php
+  - tests/Rooms/SpecTables.php
   - tests/Unit/Icm/RoomChecksTest.php
   - tests/Unit/Icm/SingleFileTypeTest.php
   - tests/Unit/Rooms/RoomRegistryTest.php
 findings:
   critical: 0
-  warning: 3
-  info: 5
-  total: 8
+  warning: 1
+  info: 2
+  total: 3
 status: issues_found
 ---
 
-# Phase 5: Code Review Report
+# Phase 5: Code Review Report (incremental re-review)
 
-**Reviewed:** 2026-10-25
+**Reviewed:** 2026-10-26
 **Depth:** standard
-**Files Reviewed:** 68
+**Files Reviewed:** 33
 **Status:** issues_found
+
+## Prior review
+
+The earlier review (WR-01 to WR-03, IN-01 to IN-05) was fixed and dispositioned in `05-REVIEW-DISPOSITION.md`. I checked each fix against the code and found none wrong or incomplete. The recorded decisions D-28 to D-32 are not reported as defects, and neither are the accepted misses in D-31 (a 9-digit number right after another number in a span of 19 digits or fewer, for example `1 123-45-6789`).
+
+One record-keeping note: the disposition file still lists IN-03 as `open`, but `GbpCategoriesType` and `GbpCategoriesTest` now carry a change labelled IN-03 (invalid UTF-8 is no longer reported as an empty entry). The record may need to be updated to `fixed`. This is not a code defect.
 
 ## Summary
 
-I read every app file in scope in full, along with the supporting code they depend on: `RoomRegistry`, `RoomSection`, `RoomServiceProvider`, `ConnectorChecks`, `FolderSync::compile`, `ActiveConfig`, `OfferSentences` and `PhoneNumber`. I also read the example folder files, the SPEC and BLUEPRINT diffs, and the test diffs. I ran `tests/Feature/Rooms`, `tests/Feature/Icm`, `tests/Unit/Icm` and `tests/Unit/Rooms`: 661 passed.
+I read the diff `8f7e1a7..HEAD` for every listed file, then read `AccountNumberScan`, `RoomChecks::singleFileErrors` and `RoomSection` in full. I probed the money number scan directly with about 30 inputs, including line-break variants, dots, non-breaking spaces, dashes, a blank line, a 12,000-group file and a 60,000-group file. I ran `Loader` and `Validator` against a copy of the example folder to confirm the one real gap below.
 
-I also probed `AccountNumberScan`, `GbpCategoriesType::checks()` and `HiddenCharacters` directly with edge inputs.
-
-I found no blockers. The ownership, single-file, never-left-out and hidden-name logic is consistent with D-02, D-19, D-25 and D-27. The owned paths and file types in the example contracts agree with the SPEC rows and the code (room keys, handled types, slot name, `none` handling).
-
-The warnings are gaps in the safety checks. They do not break the sync. Recorded decisions D-xx are not reported as defects. Wording is not reported.
+The rest holds up:
+- The `\z` anchors work.
+- The D-29 default-path choice works, and an interface implementer that was missed would fail the SPEC-table test.
+- The D-30 limit path refuses as intended: 60,000 groups throws `NumberCheckCouldNotFinish` with "Recursion limit exhausted".
+- The D-32 try/catch sits at the right layer.
+- The IN-02, IN-04 and WR-02 changes behave as their tests say.
+- The docs changes (SPEC file types table, BLUEPRINT, router) match the code. No statement is now false.
 
 ## Warnings
 
-### WR-01: The card/ID scan can be bypassed by ordinary separators and by a preceding number
+### WR-01: A file with non-UTF-8 bytes between card or ID digit groups gets past the number check
 
-**File:** `app/Rooms/Money/AccountNumberScan.php:21`
-**Issue:** The span regex joins digits only across a single ASCII space or hyphen. I confirmed with a probe that each of these returns `false` (nothing found):
-- `4111.1111.1111.1111` (dots)
-- `4111 1111` + newline + `1111 1111` (a card wrapped across two lines)
-- groups separated by a non-breaking space, an en dash, a tab or two spaces
-- `123.45.6789`
-- `2026-10-25 4111 1111 1111 1111`
+**File:** `app/Rooms/Money/AccountNumberScan.php:48`
+**Issue:** `findsAccountNumber()` runs `mb_scrub($text, 'UTF-8')` so that the `/u` pattern can read the text. `mb_scrub` replaces each invalid byte with `?` (the default substitute character, 63). A `?` is not one of the span separators, so it splits the span. The Loader does not reject non-UTF-8 files: it reads them with `file_get_contents`. The money notes type then scans `$file->raw` as it is.
 
-The last one is the most worrying. Any number joined to the card by one space or dash makes the span 24 digits long, which is over 19, so it passes. A line such as "Paid 2026-10-25 4111 1111 1111 1111" slips through. The scan's own header says it leans toward refusing because a missed card number costs far more than a false refusal.
+A notes file saved in Windows-1252 (Notepad's older ANSI default, or text pasted from Word) holds an en dash as byte `0x96` and a non-breaking space as byte `0xA0`. Both are invalid UTF-8. I confirmed this with a copy of the example folder:
+- `Card 4111<0x96>1111<0x96>1111<0x96>1111 on file.` in `rooms/money/notes.md` gives `Validator::validate()->hasErrors() === false`, so the version would be accepted.
+- The same line with ASCII hyphens gives `true` (refused).
+- The scan returns `false` for `4111<0xA0>1111<0xA0>1111<0xA0>1111` and for `SSN 123<0x96>45<0x96>6789`.
 
-D-22 fixes the span as "digits joined by single spaces or dashes" and says to decide on the whole span, so the card-after-a-date case follows from that decision. I am flagging it because it defeats the stated purpose, not because the code departs from the decision. The separator gaps (dot, newline, NBSP, en dash) are not covered by D-22's wording, only by its examples.
-**Fix:** Ask Ian whether D-22 should also try each span's trailing 13 to 19 digit windows (or each group boundary). At minimum, widen the separator class so the span also joins `.`, `\t`, a newline and `\x{00A0}`, `\x{2011}`, `\x{2013}`:
+This is the failure the scan exists to stop, and it is the same kind of separator gap D-28 closed for valid dashes and spaces. D-28 does not accept it: it says dashes and horizontal whitespace of any kind join groups, and a stray byte is only the file's encoding. The tests cover Unicode separators (NBSP, en dash) but only as valid UTF-8, so nothing pins this.
+**Fix:** Do not let an invalid byte split a span. Replace each run of invalid bytes with a space, which is a separator, before scanning. For example, with no global state:
 ```php
-private const SPAN = '/\+?\d+(?:[ \-.\t\x{00A0}\x{2010}-\x{2015}]\d+)*/u';
+private function readable(string $text): string
+{
+    if (mb_check_encoding($text, 'UTF-8')) {
+        return $text;
+    }
+
+    // Each invalid byte becomes a space so it joins digit groups the way a dash or a non-breaking space does.
+    return (string) preg_replace('/[\x80-\xFF]/', ' ', $text);
+}
 ```
-and add `\R` (at most one). Update `MoneyNotesCheckTest` with the cases above. Keep the "bank account numbers have no shape" warning in `rooms/money/CONTEXT.md`.
-
-### WR-02: `GoogleBusinessProfileSection` can take down the whole dashboard on a bad driver setting
-
-**File:** `app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php:46`, `app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileServiceProvider.php:39-45`
-**Issue:** `connectedToGoogle()` calls `app(GoogleListingSource::class)` only to test `instanceof`. If `config('rooms.google_business_profile.driver')` is set to anything but `fake`, the binding throws `InvalidArgumentException` while a Filament widget renders. Every page that draws the section then returns a 500, and the owner cannot reach the dashboard.
-
-Failing fast is the `TextChannel` pattern. But `TextChannel` is not resolved while drawing an owner screen. A non-string config value (for example an array) also hits "Array to string conversion" in the message.
-**Fix:** Do not construct the driver to answer a display question. Either read the configured driver name directly:
-```php
-return config('rooms.google_business_profile.driver', 'fake') !== 'fake'
-    && collect(app(ActiveConfig::class)->filesOfType('connector'))
-        ->contains(fn (array $file): bool => ($file['slot'] ?? null) === 'google_business_profile');
-```
-or catch `InvalidArgumentException` and treat it as "not connected". Cast the driver with `(string)` or `is_string` in the exception message.
-
-### WR-03: `RoomChecks::bothClaimError` puts the owner's raw `owns` entry in the message
-
-**File:** `app/Icm/RoomChecks.php:394-397` (called from `:384`)
-**Issue:** On the "same owns entry written in two contracts, no file matches it yet" path, `$claimed` is the raw owner-written `owns` entry. Everywhere else in this file and in `ConnectorChecks`, owner values go through `PlainWords::oneLine()` or `PlainWords::value()`, which cap length at 80 characters and collapse whitespace. `ValidationReport::lines()` now marks line breaks, so a forged line is no longer possible. But a very long or space-heavy entry still prints in full into the stored error and `changelog.md`, and the code contradicts its own rule that quoted owner values pass through `PlainWords`. A path-error line for the same field (`pathErrors`) does use `PlainWords::value`.
-**Fix:**
-```php
-return $this->error($later, 'owns', PlainWords::oneLine($claimed)." is claimed by both {$first} and {$later}; pick one, the other can read it");
-```
-`$claimed` from the file-path branch is a loaded path and is unaffected by `oneLine` unless it is over 80 characters. If that matters, apply `oneLine` only to the entry branch.
+Applied only on the invalid path, this changes multi-byte characters in an already-broken file to spaces. That can only add refusals, which matches the stated bias. Add `MoneyNotesCheckTest` cases for `\x96` and `\xA0` between the groups of a card and of a 9-digit number. The same `mb_scrub` pattern is in `HiddenCharacters::marked()`, where it only renders a message and is harmless.
 
 ## Info
 
-### IN-01: `Loader::ROOM_CONTRACT` ends in `$`, which accepts a trailing newline
+### IN-01: `GoogleBusinessProfileSection::connectedToGoogle()` can never return true, and the live-driver list repeats a fact the provider already holds
 
-**File:** `app/Icm/Loader.php:44`
-**Issue:** In PCRE, `$` also matches before a final `\n`, so `rooms/x/CONTEXT.md\n` would count as a contract. Today the hidden-character check in `load()` refuses such a name before any contract match, so this cannot be reached. But `RoomChecks` and `FolderSync::compile` rely on this regex alone for the contract path, and Phase 5 just made the safety of that depend on a separate check running first.
-**Fix:** Use `\z`, or the `D` modifier: `'#^rooms/([^/]+)/CONTEXT\.md\z#'`.
+**File:** `app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php:41-61`
+**Issue:** `LIVE_DRIVERS` is `[]`, so `in_array(...)` is always false and the method always returns `false`. The connector-file lookup after it is unreachable. The constant sits between two methods, and the class docblock line is far over the width of the surrounding comments. The WR-02 fix is correct, but the driver names now live in two places: the provider's `match` and `LIVE_DRIVERS`. When the real connector lands and someone adds a case to the `match` without adding it to `LIVE_DRIVERS`, the section keeps saying "Not connected to Google" and nothing fails. The current tests cannot catch that, because they only exercise bad settings.
+**Fix:** Keep the shape, but declare the constant with the other constants at the top of the class. Better, expose the live driver names from one place (a constant on the provider, used by both the `match` and this check), and add one test that every driver the provider can build is either `fake` or listed live. Until then, a one-line note on `LIVE_DRIVERS` saying it must change together with the provider's `match` is enough.
 
-### IN-02: `CompanyKnowledgeSection` hardcodes the FAQ path
+### IN-02: The scan reads only ASCII digits, so fullwidth and other Unicode digits are not seen
 
-**File:** `app/Rooms/CompanyKnowledge/CompanyKnowledgeSection.php:28`
-**Issue:** `$config->file('business/faq.md')` ignores what the contract owns, and `file()` returns a file of any type. If the owner moves the FAQ to another owned path (a `knowledge` file elsewhere), the section keeps saying "FAQ: not added yet". If a non-knowledge file is placed at that path, the section says "in place". The rest of the app has `compiled['index']['knowledge']`, but `ActiveConfig` has no accessor for it.
-**Fix:** Ask for the knowledge files by type (`filesOfType('knowledge')` works with the index shape `FolderSync::compile` builds), and check for a `business/faq.md` entry in that list. Or document the fixed path as the contract.
-
-### IN-03: `GbpCategoriesType` comparison edge cases
-
-**File:** `app/Rooms/GoogleBusinessProfile/GbpCategoriesType.php:126-129`
-**Issue:**
-- `normalized()` does not strip hidden characters. `"Furnace repair"` and `"Furnace\u{200B} repair"` are treated as different categories, so the repeat and primary-equals checks miss them. SPEC says hidden characters inside values are not checked yet (a deferred item), so this is a known gap rather than a bug.
-- If `preg_replace` fails (invalid UTF-8 in the value), `(string) null` gives `''`. The entry is then reported as "item N is empty", which is misleading.
-**Fix:** Strip `\p{Cf}` in `normalized()` if the deferred decision lands. Optionally treat a `null` from `preg_replace` as a distinct error line.
-
-### IN-04: `OfferSentences` usage in `MarketingSection` indexes the result of `offer()` without a null guard
-
-**File:** `app/Rooms/Marketing/MarketingSection.php:29`
-**Issue:** `$config->offer($live['slug'])['name']` is safe today because `liveToday()` iterates the same `offers()` list. It would raise a warning (and a 500 on the dashboard) if the two ever diverged, for example an offer whose slug normalises differently as an array key. The `(string)` cast would then hide a `null`.
-**Fix:** `$config->offer($live['slug'])['name'] ?? $live['slug']`.
-
-### IN-05: Example folder router does not mention the new folders
-
-**File:** `examples/example-hvac/CLAUDE.md`
-**Issue:** The router points to `business/`, `voice/`, `rules/` and `records/` only. It says nothing about `rooms/` or `connectors/`, which now hold seven of the example's typed files. `SPEC.md` lists `CLAUDE.md` as the house's file and routers are only pointers, so nothing breaks. An owner or AI reading the folder via this file will not find the rooms.
-**Fix:** Add one line to the router: "What each part of the business does and which files it owns: `rooms/`. Outside systems: `connectors/`."
+**File:** `app/Rooms/Money/AccountNumberScan.php:29-32`
+**Issue:** The docblock says digits are written `0-9` "so a Unicode digit is never read as a group". That is deliberate, but the effect is that `４１１１ １１１１ １１１１ １１１１` (fullwidth digits, which an input method on a phone or a CJK keyboard can produce) returns `false` and passes. It is unlikely for the business owners this targets, and the docblock already states the choice, so this is not a defect against the decisions. It is a quiet gap in a check whose purpose is to lean toward refusing.
+**Fix:** Either note the gap next to the "bank account numbers have no shape" warning in `rooms/money/CONTEXT.md`, or fold digits first with `preg_replace_callback('/\p{Nd}/u', fn ($m) => (string) IntlChar::charDigitValue($m[0]), $text)` before the span match. Ask Ian which, since D-28 only names `0-9`.
 
 ---
 
-_Reviewed: 2026-10-25_
+_Reviewed: 2026-10-26_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
