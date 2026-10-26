@@ -45,7 +45,7 @@ created: "2026-10-25"
 | T-05-20 | Tampering | single-file check, owner-edited contract | medium | mitigate | D-27 RoomChecks::singleFileErrors() keeps one file per single-file type (SingleFileTypeTest) | closed |
 | T-05-13 | Information disclosure | rooms/money/notes.md | high | mitigate | AccountNumberScan refuses card-shaped (check digit) and every 9-digit span; a scan that cannot finish refuses (D-30) (MoneyNotesCheckTest) | closed |
 | T-05-14 | Information disclosure | refusal line, rejected version, changelog.md | high | mitigate | Fixed sentence with no digit; ordering test asserts no digit in line or changelog | closed |
-| T-05-15 | Information disclosure | numbers the check cannot see | medium | accept | Bank account numbers have no shape; warned in rooms/money/CONTEXT.md; see accepted risks | closed |
+| T-05-15 | Information disclosure | numbers the check cannot see | medium | accept | Bank account numbers have no shape, nor a 9-digit number right after another number in a span of 19 digits or fewer (D-31); warned in rooms/money/CONTEXT.md; see accepted risks | closed |
 | T-05-21 | Tampering | a second money notes file | low | mitigate | MoneyNotesType::singleFileLabel() is 'money notes file' (MoneyBootTest) | closed |
 | T-05-16 | Information disclosure | GoogleListingSource binding | high | mitigate | Only the fake is bound, other drivers throw, one read method; Http::assertNothingSent() in the boot test | closed |
 | T-05-17 | Tampering | connector file owns | medium | mitigate | owns and reads are none; [none] refused (GoogleBusinessProfileBootTest, ConnectorFileTest) | closed |
@@ -67,6 +67,7 @@ created: "2026-10-25"
 | AR-05-01 | T-05-11 | The content brief is guidance read by no agent in Phase 5 (D-14); the rules that must hold stay in never_say, checked by code on every draft when the writer is built | plan 05-06 threat model (Ian's planning decisions) | 2026-10-25 |
 | AR-05-02 | T-05-15 | Bank account numbers have no shape the check can name; a ZIP+4 or a leading-+ phone shape passes by D-26's own terms; the room's CONTEXT.md warns the owner | plan 05-07 threat model (D-26) | 2026-10-25 |
 | AR-05-03 | T-05-SC | No package is installed in this phase (05-RESEARCH.md Package Legitimacy Audit: none) | plan threat models | 2026-10-25 |
+| AR-05-04 | T-05-15 | A 9-digit number written in groups right after another number, in a span of 19 digits or fewer (`2026-10-25 123 45 6789`), passes: the group-by-group check runs only on spans over 19 digits, because checking every multi-group span would refuse ordinary lines such as a date followed by a phone number about one time in five. The rooms/money/CONTEXT.md warning and the CONN-01 no-secrets scan cover it | Ian (05-CONTEXT D-31) | 2026-10-26 |
 
 *Accepted risks do not resurface in future audit runs.*
 
