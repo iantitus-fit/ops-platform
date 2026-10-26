@@ -122,7 +122,8 @@ it('declares exactly one method on the slot interface', function () {
 /**
  * 05 D-10 and success criterion 4: the example folder's connector file fills the slot and owns and reads no kind of
  * record, so Google is the truth for nothing the platform keeps. The bare word none compiles to an empty list. The bound
- * driver is still the fake, so the section still says it is not connected.
+ * driver is still the fake. The section's "not connected" line shows once the room has its categories file, so the
+ * furnished row of the categories test checks it on the page, not this case.
  */
 it('fills its slot with a connector file that owns and reads none', function () {
     activateExampleFolder();
@@ -135,9 +136,7 @@ it('fills its slot with a connector file that owns and reads none', function () 
         ->and($connector['front_matter']['owns'])->toBe([])
         ->and($connector['front_matter']['reads'])->toBe([]);
 
-    $this->get('/admin')
-        ->assertOk()
-        ->assertSee('Not connected to Google: this room runs on a stand-in and sends nothing.');
+    expect(app(GoogleListingSource::class))->toBeInstanceOf(FakeGoogleListingSource::class);
 });
 
 /**

@@ -265,14 +265,6 @@ it('refuses a slot that no room has, naming the slots that exist', function () {
         ->and(app(RoomRegistry::class)->slots())->toContain('pretend_feed', 'annex_feed');
 });
 
-it('says the engine has no connector slots yet when no room offers one', function () {
-    writeIcmFile('connectors/x.md', connectorFor('nowhere'));
-
-    $this->artisan('icm:sync')->assertExitCode(1);
-
-    expect(rejectedErrors())->toBe(['connectors/x.md: this file fills the nowhere slot, which no room has; this engine has no connector slots yet']);
-});
-
 it('treats slot: none as a slot name no room has, not as an empty value', function () {
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md');

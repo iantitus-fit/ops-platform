@@ -11,7 +11,7 @@ readonly class Room
 {
     /**
      * @param  string  $key  Lower snake case, the folder name under rooms/ in the business folder.
-     * @param  string  $label  The plain name used mid-sentence, lower case, such as "pretend". Display code applies ucfirst.
+     * @param  string  $label  The plain name used mid-sentence, lower case such as "pretend", unless it is a proper noun such as "Google Business Profile". Display code applies ucfirst.
      * @param  list<string>  $handles  Hard-coded file types this room is the owner room for. No Phase 4 room lists any: the owner room for agents/*.md is left to the front desk room's phase (D-15).
      * @param  list<RoomFileType>  $fileTypes  New kinds of file the room defines (D-04).
      * @param  ?string  $slot  The name of the outside-system slot the room offers, such as "text".
