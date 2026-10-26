@@ -228,6 +228,7 @@ Every file has exactly one owner: a room or the house (D-11). This is the map; t
 | `rooms/*/CONTEXT.md` | the room whose folder it is | |
 | `rooms/content_generation/brief.md` | content generation | |
 | `rooms/money/notes.md` | money | |
+| `rooms/google_business_profile/categories.md` | Google Business Profile | |
 | `CLAUDE.md` | the house | |
 | `START-HERE.md` | the house | |
 | `*CONTEXT.md` | the house (every CONTEXT.md outside `rooms/`) | |
