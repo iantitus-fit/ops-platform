@@ -40,10 +40,12 @@ class AccountNumberScan
     /**
      * Whether any span in the text looks like a card number or a 9-digit identifying number. Each span is judged whole
      * first (D-22); a span over 19 digits is then also judged on its own group boundaries (D-28).
+     *
+     * @throws NumberCheckCouldNotFinish when a pattern cannot finish, so a scan that stops early never passes (D-30)
      */
     public function findsAccountNumber(string $text): bool
     {
-        preg_match_all(self::SPAN, mb_scrub($text, 'UTF-8'), $matches);
+        $this->finished(preg_match_all(self::SPAN, mb_scrub($text, 'UTF-8'), $matches));
 
         foreach ($matches[0] as $span) {
             if ($this->isAccountNumber($span) || $this->hasAccountNumberRun($span)) {
@@ -70,12 +72,12 @@ class AccountNumberScan
      */
     private function isAccountNumber(string $span): bool
     {
-        $digits = preg_replace('/[^0-9]/', '', $span);
+        $digits = $this->finished(preg_replace('/[^0-9]/', '', $span));
         $count = strlen($digits);
         $hasPlus = str_starts_with($span, '+');
 
         if ($count === 9 && ! $hasPlus) {
-            return preg_match(self::ZIP_PLUS_FOUR, $span) !== 1;
+            return $this->finished(preg_match(self::ZIP_PLUS_FOUR, $span)) !== 1;
         }
 
         if (PhoneNumber::toE164($span) !== null) {
@@ -99,13 +101,13 @@ class AccountNumberScan
      */
     private function hasAccountNumberRun(string $span): bool
     {
-        $digits = preg_replace('/[^0-9]/', '', $span);
+        $digits = $this->finished(preg_replace('/[^0-9]/', '', $span));
 
         if (strlen($digits) <= self::MOST_CARD_DIGITS) {
             return false;
         }
 
-        preg_match_all('/[0-9]+/', $span, $groups, PREG_OFFSET_CAPTURE);
+        $this->finished(preg_match_all('/[0-9]+/', $span, $groups, PREG_OFFSET_CAPTURE));
         $groups = $groups[0];
         $groupCount = count($groups);
         $digitsBefore = [];
@@ -140,6 +142,26 @@ class AccountNumberScan
         }
 
         return false;
+    }
+
+    /**
+     * Pass a pattern call's result through, or stop the scan when the call could not finish: PHP's pattern functions
+     * return false or null when they hit a limit, and a "no match" read from that would let the file through (D-30).
+     *
+     * @template TResult
+     *
+     * @param  TResult|false|null  $result
+     * @return TResult
+     *
+     * @throws NumberCheckCouldNotFinish
+     */
+    private function finished(mixed $result): mixed
+    {
+        if ($result === false || $result === null) {
+            throw new NumberCheckCouldNotFinish(preg_last_error_msg());
+        }
+
+        return $result;
     }
 
     /**

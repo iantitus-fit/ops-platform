@@ -25,18 +25,25 @@ class MoneyNotesType implements RoomFileType
     /**
      * The one check: the file may not hold what looks like a card, bank routing, Social Security or tax ID number
      * (05 D-16, D-22, D-26). The whole file as written is scanned, front matter included. The message is a fixed
-     * sentence and never quotes what was found, so a number can never reach a stored version or changelog.md.
+     * sentence and never quotes what was found, so a number can never reach a stored version or changelog.md. A file the
+     * scan cannot finish reading is refused with its own fixed sentence, never let through (D-30).
      */
     public function checks(IcmFile $file): array
     {
-        if (! (new AccountNumberScan)->findsAccountNumber($file->raw)) {
-            return [];
+        try {
+            if (! (new AccountNumberScan)->findsAccountNumber($file->raw)) {
+                return [];
+            }
+
+            $message = 'this file has what looks like a card, bank routing, Social Security or tax ID number; account, card and ID numbers never go in the folder';
+        } catch (NumberCheckCouldNotFinish) {
+            $message = 'this file is too long for the number check to read; shorten it or split it';
         }
 
         return [[
             'file' => $file->path,
             'field' => null,
-            'message' => 'this file has what looks like a card, bank routing, Social Security or tax ID number; account, card and ID numbers never go in the folder',
+            'message' => $message,
         ]];
     }
 
