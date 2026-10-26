@@ -6,10 +6,10 @@ current_phase: 6
 current_phase_name: Front Desk and Team Rooms
 status: planning
 stopped_at: Phase 05 complete, ready to plan Phase 6
-last_updated: "2026-10-26T18:02:44.710Z"
+last_updated: "2026-10-26T19:15:41.857Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 05 complete, transitioned to Phase 6
-state_head: 3a43aa4d666ec743b0a8cd8bd900eb47fba9813d
+state_head: eb07487fe924c349b08b975f7ee0d987694e3a96
 progress:
   total_phases: 9
   completed_phases: 2
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 Phase: 6 — Front Desk and Team Rooms
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-26 — Phase 05 complete, transitioned to Phase 6
+Last activity: 2026-10-26 - Completed quick task 261026-jig: Make CI steadier (runner pinned to ubuntu-24.04, Chromium cache, job and browser-step timeouts)
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -221,7 +221,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
-- [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
+- [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09 and IN-10 included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23); the CI runner pin was closed by quick task 261026-jig
 - [Phase 5, review]: WR-01 fixed at close (0fef6e8): in text that is not valid UTF-8, each invalid byte joins digit groups as a space. IN-01 (the unreachable connected-to-Google branch) and IN-02 (Unicode digits) stay open as info; IN-03 is deferred to the hidden-characters-in-values decision (05-REVIEW-DISPOSITION.md)
 - [Phase 5 close, fixed]: a folder file that is not valid UTF-8 crashed `icm:sync` with a JsonEncodingException when the version was saved. D-33 (5ccb4f8): the Loader refuses it beside the hidden-character name check, in one plain line naming the file, and the previous version stays live. Found while writing the WR-01 tests
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
@@ -230,6 +230,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 261026-jig | Make CI steadier: runner pinned to ubuntu-24.04, Playwright Chromium cache keyed on its version, 30-minute job and 10-minute browser-step timeouts; BLUEPRINT runner pin closed | 2026-10-26 | eb07487 | [261026-jig-make-ci-steadier-pin-runs-on-to-ubuntu-2](./quick/261026-jig-make-ci-steadier-pin-runs-on-to-ubuntu-2/) |
 
 ### Roadmap Evolution
 
