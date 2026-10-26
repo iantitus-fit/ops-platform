@@ -23,6 +23,8 @@ v1.0 Front Desk shipped 2026-10-20: Phases 1, 2 and 02.1 (76 plans). The folder 
 
 v2.0 Model Home: Phase 4 Room Standard completed 2026-10-23 (9 plans; UAT 3 of 3 passed). The pretend room that proves the standard lives only in `tests/`; Phase 5 builds the first real rooms. Open items from its UAT and review are in `docs/BLUEPRINT.md` under the punch-list rule.
 
+v2.0 Model Home: Phase 5 Standard Rooms completed 2026-10-26 (9 plans; UAT 2 of 2 passed; verification 4/4). Company knowledge, marketing, content generation, Google Business Profile and money are the first real rooms in the example business, each a folder with its contract, example file, dashboard section and boot test. The re-review after the fixes left one warning open: a money notes file with non-UTF-8 bytes between digit groups gets past the number check (05-REVIEW.md WR-01).
+
 ## Current Milestone: v2.0 Model Home
 
 **Goal:** A cookie-cutter house that is a starting point for any business: every room built to one standard around the project, so a business is set up by walking the rooms and furnishing them at setup. Wording, policies and which rooms a business uses are the business's own decisions, not built in.
@@ -55,6 +57,7 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ Jev reads the customer's text on every run; an automated text without a reading is refused at the sender; a Jev outage alerts the owner once and again when it is back — Phase 02.1, v1.0
 - ✓ The room standard: a room is a folder under `rooms/` with a `CONTEXT.md` contract the sync checks (owns, reads, writes_records, connector), and a Laravel module that registers its file types, tables, dashboard section and timeline entries, with a connector slot only when it talks to an outside system; one test boots it empty and with its example folder on SQLite and Postgres, and its dashboard section passes an axe check (WCAG 2.2 AA) in CI (ROOM-01 to ROOM-05, A11Y-01) — Phase 4, v2.0
 - ✓ Two systems never own the same kind of record: connector files declare `owns` and `reads`, live only in `connectors/`, and a folder where two of them own one kind is refused in plain words while the previous version stays live (CONN-07) — Phase 4, v2.0
+- ✓ The first real rooms meet the standard in the example business: company knowledge, marketing (owns the lead sources and offers; its "live today" line asks the front desk's own rule), content generation (no connector), Google Business Profile (a read-only slot bound to a fake that sends nothing, one categories file of at most nine additional categories) and money (no slot, no payment records; its notes file refuses card and 9-digit numbers in one digit-free line). Leaving out company knowledge or marketing is refused by name, a file name with a hidden character is refused with the character marked, and a room section that fails shows one line instead of taking down the dashboard (ROOM-08 to ROOM-11, ROOM-14) — Phase 5, v2.0
 
 ### Active
 
@@ -286,4 +289,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-23 after Phase 4*
+*Last updated: 2026-10-26 after Phase 5*

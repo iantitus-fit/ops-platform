@@ -22,10 +22,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-23)
+See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 05 — Standard Rooms
+**Current focus:** Phase 6 — Front Desk and Team Rooms
 
 ## Current Position
 
@@ -34,7 +34,7 @@ Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-26 — Phase 05 complete, transitioned to Phase 6
 
-Progress: [██░░░░░░░░] 22% (1 of 9 v2.0 phases complete)
+Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
@@ -202,6 +202,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-08: the Google Business Profile slot is an interface in the room's namespace bound to the fake by a closure reading rooms.google_business_profile.driver with a default of fake; no config file or env key, one read method and no send method, so no chokepoint this phase
 - [Phase 05]: 05-08: a room section's own lines show only while the room is not empty, so a test of them needs the owned file in place; Task 2's not-connected assertion moved to Task 3's furnished row
 - [Phase 05]: 05-09: categories compared by whitespace collapse, trim and mb_strtolower; blank entries are empty, not repeats; a repeat is quoted once by its first spelling
+- [Phase 05, review]: the money notes scan joins digit groups across any horizontal whitespace run with at most one line break (D-28), refuses a file it cannot finish scanning (D-30), and accepts a 9-digit number right after another number in a span of 19 digits or fewer as a known miss (D-31); a room section that fails shows one line and leaves /admin standing (D-32)
 
 ### Pending Todos
 
@@ -220,7 +221,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
-- [Phase 04, carry into Phase 5]: the keyboard-only and VoiceOver walk of a room section moves to Phase 5's UAT, on the first real room section (the pretend room's section exists only in tests). G-04-1 (a path with a line break in a refusal line) is for Phase 5 but not in its roadmap criteria, so Phase 5's discuss picks it up. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
+- [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09, IN-10 and the CI runner pin included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23)
+- [Phase 5, open for Ian]: the re-review (05-REVIEW.md) left one warning: a money notes file with non-UTF-8 bytes between digit groups (a Windows-1252 en dash or no-break space) gets past the card and 9-digit check, because mb_scrub turns each bad byte into `?`. Fix it (bad bytes become spaces, two test cases) or record it as an accepted miss beside D-31, before real money notes go in. Two info items (IN-01 the unreachable connected-to-Google branch, IN-02 Unicode digits) and the ledger's IN-03 row (half fixed, half waiting on the hidden-characters-in-values decision) are in 05-REVIEW-DISPOSITION.md
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -256,10 +258,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T00:34:23.739Z
+Last session: 2026-10-26T18:03:25Z
 Stopped at: Phase 05 complete, ready to plan Phase 6
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss Phase 5 with /gsd-discuss-phase 5, then plan it with /gsd-plan-phase 5
+- Decide on 05-REVIEW.md WR-01 (fix or accept beside D-31), then review and merge the Phase 5 branch
+- Discuss Phase 6 with /gsd-discuss-phase 6, then plan it with /gsd-plan-phase 6
