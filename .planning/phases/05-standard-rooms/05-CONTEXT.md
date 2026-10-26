@@ -107,7 +107,7 @@ Phase 4 decisions are cited as "04 D-nn" (`.planning/phases/04-room-standard/04-
 
 ### Settled after the code review (Ian, 2026-10-25, from `05-REVIEW.md`)
 - **D-28 (refines D-22 and D-26):** The money notes check is widened (WR-01).
-  - Digit groups are joined by a single space or hyphen, and also by a dot, a tab, any Unicode space (non-breaking included), any Unicode dash, or at most one line break.
+  - Digit groups are joined by one separator: a dot, any one Unicode dash (the hyphen included), or any run of horizontal whitespace (spaces, tabs, non-breaking spaces, two spaces included) counted as one separator, with at most one line break inside the run. So a markdown hard break (two trailing spaces, then a line break) and a list item whose next line is indented still join; a blank line between two numbers splits them. (Ian, 2026-10-25, clarifying the first wording.)
   - A span over 19 digits is also checked on its own group boundaries: any run of whole groups that makes a card (13 to 19 digits passing the check digit) or exactly 9 digits is refused, unless that run is a whole phone number. So `Paid 2026-10-25 4111 1111 1111 1111` is refused.
   - False refusals stay the accepted cost (D-22). Bank account numbers still have no pattern; the warning in `rooms/money/CONTEXT.md` stays.
 
