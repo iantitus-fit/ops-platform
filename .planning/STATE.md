@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 05
 current_phase_name: Standard Rooms
 status: executing
-stopped_at: Completed 05-06-PLAN.md
-last_updated: "2026-10-25T23:56:29.519Z"
+stopped_at: Completed 05-07-PLAN.md
+last_updated: "2026-10-26T00:09:05.247Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 05 execution started
-state_head: 4ccf8213f5ca443fabdbced86db6e23cde393ff4
+state_head: c801df0445a65a7ead10ceeeed948f605227f87a
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
   percent: 11
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 05 (Standard Rooms) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 05 execution started
 
@@ -152,6 +152,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 05 P04 | 11 min | 2 tasks | 10 files |
 | Phase 05 P05-05 | 6 min | 2 tasks | 9 files |
 | Phase 05 P06 | 8 min | 3 tasks | 14 files |
+| Phase 05 P07 | 25 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -194,6 +195,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-04: a hidden-named file reaches the Validator as an Unrecognized file with problem hidden_name and no raw text, so it is never read and RoomChecks leaves it out of the room-folder lines
 - [Phase 05]: 05-05: the marketing section asks OfferSentences::liveToday() for the offers live today and carries no date logic of its own
 - [Phase 05]: 05-06: the single-file check (RoomChecks::singleFileErrors) reads the room's folder, not the contract's owns, so a business keeps one content brief even after the owner edits owns; money and Google Business Profile reuse RoomFileType::singleFileLabel()
+- [Phase 05]: 05-07: the money room has no slot, table or payment record; its notes check refuses card numbers and every 9-digit number except a ZIP+4 written 60601-1234, in one fixed digit-free line
 
 ### Pending Todos
 
@@ -248,8 +250,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T23:56:29.478Z
-Stopped at: Completed 05-06-PLAN.md
+Last session: 2026-10-26T00:09:05.203Z
+Stopped at: Completed 05-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
