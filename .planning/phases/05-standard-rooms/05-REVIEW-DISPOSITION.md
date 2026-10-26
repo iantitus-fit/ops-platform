@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The card/ID scan can be bypassed by ordinary separators and by a preceding number"
   - id: WR-02
     severity: warning
@@ -13,7 +13,7 @@ findings:
     title: "`GoogleBusinessProfileSection` can take down the whole dashboard on a bad driver setting"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`RoomChecks::bothClaimError` puts the owner's raw `owns` entry in the message"
   - id: IN-01
     severity: info
@@ -21,7 +21,7 @@ findings:
     title: "`Loader::ROOM_CONTRACT` ends in `$`, which accepts a trailing newline"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`CompanyKnowledgeSection` hardcodes the FAQ path"
   - id: IN-03
     severity: info
@@ -33,25 +33,25 @@ findings:
     title: "`OfferSentences` usage in `MarketingSection` indexes the result of `offer()` without a null guard"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Example folder router does not mention the new folders"
-open: 8
+open: 4
 total: 8
-recorded: 2026-10-26T00:46:35.963Z
+recorded: 2026-10-26T02:33:48.954Z
 ---
 
 # Phase 05: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
+| WR-01 | warning | fixed | 05-REVIEW-FIX.md |
 | WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
+| WR-03 | warning | fixed | 05-REVIEW-FIX.md |
 | IN-01 | info | open | - |
-| IN-02 | info | open | - |
+| IN-02 | info | fixed | 05-REVIEW-FIX.md |
 | IN-03 | info | open | - |
 | IN-04 | info | open | - |
-| IN-05 | info | open | - |
+| IN-05 | info | fixed | 05-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
