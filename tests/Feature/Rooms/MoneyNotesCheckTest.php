@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\File;
 const MONEY_NOTES_REFUSAL = 'rooms/money/notes.md: this file has what looks like a card, bank routing, Social Security or tax ID number; account, card and ID numbers never go in the folder';
 
 /**
+ * The line for a notes file the check cannot finish reading (D-30): a scan that cannot finish refuses.
+ */
+const MONEY_NOTES_TOO_LONG = 'rooms/money/notes.md: this file is too long for the number check to read; shorten it or split it';
+
+/**
  * Write rooms/money/notes.md with the given body and, optionally, one extra front matter line.
  */
 function writeMoneyNotes(string $body, string $extraFrontMatter = ''): void
@@ -200,6 +205,20 @@ it('still splits spans at a blank line, at two different separators in a row, an
     'a date followed by a phone' => '2026-10-25 2026-10-26 312-555-0100',
     'a faroese phone before two dates' => '+298 302010 2026-10-25 2026-10-26',
 ]);
+
+it('refuses a file the number check cannot finish reading, even one with a card in it, and keeps the previous version live (D-30)', function () {
+    $live = activateExampleFolder();
+
+    // 100,000 two-digit groups joined by single spaces make one 300 KB span, past what the pattern engine can match
+    // with or without its JIT (it stops near 10,000 groups with JIT, near 50,000 without). The card at the end used to
+    // pass with it.
+    writeMoneyNotes('Deposit slips: '.str_repeat('12 ', 100_000).'4111 1111 1111 1111');
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([MONEY_NOTES_TOO_LONG])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
 
 it('lets the example money notes through the widened check', function () {
     $this->artisan('icm:sync')->assertExitCode(0);
