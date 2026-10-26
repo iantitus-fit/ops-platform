@@ -552,6 +552,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - Jev tuning.
 - Message shape (B) (notice placement).
 - IN-11 (outage alerts with no owner phone).
+- apt can stall fetching Chromium's system packages (Ian, 2026-10-26, [quick task 261026-jig](../.planning/quick/261026-jig-make-ci-steadier-pin-runs-on-to-ubuntu-2/)): on run 40378515760 apt took 15m24s at 23 kB/s from the Azure mirror, and the 10-minute timeout on the browser step now turns a repeat into a red run that needs a re-run. Fix only if it happens again. Two options, neither picked: a shell retry around `npx playwright install-deps chromium`, or caching the downloaded `.deb` files through the `actions/cache` step the workflow already pins. Neither needs a new third-party action. Affects: safety and compliance, knowledge.
 - Hidden characters inside file values (Ian, 2026-10-25, [Phase 5 context](../.planning/phases/05-standard-rooms/05-CONTEXT.md) deferred): the line breaks, text-direction overrides and zero-width characters Phase 5 refuses in file and folder names pass the sync today inside values (a service name, for example) and can reach agent prompts. Whether the sync refuses them in every value is its own decision. Affects: safety and compliance, knowledge.
 - The Pest browser plugin's rmdir warning (Phase 5 close): the full suite reports one warning, from the browser plugin failing to remove `tests/Browser/Traces`. A quick task. Affects: safety and compliance.
 
