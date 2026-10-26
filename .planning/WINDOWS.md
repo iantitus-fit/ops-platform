@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 16
 waived_count: 1
 fixed_count: 9
-total_count: 24
-last_updated: 2026-10-26T00:21:53.598Z
+total_count: 26
+last_updated: 2026-10-26T20:50:09.012Z
 ---
 
 # Broken Windows Ledger
@@ -39,6 +39,8 @@ last_updated: 2026-10-26T00:21:53.598Z
 | 22 | 05 | unrun-verify | app/Rooms/ContentGeneration/ContentGenerationSection.php |  | Plan 05-06 hand check (D-18): keyboard-only and VoiceOver walk of the content generation section on /admin, empty and with the brief in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-25T23:55:41.982Z |  |
 | 23 | 05 | unrun-verify | app/Rooms/Money/MoneySection.php |  | Plan 05-07 hand check (D-18): keyboard-only and VoiceOver walk of the money section on /admin, empty and with the notes in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:08:17.569Z |  |
 | 24 | 05 | unrun-verify | app/Rooms/GoogleBusinessProfile/GoogleBusinessProfileSection.php |  | Plan 05-08 hand check (D-18): keyboard-only and VoiceOver walk of the Google Business Profile section on /admin, empty and with the categories file in place; not run by the executor, left for Phase 5 UAT | open |  | 2026-10-26T00:21:53.598Z |  |
+| 25 | quick-261026-jig | unrun-verify | .github/workflows/tests.yml |  | CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout | open |  | 2026-10-26T19:14:54.022Z |  |
+| 26 | quick-261026-lrs | unrun-verify | .github/workflows/tests.yml |  | After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig). | open |  | 2026-10-26T20:50:09.012Z |  |
 
 ````json
 [
@@ -351,6 +353,32 @@ last_updated: 2026-10-26T00:21:53.598Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-26T00:21:53.598Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 25,
+    "kind": "unrun-verify",
+    "phase": "quick-261026-jig",
+    "file": ".github/workflows/tests.yml",
+    "line": null,
+    "description": "CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-26T19:14:54.022Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 26,
+    "kind": "unrun-verify",
+    "phase": "quick-261026-lrs",
+    "file": ".github/workflows/tests.yml",
+    "line": null,
+    "description": "After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig).",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-26T20:50:09.012Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
