@@ -43,7 +43,7 @@ created: "2026-10-25"
 | T-05-11 | Tampering | rooms/content_generation/brief.md | medium | accept | No agent reads the brief this phase (D-14); see accepted risks | closed |
 | T-05-12 | Elevation of privilege | content generation connector field | low | mitigate | Connector other than none refused for a room with no slot (ContentGenerationBootTest) | closed |
 | T-05-20 | Tampering | single-file check, owner-edited contract | medium | mitigate | D-27 RoomChecks::singleFileErrors() keeps one file per single-file type (SingleFileTypeTest) | closed |
-| T-05-13 | Information disclosure | rooms/money/notes.md | high | mitigate | AccountNumberScan refuses card-shaped (check digit) and every 9-digit span (MoneyNotesCheckTest) | closed |
+| T-05-13 | Information disclosure | rooms/money/notes.md | high | mitigate | AccountNumberScan refuses card-shaped (check digit) and every 9-digit span; a scan that cannot finish refuses (D-30) (MoneyNotesCheckTest) | closed |
 | T-05-14 | Information disclosure | refusal line, rejected version, changelog.md | high | mitigate | Fixed sentence with no digit; ordering test asserts no digit in line or changelog | closed |
 | T-05-15 | Information disclosure | numbers the check cannot see | medium | accept | Bank account numbers have no shape; warned in rooms/money/CONTEXT.md; see accepted risks | closed |
 | T-05-21 | Tampering | a second money notes file | low | mitigate | MoneyNotesType::singleFileLabel() is 'money notes file' (MoneyBootTest) | closed |
