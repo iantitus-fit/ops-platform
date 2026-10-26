@@ -66,7 +66,9 @@ it('lets through what is not a card or a 9-digit number', function (string $text
     'phone in e164' => '+13125550147',
     'spanish phone with a nine digit part' => '+34 912345678',
     'faroese phone with a plus and nine digits' => '+298 302010',
-    'two phones side by side' => '312-555-0147 773-555-0100',
+    // D-28 changed this input: 312-555-0147 773-555-0100 is one 20-digit span, and its first four groups (3125550147773)
+    // pass the card check digit and are not a phone, so it is now refused. Two phones whose groups make no such run still pass.
+    'two phones side by side' => '312-555-0100 773-555-0147',
     'zip plus four' => '60601-1234',
     'a date' => '2026-10-25',
     'sixteen digits failing the check digit' => '4111111111111112',
@@ -163,6 +165,7 @@ it('refuses a card or a 9-digit number that follows another number in the same s
     'card after a date, line break between groups' => "Paid 2026-10-25 4111 1111\n1111 1111",
     'nine digits after two dates' => '2026-10-25 2026-10-26 123 45 6789',
     'nine digits and a card after a date' => 'Paid 2026-10-25 123-45-6789 4111 1111 1111 1111',
+    'two phones whose first four groups pass the check digit (the accepted false refusal, D-22 and D-28)' => '312-555-0147 773-555-0100',
 ]);
 
 it('still splits spans at two separators in a row, and at a comma (D-28)', function (string $text) {
@@ -177,7 +180,7 @@ it('still splits spans at two separators in a row, and at a comma (D-28)', funct
     'a space and a dot' => '4111 .1111 .1111 .1111',
     'a blank line' => "4111 1111\n\n1111 1111",
     'zip plus four alone' => '60601-1234',
-    'a date followed by a phone' => '2026-10-25 2026-10-26 312-555-0147',
+    'a date followed by a phone' => '2026-10-25 2026-10-26 312-555-0100',
     'a faroese phone before two dates' => '+298 302010 2026-10-25 2026-10-26',
 ]);
 
