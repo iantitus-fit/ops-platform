@@ -45,7 +45,7 @@ class AccountNumberScan
      */
     public function findsAccountNumber(string $text): bool
     {
-        $this->finished(preg_match_all(self::SPAN, mb_scrub($text, 'UTF-8'), $matches));
+        $this->finished(preg_match_all(self::SPAN, $this->validText($text), $matches));
 
         foreach ($matches[0] as $span) {
             if ($this->isAccountNumber($span) || $this->hasAccountNumberRun($span)) {
@@ -54,6 +54,28 @@ class AccountNumberScan
         }
 
         return false;
+    }
+
+    /**
+     * The text as valid UTF-8, for the span pattern. Valid text comes back unchanged. In text that is not valid, each
+     * byte that is not part of a character becomes a space (WR-01): an older Windows editor saves an en dash as the byte
+     * 0x96 and a non-breaking space as 0xA0, and D-28 joins digit groups across any dash or space, so the byte must join
+     * them too. mb_scrub's own stand-in is "?", which would split the span and let the number through.
+     */
+    private function validText(string $text): string
+    {
+        if (mb_check_encoding($text, 'UTF-8')) {
+            return $text;
+        }
+
+        $previous = mb_substitute_character();
+        mb_substitute_character(0x20);
+
+        try {
+            return mb_scrub($text, 'UTF-8');
+        } finally {
+            mb_substitute_character($previous);
+        }
     }
 
     /**
