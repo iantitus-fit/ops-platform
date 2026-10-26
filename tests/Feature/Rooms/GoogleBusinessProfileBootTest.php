@@ -5,6 +5,7 @@ use App\Icm\ActiveConfig;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Rooms\GoogleBusinessProfile\FakeGoogleListingSource;
+use App\Rooms\GoogleBusinessProfile\GbpCategoriesType;
 use App\Rooms\GoogleBusinessProfile\GoogleBusinessProfileServiceProvider;
 use App\Rooms\GoogleBusinessProfile\GoogleListingSource;
 use App\Rooms\RoomRegistry;
@@ -165,4 +166,105 @@ it('refuses the connector file when the room folder is gone', function () {
 
     expect(rejectedErrors())->toBe(['connectors/google-business-profile.md: this file fills the google_business_profile slot, but the Google Business Profile room is not in this folder'])
         ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * The furnished boot (ROOM-11, ROOM-05): the example folder as shipped holds the one categories file, the room's own file
+ * type reads it, and the section shows the primary category and that the room is not connected to Google.
+ */
+it('boots the Google Business Profile room with its example folder', function () {
+    $version = activateExampleFolder();
+    $config = app(ActiveConfig::class);
+    $room = app(RoomRegistry::class)->get('google_business_profile');
+
+    expect($version->file_count)->toBe(exampleFolderFileCount())
+        ->and($config->hasRoom('google_business_profile'))->toBeTrue()
+        ->and($room->fileTypes)->toHaveCount(1)
+        ->and($room->fileTypes[0])->toBeInstanceOf(GbpCategoriesType::class)
+        ->and($room->fileTypes[0]->type())->toBe('gbp_categories');
+
+    $categories = $config->filesOfType('gbp_categories');
+
+    expect($categories)->toHaveCount(1)
+        ->and($categories[0]['path'])->toBe('rooms/google_business_profile/categories.md')
+        ->and($categories[0]['primary_category'])->toBe('HVAC contractor');
+
+    $this->get('/admin')
+        ->assertOk()
+        ->assertSee('data-room-section="google_business_profile"', false)
+        ->assertSee('Google Business Profile')
+        ->assertSee('Primary category: HVAC contractor')
+        ->assertSee('Not connected to Google: this room runs on a stand-in and sends nothing.')
+        ->assertDontSee('Google Business Profile: nothing set up yet');
+
+    $page = visit('/admin');
+    $page->assertSee('Primary category: HVAC contractor');
+
+    RoomSectionAxe::assertClean(RoomSectionAxe::report($page, 'google_business_profile'));
+});
+
+/**
+ * 05 D-07 (shape only): the primary category is required, so a categories file without one is refused, and the version
+ * that was live stays live.
+ */
+it('refuses a categories file without a primary category', function () {
+    $live = activateExampleFolder();
+
+    writeIcmFile('rooms/google_business_profile/categories.md', "---\ntype: gbp_categories\nadditional_categories: [Heating contractor]\n---\nThe categories Google shows.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/google_business_profile/categories.md: primary_category is missing, and it is required'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * D-27 under the shipped contract: a second categories file in the room's folder is refused in one line naming both
+ * files, and the version that was live stays live.
+ */
+it('refuses a second categories file under the shipped contract', function () {
+    $live = activateExampleFolder();
+    writeIcmFile('rooms/google_business_profile/more.md', "---\ntype: gbp_categories\nprimary_category: Heating contractor\n---\nMore categories.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/google_business_profile/more.md: this business already has a Google Business Profile categories file in rooms/google_business_profile/categories.md; keep one'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * D-27 under a contract the owner edited to own a second path: owning the file does not let a business keep two. The
+ * second file sorts after categories.md, the file the sync keeps when a contract claims both.
+ */
+it('refuses a second categories file under a contract edited to own two paths', function () {
+    $live = activateExampleFolder();
+
+    breakFile('rooms/google_business_profile/CONTEXT.md', fn (string $contents): string => str_replace(
+        'owns: [rooms/google_business_profile/categories.md]',
+        'owns: [rooms/google_business_profile/categories.md, rooms/google_business_profile/more.md]',
+        $contents,
+    ));
+    writeIcmFile('rooms/google_business_profile/more.md', "---\ntype: gbp_categories\nprimary_category: Heating contractor\n---\nMore categories.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/google_business_profile/more.md: this business already has a Google Business Profile categories file in rooms/google_business_profile/categories.md; keep one'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
+ * D-27: owning two paths is fine while only one categories file exists, so the contract can be edited ahead of the file.
+ */
+it('accepts a contract that owns two paths while only one categories file is there', function () {
+    activateExampleFolder();
+
+    breakFile('rooms/google_business_profile/CONTEXT.md', fn (string $contents): string => str_replace(
+        'owns: [rooms/google_business_profile/categories.md]',
+        'owns: [rooms/google_business_profile/categories.md, rooms/google_business_profile/more.md]',
+        $contents,
+    ));
+
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    expect(app(ActiveConfig::class)->filesOfType('gbp_categories'))->toHaveCount(1);
 });
