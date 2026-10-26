@@ -168,17 +168,34 @@ it('refuses a card or a 9-digit number that follows another number in the same s
     'two phones whose first four groups pass the check digit (the accepted false refusal, D-22 and D-28)' => '312-555-0147 773-555-0100',
 ]);
 
-it('still splits spans at two separators in a row, and at a comma (D-28)', function (string $text) {
+it('refuses a card or a 9-digit number whose groups are joined by a run of horizontal whitespace holding at most one line break (D-28)', function (string $text) {
+    $live = activateExampleFolder();
+    writeMoneyNotes($text);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([MONEY_NOTES_REFUSAL])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+})->with([
+    'two spaces inside a card' => '4111  1111  1111  1111',
+    'two spaces inside nine digits' => '123  45  6789',
+    'spaces, tabs and non-breaking spaces mixed inside a card' => "4111 \t 1111\u{00A0} 1111\t\t1111",
+    'a markdown hard break inside a card' => "4111 1111  \n1111 1111",
+    'a list item whose next line is indented' => "- Deposit reference 4111 1111\n  1111 1111",
+    'nine digits across an indented line' => "- Reference 123 45\n    6789",
+]);
+
+it('still splits spans at a blank line, at two different separators in a row, and at a comma (D-28)', function (string $text) {
     writeMoneyNotes($text);
 
     $this->artisan('icm:sync')->assertExitCode(0);
 
     expect(app(ActiveConfig::class)->filesOfType('money_notes'))->toHaveCount(1);
 })->with([
-    'two spaces inside a card' => '4111  1111  1111  1111',
-    'two spaces inside nine digits' => '123  45  6789',
     'a space and a dot' => '4111 .1111 .1111 .1111',
     'a blank line' => "4111 1111\n\n1111 1111",
+    'a blank line holding spaces' => "4111 1111\n  \n1111 1111",
+    'a blank line after a markdown hard break' => "4111 1111  \n\n1111 1111",
     'zip plus four alone' => '60601-1234',
     'a date followed by a phone' => '2026-10-25 2026-10-26 312-555-0100',
     'a faroese phone before two dates' => '+298 302010 2026-10-25 2026-10-26',
