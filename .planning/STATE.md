@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 05
 current_phase_name: Standard Rooms
-status: executing
-stopped_at: Completed 05-08-PLAN.md
-last_updated: "2026-10-26T00:25:22.037Z"
+status: verifying
+stopped_at: Completed 05-09-PLAN.md
+last_updated: "2026-10-26T00:34:23.776Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 05 execution started
-state_head: bf59a26f1b27a1fa0898ad82303bc820b864797c
+state_head: 517a22431d6513fa2b2d048a9c459c721f62ad2f
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
   percent: 11
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 
 Phase: 05 (Standard Rooms) — EXECUTING
 Plan: 9 of 9
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-25 — Phase 05 execution started
 
 Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
@@ -154,6 +154,7 @@ Progress: [█░░░░░░░░░] 11% (1 of 9 v2.0 phases complete)
 | Phase 05 P06 | 8 min | 3 tasks | 14 files |
 | Phase 05 P07 | 25 min | 2 tasks | 13 files |
 | Phase 05 P08 | 11 min | 3 tasks | 17 files |
+| Phase 05 P09 | 8 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -199,6 +200,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-07: the money room has no slot, table or payment record; its notes check refuses card numbers and every 9-digit number except a ZIP+4 written 60601-1234, in one fixed digit-free line
 - [Phase 05]: 05-08: the Google Business Profile slot is an interface in the room's namespace bound to the fake by a closure reading rooms.google_business_profile.driver with a default of fake; no config file or env key, one read method and no send method, so no chokepoint this phase
 - [Phase 05]: 05-08: a room section's own lines show only while the room is not empty, so a test of them needs the owned file in place; Task 2's not-connected assertion moved to Task 3's furnished row
+- [Phase 05]: 05-09: categories compared by whitespace collapse, trim and mb_strtolower; blank entries are empty, not repeats; a repeat is quoted once by its first spelling
 
 ### Pending Todos
 
@@ -253,8 +255,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T00:25:21.999Z
-Stopped at: Completed 05-08-PLAN.md
+Last session: 2026-10-26T00:34:23.739Z
+Stopped at: Completed 05-09-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
