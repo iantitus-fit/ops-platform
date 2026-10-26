@@ -41,7 +41,8 @@ class GbpCategoriesType implements RoomFileType
     /**
      * Shape only (05 D-07): Google takes at most nine additional categories after the primary, each once, none the same
      * as the primary, compared the way an owner reads them (ignoring case and extra spaces). One line per problem, in a
-     * fixed order: too many, then empty entries, then repeats in list order, then equal to the primary. The count is
+     * fixed order: too many, then empty entries and entries that are not valid text (in list order, each its own line),
+     * then repeats in list order, then equal to the primary. The count is
      * written as its own sentence rather than with the max rule, whose sentence reads wrongly for a list. Only text
      * entries are looked at; the rules above already report an entry that is not text. Whether a name is one of
      * Google's categories waits for the real connector (05 D-07); nothing here calls Google or any outside list.
@@ -75,6 +76,13 @@ class GbpCategoriesType implements RoomFileType
 
             $key = $this->normalized($category);
 
+            if ($key === null) {
+                $number = $position + 1;
+                $lines[] = "additional_categories item {$number} has characters that are not valid text; retype that category";
+
+                continue;
+            }
+
             if ($key === '') {
                 $number = $position + 1;
                 $lines[] = "additional_categories item {$number} is empty; write a category there or remove it";
@@ -94,7 +102,9 @@ class GbpCategoriesType implements RoomFileType
 
         $primary = $file->frontMatter['primary_category'] ?? null;
 
-        if (is_string($primary) && $this->normalized($primary) !== '' && isset($seen[$this->normalized($primary)])) {
+        $primaryKey = is_string($primary) ? $this->normalized($primary) : null;
+
+        if ($primaryKey !== null && $primaryKey !== '' && isset($seen[$primaryKey])) {
             $lines[] = 'additional_categories repeats the primary category '.PlainWords::oneLine($primary).'; leave it out of this list';
         }
 
@@ -129,10 +139,13 @@ class GbpCategoriesType implements RoomFileType
 
     /**
      * A category as an owner reads it: every run of whitespace is one space, the ends are trimmed and case does not
-     * count, so 'furnace  REPAIR service' and 'Furnace repair service' are the same category.
+     * count, so 'furnace  REPAIR service' and 'Furnace repair service' are the same category. It is null when the text is
+     * not valid UTF-8, which preg_replace cannot read, so the caller can say that instead of calling the entry empty.
      */
-    private function normalized(string $category): string
+    private function normalized(string $category): ?string
     {
-        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $category)));
+        $collapsed = preg_replace('/\s+/u', ' ', $category);
+
+        return $collapsed === null ? null : mb_strtolower(trim($collapsed));
     }
 }
