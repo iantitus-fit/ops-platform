@@ -6,8 +6,8 @@ use App\Icm\ActiveConfig;
 use App\Rooms\RoomSection;
 
 /**
- * The Google Business Profile room's dashboard section: whether the room is connected to Google. While the bound driver
- * is the fake, or no connector file fills the slot, it says so in plain words (05 D-17, D-18). The section never fetches
+ * The Google Business Profile room's dashboard section: whether the room is connected to Google. While the configured
+ * driver is the fake (or is not one that reaches Google), or no connector file fills the slot, it says so in plain words (05 D-17, D-18). The section never fetches
  * the listing: the dashboard only reads the folder's own files (05 D-11). The wording is a placeholder until the wording
  * pass.
  */
@@ -38,12 +38,24 @@ class GoogleBusinessProfileSection extends RoomSection
     }
 
     /**
-     * Connected means a live driver is bound and a connector file fills the slot. Only the fake exists this phase, so
-     * the answer is no until the real connector lands.
+     * The driver names that reach Google. Only the fake exists this phase, so the list is empty until the real
+     * connector lands.
+     *
+     * @var list<string>
+     */
+    private const LIVE_DRIVERS = [];
+
+    /**
+     * Connected means a live driver is configured and a connector file fills the slot. It reads the configured driver
+     * name and never builds the driver: this answers a display question while a dashboard widget draws, so a bad driver
+     * setting (an unknown name, or a value that is not text) reads as not connected here and cannot take the page down.
+     * The provider still refuses a bad setting for a real caller of the slot (WR-02).
      */
     private function connectedToGoogle(): bool
     {
-        if (app(GoogleListingSource::class) instanceof FakeGoogleListingSource) {
+        $driver = config('rooms.google_business_profile.driver', 'fake');
+
+        if (! is_string($driver) || ! in_array($driver, self::LIVE_DRIVERS, true)) {
             return false;
         }
 

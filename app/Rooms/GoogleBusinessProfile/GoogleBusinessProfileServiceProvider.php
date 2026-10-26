@@ -41,7 +41,7 @@ class GoogleBusinessProfileServiceProvider extends RoomServiceProvider
 
             return match ($driver) {
                 'fake' => $app->make(FakeGoogleListingSource::class),
-                default => throw new InvalidArgumentException("Unknown Google Business Profile driver [{$driver}]. Use fake."),
+                default => throw new InvalidArgumentException('Unknown Google Business Profile driver ['.(is_string($driver) ? $driver : get_debug_type($driver)).']. Use fake.'),
             };
         });
     }
