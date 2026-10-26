@@ -9,7 +9,7 @@ findings:
     title: "The card/ID scan can be bypassed by ordinary separators and by a preceding number"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`GoogleBusinessProfileSection` can take down the whole dashboard on a bad driver setting"
   - id: WR-03
     severity: warning
@@ -17,7 +17,7 @@ findings:
     title: "`RoomChecks::bothClaimError` puts the owner's raw `owns` entry in the message"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`Loader::ROOM_CONTRACT` ends in `$`, which accepts a trailing newline"
   - id: IN-02
     severity: info
@@ -29,15 +29,15 @@ findings:
     title: "`GbpCategoriesType` comparison edge cases"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`OfferSentences` usage in `MarketingSection` indexes the result of `offer()` without a null guard"
   - id: IN-05
     severity: info
     disposition: fixed
     title: "Example folder router does not mention the new folders"
-open: 4
+open: 1
 total: 8
-recorded: 2026-10-26T02:33:48.954Z
+recorded: 2026-10-26T02:34:05.030Z
 ---
 
 # Phase 05: Code Review Disposition
@@ -45,12 +45,12 @@ recorded: 2026-10-26T02:33:48.954Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 05-REVIEW-FIX.md |
-| WR-02 | warning | open | - |
+| WR-02 | warning | fixed | 05-REVIEW-FIX.md |
 | WR-03 | warning | fixed | 05-REVIEW-FIX.md |
-| IN-01 | info | open | - |
+| IN-01 | info | fixed | 05-REVIEW-FIX.md |
 | IN-02 | info | fixed | 05-REVIEW-FIX.md |
 | IN-03 | info | open | - |
-| IN-04 | info | open | - |
+| IN-04 | info | fixed | 05-REVIEW-FIX.md |
 | IN-05 | info | fixed | 05-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
