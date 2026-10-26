@@ -385,7 +385,7 @@ class RoomChecks
             }
 
             foreach (array_slice($contracts, 1) as $later) {
-                $errors[] = $this->bothClaimError($later, $contracts[0], $entry);
+                $errors[] = $this->bothClaimError($later, $contracts[0], PlainWords::oneLine($entry));
             }
         }
 
@@ -393,6 +393,9 @@ class RoomChecks
     }
 
     /**
+     * The line for a path or owns entry two contracts both claim. A loaded file's path is passed as it is; an owns entry
+     * no file matches is the owner's own text, so the caller passes it through PlainWords::oneLine() first (WR-03).
+     *
      * @return array{file: string, field: ?string, message: string}
      */
     private function bothClaimError(string $later, string $first, string $claimed): array
