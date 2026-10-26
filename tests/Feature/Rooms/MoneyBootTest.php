@@ -127,6 +127,26 @@ it('refuses a second money notes file under a contract edited to own two paths',
 });
 
 /**
+ * D-29: when the contract owns both files and the added one sorts before notes.md, the file kept is still the default
+ * rooms/money/notes.md, so the line is on the file the owner added and names the one that was there.
+ */
+it('keeps the default notes file when an added file sorts before it', function () {
+    $live = activateExampleFolder();
+
+    breakFile('rooms/money/CONTEXT.md', fn (string $contents): string => str_replace(
+        'owns: [rooms/money/notes.md]',
+        'owns: [rooms/money/more.md, rooms/money/notes.md]',
+        $contents,
+    ));
+    writeIcmFile('rooms/money/more.md', "---\ntype: money_notes\n---\nMore about how we get paid.");
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(['rooms/money/more.md: this business already has a money notes file in rooms/money/notes.md; keep one'])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+/**
  * D-27: owning two paths is fine while only one notes file exists, so the contract can be edited ahead of the file.
  */
 it('accepts a contract that owns two paths while only one notes file is there', function () {

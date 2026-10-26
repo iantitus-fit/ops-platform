@@ -95,6 +95,39 @@ class SpecTables
     }
 
     /**
+     * The File column of the "File types (the front matter contract)" table, by type word: a row is any line that starts
+     * with a pipe, whose first cell is a lower snake case word. The header and divider lines are not rows. A type whose
+     * File cell is not one path (a pattern or a note) is returned as written.
+     *
+     * @return array<string, string>
+     */
+    public static function fileTypeFiles(string $markdown): array
+    {
+        $files = [];
+        $underHeading = false;
+
+        foreach (preg_split('/\R/', $markdown) ?: [] as $line) {
+            if (! $underHeading) {
+                $underHeading = trim($line) === '### File types (the front matter contract)';
+
+                continue;
+            }
+
+            if (str_starts_with($line, '#')) {
+                break;
+            }
+
+            $cells = array_map('trim', explode('|', (string) preg_replace('/^\||\|$/', '', trim($line))));
+
+            if (str_starts_with($line, '|') && preg_match('/^[a-z][a-z_]*$/', $cells[0]) === 1 && $cells[0] !== 'type' && isset($cells[1])) {
+                $files[$cells[0]] = $cells[1];
+            }
+        }
+
+        return $files;
+    }
+
+    /**
      * The first backticked token of each row under a heading, in table order.
      *
      * @return list<string>

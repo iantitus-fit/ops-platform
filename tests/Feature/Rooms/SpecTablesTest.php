@@ -4,6 +4,7 @@ use App\Enums\OwnableKind;
 use App\Enums\PlatformKind;
 use App\Icm\ActiveConfig;
 use App\Icm\Loader;
+use App\Rooms\RoomRegistry;
 use Illuminate\Support\Str;
 use Tests\Rooms\SpecTables;
 
@@ -171,4 +172,46 @@ it('never puts one kind of record on both lists', function () {
     expect(SpecTables::ownableKinds(specMarkdown()))->not->toBeEmpty()
         ->and(SpecTables::platformKinds(specMarkdown()))->not->toBeEmpty()
         ->and(array_intersect(SpecTables::ownableKinds(specMarkdown()), SpecTables::platformKinds(specMarkdown())))->toBe([]);
+});
+
+it('reads the File column of the file types table, and only the rows under its heading', function () {
+    $markdown = <<<'MD'
+    ### File types (the front matter contract)
+
+    | type | File | Required front matter |
+    |---|---|---|
+    | business | business/profile.md | name |
+    | money_notes | rooms/money/notes.md | none beyond type |
+
+    ### Something else
+
+    | decoy | decoy.md | not a type |
+    MD;
+
+    expect(SpecTables::fileTypeFiles($markdown))->toBe(['business' => 'business/profile.md', 'money_notes' => 'rooms/money/notes.md']);
+});
+
+/**
+ * D-29: a single-file type declares its default path, and the SPEC file types table says the same path, so the code and
+ * the document cannot drift. A type that keeps any number of files declares no default path.
+ */
+it('declares for each single-file type the default path that SPEC gives it', function () {
+    $specFiles = SpecTables::fileTypeFiles(specMarkdown());
+    $single = [];
+
+    foreach (app(RoomRegistry::class)->all() as $room) {
+        foreach ($room->fileTypes as $fileType) {
+            expect($fileType->singleFileDefaultPath() !== null)->toBe($fileType->singleFileLabel() !== null);
+
+            if ($fileType->singleFileDefaultPath() !== null) {
+                $single[$fileType->type()] = $fileType->singleFileDefaultPath();
+            }
+        }
+    }
+
+    expect($single)->toBe([
+        'content_brief' => $specFiles['content_brief'],
+        'money_notes' => $specFiles['money_notes'],
+        'gbp_categories' => $specFiles['gbp_categories'],
+    ]);
 });
