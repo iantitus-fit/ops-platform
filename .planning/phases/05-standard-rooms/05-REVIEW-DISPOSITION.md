@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A file with non-UTF-8 bytes between card or ID digit groups gets past the number check"
   - id: IN-01
     severity: info
@@ -35,7 +35,7 @@ findings:
     severity: info
     disposition: fixed
     title: "Example folder router does not mention the new folders"
-open: 4
+open: 3
 total: 8
 recorded: 2026-10-26T17:56:24.560Z
 ---
@@ -44,7 +44,7 @@ recorded: 2026-10-26T17:56:24.560Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
+| WR-01 | warning | fixed | 1d76a8e (failing tests), 0fef6e8 (fix) |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | WR-02 | warning | fixed | 05-REVIEW-FIX.md (not in the current review) |
