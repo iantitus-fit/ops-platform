@@ -39,9 +39,10 @@ class Loader
 
     /**
      * The one CONTEXT.md that is not a router: a room's contract, directly inside rooms/<room>/ (D-03). The match is
-     * exact and case-sensitive, so a CONTEXT.md one folder deeper, or under Rooms/, stays a router.
+     * exact and case-sensitive, so a CONTEXT.md one folder deeper, or under Rooms/, stays a router. It ends in \z, not $,
+     * because $ also matches before a final line break, and RoomChecks and FolderSync::compile rely on this pattern alone.
      */
-    public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md$#';
+    public const ROOM_CONTRACT = '#^rooms/([^/]+)/CONTEXT\.md\z#';
 
     /**
      * The list fields of each file type that accept the word none for an empty list (D-02, "or none"). The word must
