@@ -19,6 +19,7 @@ class GoogleBusinessProfileServiceProvider extends RoomServiceProvider
         return new Room(
             key: 'google_business_profile',
             label: 'Google Business Profile',
+            fileTypes: [new GbpCategoriesType],
             slot: 'google_business_profile',
             slotInterface: GoogleListingSource::class,
             sections: [GoogleBusinessProfileSection::class],

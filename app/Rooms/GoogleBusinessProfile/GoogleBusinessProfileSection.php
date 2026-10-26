@@ -24,6 +24,11 @@ class GoogleBusinessProfileSection extends RoomSection
     protected function contentLines(): array
     {
         $lines = [];
+        $categories = app(ActiveConfig::class)->filesOfType('gbp_categories');
+
+        if ($categories !== [] && is_string($categories[0]['primary_category'] ?? null)) {
+            $lines[] = 'Primary category: '.$categories[0]['primary_category'];
+        }
 
         if (! $this->connectedToGoogle()) {
             $lines[] = 'Not connected to Google: this room runs on a stand-in and sends nothing.';
