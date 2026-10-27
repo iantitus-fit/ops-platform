@@ -4,6 +4,7 @@ use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Rooms\CompanyKnowledge\CompanyKnowledgeServiceProvider;
 use App\Rooms\ContentGeneration\ContentGenerationServiceProvider;
+use App\Rooms\FrontDesk\FrontDeskServiceProvider;
 use App\Rooms\GoogleBusinessProfile\GoogleBusinessProfileServiceProvider;
 use App\Rooms\Marketing\MarketingServiceProvider;
 use App\Rooms\Money\MoneyServiceProvider;
@@ -16,4 +17,5 @@ return [
     ContentGenerationServiceProvider::class,
     MoneyServiceProvider::class,
     GoogleBusinessProfileServiceProvider::class,
+    FrontDeskServiceProvider::class,
 ];
