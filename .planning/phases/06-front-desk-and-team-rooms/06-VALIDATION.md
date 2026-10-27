@@ -49,7 +49,7 @@ Filled from the plans as they land. Requirement-level map (from 06-RESEARCH.md):
 | ALRT-01 | Stale copies and a re-entrant worker text once; stale claim re-sent after 2 minutes; ended alerts stay ended | feature | `php artisan test --compact tests/Feature/Alerts` | ❌ W0 | ⬜ pending |
 | ALRT-01 | Duplicate `dedupe_key` returns the existing row and sends nothing; NULL keys repeat; migration backfill tolerates duplicates | feature | `php artisan test --compact tests/Feature/Alerts` | ❌ W0 | ⬜ pending |
 | ALRT-01 (D-09) | Only `SendOwnerAlert` texts an owner alert | arch | `php artisan test --compact tests/Unit/ArchitectureTest.php` | ✅ (add rule) | ⬜ pending |
-| ALRT-02 | Claim token written by the claim; `failed()` reports only this run's rows; later text and STOP text not blamed | feature | `php artisan test --compact tests/Feature/FrontDesk/FrontDeskFailureTest.php` | ✅ (three cases change) | ⬜ pending |
+| ALRT-02 | Claim token written by the claim; `failed()` reports only this run's rows; later text and STOP text not blamed | feature | `php artisan test --compact tests/Feature/FrontDesk/FrontDeskFailureTest.php` | ✅ (four cases change in 06-06, one in 06-07) | ⬜ pending |
 | ALRT-02 (D-12(4)) | `unserialize(serialize($job))->failed()` reports the right burst | feature | same | ❌ W0 | ⬜ pending |
 | ALRT-02 (D-11) | Catch path then `failed()` (and reverse) write one note and one alert | feature | same | ✅ partial | ⬜ pending |
 
