@@ -8,10 +8,12 @@ use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 
 /**
- * These branches are reached in the running app only through a kind of file no room handles, which stops existing once
- * the front desk room handles triage in Phase 6, so this unit test keeps them covered with a registry the test builds
- * itself. The last case covers a registry with no rooms, which stops being reachable once the first real room is
- * registered (D-23).
+ * These branches are reached in the running app only through a kind of file no room handles, or through an absent room
+ * that alone handles a type. From Phase 6 the front desk handles sending_rules, set_replies, triage and agent, so every
+ * hard-coded type has a real room that can never be left out, and these cases keep the branches covered with a registry
+ * the test builds itself (05 D-23, 06 D-14). The branch where the previous version stays live after such a refusal needs
+ * a whole sync, so its case is in tests/Feature/Rooms/HandBuiltRegistrySyncTest.php. The last case covers a registry with
+ * no rooms, which stops being reachable once the first real room is registered (05 D-23).
  */
 
 /**
