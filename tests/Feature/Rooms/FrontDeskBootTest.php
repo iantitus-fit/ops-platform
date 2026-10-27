@@ -2,11 +2,15 @@
 
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
+use App\Filament\Widgets\NewLeads;
+use App\Filament\Widgets\PausedConversationsWaiting;
+use App\Filament\Widgets\TodaysConversations;
 use App\Icm\ActiveConfig;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Rooms\FrontDesk\FrontDeskServiceProvider;
 use App\Rooms\RoomRegistry;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\File;
 use Tests\Rooms\SpecTables;
 
@@ -71,6 +75,19 @@ it('boots the front desk room', function (bool $empty) {
         expect($owned)->not->toContain('agents/front-desk.md');
     } else {
         expect($owned)->toContain('agents/front-desk.md');
+    }
+
+    expect($room->claimedWidgets)->toBe([TodaysConversations::class, PausedConversationsWaiting::class])
+        ->and(app(RoomRegistry::class)->widgetClasses())->not->toContain(TodaysConversations::class)
+        ->and(app(RoomRegistry::class)->widgetClasses())->not->toContain(PausedConversationsWaiting::class);
+
+    $panelWidgets = Filament::getPanel('admin')->getWidgets();
+
+    expect(array_count_values($panelWidgets)[TodaysConversations::class] ?? 0)->toBe(1)
+        ->and(array_count_values($panelWidgets)[PausedConversationsWaiting::class] ?? 0)->toBe(1);
+
+    foreach (app(RoomRegistry::class)->all() as $registered) {
+        expect($registered->claimedWidgets)->not->toContain(NewLeads::class);
     }
 
     $providers = require base_path('bootstrap/providers.php');
