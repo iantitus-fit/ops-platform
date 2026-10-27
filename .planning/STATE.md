@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
 current_phase: 06
-current_phase_name: front-desk-and-team-rooms
+current_phase_name: Front Desk and Team Rooms
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-10-27T19:33:24.103Z"
-last_activity: 2026-10-26
-last_activity_desc: Phase 05 complete, transitioned to Phase 6
-state_head: c8e6141f667895d29abf7b59e301e13929def09b
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-10-27T21:49:16.403Z"
+last_activity: 2026-10-27
+last_activity_desc: Phase 06 execution started
+state_head: 8c1fec7010caca4e22a5cada1f4c7d0328d23a60
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 25
-  completed_plans: 18
+  completed_plans: 19
   percent: 22
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 6 — Front Desk and Team Rooms
+**Current focus:** Phase 06 — Front Desk and Team Rooms
 
 ## Current Position
 
-Phase: 06 (front-desk-and-team-rooms) — READY TO EXECUTE
-Plan: Not started
+Phase: 06 (Front Desk and Team Rooms) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-10-26 - Completed quick task 261026-lrs: Stop running apt in CI (browser step only installs Chromium)
+Last activity: 2026-10-27 — Phase 06 execution started
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -156,6 +156,7 @@ Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 | Phase 05 P07 | 25 min | 2 tasks | 13 files |
 | Phase 05 P08 | 11 min | 3 tasks | 17 files |
 | Phase 05 P09 | 8 min | 2 tasks | 2 files |
+| Phase 06 P01 | 8 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -203,6 +204,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 05]: 05-08: a room section's own lines show only while the room is not empty, so a test of them needs the owned file in place; Task 2's not-connected assertion moved to Task 3's furnished row
 - [Phase 05]: 05-09: categories compared by whitespace collapse, trim and mb_strtolower; blank entries are empty, not repeats; a repeat is quoted once by its first spelling
 - [Phase 05, review]: the money notes scan joins digit groups across any horizontal whitespace run with at most one line break (D-28), refuses a file it cannot finish scanning (D-30), and accepts a 9-digit number right after another number in a span of 19 digits or fewer as a known miss (D-31); a room section that fails shows one line and leaves /admin standing (D-32)
+- [Phase 06]: 06-01: all three triage-only branches (lines 77, 160, 185) follow the unit-first pattern; none re-pointed at a test-only room
 
 ### Pending Todos
 
@@ -261,9 +263,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-27T17:18:15.497Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-front-desk-and-team-rooms/06-CONTEXT.md
+Last session: 2026-10-27T21:49:16.354Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
