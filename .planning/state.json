@@ -16,7 +16,7 @@
     {
       "number": "6",
       "name": "Front Desk and Team Rooms",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "7",
@@ -54,5 +54,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 06 of 9 · 22% · executing"
   },
-  "updated_at": "2026-10-27T21:49:15.620Z"
+  "updated_at": "2026-10-27T22:29:13.922Z"
 }

@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 15
 waived_count: 1
 fixed_count: 12
-total_count: 27
-last_updated: 2026-10-27T21:48:43.201Z
+total_count: 28
+last_updated: 2026-10-27T22:28:22.535Z
 ---
 
 # Broken Windows Ledger
@@ -42,6 +42,7 @@ last_updated: 2026-10-27T21:48:43.201Z
 | 25 | quick-261026-jig | unrun-verify | .github/workflows/tests.yml |  | CI human check after push: both legs pass on Ubuntu 24.04; first run cache miss then re-run hit (install-deps only, no Chromium download); no step exceeds its timeout | fixed |  | 2026-10-26T19:14:54.022Z | 2026-10-26T22:56:08.825Z |
 | 26 | quick-261026-lrs | unrun-verify | .github/workflows/tests.yml |  | After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig). | fixed |  | 2026-10-26T20:50:09.012Z | 2026-10-26T22:56:08.916Z |
 | 27 | 06 | unrun-verify | tests/Feature/Rooms/HandBuiltRegistrySyncTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs HandBuiltRegistrySyncTest and the rest of the suite green (06-01 hand check) | open |  | 2026-10-27T21:48:43.201Z |  |
+| 28 | 06 | unrun-verify | .github/workflows/tests.yml |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs FrontDeskBootTest and RoomClaimedWidgetsTest and the rest of the suite green (06-02 hand check) | open |  | 2026-10-27T22:28:22.535Z |  |
 
 ````json
 [
@@ -393,6 +394,19 @@ last_updated: 2026-10-27T21:48:43.201Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-27T21:48:43.201Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 28,
+    "kind": "unrun-verify",
+    "phase": "06",
+    "file": ".github/workflows/tests.yml",
+    "line": null,
+    "description": "Postgres: after Ian pushes the phase branch, the CI pgsql leg runs FrontDeskBootTest and RoomClaimedWidgetsTest and the rest of the suite green (06-02 hand check)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-27T22:28:22.535Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
