@@ -53,6 +53,27 @@ Filled from the plans as they land. Requirement-level map (from 06-RESEARCH.md):
 | ALRT-02 (D-12(4)) | `unserialize(serialize($job))->failed()` reports the right burst | feature | same | ❌ W0 | ⬜ pending |
 | ALRT-02 (D-11) | Catch path then `failed()` (and reverse) write one note and one alert | feature | same | ✅ partial | ⬜ pending |
 
+Per task (from the plans, 2026-10-27):
+
+| Task | Requirement | Automated command (SQLite) | New test file | Status |
+|------|-------------|----------------------------|---------------|--------|
+| 06-01 T1 | ROOM-06 (D-14) | `php artisan test --compact tests/Feature/Rooms/HandBuiltRegistrySyncTest.php tests/Unit/Icm/RoomChecksTest.php` | HandBuiltRegistrySyncTest.php | ⬜ pending |
+| 06-01 T2 | ROOM-06 (D-14) | `php artisan test --compact tests/Feature/Rooms tests/Unit`; `php artisan test --compact` | none (three removed) | ⬜ pending |
+| 06-02 T1 | ROOM-06 | `php artisan test --compact tests/Feature/Rooms/FrontDeskBootTest.php tests/Unit/ArchitectureTest.php tests/Feature/Rooms/SpecTablesTest.php tests/Feature/Rooms/NeverLeftOutTest.php tests/Unit/Icm/NeverLeftOutTest.php`; `php artisan test --compact` | FrontDeskBootTest.php | ⬜ pending |
+| 06-02 T2 | ROOM-06 (D-18) | `php artisan test --compact tests/Unit/Rooms tests/Feature/Rooms/FrontDeskBootTest.php tests/Feature/Rooms/RoomSectionTest.php tests/Feature/Rooms/PretendRoomBootTest.php`; `php artisan test --compact` | RoomClaimedWidgetsTest.php | ⬜ pending |
+| 06-03 T1 | ROOM-15 | `php artisan test --compact tests/Feature/Rooms/TeamBootTest.php tests/Feature/Rooms/FrontDeskBootTest.php tests/Unit/Rooms tests/Unit/ArchitectureTest.php`; `php artisan test --compact` | TeamBootTest.php | ⬜ pending |
+| 06-03 T2 | ROOM-15 | `php artisan test --compact tests/Feature/Rooms/TeamBootTest.php tests/Feature/Rooms/NeverLeftOutTest.php tests/Unit/Icm/NeverLeftOutTest.php tests/Feature/Rooms/SpecTablesTest.php`; `php artisan test --compact` | (TeamBootTest.php) | ⬜ pending |
+| 06-04 T1 | ALRT-01 | `php artisan test --compact tests/Feature/Alerts/AlertSentOnceTest.php tests/Feature/Alerts/OwnerAlertTest.php tests/Feature/Alerts/BusinessAlertTest.php` | AlertSentOnceTest.php | ⬜ pending |
+| 06-04 T2 | ALRT-01 (D-09) | `php artisan test --compact tests/Feature/Alerts tests/Unit/ArchitectureTest.php tests/Feature/SendRule`; `php artisan test --compact` | (AlertSentOnceTest.php) | ⬜ pending |
+| 06-05 T1 | ALRT-01 | `php artisan test --compact tests/Feature/Alerts/AlertDedupeKeyTest.php tests/Feature/Alerts/OwnerAlertTest.php tests/Feature/Alerts/BusinessAlertTest.php tests/Feature/Alerts/AlertSentOnceTest.php` | AlertDedupeKeyTest.php | ⬜ pending |
+| 06-05 T2 | ALRT-01 | `php artisan test --compact tests/Feature/Alerts tests/Feature/SendRule tests/Feature/FrontDesk/FrontDeskFailureTest.php`; `php artisan test --compact` | (AlertDedupeKeyTest.php) | ⬜ pending |
+| 06-06 T1 | ALRT-02 (D-12) | `php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/ProcessInboundTest.php tests/Feature/Inbound tests/Feature/FrontDesk/FrontDeskFailureTest.php` | ClaimTokenTest.php | ⬜ pending |
+| 06-06 T2 | ALRT-02 (D-12 (4), D-20) | `php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php tests/Feature/Inbound tests/Feature/Alerts`; `php artisan test --compact` | (ClaimTokenTest.php) | ⬜ pending |
+| 06-07 T1 | ALRT-02 (D-11) | `php artisan test --compact tests/Feature/FrontDesk/FailureReportOnceTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php tests/Feature/FrontDesk/ClaimTokenTest.php` | FailureReportOnceTest.php | ⬜ pending |
+| 06-07 T2 | ALRT-02 (D-20) | `php artisan test --compact tests/Feature/FrontDesk tests/Feature/Inbound tests/Feature/Alerts`; `php artisan test --compact` | (FailureReportOnceTest.php) | ⬜ pending |
+
+Every task has an automated command; no three tasks in a row lack one. The Postgres leg of each plan is a carried hand check (CI pgsql), recorded as an unrun-verify entry, never a pause. D-19 replaces the research's "additive arch rule": ArchitectureTest is run unchanged as D-09's proof.
+
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
 ---

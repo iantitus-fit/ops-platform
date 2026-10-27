@@ -146,7 +146,29 @@ Plans:
   4. Each owner alert is texted exactly once, even when the job that sends it runs twice or two workers race for it (an atomic send claim and a unique de-duplication key). The alert-timing and one-alert rules behave as before.
   5. When a front-desk run fails, the owner is alerted for exactly the burst of texts that run claimed, using a claim token stored on the claimed rows, and a text that arrives afterward is not swept into that report.
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+**Wave 1**
+- [ ] 06-01-PLAN.md — D-14 prep: the line-185 case on a hand-built registry, then the three triage-only ownership tests removed (tests only)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 06-02-PLAN.md — Front desk wrap: provider, contract, boot test, text slot named as a string, claimedWidgets pointer and its guard; file count 23 to 24
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 06-03-PLAN.md — Team wrap: provider, contract that owns nothing, boot test, Drafts waiting claim, never left out; file count 24 to 25
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 06-04-PLAN.md — ALRT-01 send claim: one conditional update right before the text, 2-minute release, the sweep and skip() respect it
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 06-05-PLAN.md — ALRT-01 unique de-duplication key: createOrFirst on a nullable unique dedupe_key, backfill, business alerts keyless
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 06-06-PLAN.md — ALRT-02 claim token: made in ProcessInbound's constructor, written by the claim, failed() finds its burst by it
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 06-07-PLAN.md — ALRT-02 report once per token on every path, release on failure, form-only bursts reported on the catch path
 
 **Planning notes** (settle these in discuss-phase):
 - The wraps and the fixes are different kinds of change. The wraps land and pass the existing suite unchanged before any ALRT-01 or ALRT-02 work changes a test (criterion 1, Ian, 2026-10-21); keep the fixes out of the wrap plans.
