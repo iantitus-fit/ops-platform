@@ -35,8 +35,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'gate',
     'dispatched_at',
     'handled_at',
-    'claim_token',
-    'failure_reported_at',
     'resolution',
     'resolved_by',
     'resolved_at',
