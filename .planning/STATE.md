@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 06
 current_phase_name: Front Desk and Team Rooms
 status: executing
-stopped_at: Completed 06-04-PLAN.md
-last_updated: "2026-10-28T13:45:36.506Z"
+stopped_at: Completed 06-05-PLAN.md
+last_updated: "2026-10-28T15:47:33.723Z"
 last_activity: 2026-10-28
 last_activity_desc: Phase 06 execution started
-state_head: a2418a7e9c89a832b7ecef50a568d31dbf67f6e5
+state_head: b0e6cea04f09b59d6aac06826c761888215ebf04
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
   percent: 22
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 06 (Front Desk and Team Rooms) — EXECUTING
-Plan: 4 of 7 complete, next 06-05
-Status: Ready to execute 06-05
-Last activity: 2026-10-28 — Completed 06-04 (the alert send claim)
+Plan: 5 of 7 complete, next 06-06
+Status: Ready to execute 06-06
+Last activity: 2026-10-28 — Completed 06-05 (the alert de-duplication key)
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -160,6 +160,7 @@ Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 | Phase 06 P02 | 8 min | 2 tasks | 11 files |
 | Phase 06 P03 | 14 min | 2 tasks | 7 files |
 | Phase 06 P04 | 7 min | 2 tasks | 8 files |
+| Phase 06 P05 | 7 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -211,6 +212,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-02: the text slot interface is the quoted string 'App\Channels\TextChannel' with no import, so ArchitectureTest passes unchanged; RoomRegistry::guardClaimedWidgets() refuses a claimed class that does not exist, unlike guardSections()
 - [Phase 06]: 06-03: the team room owns no file, so its boot test has one case (empty and example folders are the same folder); its never-left-out reason is that the front desk alerts the owner through it and the life-safety alert goes out at any hour
 - [Phase 06]: 06-04: the owner-alert send claim is one conditional UPDATE on owner_alerts.send_claimed_at right before TextChannel::send; a claim with no outcome is released after 2 minutes (CLAIM_WAIT_MINUTES) and the sweep re-sends it; every outcome write is conditional on all three outcome columns being null
+- [Phase 06]: 06-05: each conversation alert is stored under one unique dedupe_key (c<conversation>:m<message|0>:<reason>:u<user|0>) through createOrFirst; business-wide alerts keep a NULL key (D-08)
 
 ### Pending Todos
 
@@ -269,8 +271,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-28T13:45:36.461Z
-Stopped at: Completed 06-04-PLAN.md
+Last session: 2026-10-28T15:47:33.630Z
+Stopped at: Completed 06-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
