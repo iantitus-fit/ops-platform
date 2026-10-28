@@ -18,6 +18,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\DebounceFor;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -50,9 +51,20 @@ class ProcessInbound implements ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
+     * Which run this is. Made when the job is built, so it is part of the queued payload and the fresh copy failed()
+     * runs on has it; a token chosen inside handle() would be lost (06 D-12, research Pitfall 4). Debounced copies each
+     * have their own, and only one runs. It has no default on purpose: a default would hand every older payload the
+     * same token.
+     */
+    public string $claimToken;
+
+    /**
      * Create a new job instance.
      */
-    public function __construct(public int $messageId, public int $conversationId) {}
+    public function __construct(public int $messageId, public int $conversationId, ?string $claimToken = null)
+    {
+        $this->claimToken = $claimToken ?? (string) Str::uuid();
+    }
 
     /**
      * Debounce by conversation, so every text in one conversation shares one waiting job.
@@ -84,7 +96,7 @@ class ProcessInbound implements ShouldQueue
      */
     public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk, ReportFrontDeskFailure $reportFrontDeskFailure, RaiseOwnerAlert $raiseOwnerAlert): bool
     {
-        $burst = $claimInboundBurst->handle($this->conversationId);
+        $burst = $claimInboundBurst->handle($this->conversationId, $this->claimToken);
 
         if ($burst->isEmpty()) {
             return false;
