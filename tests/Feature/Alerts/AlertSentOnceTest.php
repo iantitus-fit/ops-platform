@@ -1,14 +1,19 @@
 <?php
 
+use App\Actions\RaiseOwnerAlert;
 use App\Actions\SendOwnerAlert;
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
+use App\Enums\MessageStatus;
+use App\Jobs\SendDueAlerts;
 use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\Models\User;
 
 /**
  * An owner alert is texted once, however many copies of it are sent and however two workers
@@ -20,16 +25,23 @@ use App\Models\OwnerAlert;
  */
 
 /**
+ * Dana Whitfield's open conversation, which the alerts in this file are about.
+ */
+function sentOnceConversation(): Conversation
+{
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
+
+    return Conversation::factory()->for($contact)->create();
+}
+
+/**
  * A due alert for a person with a phone, on Dana Whitfield's conversation, ready to be sent.
  *
  * @param  array<string, mixed>  $attributes
  */
 function sentOnceAlert(array $attributes = []): OwnerAlert
 {
-    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
-    $conversation = Conversation::factory()->for($contact)->create();
-
-    return OwnerAlert::factory()->for($conversation)->create(array_merge([
+    return OwnerAlert::factory()->for(sentOnceConversation())->create(array_merge([
         'reason' => AlertReason::DraftWaiting,
         'to_phone' => '+12025550199',
         'body' => 'Dana Whitfield: Held: asks about price',
@@ -45,6 +57,14 @@ function sentOnceAlert(array $attributes = []): OwnerAlert
 function sentOnceTexts(): array
 {
     return app(FakeTextChannel::class)->sent();
+}
+
+/**
+ * Run the minute sweep the way the scheduler would.
+ */
+function sentOnceSweep(): void
+{
+    app()->call([new SendDueAlerts, 'handle']);
 }
 
 /**
@@ -155,7 +175,7 @@ it('takes no claim for an alert that has no phone to text', function () {
 });
 
 it('leaves an alert alone while someone else holds a fresh claim on it', function () {
-    $held = OwnerAlert::factory()->claimed()->for(sentOnceAlert()->conversation)->create(['to_phone' => '+12025550199']);
+    $held = OwnerAlert::factory()->claimed()->for(sentOnceConversation())->create(['to_phone' => '+12025550199', 'body' => 'Held by someone else']);
 
     app(SendOwnerAlert::class)->handle($held);
 
@@ -165,7 +185,7 @@ it('leaves an alert alone while someone else holds a fresh claim on it', functio
 });
 
 it('texts an alert whose claim has gone stale exactly once', function () {
-    $alert = OwnerAlert::factory()->staleClaim()->for(sentOnceAlert()->conversation)->create(['to_phone' => '+12025550199']);
+    $alert = OwnerAlert::factory()->staleClaim()->for(sentOnceConversation())->create(['to_phone' => '+12025550199', 'body' => 'Sender died']);
 
     app(SendOwnerAlert::class)->handle($alert);
     app(SendOwnerAlert::class)->handle(OwnerAlert::query()->find($alert->id));
@@ -183,4 +203,120 @@ it('never throws when the alert row has been deleted under the copy', function (
     app(SendOwnerAlert::class)->handle($copy);
 
     expect(sentOnceTexts())->toBeEmpty();
+});
+
+it('leaves a fresh claim alone at 119 seconds and sends the alert once at exactly 120', function () {
+    $this->freezeTime();
+    $alert = OwnerAlert::factory()->claimed()->for(sentOnceConversation())->create(['to_phone' => '+12025550199']);
+
+    $this->travel(119)->seconds();
+    sentOnceSweep();
+
+    expect(sentOnceTexts())->toBeEmpty()
+        ->and(OwnerAlert::query()->find($alert->id)->sent_at)->toBeNull();
+
+    $this->travel(1)->seconds();
+    sentOnceSweep();
+    sentOnceSweep();
+
+    expect(sentOnceTexts())->toHaveCount(1)
+        ->and(OwnerAlert::query()->find($alert->id)->sent_at)->not->toBeNull();
+});
+
+it('texts each of several due alerts once, oldest first, however often the sweep runs', function () {
+    $conversation = sentOnceConversation();
+    $first = OwnerAlert::factory()->for($conversation)->create(['to_phone' => '+12025550199', 'body' => 'First alert']);
+    $second = OwnerAlert::factory()->for($conversation)->create(['to_phone' => '+12025550198', 'body' => 'Second alert']);
+
+    sentOnceSweep();
+    sentOnceSweep();
+
+    expect(array_column(sentOnceTexts(), 'body'))->toBe(['First alert', 'Second alert'])
+        ->and(OwnerAlert::query()->find($first->id)->send_claimed_at)->not->toBeNull()
+        ->and(OwnerAlert::query()->find($second->id)->sent_at)->not->toBeNull();
+});
+
+it('does not claim a held alert until it falls due', function () {
+    $this->freezeTime();
+    $alert = sentOnceAlert(['due_at' => now()->addHours(10)]);
+
+    sentOnceSweep();
+
+    expect(sentOnceTexts())->toBeEmpty()
+        ->and(OwnerAlert::query()->find($alert->id)->send_claimed_at)->toBeNull();
+
+    $this->travel(10)->hours();
+    sentOnceSweep();
+
+    expect(sentOnceTexts())->toHaveCount(1)
+        ->and(OwnerAlert::query()->find($alert->id)->send_claimed_at)->not->toBeNull();
+});
+
+it('neither skips nor texts an alert whose draft was handled while its text is going out', function () {
+    $this->freezeTime();
+    $conversation = sentOnceConversation();
+    $draft = Message::factory()->for($conversation)->outbound()->create(['status' => MessageStatus::Sent]);
+    $alert = OwnerAlert::factory()->claimed()->for($conversation)->create([
+        'reason' => AlertReason::DraftWaiting,
+        'message_id' => $draft->id,
+        'to_phone' => '+12025550199',
+    ]);
+
+    sentOnceSweep();
+
+    expect(OwnerAlert::query()->find($alert->id)->skipped_at)->toBeNull()
+        ->and(sentOnceTexts())->toBeEmpty()
+        ->and(sentOnceTimelineEntries())->toBe(0);
+
+    $this->travel(SendOwnerAlert::CLAIM_WAIT_MINUTES)->minutes();
+    sentOnceSweep();
+
+    $stored = OwnerAlert::query()->find($alert->id);
+
+    expect($stored->skipped_at)->not->toBeNull()
+        ->and($stored->failure)->toBe(SendDueAlerts::HANDLED_BEFORE_DUE)
+        ->and(sentOnceTexts())->toBeEmpty()
+        ->and(sentOnceTimelineEntries())->toBe(1)
+        ->and(Activity::query()->where('type', ActivityType::OwnerAlerted)->sole()->summary)->toBe('Owner alert not sent: Handled before it was due');
+});
+
+it('does not end an alert as skipped while someone holds a fresh claim on it', function () {
+    $alert = OwnerAlert::factory()->claimed()->for(sentOnceConversation())->create(['to_phone' => '+12025550199']);
+
+    app(SendOwnerAlert::class)->skip($alert, 'Handled before it was due');
+
+    expect(OwnerAlert::query()->find($alert->id)->skipped_at)->toBeNull()
+        ->and(sentOnceTimelineEntries())->toBe(0);
+});
+
+it('changes nothing when skipping an alert that has already ended', function () {
+    $alert = sentOnceAlert();
+    $staleCopy = OwnerAlert::query()->find($alert->id);
+
+    OwnerAlert::query()->whereKey($alert->id)->update(['sent_at' => now(), 'provider_message_id' => 'someone-else']);
+
+    app(SendOwnerAlert::class)->skip($staleCopy, 'Handled before it was due');
+
+    $stored = OwnerAlert::query()->find($alert->id);
+
+    expect($stored->skipped_at)->toBeNull()
+        ->and($stored->failure)->toBeNull()
+        ->and(sentOnceTimelineEntries())->toBe(0);
+});
+
+it('sends a business-wide alert once through the same claim', function () {
+    User::factory()->withPhone('+12025550199')->create();
+
+    $alert = app(RaiseOwnerAlert::class)->forBusiness(AlertReason::SafetyCheckDown, 'The safety check is not answering.')->sole();
+
+    $stored = OwnerAlert::query()->find($alert->id);
+
+    expect(sentOnceTexts())->toHaveCount(1)
+        ->and($stored->sent_at)->not->toBeNull()
+        ->and($stored->send_claimed_at)->not->toBeNull();
+
+    app(SendOwnerAlert::class)->handle(OwnerAlert::query()->find($alert->id));
+    sentOnceSweep();
+
+    expect(sentOnceTexts())->toHaveCount(1);
 });
