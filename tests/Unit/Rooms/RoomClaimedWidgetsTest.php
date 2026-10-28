@@ -4,6 +4,7 @@ use App\Filament\Widgets\DraftsWaiting;
 use App\Filament\Widgets\NewLeads;
 use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
+use Tests\Rooms\PretendRoom\PretendRoomSection;
 
 /**
  * 06 D-18: a room's claimedWidgets is a pointer at dashboard widgets the panel already discovers. The registry checks each
@@ -40,4 +41,22 @@ it('refuses a widget another room already claims and names both', function () {
         ->toThrow(LogicException::class, 'room [first] already claims');
 
     expect($registry->has('second'))->toBeFalse();
+});
+
+it('refuses a room that claims one widget twice (06-REVIEW WR-04)', function () {
+    $registry = new RoomRegistry;
+
+    expect(fn () => $registry->add(new Room(key: 'claimer', label: 'claimer', claimedWidgets: [DraftsWaiting::class, DraftsWaiting::class])))
+        ->toThrow(LogicException::class, 'more than once');
+
+    expect($registry->has('claimer'))->toBeFalse();
+});
+
+it('refuses a room that both adds a widget in its sections and claims it (06-REVIEW WR-04)', function () {
+    $registry = new RoomRegistry;
+
+    expect(fn () => $registry->add(new Room(key: 'pretend', label: 'pretend', sections: [PretendRoomSection::class], claimedWidgets: [PretendRoomSection::class])))
+        ->toThrow(LogicException::class, 'both adds and claims');
+
+    expect($registry->has('pretend'))->toBeFalse();
 });
