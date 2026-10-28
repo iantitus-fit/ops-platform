@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 15
+open_count: 16
 waived_count: 1
 fixed_count: 15
-total_count: 31
-last_updated: 2026-10-28T15:46:45.038Z
+total_count: 32
+last_updated: 2026-10-28T16:14:33.573Z
 ---
 
 # Broken Windows Ledger
@@ -46,6 +46,7 @@ last_updated: 2026-10-28T15:46:45.038Z
 | 29 | 06 | unrun-verify | tests/Feature/Rooms/TeamBootTest.php |  | 06-03 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg is green with both room wraps registered and no ALRT change yet (local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T00:36:39.046Z | 2026-10-28T12:17:22.024Z |
 | 30 | 06 | unrun-verify | tests/Feature/Alerts/AlertSentOnceTest.php |  | 06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | open |  | 2026-10-28T13:44:35.628Z |  |
 | 31 | 06 | unrun-verify | tests/Feature/Alerts/AlertDedupeKeyTest.php |  | 06-05 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertDedupeKeyTest.php green (the refused duplicate inside the test's transaction is survived through createOrFirst's savepoint, and many NULL keys sit under the unique index; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | open |  | 2026-10-28T15:46:45.038Z |  |
+| 32 | 06 | unrun-verify | tests/Feature/FrontDesk/ClaimTokenTest.php |  | 06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php) | open |  | 2026-10-28T16:14:33.573Z |  |
 
 ````json
 [
@@ -449,6 +450,19 @@ last_updated: 2026-10-28T15:46:45.038Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-28T15:46:45.038Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 32,
+    "kind": "unrun-verify",
+    "phase": "06",
+    "file": "tests/Feature/FrontDesk/ClaimTokenTest.php",
+    "line": null,
+    "description": "06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-28T16:14:33.573Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

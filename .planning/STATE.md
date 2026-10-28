@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 06
 current_phase_name: Front Desk and Team Rooms
 status: executing
-stopped_at: Completed 06-05-PLAN.md
-last_updated: "2026-10-28T15:47:33.723Z"
+stopped_at: Completed 06-06-PLAN.md
+last_updated: "2026-10-28T16:15:20.685Z"
 last_activity: 2026-10-28
-last_activity_desc: Phase 06 execution started
-state_head: b0e6cea04f09b59d6aac06826c761888215ebf04
+last_activity_desc: Completed 06-06 (the claim token)
+state_head: 022c478a0550a1df9296fa6e9485f8b4de101aec
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 22
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 06 (Front Desk and Team Rooms) — EXECUTING
-Plan: 5 of 7 complete, next 06-06
-Status: Ready to execute 06-06
-Last activity: 2026-10-28 — Completed 06-05 (the alert de-duplication key)
+Plan: 6 of 7 complete, next 06-07
+Status: Ready to execute 06-07
+Last activity: 2026-10-28 — Completed 06-06 (the claim token)
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -161,6 +161,7 @@ Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 | Phase 06 P03 | 14 min | 2 tasks | 7 files |
 | Phase 06 P04 | 7 min | 2 tasks | 8 files |
 | Phase 06 P05 | 7 min | 2 tasks | 8 files |
+| Phase 06 P06 | 6 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -213,6 +214,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-03: the team room owns no file, so its boot test has one case (empty and example folders are the same folder); its never-left-out reason is that the front desk alerts the owner through it and the life-safety alert goes out at any hour
 - [Phase 06]: 06-04: the owner-alert send claim is one conditional UPDATE on owner_alerts.send_claimed_at right before TextChannel::send; a claim with no outcome is released after 2 minutes (CLAIM_WAIT_MINUTES) and the sweep re-sends it; every outcome write is conditional on all three outcome columns being null
 - [Phase 06]: 06-05: each conversation alert is stored under one unique dedupe_key (c<conversation>:m<message|0>:<reason>:u<user|0>) through createOrFirst; business-wide alerts keep a NULL key (D-08)
+- [Phase 06]: 06-06: ProcessInbound makes its claim token in the constructor with no default (a default would give older payloads one shared token), the claim writes it with handled_at, and failed() finds its burst by token; a queue holding ProcessInbound jobs is drained before this lands
 
 ### Pending Todos
 
@@ -271,8 +273,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-28T15:47:33.630Z
-Stopped at: Completed 06-05-PLAN.md
+Last session: 2026-10-28T16:15:20.636Z
+Stopped at: Completed 06-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
