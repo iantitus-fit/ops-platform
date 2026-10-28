@@ -8,6 +8,7 @@ use App\Rooms\FrontDesk\FrontDeskServiceProvider;
 use App\Rooms\GoogleBusinessProfile\GoogleBusinessProfileServiceProvider;
 use App\Rooms\Marketing\MarketingServiceProvider;
 use App\Rooms\Money\MoneyServiceProvider;
+use App\Rooms\Team\TeamServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -18,4 +19,5 @@ return [
     MoneyServiceProvider::class,
     GoogleBusinessProfileServiceProvider::class,
     FrontDeskServiceProvider::class,
+    TeamServiceProvider::class,
 ];
