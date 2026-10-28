@@ -229,3 +229,10 @@ it('reports nothing when the job\'s token claimed nothing (D-13)', function () {
 
     expect(OwnerAlert::query()->count())->toBe(0);
 });
+
+it('keeps the claim token and the report claim out of mass assignment, so only the conditional updates write them (06-REVIEW IN-01)', function () {
+    $message = new Message;
+
+    expect($message->isFillable('claim_token'))->toBeFalse()
+        ->and($message->isFillable('failure_reported_at'))->toBeFalse();
+});
