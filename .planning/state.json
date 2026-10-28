@@ -16,7 +16,7 @@
     {
       "number": "6",
       "name": "Front Desk and Team Rooms",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "7",
@@ -51,8 +51,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 06 of 9 · 22% · executing"
+    "label": "Advance to the next step (plan phase 7)",
+    "reason": "Phase 7 of 9 — needs a plan"
   },
-  "updated_at": "2026-10-28T13:45:35.723Z"
+  "updated_at": "2026-10-28T17:12:06.041Z"
 }
