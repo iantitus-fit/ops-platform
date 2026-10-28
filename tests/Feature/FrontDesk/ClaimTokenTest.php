@@ -1,10 +1,16 @@
 <?php
 
 use App\Actions\ClaimInboundBurst;
+use App\Enums\ActivityType;
+use App\Enums\AlertReason;
+use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Jobs\ProcessInbound;
+use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
+use App\Models\User;
 use Illuminate\Support\Str;
 
 /**
@@ -93,4 +99,133 @@ it('stores a STOP text handled on arrival with no claim token', function () {
 
     expect($stop->handled_at)->not->toBeNull()
         ->and(Message::query()->whereKey($stop->id)->whereNull('claim_token')->exists())->toBeTrue();
+});
+
+/**
+ * Dana's text, claimed by the job the queue captured for it, and a later text of hers that no run has claimed.
+ *
+ * @return array{ProcessInbound, Message, Message} the captured job, her claimed text and her later text
+ */
+function claimTokenDanaClaimedThenTextsAgain(): array
+{
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+
+    $job = Queue::pushed(ProcessInbound::class)->first();
+    $claimed = app(ClaimInboundBurst::class)->handle($job->conversationId, $job->claimToken)->sole();
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('e', 32), 'Body' => 'Hello? Any news?']))->assertOk();
+    $later = Message::query()->where('direction', MessageDirection::In)->latest('id')->first();
+
+    return [$job, $claimed, $later];
+}
+
+it('reports her claimed text, not her later one, when failed() runs on a copy rebuilt from the serialized job (D-12 (4))', function () {
+    [$job, $claimed, $later] = claimTokenDanaClaimedThenTextsAgain();
+
+    unserialize(serialize($job))->failed(new RuntimeException('timed out: secret-detail-789'));
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($later->id)->not->toBe($claimed->id)
+        ->and($later->claim_token)->toBeNull()
+        ->and($alert->message_id)->toBe($claimed->id)
+        ->and($alert->body)->toContain('Front desk stopped before answering')
+        ->and($alert->body)->not->toContain('secret-detail-789')
+        ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: it stopped before finishing');
+});
+
+it('does not blame an earlier run\'s text for the later text\'s job, whose token claimed nothing (WR-22)', function () {
+    [$earlierJob, $claimed, $later] = claimTokenDanaClaimedThenTextsAgain();
+    $laterJob = Queue::pushed(ProcessInbound::class)->last();
+
+    unserialize(serialize($laterJob))->failed(new RuntimeException('timed out'));
+
+    expect($laterJob->messageId)->toBe($later->id)
+        ->and($laterJob->claimToken)->not->toBe($earlierJob->claimToken)
+        ->and($claimed->claim_token)->toBe($earlierJob->claimToken)
+        ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+it('makes the same report on the job object that was never serialized, the shape the sync queue gives', function () {
+    [$job, $claimed] = claimTokenDanaClaimedThenTextsAgain();
+
+    $job->failed(new RuntimeException('timed out: secret-detail-789'));
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($alert->message_id)->toBe($claimed->id)
+        ->and($alert->body)->toContain('Front desk stopped before answering')
+        ->and($alert->body)->not->toContain('secret-detail-789')
+        ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: it stopped before finishing');
+});
+
+it('reports only its own run\'s text when two runs claimed different texts of one conversation (D-12 (3))', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $firstText = Message::factory()->for($conversation)->claimedBy('first-run')->create();
+    $secondText = Message::factory()->for($conversation)->claimedBy('second-run')->create();
+    $firstJob = new ProcessInbound($firstText->id, $conversation->id, 'first-run');
+    $secondJob = new ProcessInbound($secondText->id, $conversation->id, 'second-run');
+
+    unserialize(serialize($firstJob))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->pluck('message_id')->all())->toBe([$firstText->id]);
+
+    unserialize(serialize($secondJob))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->orderBy('id')->pluck('message_id')->all())->toBe([$firstText->id, $secondText->id]);
+});
+
+it('never reports a STOP text that was handled on arrival after the run claimed her first text (WR-22)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    $job = Queue::pushed(ProcessInbound::class)->first();
+    $claimed = app(ClaimInboundBurst::class)->handle($job->conversationId, $job->claimToken)->sole();
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('f', 32), 'Body' => 'STOP']))->assertOk();
+    $stop = Message::query()->where('direction', MessageDirection::In)->latest('id')->first();
+
+    unserialize(serialize($job))->failed(new RuntimeException('timed out'));
+
+    expect($stop->id)->toBeGreaterThan($claimed->id)
+        ->and($stop->handled_at)->not->toBeNull()
+        ->and($stop->claim_token)->toBeNull()
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole()->message_id)->toBe($claimed->id);
+});
+
+it('reports a web form lead claimed on its own, tied to the form (D-20)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $form = Message::factory()->web()->for($conversation)->claimedBy('form-run')->create();
+
+    unserialize(serialize(new ProcessInbound($form->id, $conversation->id, 'form-run')))->failed(new RuntimeException('timed out'));
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($form->channel)->toBe(MessageChannel::Web)
+        ->and($alert->message_id)->toBe($form->id)
+        ->and($alert->body)->toContain('Front desk stopped before answering')
+        ->and($conversation->contact->activities()->where('type', ActivityType::Note)->sole()->summary)->toBe('Front desk could not answer: it stopped before finishing');
+});
+
+it('reports the text, not the newer web form, when a run claimed both (D-20)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $text = Message::factory()->for($conversation)->claimedBy('mixed-run')->create();
+    $form = Message::factory()->web()->for($conversation)->claimedBy('mixed-run')->create();
+
+    unserialize(serialize(new ProcessInbound($form->id, $conversation->id, 'mixed-run')))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->sole()->message_id)->toBe($text->id);
+});
+
+it('reports nothing when the job\'s token claimed nothing (D-13)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $someoneElses = Message::factory()->for($conversation)->claimedBy('another-run')->create();
+
+    unserialize(serialize(new ProcessInbound($someoneElses->id, $conversation->id, 'a-run-that-claimed-nothing')))->failed(new RuntimeException('timed out'));
+
+    expect(OwnerAlert::query()->count())->toBe(0);
 });
