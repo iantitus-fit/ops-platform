@@ -76,10 +76,24 @@ class ReportFrontDeskFailure
             $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $text, $why);
         } catch (Throwable $exception) {
             if ($claimedRow !== null) {
-                Message::query()->whereKey($claimedRow->id)->update(['failure_reported_at' => null]);
+                $this->giveTheReportClaimBack($claimedRow);
             }
 
             throw $exception;
+        }
+    }
+
+    /**
+     * Give the report claim back so another path reports. When the database is what broke, this update can fail too:
+     * its failure is reported, never thrown, so the exception that broke the report is the one that escapes
+     * (06-REVIEW WR-03).
+     */
+    private function giveTheReportClaimBack(Message $claimedRow): void
+    {
+        try {
+            Message::query()->whereKey($claimedRow->id)->update(['failure_reported_at' => null]);
+        } catch (Throwable $releaseFailure) {
+            report($releaseFailure);
         }
     }
 
