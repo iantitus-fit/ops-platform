@@ -22,10 +22,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-26)
+See: .planning/PROJECT.md (updated 2026-10-28)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 06 — Front Desk and Team Rooms
+**Current focus:** Phase 7 — The Spine and Leads
 
 ## Current Position
 
@@ -233,12 +233,14 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is in backlog 999.5 (Owner Loop).
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
 - [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved.
-- [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05.
+- [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05. ALRT-01 and ALRT-02 done in Phase 6 (2026-10-28); GATE-05 is in Phase 9.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
 - [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09 and IN-10 included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23); the CI runner pin was closed by quick task 261026-jig
 - [Phase 5, review]: WR-01 fixed at close (0fef6e8): in text that is not valid UTF-8, each invalid byte joins digit groups as a space. IN-01 (the unreachable connected-to-Google branch) and IN-02 (Unicode digits) stay open as info; IN-03 is deferred to the hidden-characters-in-values decision (05-REVIEW-DISPOSITION.md)
 - [Phase 5 close, fixed]: a folder file that is not valid UTF-8 crashed `icm:sync` with a JsonEncodingException when the version was saved. D-33 (5ccb4f8): the Loader refuses it beside the hidden-character name check, in one plain line naming the file, and the previous version stays live. Found while writing the WR-01 tests
+- [Phase 6, open for Ian]: the review (06-REVIEW.md, ledger 06-REVIEW-DISPOSITION.md, all open) left four warnings: WR-01 a ProcessInbound job queued before the claim-token deploy throws in handle() and failed() (06-06 chose no default on purpose; drain the queue before that deploy or mint the token lazily); WR-02 in a mixed burst RunFrontDesk's report puts the note and alert on $burst->last() while the claim sits on subjectOf(), untested; WR-03 the claim release in ReportFrontDeskFailure's catch can throw and mask the original error; WR-04 guardClaimedWidgets misses a widget claimed twice or claimed and also in the room's sections. The verifier advises triaging WR-01 and WR-02 before Phase 8 builds BOOK-05 on the alert path. Fix with /gsd-code-review 6 --fix or decide each.
+- [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -276,11 +278,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-28T16:37:13.560Z
+Last session: 2026-10-28T17:13:19.318Z
 Stopped at: Phase 06 complete, ready to plan Phase 7
 Resume file: None
 
 ## Operator Next Steps
 
-- Review, push and merge the Phase 5 branch
-- Discuss Phase 6 with /gsd-discuss-phase 6, then plan it with /gsd-plan-phase 6
+- Triage the four Phase 6 review warnings (06-REVIEW.md WR-01 to WR-04), then review, push and merge the Phase 6 branch; confirm CI green on both legs (WINDOWS.md entries 30 to 33)
+- Discuss Phase 7 with /gsd-discuss-phase 7, then plan it with /gsd-plan-phase 7
