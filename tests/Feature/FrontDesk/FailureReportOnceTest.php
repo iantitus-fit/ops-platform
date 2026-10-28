@@ -185,6 +185,29 @@ it('lets the original exception escape, and reports the release failure, when gi
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the claim could not be given back');
 });
 
+it('gives the claim back and lets the error escape when the "already reported" lookup throws, so failed() still tells the owner (06-REVIEW WR-05)', function () {
+    [$conversation, $text] = failureOnceClaimedText();
+    $broke = false;
+    DB::beforeExecuting(function (string $query) use (&$broke): void {
+        if (! $broke && str_starts_with(strtolower($query), 'select exists') && str_contains($query, '"owner_alerts"')) {
+            $broke = true;
+
+            throw new RuntimeException('the alert lookup failed');
+        }
+    });
+
+    expect(fn () => app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped with an error', 'Front desk stopped with an error'))
+        ->toThrow(RuntimeException::class, 'the alert lookup failed');
+
+    expect(failureOnceAlertCount())->toBe(0)
+        ->and($text->fresh()->failure_reported_at)->toBeNull();
+
+    failureOnceQueueFails($text, $conversation);
+
+    expect(failureOnceAlertCount())->toBe(1)
+        ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped before finishing']);
+});
+
 it('keeps the words fixed, and the exception message out of the note and the alert, on a report that broke and was retried', function () {
     [$conversation, $text] = failureOnceClaimedText();
     failureOnceAlertThatBreaksOnce();
