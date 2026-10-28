@@ -223,7 +223,10 @@ it('lets the original exception escape, and reports the release failure, when gi
     failureOnceAlertThatBreaksOnce();
     Exceptions::fake();
     DB::beforeExecuting(function (string $query, array $bindings): void {
-        if (str_starts_with(strtolower($query), 'update') && str_contains($query, 'failure_report_claimed_at') && array_key_exists(0, $bindings) && $bindings[0] === null) {
+        // The release is the one update that sets failure_report_claimed_at to null. Its SET clause comes first in the
+        // SQL and Eloquent adds updated_at after it, so binding 0 is the value of failure_report_claimed_at: null for
+        // the release, a time for the claim (06-REVIEW IN-04).
+        if (str_starts_with(strtolower($query), 'update') && str_contains($query, '"failure_report_claimed_at" = ?') && array_key_exists(0, $bindings) && $bindings[0] === null) {
             throw new RuntimeException('the claim could not be given back');
         }
     });
