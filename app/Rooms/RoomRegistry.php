@@ -321,11 +321,24 @@ class RoomRegistry
     /**
      * A claim is a pointer and never feeds widgetClasses() or addWidgetsTo(): the panel already finds the widget on its
      * own. Unlike guardSections(), a class that does not exist is refused, because a claim names a widget the panel
-     * already has, so a typo shows at start-up (06 D-18). Each widget has one owner room.
+     * already has, so a typo shows at start-up (06 D-18). Each widget has one owner room, a room claims it once, and a
+     * room never both adds a widget in its sections and claims it, which would put it on the panel twice (06-REVIEW WR-04).
      */
     private function guardClaimedWidgets(Room $room): void
     {
+        $seen = [];
+
         foreach ($room->claimedWidgets as $widget) {
+            if (in_array($widget, $seen, true)) {
+                throw new LogicException("Room [{$room->key}] claims widget [{$widget}] more than once.");
+            }
+
+            if (in_array($widget, $room->sections, true)) {
+                throw new LogicException("Room [{$room->key}] both adds and claims widget [{$widget}]. Add it in sections, or claim it, not both.");
+            }
+
+            $seen[] = $widget;
+
             if (! class_exists($widget)) {
                 throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which does not exist.");
             }
