@@ -30,11 +30,16 @@ class RaiseOwnerAlert
      * that alert is skipped and nothing more is sent. With nobody to text, one alert is stored
      * as failed so the gap shows (D-19). Nothing here throws on a send failure.
      *
+     * alreadyRaised() is the cheap check that spares building the text for a known duplicate; the
+     * unique dedupe_key is the guarantee (WR-04). Two workers can both pass the check, so each
+     * alert is stored with createOrFirst(): the loser of the race finds the row the winner stored,
+     * sends nothing and leaves it out of what is returned.
+     *
      * An urgent alert is due now. So is any alert raised while the shop is open, or when the
      * folder says after_hours: right_away. Any other alert raised while the shop is closed is
      * stored with a due_at of the next opening and left for SendDueAlerts to send (D-20).
      *
-     * @return Collection<int, OwnerAlert> the alerts stored by this call, in recipient order
+     * @return Collection<int, OwnerAlert> the alerts this call stored, in recipient order
      */
     public function handle(Conversation $conversation, AlertReason $reason, ?Message $subject = null, ?string $why = null): Collection
     {
@@ -57,23 +62,26 @@ class RaiseOwnerAlert
         $dueAt = $this->dueAt($urgent);
 
         return $pendingIds->map(function (?int $userId) use ($conversation, $reason, $subject, $recipients, $body, $urgent, $dueAt): OwnerAlert {
-            $alert = OwnerAlert::query()->create([
-                'conversation_id' => $conversation->id,
-                'message_id' => $subject?->id,
-                'user_id' => $userId,
-                'reason' => $reason,
-                'urgent' => $urgent,
-                'due_at' => $dueAt,
-                'to_phone' => $userId === null ? null : trim((string) $recipients->firstWhere('id', $userId)?->phone),
-                'body' => $body,
-            ]);
+            $alert = OwnerAlert::query()->createOrFirst(
+                ['dedupe_key' => OwnerAlert::dedupeKey($conversation->id, $subject?->id, $reason, $userId)],
+                [
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $subject?->id,
+                    'user_id' => $userId,
+                    'reason' => $reason,
+                    'urgent' => $urgent,
+                    'due_at' => $dueAt,
+                    'to_phone' => $userId === null ? null : trim((string) $recipients->firstWhere('id', $userId)?->phone),
+                    'body' => $body,
+                ],
+            );
 
-            if ($dueAt->lessThanOrEqualTo(now())) {
+            if ($alert->wasRecentlyCreated && $dueAt->lessThanOrEqualTo(now())) {
                 $this->sendOwnerAlert->handle($alert);
             }
 
             return $alert;
-        })->values();
+        })->filter(fn (OwnerAlert $alert): bool => $alert->wasRecentlyCreated)->values();
     }
 
     /**
@@ -82,7 +90,8 @@ class RaiseOwnerAlert
      * alert when nobody has a phone (D-19). The alert has no conversation and no message, is
      * urgent, due now and sent at once through SendOwnerAlert, at any hour.
      *
-     * Nothing here dedupes on purpose: the caller decides when an alert is worth sending. Nothing
+     * Nothing here dedupes on purpose: the caller decides when an alert is worth sending, so these
+     * alerts carry no dedupe_key and any number of them can be stored (06 D-08). Nothing
      * here throws on a send failure. A title replaces the reason's words as the headline while the
      * stored reason, and so the urgency, stays the reason's own.
      *
