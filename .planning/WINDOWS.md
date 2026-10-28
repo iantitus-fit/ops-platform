@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 13
+open_count: 14
 waived_count: 1
 fixed_count: 15
-total_count: 29
-last_updated: 2026-10-28T12:17:22.024Z
+total_count: 30
+last_updated: 2026-10-28T13:44:35.628Z
 ---
 
 # Broken Windows Ledger
@@ -44,6 +44,7 @@ last_updated: 2026-10-28T12:17:22.024Z
 | 27 | 06 | unrun-verify | tests/Feature/Rooms/HandBuiltRegistrySyncTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs HandBuiltRegistrySyncTest and the rest of the suite green (06-01 hand check) | fixed |  | 2026-10-27T21:48:43.201Z | 2026-10-28T12:17:21.837Z |
 | 28 | 06 | unrun-verify | .github/workflows/tests.yml |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs FrontDeskBootTest and RoomClaimedWidgetsTest and the rest of the suite green (06-02 hand check) | fixed |  | 2026-10-27T22:28:22.535Z | 2026-10-28T12:17:21.932Z |
 | 29 | 06 | unrun-verify | tests/Feature/Rooms/TeamBootTest.php |  | 06-03 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg is green with both room wraps registered and no ALRT change yet (local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T00:36:39.046Z | 2026-10-28T12:17:22.024Z |
+| 30 | 06 | unrun-verify | tests/Feature/Alerts/AlertSentOnceTest.php |  | 06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | open |  | 2026-10-28T13:44:35.628Z |  |
 
 ````json
 [
@@ -422,6 +423,19 @@ last_updated: 2026-10-28T12:17:22.024Z
     "reason": "",
     "recorded_at": "2026-10-28T00:36:39.046Z",
     "resolved_at": "2026-10-28T12:17:22.024Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 30,
+    "kind": "unrun-verify",
+    "phase": "06",
+    "file": "tests/Feature/Alerts/AlertSentOnceTest.php",
+    "line": null,
+    "description": "06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-28T13:44:35.628Z",
+    "resolved_at": null,
     "milestone": "v2.0"
   }
 ]

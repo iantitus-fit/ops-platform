@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 06
 current_phase_name: Front Desk and Team Rooms
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-10-28T00:37:13.855Z"
-last_activity: 2026-10-27
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-10-28T13:45:36.506Z"
+last_activity: 2026-10-28
 last_activity_desc: Phase 06 execution started
-state_head: 3570d34f652a4a426b5103cfa6932518f0b4f403
+state_head: a2418a7e9c89a832b7ecef50a568d31dbf67f6e5
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 25
-  completed_plans: 21
+  completed_plans: 22
   percent: 22
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 06 (Front Desk and Team Rooms) — EXECUTING
-Plan: 3 of 7 complete, next 06-04
-Status: Ready to execute 06-04
-Last activity: 2026-10-28 — Completed 06-03 (the team room)
+Plan: 4 of 7 complete, next 06-05
+Status: Ready to execute 06-05
+Last activity: 2026-10-28 — Completed 06-04 (the alert send claim)
 
 Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 
@@ -159,6 +159,7 @@ Progress: [██░░░░░░░░] 22% (2 of 9 v2.0 phases complete)
 | Phase 06 P01 | 8 min | 2 tasks | 4 files |
 | Phase 06 P02 | 8 min | 2 tasks | 11 files |
 | Phase 06 P03 | 14 min | 2 tasks | 7 files |
+| Phase 06 P04 | 7 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -209,6 +210,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-01: all three triage-only branches (lines 77, 160, 185) follow the unit-first pattern; none re-pointed at a test-only room
 - [Phase 06]: 06-02: the text slot interface is the quoted string 'App\Channels\TextChannel' with no import, so ArchitectureTest passes unchanged; RoomRegistry::guardClaimedWidgets() refuses a claimed class that does not exist, unlike guardSections()
 - [Phase 06]: 06-03: the team room owns no file, so its boot test has one case (empty and example folders are the same folder); its never-left-out reason is that the front desk alerts the owner through it and the life-safety alert goes out at any hour
+- [Phase 06]: 06-04: the owner-alert send claim is one conditional UPDATE on owner_alerts.send_claimed_at right before TextChannel::send; a claim with no outcome is released after 2 minutes (CLAIM_WAIT_MINUTES) and the sweep re-sends it; every outcome write is conditional on all three outcome columns being null
 
 ### Pending Todos
 
@@ -267,8 +269,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-28T00:37:13.806Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-10-28T13:45:36.461Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
