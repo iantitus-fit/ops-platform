@@ -27,6 +27,7 @@ status: issues_found
 **Depth:** standard
 **Files Reviewed:** 9
 **Status:** issues_found
+**Finding IDs:** this third round continues the numbering from the first two (WR-01 to WR-06, IN-01 to IN-04), so its findings are WR-07 to WR-09 and IN-05 and IN-06. The other ids in the text below name earlier rounds' fixes and tests.
 
 ## Summary
 
@@ -38,7 +39,7 @@ The main weakness is that the "claim once per token" guarantee holds for the cla
 
 ## Warnings
 
-### WR-01: The report is written against the caller's row, but the claim and the "already reported" check use two different rows
+### WR-07: The report is written against the caller's row, but the claim and the "already reported" check use two different rows
 
 **File:** `app/Actions/ReportFrontDeskFailure.php:57-85` (callers: `app/Actions/RunFrontDesk.php:203,214`, `app/Jobs/ProcessInbound.php:189`)
 
@@ -61,7 +62,7 @@ $alreadyReported = OwnerAlert::query()
 ```
 Also change `RunFrontDesk` to pass `ReportFrontDeskFailure::subjectOf($burst)` instead of `$burst->last()`, and update the WR-02 test at line 168 to expect the text.
 
-### WR-02: A report claim taken by a reporter that then dies is not recovered when `failed()` arrives inside the lease
+### WR-08: A report claim taken by a reporter that then dies is not recovered when `failed()` arrives inside the lease
 
 **File:** `app/Actions/ReportFrontDeskFailure.php:45,146-155`
 
@@ -73,7 +74,7 @@ Also change `RunFrontDesk` to pass `ReportFrontDeskFailure::subjectOf($burst)` i
 
 **Fix:** Let the last-resort path ignore a live claim. For example, give `handle()` a `bool $lastResort = false` that `failed()` sets, and use it to skip the `failure_report_claimed_at` age check while still honouring `failure_reported_at`. If a double report from `failed()` racing a live reporter is acceptable, say so in the docblock. Alternatively, add a scheduled sweep of claims older than the lease with no `failure_reported_at`.
 
-### WR-03: A room can claim a widget that another room adds in its sections, and the reverse
+### WR-09: A room can claim a widget that another room adds in its sections, and the reverse
 
 **File:** `app/Rooms/RoomRegistry.php:329-362`
 
@@ -86,7 +87,7 @@ Also change `RunFrontDesk` to pass `ReportFrontDeskFailure::subjectOf($burst)` i
 
 ## Info
 
-### IN-01: The first migration was edited in place and its column changed meaning
+### IN-05: The first migration was edited in place and its column changed meaning
 
 **File:** `database/migrations/2026_10_27_000006_add_failure_reported_at_to_messages_table.php:12-16`
 
@@ -97,7 +98,7 @@ Also change `RunFrontDesk` to pass `ReportFrontDeskFailure::subjectOf($burst)` i
 
 **Fix:** Confirm the original migration never shipped. If it did, add a migration that clears `failure_reported_at` where no matching `front_desk_failed` alert exists.
 
-### IN-02: Two tests depend on the exact SQL text and the order of bindings
+### IN-06: Two tests depend on the exact SQL text and the order of bindings
 
 **File:** `tests/Feature/FrontDesk/FailureReportOnceTest.php:225-232,243-249`
 
