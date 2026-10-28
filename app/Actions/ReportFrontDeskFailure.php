@@ -4,10 +4,12 @@ namespace App\Actions;
 
 use App\Enums\ActivityType;
 use App\Enums\AlertReason;
+use App\Enums\MessageChannel;
 use App\Events\CustomerRecordChanged;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use Illuminate\Support\Collection;
 
 /**
  * The one door for "the front desk could not answer": a note on the customer's timeline and a front_desk_failed
@@ -52,5 +54,16 @@ class ReportFrontDeskFailure
         CustomerRecordChanged::dispatch($contact->id);
 
         $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $text, $why);
+    }
+
+    /**
+     * The text a failed run is reported against: the newest text message the run claimed, or its newest row when it
+     * claimed no text message, so a failed web-form-only burst is still reported (06 D-20).
+     *
+     * @param  Collection<int, Message>  $burst  the rows one run claimed, oldest first
+     */
+    public static function subjectOf(Collection $burst): Message
+    {
+        return $burst->last(fn (Message $message): bool => $message->channel === MessageChannel::Sms) ?? $burst->last();
     }
 }

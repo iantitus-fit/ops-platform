@@ -147,9 +147,10 @@ class ProcessInbound implements ShouldQueue
      * customer cannot get two replies, and ReportFrontDeskFailure skips a text it already reported. The exception's
      * words are never copied into the note or the alert.
      *
-     * The text reported is the newest claimed customer text message at or before the one that queued this job. A newer
-     * text has its own job and has not been claimed, a web form is never answered by text, and an earlier burst's
-     * texts are older than this one's, so none of them are blamed for this run.
+     * The rows reported are the ones this run claimed, found by the claim token every claimed row carries (06 D-12). A
+     * text that arrived after the claim, an earlier run's texts and a keyword text handled on arrival carry another
+     * token or none, so none of them is blamed (WR-22). The newest text message is reported, or the newest row when the
+     * run claimed no text message (06 D-20). A run that claimed nothing has nothing to report (D-13).
      */
     public function failed(?Throwable $exception): void
     {
@@ -159,20 +160,18 @@ class ProcessInbound implements ShouldQueue
             return;
         }
 
-        $text = Message::query()
+        $burst = Message::query()
             ->where('conversation_id', $conversation->id)
             ->where('direction', MessageDirection::In)
             ->where('author', MessageAuthor::Customer)
-            ->where('channel', MessageChannel::Sms)
-            ->whereNotNull('handled_at')
-            ->where('id', '<=', $this->messageId)
-            ->latest('id')
-            ->first();
+            ->where('claim_token', $this->claimToken)
+            ->orderBy('id')
+            ->get();
 
-        if ($text === null) {
+        if ($burst->isEmpty()) {
             return;
         }
 
-        app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped before finishing', 'Front desk stopped before answering');
+        app(ReportFrontDeskFailure::class)->handle($conversation, ReportFrontDeskFailure::subjectOf($burst), 'it stopped before finishing', 'Front desk stopped before answering');
     }
 }

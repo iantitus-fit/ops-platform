@@ -23,6 +23,7 @@ use App\SendRule\FixedReplies;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 it('tells the owner, and texts the customer the holding reply, when every model failed (AGNT-04, D-51)', function () {
     User::factory()->withPhone('+12025550199')->create();
@@ -126,9 +127,10 @@ function frontDeskJobForTheOnlyConversation(): ProcessInbound
 it('tells the owner when the worker stops the run before it finishes', function () {
     User::factory()->withPhone('+12025550199')->create();
     frontDeskCustomerTexts();
-    app(ClaimInboundBurst::class)->handle(Conversation::sole()->id);
+    $token = (string) Str::uuid();
+    app(ClaimInboundBurst::class)->handle(Conversation::sole()->id, $token);
 
-    frontDeskJobForTheOnlyConversation()->failed(new RuntimeException('timed out: secret-detail-456'));
+    (new ProcessInbound(Message::query()->where('direction', MessageDirection::In)->sole()->id, Conversation::sole()->id, $token))->failed(new RuntimeException('timed out: secret-detail-456'));
 
     $alert = OwnerAlert::query()->sole();
 
@@ -160,11 +162,12 @@ it('reports the claimed text, not a newer one that has its own queued job (WR-03
     $this->freezeTime();
     User::factory()->withPhone('+12025550199')->create();
     $conversation = Conversation::factory()->create();
+    $token = (string) Str::uuid();
     $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
-    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now(), 'claim_token' => $token]);
     $newer = Message::factory()->for($conversation)->create(['handled_at' => null]);
 
-    (new ProcessInbound($claimed->id, $conversation->id))->failed(new RuntimeException('timed out'));
+    (new ProcessInbound($claimed->id, $conversation->id, $token))->failed(new RuntimeException('timed out'));
 
     $alert = OwnerAlert::query()->sole();
 
@@ -177,12 +180,13 @@ it('does not tell the owner twice when the run reported its text and then timed 
     $this->freezeTime();
     User::factory()->withPhone('+12025550199')->create();
     $conversation = Conversation::factory()->create();
+    $token = (string) Str::uuid();
     $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
-    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    $claimed = Message::factory()->for($conversation)->create(['handled_at' => now(), 'claim_token' => $token]);
     Message::factory()->for($conversation)->create(['handled_at' => null]);
 
     app(ReportFrontDeskFailure::class)->handle($conversation, $claimed, 'it stopped with an error', 'Front desk stopped with an error');
-    (new ProcessInbound($claimed->id, $conversation->id))->failed(new RuntimeException('timed out'));
+    (new ProcessInbound($claimed->id, $conversation->id, $token))->failed(new RuntimeException('timed out'));
 
     expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1);
 });
@@ -191,11 +195,12 @@ it('reports the customer text, not a web form that was claimed with it (WR-03)',
     $this->freezeTime();
     User::factory()->withPhone('+12025550199')->create();
     $conversation = Conversation::factory()->create();
+    $token = (string) Str::uuid();
     $earlier = Message::factory()->for($conversation)->create(['handled_at' => now()->subHour()]);
-    $text = Message::factory()->for($conversation)->create(['handled_at' => now()]);
-    $form = Message::factory()->for($conversation)->create(['channel' => MessageChannel::Web, 'handled_at' => now()]);
+    $text = Message::factory()->for($conversation)->create(['handled_at' => now(), 'claim_token' => $token]);
+    $form = Message::factory()->for($conversation)->create(['channel' => MessageChannel::Web, 'handled_at' => now(), 'claim_token' => $token]);
 
-    (new ProcessInbound($form->id, $conversation->id))->failed(new RuntimeException('timed out'));
+    (new ProcessInbound($form->id, $conversation->id, $token))->failed(new RuntimeException('timed out'));
 
     expect(OwnerAlert::query()->sole()->message_id)->toBe($text->id);
 });
