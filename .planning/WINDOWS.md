@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 17
+open_count: 13
 waived_count: 1
-fixed_count: 15
+fixed_count: 19
 total_count: 33
-last_updated: 2026-10-28T16:36:32.260Z
+last_updated: 2026-10-28T18:14:47.697Z
 ---
 
 # Broken Windows Ledger
@@ -44,10 +44,10 @@ last_updated: 2026-10-28T16:36:32.260Z
 | 27 | 06 | unrun-verify | tests/Feature/Rooms/HandBuiltRegistrySyncTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs HandBuiltRegistrySyncTest and the rest of the suite green (06-01 hand check) | fixed |  | 2026-10-27T21:48:43.201Z | 2026-10-28T12:17:21.837Z |
 | 28 | 06 | unrun-verify | .github/workflows/tests.yml |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs FrontDeskBootTest and RoomClaimedWidgetsTest and the rest of the suite green (06-02 hand check) | fixed |  | 2026-10-27T22:28:22.535Z | 2026-10-28T12:17:21.932Z |
 | 29 | 06 | unrun-verify | tests/Feature/Rooms/TeamBootTest.php |  | 06-03 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg is green with both room wraps registered and no ALRT change yet (local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T00:36:39.046Z | 2026-10-28T12:17:22.024Z |
-| 30 | 06 | unrun-verify | tests/Feature/Alerts/AlertSentOnceTest.php |  | 06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | open |  | 2026-10-28T13:44:35.628Z |  |
-| 31 | 06 | unrun-verify | tests/Feature/Alerts/AlertDedupeKeyTest.php |  | 06-05 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertDedupeKeyTest.php green (the refused duplicate inside the test's transaction is survived through createOrFirst's savepoint, and many NULL keys sit under the unique index; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | open |  | 2026-10-28T15:46:45.038Z |  |
-| 32 | 06 | unrun-verify | tests/Feature/FrontDesk/ClaimTokenTest.php |  | 06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php) | open |  | 2026-10-28T16:14:33.573Z |  |
-| 33 | 06 | unrun-verify | tests/Feature/FrontDesk/FailureReportOnceTest.php |  | 06-07 hand check, left unrun for UAT and the phase gate before /gsd-verify-work: after the phase branch is pushed, the CI tests workflow is green on both legs for the whole phase, tests/Feature/FrontDesk/FailureReportOnceTest.php included (the conditional update on messages.failure_reported_at is atomic on SQLite and Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | open |  | 2026-10-28T16:36:32.260Z |  |
+| 30 | 06 | unrun-verify | tests/Feature/Alerts/AlertSentOnceTest.php |  | 06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | fixed |  | 2026-10-28T13:44:35.628Z | 2026-10-28T18:14:47.414Z |
+| 31 | 06 | unrun-verify | tests/Feature/Alerts/AlertDedupeKeyTest.php |  | 06-05 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertDedupeKeyTest.php green (the refused duplicate inside the test's transaction is survived through createOrFirst's savepoint, and many NULL keys sit under the unique index; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | fixed |  | 2026-10-28T15:46:45.038Z | 2026-10-28T18:14:47.506Z |
+| 32 | 06 | unrun-verify | tests/Feature/FrontDesk/ClaimTokenTest.php |  | 06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php) | fixed |  | 2026-10-28T16:14:33.573Z | 2026-10-28T18:14:47.601Z |
+| 33 | 06 | unrun-verify | tests/Feature/FrontDesk/FailureReportOnceTest.php |  | 06-07 hand check, left unrun for UAT and the phase gate before /gsd-verify-work: after the phase branch is pushed, the CI tests workflow is green on both legs for the whole phase, tests/Feature/FrontDesk/FailureReportOnceTest.php included (the conditional update on messages.failure_reported_at is atomic on SQLite and Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T16:36:32.260Z | 2026-10-28T18:14:47.697Z |
 
 ````json
 [
@@ -435,10 +435,10 @@ last_updated: 2026-10-28T16:36:32.260Z
     "file": "tests/Feature/Alerts/AlertSentOnceTest.php",
     "line": null,
     "description": "06-04 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertSentOnceTest.php green (the conditional update's affected-row count and the frozen-clock 119/120 second comparison on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-28T13:44:35.628Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-28T18:14:47.414Z",
     "milestone": "v2.0"
   },
   {
@@ -448,10 +448,10 @@ last_updated: 2026-10-28T16:36:32.260Z
     "file": "tests/Feature/Alerts/AlertDedupeKeyTest.php",
     "line": null,
     "description": "06-05 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertDedupeKeyTest.php green (the refused duplicate inside the test's transaction is survived through createOrFirst's savepoint, and many NULL keys sit under the unique index; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-28T15:46:45.038Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-28T18:14:47.506Z",
     "milestone": "v2.0"
   },
   {
@@ -461,10 +461,10 @@ last_updated: 2026-10-28T16:36:32.260Z
     "file": "tests/Feature/FrontDesk/ClaimTokenTest.php",
     "line": null,
     "description": "06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-28T16:14:33.573Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-28T18:14:47.601Z",
     "milestone": "v2.0"
   },
   {
@@ -474,10 +474,10 @@ last_updated: 2026-10-28T16:36:32.260Z
     "file": "tests/Feature/FrontDesk/FailureReportOnceTest.php",
     "line": null,
     "description": "06-07 hand check, left unrun for UAT and the phase gate before /gsd-verify-work: after the phase branch is pushed, the CI tests workflow is green on both legs for the whole phase, tests/Feature/FrontDesk/FailureReportOnceTest.php included (the conditional update on messages.failure_reported_at is atomic on SQLite and Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-28T16:36:32.260Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-28T18:14:47.697Z",
     "milestone": "v2.0"
   }
 ]
