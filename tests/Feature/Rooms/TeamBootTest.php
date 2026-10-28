@@ -76,3 +76,46 @@ it('boots the team room', function () {
             "Today's conversations",
         ]);
 });
+
+const TEAM_LEFT_OUT = 'rooms/team/CONTEXT.md: the team room can never be left out, because the front desk alerts the owner through it, and the life-safety alert goes out at any hour; add rooms/team/CONTEXT.md';
+const FRONT_DESK_LEFT_OUT = 'rooms/front_desk/CONTEXT.md: the front desk room can never be left out, because it owns the sending, replies and triage files the sync requires; add rooms/front_desk/CONTEXT.md';
+
+/**
+ * 04 D-09 with the team: a folder without rooms/team/ is refused in one line naming the room and why, and the version
+ * that was live stays live. The team owns no file, so the never-left-out line is the only thing that keeps the owner's
+ * alerts from being left out (04 D-21).
+ */
+it('refuses a folder with no team room in one line and keeps the previous version live', function () {
+    $live = activateExampleFolder();
+    File::deleteDirectory(icmPath('rooms/team'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([TEAM_LEFT_OUT])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('gives the front desk line then the team line, in key order, when both rooms are left out', function () {
+    $live = activateExampleFolder();
+    File::deleteDirectory(icmPath('rooms/front_desk'));
+    File::deleteDirectory(icmPath('rooms/team'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe([FRONT_DESK_LEFT_OUT, TEAM_LEFT_OUT])
+        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
+});
+
+it('gives the same lines in the same order when the same refused folder is synced twice', function () {
+    activateExampleFolder();
+    File::deleteDirectory(icmPath('rooms/front_desk'));
+    File::deleteDirectory(icmPath('rooms/team'));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+    $first = rejectedErrors();
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe($first)
+        ->and($first)->toBe([FRONT_DESK_LEFT_OUT, TEAM_LEFT_OUT]);
+});
