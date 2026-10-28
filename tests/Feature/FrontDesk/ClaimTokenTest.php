@@ -234,5 +234,6 @@ it('keeps the claim token and the report claim out of mass assignment, so only t
     $message = new Message;
 
     expect($message->isFillable('claim_token'))->toBeFalse()
-        ->and($message->isFillable('failure_reported_at'))->toBeFalse();
+        ->and($message->isFillable('failure_reported_at'))->toBeFalse()
+        ->and($message->isFillable('failure_report_claimed_at'))->toBeFalse();
 });

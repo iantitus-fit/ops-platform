@@ -144,7 +144,8 @@ it('gives the claim back when the report cannot be written, so the other path st
         ->toThrow(RuntimeException::class, 'the alert could not be stored');
 
     expect(failureOnceAlertCount())->toBe(0)
-        ->and($text->fresh()->failure_reported_at)->toBeNull();
+        ->and($text->fresh()->failure_reported_at)->toBeNull()
+        ->and($text->fresh()->failure_report_claimed_at)->toBeNull();
 
     failureOnceQueueFails($text, $conversation);
 
@@ -169,12 +170,60 @@ it('reports a mixed burst once, on its newest row, when RunFrontDesk reports fir
         ->and($notes->sole()->subject_id)->toBe($form->id);
 });
 
+it('still reports a mixed burst once when RunFrontDesk reports first and failed() runs 3 minutes later, after the lease (06-REVIEW WR-02, WR-06)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    File::delete(icmPath('agents/front-desk.md'));
+    frontDeskCustomerTexts();
+    $form = Message::factory()->web()->for(Conversation::sole())->create(['body' => 'Need AC looked at this week']);
+
+    runQueuedFrontDeskJobs();
+    $this->travel(3)->minutes();
+    unserialize(serialize(Queue::pushed(ProcessInbound::class)->sole()))->failed(new RuntimeException('timed out'));
+
+    $notes = Activity::query()->where('type', ActivityType::Note)->where('summary', 'like', 'Front desk could not answer%')->get();
+
+    expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole()->message_id)->toBe($form->id)
+        ->and($notes)->toHaveCount(1);
+});
+
+it('leaves a report claim alone at 119 seconds and takes it at exactly 120 (06-REVIEW WR-06)', function () {
+    $this->freezeTime();
+    [$conversation, $text] = failureOnceClaimedText();
+    Message::query()->whereKey($text->id)->update(['failure_report_claimed_at' => now()]);
+
+    $this->travel(119)->seconds();
+    failureOnceQueueFails($text, $conversation);
+
+    expect(failureOnceAlertCount())->toBe(0)
+        ->and(failureOnceNotes())->toBe([]);
+
+    $this->travel(1)->seconds();
+    failureOnceQueueFails($text, $conversation);
+
+    expect(failureOnceAlertCount())->toBe(1)
+        ->and(failureOnceNotes())->toHaveCount(1)
+        ->and($text->fresh()->failure_reported_at)->not->toBeNull();
+});
+
+it('reports, once, a run whose reporter died after taking the claim and before writing anything (06-REVIEW WR-06)', function () {
+    [$conversation, $text] = failureOnceClaimedText();
+    Message::query()->whereKey($text->id)->update(['failure_report_claimed_at' => now()]);
+    $this->travel(3)->minutes();
+
+    failureOnceQueueFails($text, $conversation);
+    app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped with an error', 'Front desk stopped with an error');
+
+    expect(failureOnceAlertCount())->toBe(1)
+        ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped before finishing'])
+        ->and($text->fresh()->failure_reported_at)->not->toBeNull();
+});
+
 it('lets the original exception escape, and reports the release failure, when giving the claim back also throws (06-REVIEW WR-03)', function () {
     [$conversation, $text] = failureOnceClaimedText();
     failureOnceAlertThatBreaksOnce();
     Exceptions::fake();
     DB::beforeExecuting(function (string $query, array $bindings): void {
-        if (str_starts_with(strtolower($query), 'update') && str_contains($query, 'failure_reported_at') && array_key_exists(0, $bindings) && $bindings[0] === null) {
+        if (str_starts_with(strtolower($query), 'update') && str_contains($query, 'failure_report_claimed_at') && array_key_exists(0, $bindings) && $bindings[0] === null) {
             throw new RuntimeException('the claim could not be given back');
         }
     });
