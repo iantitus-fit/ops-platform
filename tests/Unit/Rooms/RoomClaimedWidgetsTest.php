@@ -60,3 +60,15 @@ it('refuses a room that both adds a widget in its sections and claims it (06-REV
 
     expect($registry->has('pretend'))->toBeFalse();
 });
+
+it('refuses a claim entry that is not a class name with a readable error (06-REVIEW IN-03)', function (mixed $entry) {
+    $registry = new RoomRegistry;
+
+    expect(fn () => $registry->add(new Room(key: 'claimer', label: 'claimer', claimedWidgets: [$entry])))
+        ->toThrow(LogicException::class, 'Room [claimer] claims a widget that is not a class name.');
+
+    expect($registry->has('claimer'))->toBeFalse();
+})->with([
+    'an array' => [[DraftsWaiting::class]],
+    'a number' => [42],
+]);
