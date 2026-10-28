@@ -165,3 +165,113 @@ it('stores business-wide alerts with no key and sends every one of them', functi
         ->and(OwnerAlert::query()->whereNotNull('dedupe_key')->count())->toBe(0)
         ->and(dedupeKeySentTexts())->toHaveCount(2);
 });
+
+it('gives each reason its own alert on one message', function () {
+    [$conversation, $draft] = dedupeKeyConversation();
+    User::factory()->withPhone('+12025550199')->create();
+
+    $waiting = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft);
+    $complaint = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::Complaint, $draft);
+
+    expect($waiting)->toHaveCount(1)
+        ->and($complaint)->toHaveCount(1)
+        ->and(OwnerAlert::query()->pluck('dedupe_key')->unique())->toHaveCount(2)
+        ->and(dedupeKeySentTexts())->toHaveCount(2);
+});
+
+it('gives each person with a phone their own alert for one reason', function () {
+    [$conversation, $draft] = dedupeKeyConversation();
+    User::factory()->withPhone('+12025550199')->create();
+    User::factory()->withPhone('+13125550188')->create();
+
+    $alerts = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft);
+
+    expect($alerts)->toHaveCount(2)
+        ->and(OwnerAlert::query()->pluck('dedupe_key')->unique())->toHaveCount(2)
+        ->and(collect(dedupeKeySentTexts())->pluck('to')->all())->toBe(['+12025550199', '+13125550188']);
+});
+
+it('gives a second message in the same conversation its own alert', function () {
+    [$conversation, $draft] = dedupeKeyConversation();
+    $laterText = Message::factory()->for($conversation)->create(['body' => 'Also, do you do water heaters?']);
+    User::factory()->withPhone('+12025550199')->create();
+
+    app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft);
+    app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $laterText);
+
+    expect(OwnerAlert::query()->count())->toBe(2)
+        ->and(dedupeKeySentTexts())->toHaveCount(2);
+});
+
+it('stores one failed alert when nobody has a phone and two workers raise it at once', function () {
+    [$conversation, $draft] = dedupeKeyConversation();
+    User::factory()->create();
+
+    dedupeKeyOtherWorkerRaces($conversation, AlertReason::DraftWaiting, $draft);
+
+    $lostTheRace = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::DraftWaiting, $draft);
+    $alert = OwnerAlert::query()->sole();
+
+    expect($lostTheRace)->toBeEmpty()
+        ->and($alert->user_id)->toBeNull()
+        ->and($alert->failed_at)->not->toBeNull()
+        ->and($alert->dedupe_key)->toEndWith(':u0');
+});
+
+it('de-duplicates an alert that has no subject message', function () {
+    [$conversation] = dedupeKeyConversation();
+    User::factory()->withPhone('+12025550199')->create();
+
+    dedupeKeyOtherWorkerRaces($conversation, AlertReason::PausedMessage, null);
+
+    $lostTheRace = app(RaiseOwnerAlert::class)->handle($conversation, AlertReason::PausedMessage);
+    $alert = OwnerAlert::query()->sole();
+
+    expect($lostTheRace)->toBeEmpty()
+        ->and($alert->message_id)->toBeNull()
+        ->and($alert->dedupe_key)->toContain(':m0:')
+        ->and(dedupeKeySentTexts())->toHaveCount(1);
+});
+
+it('gives stored alerts their keys and keeps the key on the first of each duplicate group only', function () {
+    $conversation = Conversation::factory()->create();
+    $message = Message::factory()->for($conversation)->create();
+    $user = User::factory()->withPhone('+12025550199')->create();
+
+    $stored = fn (array $attributes) => OwnerAlert::factory()->for($conversation)->create(array_merge([
+        'message_id' => $message->id,
+        'user_id' => $user->id,
+        'reason' => AlertReason::DraftWaiting,
+    ], $attributes));
+
+    $first = $stored([]);
+    $twin = $stored([]);
+    $otherReason = $stored(['reason' => AlertReason::Complaint]);
+    $noMessageNoPerson = $stored(['message_id' => null, 'user_id' => null]);
+    $business = OwnerAlert::factory()->create(['conversation_id' => null, 'reason' => AlertReason::SafetyCheckDown]);
+
+    $migration = require database_path('migrations/2026_10_27_000003_backfill_dedupe_key_on_owner_alerts.php');
+    $migration->up();
+
+    expect($first->fresh()->dedupe_key)->toBe(OwnerAlert::dedupeKey($conversation->id, $message->id, AlertReason::DraftWaiting, $user->id))
+        ->and($twin->fresh()->dedupe_key)->toBeNull()
+        ->and($otherReason->fresh()->dedupe_key)->toBe(OwnerAlert::dedupeKey($conversation->id, $message->id, AlertReason::Complaint, $user->id))
+        ->and($noMessageNoPerson->fresh()->dedupe_key)->toBe(OwnerAlert::dedupeKey($conversation->id, null, AlertReason::DraftWaiting, null))
+        ->and($noMessageNoPerson->fresh()->dedupe_key)->toEndWith(':u0')
+        ->and($business->fresh()->dedupe_key)->toBeNull();
+});
+
+it('changes nothing when the backfill runs a second time', function () {
+    $conversation = Conversation::factory()->create();
+    $first = OwnerAlert::factory()->for($conversation)->create(['reason' => AlertReason::DraftWaiting]);
+    $twin = OwnerAlert::factory()->for($conversation)->create(['reason' => AlertReason::DraftWaiting]);
+
+    $migration = require database_path('migrations/2026_10_27_000003_backfill_dedupe_key_on_owner_alerts.php');
+    $migration->up();
+    $keys = OwnerAlert::query()->orderBy('id')->pluck('dedupe_key')->all();
+    $migration->up();
+
+    expect(OwnerAlert::query()->orderBy('id')->pluck('dedupe_key')->all())->toBe($keys)
+        ->and($keys[0])->not->toBeNull()
+        ->and($keys[1])->toBeNull();
+});
