@@ -151,7 +151,7 @@ it('reports a crash once even when failed() runs after the job already reported 
     $this->mock(RecordIntakeAnswers::class, fn ($mock) => $mock->shouldReceive('handle')->andThrow(new RuntimeException('database went away')));
 
     runQueuedFrontDeskJobs();
-    frontDeskJobForTheOnlyConversation()->failed(new RuntimeException('timed out'));
+    unserialize(serialize(Queue::pushed(ProcessInbound::class)->sole()))->failed(new RuntimeException('timed out'));
 
     expect(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(1)
         ->and(Contact::sole()->activities()->where('type', ActivityType::Note)->count())->toBe(1)
