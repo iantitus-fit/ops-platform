@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 15
+open_count: 16
 waived_count: 1
 fixed_count: 12
-total_count: 28
-last_updated: 2026-10-27T22:28:22.535Z
+total_count: 29
+last_updated: 2026-10-28T00:36:39.046Z
 ---
 
 # Broken Windows Ledger
@@ -43,6 +43,7 @@ last_updated: 2026-10-27T22:28:22.535Z
 | 26 | quick-261026-lrs | unrun-verify | .github/workflows/tests.yml |  | After Ian pushes gsd/quick-ci-runner: both CI legs pass; the browser step shows no package-manager output and finishes in seconds on a cache hit; no 'Host system is missing dependencies' message; if libraries are named, list them for Ian and do not add apt back. Replaces check (4) of row 25 (quick-261026-jig). | fixed |  | 2026-10-26T20:50:09.012Z | 2026-10-26T22:56:08.916Z |
 | 27 | 06 | unrun-verify | tests/Feature/Rooms/HandBuiltRegistrySyncTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs HandBuiltRegistrySyncTest and the rest of the suite green (06-01 hand check) | open |  | 2026-10-27T21:48:43.201Z |  |
 | 28 | 06 | unrun-verify | .github/workflows/tests.yml |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg runs FrontDeskBootTest and RoomClaimedWidgetsTest and the rest of the suite green (06-02 hand check) | open |  | 2026-10-27T22:28:22.535Z |  |
+| 29 | 06 | unrun-verify | tests/Feature/Rooms/TeamBootTest.php |  | 06-03 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg is green with both room wraps registered and no ALRT change yet (local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | open |  | 2026-10-28T00:36:39.046Z |  |
 
 ````json
 [
@@ -407,6 +408,19 @@ last_updated: 2026-10-27T22:28:22.535Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-27T22:28:22.535Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 29,
+    "kind": "unrun-verify",
+    "phase": "06",
+    "file": "tests/Feature/Rooms/TeamBootTest.php",
+    "line": null,
+    "description": "06-03 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg is green with both room wraps registered and no ALRT change yet (local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-28T00:36:39.046Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

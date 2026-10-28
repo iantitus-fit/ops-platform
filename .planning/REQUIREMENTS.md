@@ -40,7 +40,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [x] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
-- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
+- [x] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
 
 ### Connectors
 
@@ -211,7 +211,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-12 | Phase 8 | Pending |
 | ROOM-13 | Phase 9 | Pending |
 | ROOM-14 | Phase 5 | Complete |
-| ROOM-15 | Phase 6 | Pending |
+| ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
 | BOOK-01 | Phase 8 | Pending |
 | BOOK-02 | Phase 8 | Pending |

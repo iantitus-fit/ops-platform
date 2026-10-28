@@ -146,7 +146,7 @@ Plans:
   4. Each owner alert is texted exactly once, even when the job that sends it runs twice or two workers race for it (an atomic send claim and a unique de-duplication key). The alert-timing and one-alert rules behave as before.
   5. When a front-desk run fails, the owner is alerted for exactly the burst of texts that run claimed, using a claim token stored on the claimed rows, and a text that arrives afterward is not swept into that report.
 
-**Plans**: 2/7 plans executed
+**Plans**: 3/7 plans executed
 
 Plans:
 **Wave 1**
@@ -156,7 +156,7 @@ Plans:
 - [x] 06-02-PLAN.md — Front desk wrap: provider, contract, boot test, text slot named as a string, claimedWidgets pointer and its guard; file count 23 to 24
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 06-03-PLAN.md — Team wrap: provider, contract that owns nothing, boot test, Drafts waiting claim, never left out; file count 24 to 25
+- [x] 06-03-PLAN.md — Team wrap: provider, contract that owns nothing, boot test, Drafts waiting claim, never left out; file count 24 to 25
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06-04-PLAN.md — ALRT-01 send claim: one conditional update right before the text, 2-minute release, the sweep and skip() respect it
@@ -316,7 +316,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 |-------|----------------|--------|-----------|
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
-| 6. Front Desk and Team Rooms | 2/7 | In Progress | - |
+| 6. Front Desk and Team Rooms | 3/7 | In Progress | - |
 | 7. The Spine and Leads | 0/TBD | Not started | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
