@@ -10,12 +10,15 @@ use App\Enums\AlertReason;
 use App\Icm\ActiveConfig;
 use App\Icm\BusinessClock;
 use App\Jobs\ProcessInbound;
+use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -147,6 +150,39 @@ it('gives the claim back when the report cannot be written, so the other path st
 
     expect(failureOnceAlertCount())->toBe(1)
         ->and($text->fresh()->failure_reported_at)->not->toBeNull();
+});
+
+it('reports a mixed burst once, on its newest row, when RunFrontDesk reports first and failed() runs after (06-REVIEW WR-02)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    File::delete(icmPath('agents/front-desk.md'));
+    frontDeskCustomerTexts();
+    $form = Message::factory()->web()->for(Conversation::sole())->create(['body' => 'Need AC looked at this week']);
+
+    runQueuedFrontDeskJobs();
+    unserialize(serialize(Queue::pushed(ProcessInbound::class)->sole()))->failed(new RuntimeException('timed out'));
+
+    $notes = Activity::query()->where('type', ActivityType::Note)->where('summary', 'like', 'Front desk could not answer%')->get();
+
+    expect($form->fresh()->handled_at)->not->toBeNull()
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole()->message_id)->toBe($form->id)
+        ->and($notes)->toHaveCount(1)
+        ->and($notes->sole()->subject_id)->toBe($form->id);
+});
+
+it('lets the original exception escape, and reports the release failure, when giving the claim back also throws (06-REVIEW WR-03)', function () {
+    [$conversation, $text] = failureOnceClaimedText();
+    failureOnceAlertThatBreaksOnce();
+    Exceptions::fake();
+    DB::beforeExecuting(function (string $query, array $bindings): void {
+        if (str_starts_with(strtolower($query), 'update') && str_contains($query, 'failure_reported_at') && array_key_exists(0, $bindings) && $bindings[0] === null) {
+            throw new RuntimeException('the claim could not be given back');
+        }
+    });
+
+    expect(fn () => app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped with an error', 'Front desk stopped with an error'))
+        ->toThrow(RuntimeException::class, 'the alert could not be stored');
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the claim could not be given back');
 });
 
 it('keeps the words fixed, and the exception message out of the note and the alert, on a report that broke and was retried', function () {
