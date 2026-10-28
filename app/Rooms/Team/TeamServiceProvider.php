@@ -15,7 +15,8 @@ use App\Rooms\RoomServiceProvider;
  * agents/front-desk.md, all of which the front desk owns (04 D-12, D-13). It owns the owner_alerts table; who acted stays
  * in messages.resolved_by and messages.resolution, which the front desk owns, and no column moves (06 D-04). It claims
  * Drafts waiting as a pointer (06 D-03, D-18) and adds no timeline entry types, model nicknames or dashboard section
- * (06 D-05), so it has no register() or boot() of its own. Alert routing is code, not an agent action (06 D-09).
+ * (06 D-05), so it has no register() or boot() of its own. A business can never leave it out, because the owner's alerts,
+ * the life-safety alert included, go through it (04 D-09). Alert routing is code, not an agent action (06 D-09).
  */
 class TeamServiceProvider extends RoomServiceProvider
 {
@@ -25,6 +26,7 @@ class TeamServiceProvider extends RoomServiceProvider
             key: 'team',
             label: 'team',
             tables: ['owner_alerts'],
+            neverLeftOutBecause: 'the front desk alerts the owner through it, and the life-safety alert goes out at any hour',
             claimedWidgets: [DraftsWaiting::class],
         );
     }
