@@ -88,7 +88,10 @@ class SendOwnerAlert
 
     /**
      * End a delayed alert without sending it, with the reason stored on the alert and shown on
-     * the customer's timeline. An alert that has already ended is left alone. This never throws.
+     * the customer's timeline. One conditional update does it, only while no outcome is written
+     * and the alert is not being sent: it has never been claimed or its claim is CLAIM_WAIT_MINUTES
+     * old. So a handled draft never ends an alert whose text is going out (Pitfall 8), and an alert
+     * that has already ended is left alone, with no second timeline entry. This never throws.
      */
     public function skip(OwnerAlert $alert, string $why): void
     {
@@ -96,13 +99,30 @@ class SendOwnerAlert
             return;
         }
 
+        $columns = ['skipped_at' => now(), 'failure' => $why];
+
         try {
-            $alert->update(['skipped_at' => now(), 'failure' => $why]);
+            $skipped = OwnerAlert::query()
+                ->whereKey($alert->id)
+                ->whereNull('sent_at')
+                ->whereNull('skipped_at')
+                ->whereNull('failed_at')
+                ->where(function (Builder $query): void {
+                    $query->whereNull('send_claimed_at')
+                        ->orWhere('send_claimed_at', '<=', now()->subMinutes(self::CLAIM_WAIT_MINUTES));
+                })
+                ->update($columns);
         } catch (Throwable $exception) {
             report($exception);
 
             return;
         }
+
+        if ($skipped !== 1) {
+            return;
+        }
+
+        $alert->forceFill($columns)->syncOriginal();
 
         $this->addToTimeline($alert, "Owner alert not sent: {$why}");
     }
