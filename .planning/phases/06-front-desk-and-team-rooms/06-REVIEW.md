@@ -4,12 +4,12 @@ reviewed: 2026-10-28T00:00:00Z
 depth: standard
 files_reviewed: 9
 files_reviewed_list:
-  - .gitignore
   - app/Actions/ReportFrontDeskFailure.php
   - app/Models/Message.php
   - app/Rooms/RoomRegistry.php
+  - database/migrations/2026_10_27_000006_add_failure_reported_at_to_messages_table.php
+  - database/migrations/2026_10_28_000001_add_failure_report_claimed_at_to_messages_table.php
   - docs/BLUEPRINT.md
-  - docs/sprints/sprint-1.1.md
   - tests/Feature/FrontDesk/ClaimTokenTest.php
   - tests/Feature/FrontDesk/FailureReportOnceTest.php
   - tests/Unit/Rooms/RoomClaimedWidgetsTest.php
@@ -30,84 +30,83 @@ status: issues_found
 
 ## Summary
 
-This is the review-fix delta (diff base 2d7c012): the nested release try/catch in `ReportFrontDeskFailure`, `claim_token` and `failure_reported_at` removed from `Message`'s `#[Fillable]`, the two new `RoomRegistry::guardClaimedWidgets` guards, the matching tests and docs, and a `.gitignore` entry.
+I reviewed the report-claim lease in `ReportFrontDeskFailure`, the new Message columns and migrations, the claimed-widget guard in `RoomRegistry`, and the three test files. I also read the callers in `app/Jobs/ProcessInbound.php` and `app/Actions/RunFrontDesk.php`. The three suites pass (40 tests).
 
-The fixes themselves do what they say. Production code writes both columns only through `Message::query()->...->update()`, which ignores `$fillable`. The factory sets them with the guard off. I found no other mass-assignment writer (grep of `app`, `database`, `tests`). The `.gitignore` entry and the doc edits are fine.
+I found no security issues. The conditional-update claim is sound, and the fixed-words rule keeps exception text out of notes and alerts.
 
-The remaining problems sit around the fixes, in the report-once claim itself. They are gaps in the "never a missing alert" guarantee (02.1 IN-11) that the new code claims to protect. No security issues or blockers.
-
-Finding IDs: WR-02 re-raises the earlier review's WR-02. WR-05, WR-06, IN-03 and IN-04 are new and continue the numbering after the earlier review's WR-01 to WR-04 and IN-01 to IN-02. References in the bodies to "WR-03" or "the WR-02 test" mean the earlier review's fixes and tests.
+The main weakness is that the "claim once per token" guarantee holds for the claim row but not for what is written. The note and alert are keyed to whichever row the caller passed. The two callers pass different rows for a mixed text-plus-form burst. The lease also does not cover the case it was built for when `failed()` runs promptly.
 
 ## Warnings
 
-### WR-02: A failure is reported against different rows depending on which path reports first
+### WR-01: The report is written against the caller's row, but the claim and the "already reported" check use two different rows
 
-**File:** `app/Actions/ReportFrontDeskFailure.php:66-76, 106-121`; callers `app/Actions/RunFrontDesk.php:203, 214`; test `tests/Feature/FrontDesk/FailureReportOnceTest.php:155-170`
-**Issue:** This re-raises the earlier review's WR-02, which the disposition ledger records as skipped (design kept). `takeTheReportClaim()` ignores the row passed in and claims `subjectOf($rows)` (newest SMS row, per D-20). The note (`subject_id`), the alert (`$text`) and the `alreadyReported` lookup still use the passed `$text`. `ProcessInbound::handle()` and `failed()` pass `subjectOf($burst)`, so they agree with the claim. `RunFrontDesk` passes `$burst->last()` instead. On a mixed burst (text then web form) the claim goes on the text row while the alert and note go on the web form row. The docblock at lines 22-24 says it "does not matter which of the run's rows a caller passes", which is true for counting but false for where the report lands. The WR-02 test at line 155 locks in the form-row subject, while the catch-path test `reports her text, not the newer web form...` expects the text row, so the same burst is reported against different messages depending on which path wins. D-20 and the `ProcessInbound` docblock say the newest text message. The first call in the test at line 126 (`handle(..., $form, ...)`) asserts only counts, not the subject, so it does not catch this.
-**Fix:** Make the action authoritative about the subject, so every caller agrees:
+**File:** `app/Actions/ReportFrontDeskFailure.php:57-85` (callers: `app/Actions/RunFrontDesk.php:203,214`, `app/Jobs/ProcessInbound.php:189`)
+
+**Issue:**
+- The class docblock says "it does not matter which of the run's rows a caller passes". That holds only for the claim, which is taken on `$reportRow`, the newest SMS of the token.
+- The note's `subject_id` and the alert's `message_id` use the passed `$text`, and the `alreadyReported` check looks up `$text->id` (lines 66-85).
+- `RunFrontDesk` passes `$burst->last()`, the newest row, which is the web form in a mixed burst. `failed()` and the `ProcessInbound` catch pass `subjectOf($burst)`, the newest SMS.
+- `FailureReportOnceTest` line 168 asserts the alert is tied to the form on the RunFrontDesk path. `FailureReportOnceTest` line 362 asserts it is tied to the text on the catch path. One failure is therefore reported against different messages depending on which path wins.
+- It also breaks the lease's repeat-safety. Suppose RunFrontDesk writes the note and alert against the form, then dies, or `markTheReportFinished` fails (it is swallowed). After 2 minutes `failed()` takes the claim and passes the text. `alreadyReported` looks at the text id, finds nothing, and writes a second note and a second alert. The "repeat, never lose" trade-off in BLUEPRINT and WR-06 covers a crash between two writes. Here the repeat is guaranteed for any mixed burst, even though the first report finished its writes.
+
+**Fix:** Make the claim row the single subject of the report, so the stated invariant is true:
 ```php
 $subject = $claimedRow ?? $text;
-// use $subject for activities()->create(... 'subject_id' => $subject->id ...),
-// the alreadyReported lookup, and raiseOwnerAlert->handle(..., $subject, $why)
+
+$alreadyReported = OwnerAlert::query()
+    ->where('message_id', $subject->id)
+    ->where('reason', AlertReason::FrontDeskFailed->value)
+    ->exists();
+// ...use $subject for subject_id, getMorphClass() and raiseOwnerAlert->handle(...)
 ```
-Then change the test at line 155 to expect the text row (or change D-20 and its callers deliberately, but not leave them split).
+Also change `RunFrontDesk` to pass `ReportFrontDeskFailure::subjectOf($burst)` instead of `$burst->last()`, and update the WR-02 test at line 168 to expect the text.
 
-### WR-05: The legacy "already reported" query runs after the claim is taken but outside the try, so a database error there leaves the claim held and the owner never told
+### WR-02: A report claim taken by a reporter that then dies is not recovered when `failed()` arrives inside the lease
 
-**File:** `app/Actions/ReportFrontDeskFailure.php:46-61`
-**Issue:** `takeTheReportClaim()` sets `failure_reported_at` at line 47. The `OwnerAlert::...->exists()` query at lines 54-57 then runs before the `try` that starts at line 63. If that query throws (connection drop, lock timeout), the exception escapes with the claim still set and nothing written. The giving-back path (`giveTheReportClaimBack`) is never reached. When failed() later runs and calls `handle()` again, `takeTheReportClaim()` returns null and the method returns silently. The result is a permanent missing alert, which is exactly the outcome the class docblock says is worse than a duplicate note. The new WR-03 fix covers a failure while releasing the claim, but not this earlier window.
-**Fix:** Move the `alreadyReported` check inside the `try`, or take the claim after it:
-```php
-try {
-    $alreadyReported = OwnerAlert::query()
-        ->where('message_id', $text->id)
-        ->where('reason', AlertReason::FrontDeskFailed->value)
-        ->exists();
+**File:** `app/Actions/ReportFrontDeskFailure.php:45,146-155`
 
-    if ($alreadyReported) {
-        return;
-    }
+**Issue:**
+- The lease is meant to recover from a reporter that died after taking the claim (WR-06). It only helps if some path calls `handle()` again after `CLAIM_WAIT_MINUTES`.
+- `failed()` is called once per failed job, and normally right after the timeout or crash. `RunFrontDesk` takes the claim at the end of a run, then dies (timeout or kill) before writing. `failed()` then arrives within seconds, finds a live claim, and returns silently (`$claimedRow === null`). Nothing calls `handle()` again, so the owner is never told.
+- The tests exercise this only by calling `failed()` 3 minutes late (lines 173-187, 208-219), a timing the queue does not normally produce.
+- This is the "missing alert is worse than a second note" case the design says it avoids.
 
-    $contact = $conversation->contact;
-    // ... note, event, alert as before
-} catch (Throwable $exception) {
-    if ($claimedRow !== null) {
-        $this->giveTheReportClaimBack($claimedRow);
-    }
+**Fix:** Let the last-resort path ignore a live claim. For example, give `handle()` a `bool $lastResort = false` that `failed()` sets, and use it to skip the `failure_report_claimed_at` age check while still honouring `failure_reported_at`. If a double report from `failed()` racing a live reporter is acceptable, say so in the docblock. Alternatively, add a scheduled sweep of claims older than the lease with no `failure_reported_at`.
 
-    throw $exception;
-}
-```
+### WR-03: A room can claim a widget that another room adds in its sections, and the reverse
 
-### WR-06: The report claim has no expiry, so a failed release (the case WR-03 now swallows) or a process death between claim and write loses the alert for good
+**File:** `app/Rooms/RoomRegistry.php:329-362`
 
-**File:** `app/Actions/ReportFrontDeskFailure.php:91-98, 118`
-**Issue:** `giveTheReportClaimBack()` deliberately downgrades a release failure to `report()`. After that, `failure_reported_at` stays set on the report row with no alert written, and no later path can ever report: every caller sees `$claimed === 0` and returns. The same permanent loss happens if the worker is killed between line 118 and the alert write. The owner-alert send claim in the same phase avoids this with a 2-minute expiry plus sweep (BLUEPRINT section 6, D-06/D-07). This claim has no such recovery. The new test asserts only that the original exception escapes and the release failure is reported. It does not assert any way to recover the report.
-**Fix:** Either treat `failure_reported_at` as a lease (reclaim when it is older than N minutes and no `front_desk_failed` alert exists for the row), or record the gap. At minimum add a sweep or log line so a held claim with no alert is detectable. Lease sketch:
-```php
-->where(fn ($q) => $q->whereNull('failure_reported_at')
-    ->orWhere('failure_reported_at', '<=', now()->subMinutes(2)))
-```
-This works only together with the `alreadyReported` alert check, which already runs after the claim.
+**Issue:**
+- `guardClaimedWidgets` checks a claim against the room's own `sections` and against other rooms' `claimedWidgets`. It never checks against other rooms' `sections`, and `guardSections` never checks against other rooms' claims.
+- A room A that adds `FooSection` in `sections` and a room B that claims `FooSection` both register without error. The docblock promises "Each widget has one owner room".
+- It also leaves a claim on a `RoomSection` that hides itself when its own room is off, so the claiming room points at a widget it does not control.
+
+**Fix:** In `guardClaimedWidgets`, inside the loop over `$this->rooms`, also refuse when `in_array($widget, $other->sections, true)`. In `guardSections`, refuse a section any registered room already claims. Add tests for both orders.
 
 ## Info
 
-### IN-03: `guardClaimedWidgets` does not validate element types, unlike `guardHandles`
+### IN-01: The first migration was edited in place and its column changed meaning
 
-**File:** `app/Rooms/RoomRegistry.php:331-348`
-**Issue:** A non-string entry in `claimedWidgets` (a typo such as an array or an int) reaches the `"[{$widget}]"` interpolation or `class_exists()` and surfaces as an "Array to string conversion" warning or a `TypeError` instead of the readable `LogicException` every other guard gives. `guardHandles` and `guardMorphMap` check `is_string` first. The new duplicate and sections checks also compare before the existence check, so a bad entry would be reported oddly.
-**Fix:** Add at the top of the loop:
-```php
-if (! is_string($widget)) {
-    throw new LogicException("Room [{$room->key}] claims a widget that is not a class name.");
-}
-```
+**File:** `database/migrations/2026_10_27_000006_add_failure_reported_at_to_messages_table.php:12-16`
 
-### IN-04: The WR-03 test depends on the exact SQL shape of the release update
+**Issue:**
+- `failure_reported_at` was a claim ("set when the owner is told", given back on failure). It is now a "finished" marker, and a new column holds the claim.
+- If any database ran the old code, rows where the old code set `failure_reported_at` as a claim and then crashed are now permanently treated as finished. Those runs are never reported.
+- This is harmless if the migration never left the dev branch (not verified here). Otherwise it needs a data fix.
 
-**File:** `tests/Feature/FrontDesk/FailureReportOnceTest.php:176-180`
-**Issue:** The `DB::beforeExecuting` hook identifies the release by `str_starts_with(lower($query), 'update')`, the substring `failure_reported_at`, and `$bindings[0] === null`. It relies on Eloquent putting the nulled column first in the bindings. If `updated_at` handling or column order changes, the hook silently never fires. The final `Exceptions::assertReported` makes the test fail rather than pass vacuously, so this is robustness only, not a false pass.
-**Fix:** Optional: match on `$bindings[0] === null && str_contains($query, '"failure_reported_at" = ?')` and add a comment saying why binding 0 is the null.
+**Fix:** Confirm the original migration never shipped. If it did, add a migration that clears `failure_reported_at` where no matching `front_desk_failed` alert exists.
+
+### IN-02: Two tests depend on the exact SQL text and the order of bindings
+
+**File:** `tests/Feature/FrontDesk/FailureReportOnceTest.php:225-232,243-249`
+
+**Issue:**
+- The WR-03 test matches the quoted column `"failure_report_claimed_at" = ?` and relies on `bindings[0]` being the claim value, with `updated_at` after it. The WR-05 test matches a `select exists` string.
+- Both pass today on SQLite. A change to Laravel's `updated_at` merge order or to the grammar silently makes the interception a no-op. The WR-03 test fails via `assertReported`, so it is not vacuous, but the WR-05 test has no such backstop.
+- It passes without the throw if the string never matches, because the `RuntimeException` it expects is also never thrown. I did not run it with the match broken.
+
+**Fix:** Assert that the interceptor fired (a `$fired` flag checked with `expect($broke)->toBeTrue()`), as the WR-05 test's `$broke` almost does.
 
 ---
 
