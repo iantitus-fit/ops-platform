@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One text to one person telling them something needs the owner. An alert ends in exactly one
  * of three ways: sent_at, skipped_at or failed_at (with the reason in failure). It never just
- * disappears (D-19).
+ * disappears (D-19). send_claimed_at is when a sender took the alert to text it; only a
+ * conditional update in SendOwnerAlert writes it, so it is not fillable (06 D-06, D-07).
  */
 #[Fillable([
     'conversation_id',
@@ -48,6 +49,7 @@ class OwnerAlert extends Model
             'sent_at' => 'datetime',
             'skipped_at' => 'datetime',
             'failed_at' => 'datetime',
+            'send_claimed_at' => 'datetime',
         ];
     }
 
