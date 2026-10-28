@@ -51,16 +51,16 @@ class ReportFrontDeskFailure
             }
         }
 
-        $alreadyReported = OwnerAlert::query()
-            ->where('message_id', $text->id)
-            ->where('reason', AlertReason::FrontDeskFailed->value)
-            ->exists();
-
-        if ($alreadyReported) {
-            return;
-        }
-
         try {
+            $alreadyReported = OwnerAlert::query()
+                ->where('message_id', $text->id)
+                ->where('reason', AlertReason::FrontDeskFailed->value)
+                ->exists();
+
+            if ($alreadyReported) {
+                return;
+            }
+
             $contact = $conversation->contact;
 
             $contact->activities()->create([
