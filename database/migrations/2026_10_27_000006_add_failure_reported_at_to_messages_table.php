@@ -9,9 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * failure_reported_at is set on a run's report row when the owner is told that the run failed. One conditional
-     * update sets it, so the run's own catch and the queue's failed() report a run once (06 D-11). It is given back
-     * when the report could not be written (02.1 IN-11). Rows from before keep NULL.
+     * failure_reported_at is set on a run's report row when the owner is told that the run failed, so the run's own
+     * catch and the queue's failed() report a run once (06 D-11). Since 06-REVIEW WR-06 it marks a finished report
+     * only: the claim to write the report is failure_report_claimed_at, a lease given back when the report could not
+     * be written (02.1 IN-11). Rows from before keep NULL.
      */
     public function up(): void
     {

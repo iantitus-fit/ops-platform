@@ -11,6 +11,7 @@ use App\Events\CustomerRecordChanged;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -20,10 +21,12 @@ use Throwable;
  *
  * The report is made once per claim token, whichever of the run's own catch, the queue's failed() and RunFrontDesk's
  * own reports gets there first (06 D-11). The first to arrive takes the report claim, one conditional update that sets
- * failure_reported_at on the token's report row, and every other path returns without writing anything. The claim is
- * taken on the token's report row, so it does not matter which of the run's rows a caller passes. A report that cannot
+ * failure_report_claimed_at on the token's report row, and every other path returns without writing anything. The claim
+ * is taken on the token's report row, so it does not matter which of the run's rows a caller passes. A finished report
+ * sets failure_reported_at, and after that no path reports the run again, however late it arrives. A report that cannot
  * be written gives its claim back and rethrows, so another path reports: a missing alert is worse than a second note
- * (02.1 IN-11).
+ * (02.1 IN-11). The claim is a lease, like the alert send claim (06 D-06, D-07): one with no finished report after
+ * CLAIM_WAIT_MINUTES means its reporter died, and the next path to arrive takes it and reports (06-REVIEW WR-06).
  *
  * A text with no claim token, which means a row from before the token existed, keeps the old check: an alert that
  * already exists for the text means the owner has been told and nothing more is written or sent.
@@ -33,6 +36,14 @@ use Throwable;
  */
 class ReportFrontDeskFailure
 {
+    /**
+     * How long a report claim is respected, in minutes, measured from the claim: the same wait as the alert send claim
+     * (SendOwnerAlert::CLAIM_WAIT_MINUTES). Writing one note and storing one alert takes far less, so a report that is
+     * still being written is never taken again. A claim with no finished report after this long means its reporter
+     * died, and the next path to arrive reports the run (06-REVIEW WR-06).
+     */
+    public const int CLAIM_WAIT_MINUTES = 2;
+
     public function __construct(private readonly RaiseOwnerAlert $raiseOwnerAlert) {}
 
     /**
@@ -57,23 +68,21 @@ class ReportFrontDeskFailure
                 ->where('reason', AlertReason::FrontDeskFailed->value)
                 ->exists();
 
-            if ($alreadyReported) {
-                return;
+            if (! $alreadyReported) {
+                $contact = $conversation->contact;
+
+                $contact->activities()->create([
+                    'type' => ActivityType::Note,
+                    'summary' => "Front desk could not answer: {$noteDetail}",
+                    'subject_type' => $text->getMorphClass(),
+                    'subject_id' => $text->id,
+                    'occurred_at' => now(),
+                ]);
+
+                CustomerRecordChanged::dispatch($contact->id);
+
+                $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $text, $why);
             }
-
-            $contact = $conversation->contact;
-
-            $contact->activities()->create([
-                'type' => ActivityType::Note,
-                'summary' => "Front desk could not answer: {$noteDetail}",
-                'subject_type' => $text->getMorphClass(),
-                'subject_id' => $text->id,
-                'occurred_at' => now(),
-            ]);
-
-            CustomerRecordChanged::dispatch($contact->id);
-
-            $this->raiseOwnerAlert->handle($conversation, AlertReason::FrontDeskFailed, $text, $why);
         } catch (Throwable $exception) {
             if ($claimedRow !== null) {
                 $this->giveTheReportClaimBack($claimedRow);
@@ -81,25 +90,44 @@ class ReportFrontDeskFailure
 
             throw $exception;
         }
+
+        if ($claimedRow !== null) {
+            $this->markTheReportFinished($claimedRow);
+        }
+    }
+
+    /**
+     * Mark the report finished, so no path reports this run again. The owner has been told by now, so a failure here is
+     * reported, never thrown: the most it leaves is a claim that runs out and a second report, which is better than a
+     * missing one (02.1 IN-11).
+     */
+    private function markTheReportFinished(Message $claimedRow): void
+    {
+        try {
+            Message::query()->whereKey($claimedRow->id)->update(['failure_reported_at' => now()]);
+        } catch (Throwable $markFailure) {
+            report($markFailure);
+        }
     }
 
     /**
      * Give the report claim back so another path reports. When the database is what broke, this update can fail too:
      * its failure is reported, never thrown, so the exception that broke the report is the one that escapes
-     * (06-REVIEW WR-03).
+     * (06-REVIEW WR-03). The claim it could not give back runs out after CLAIM_WAIT_MINUTES (06-REVIEW WR-06).
      */
     private function giveTheReportClaimBack(Message $claimedRow): void
     {
         try {
-            Message::query()->whereKey($claimedRow->id)->update(['failure_reported_at' => null]);
+            Message::query()->whereKey($claimedRow->id)->update(['failure_report_claimed_at' => null]);
         } catch (Throwable $releaseFailure) {
             report($releaseFailure);
         }
     }
 
     /**
-     * Take the claim to report this text's run: one conditional update on the run's report row, so of two paths only
-     * one wins it, on SQLite and on Postgres.
+     * Take the claim to report this text's run: one conditional update on the run's report row that sets
+     * failure_report_claimed_at while the report is not finished and the row has never been claimed or its claim is
+     * CLAIM_WAIT_MINUTES old, so of two paths only one wins it, on SQLite and on Postgres.
      *
      * @return Message|null the report row this call claimed, or null when another path already took the claim
      */
@@ -115,7 +143,14 @@ class ReportFrontDeskFailure
 
         $reportRow = $rows->isEmpty() ? $text : self::subjectOf($rows);
 
-        $claimed = Message::query()->whereKey($reportRow->id)->whereNull('failure_reported_at')->update(['failure_reported_at' => now()]);
+        $claimed = Message::query()
+            ->whereKey($reportRow->id)
+            ->whereNull('failure_reported_at')
+            ->where(function (Builder $query): void {
+                $query->whereNull('failure_report_claimed_at')
+                    ->orWhere('failure_report_claimed_at', '<=', now()->subMinutes(self::CLAIM_WAIT_MINUTES));
+            })
+            ->update(['failure_report_claimed_at' => now()]);
 
         return $claimed === 1 ? $reportRow : null;
     }
