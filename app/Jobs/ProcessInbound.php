@@ -88,9 +88,11 @@ class ProcessInbound implements ShouldQueue
      * Until a first business folder is live there is no agent to ask, so the burst is claimed and left quietly
      * (Pitfall 7) instead of failing the job.
      *
-     * Anything else that goes wrong inside the front desk is logged and reported to the owner as a note and an
-     * alert in fixed words (CR-01, AGNT-04). The claim is not released: part of the run may already have texted the
-     * customer, and a second run could text them again.
+     * Anything else that goes wrong after the claim, the alert for a dangerous web form included, is logged and reported
+     * to the owner as a note and an alert in fixed words (CR-01, AGNT-04), against the newest text message the run
+     * claimed, or its newest row when it claimed only a web form (06 D-20). The report is made once per claim token, so
+     * failed() finding it already made adds nothing (06 D-11). The claim is not released: part of the run may already
+     * have texted the customer, and a second run could text them again.
      *
      * @return bool true when the burst holds a text from the customer and went on to the front desk
      */
@@ -102,23 +104,35 @@ class ProcessInbound implements ShouldQueue
             return false;
         }
 
-        $this->alertOwnerToDangerousForms($burst, $raiseOwnerAlert);
-
-        if (! $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms)) {
-            return false;
-        }
-
         try {
+            $this->alertOwnerToDangerousForms($burst, $raiseOwnerAlert);
+
+            if (! $this->holdsText($burst)) {
+                return false;
+            }
+
             $runFrontDesk->handle($burst->first()->conversation, $burst);
         } catch (NoActiveVersion) {
-            return true;
+            return $this->holdsText($burst);
         } catch (Throwable $exception) {
             report($exception);
 
-            $reportFrontDeskFailure->handle($burst->first()->conversation, $burst->last(), 'it stopped with an error', 'Front desk stopped with an error');
+            $reportFrontDeskFailure->handle($burst->first()->conversation, ReportFrontDeskFailure::subjectOf($burst), 'it stopped with an error', 'Front desk stopped with an error');
+
+            return $this->holdsText($burst);
         }
 
         return true;
+    }
+
+    /**
+     * Whether the burst holds a text message from the customer, as opposed to only web forms.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function holdsText(Collection $burst): bool
+    {
+        return $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms);
     }
 
     /**

@@ -216,7 +216,7 @@ it('reports a failed web-form-only burst on the catch path, tied to the form, an
         ->and($alert->body)->toContain('Front desk stopped with an error')
         ->and($alert->body)->not->toContain('could not be stored')
         ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped with an error'])
-        ->and(textsSentToCustomers())->toBe([]);
+        ->and(array_column(textsSentToCustomers(), 'to'))->toBe(['+12025550199']);
 });
 
 it('adds nothing when failed() runs after the catch reported a form-only burst (D-11, D-20)', function () {
