@@ -2,6 +2,7 @@
 
 use App\Actions\OwnerAlertText;
 use App\Actions\RaiseOwnerAlert;
+use App\Actions\RecordIntakeAnswers;
 use App\Actions\ReportFrontDeskFailure;
 use App\Actions\SendOwnerAlert;
 use App\Enums\ActivityType;
@@ -175,4 +176,91 @@ it('reports a text that carries no claim token exactly as before, once, by the a
     expect(failureOnceAlertCount())->toBe(1)
         ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped with an error'])
         ->and($text->fresh()->failure_reported_at)->toBeNull();
+});
+
+/**
+ * Make every life-safety alert throw, so the one step a web-form-only burst runs after its claim breaks the run.
+ */
+function failureOnceLifeSafetyAlertThatBreaks(): void
+{
+    app()->singleton(RaiseOwnerAlert::class, fn () => new class(app(ActiveConfig::class), app(BusinessClock::class), app(OwnerAlertText::class), app(SendOwnerAlert::class)) extends RaiseOwnerAlert
+    {
+        public function handle(Conversation $conversation, AlertReason $reason, ?Message $subject = null, ?string $why = null): Collection
+        {
+            if ($reason === AlertReason::LifeSafety) {
+                throw new RuntimeException('the life-safety alert could not be stored');
+            }
+
+            return parent::handle($conversation, $reason, $subject, $why);
+        }
+    });
+}
+
+it('reports a failed web-form-only burst on the catch path, tied to the form, and texts the lead nothing (D-20)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $form = Message::factory()->web()->for($conversation)->create(['body' => 'I smell gas in the basement']);
+    failureOnceLifeSafetyAlertThatBreaks();
+
+    $job = new ProcessInbound($form->id, $conversation->id, 'form-run');
+    $returned = null;
+
+    expect(function () use ($job, &$returned) {
+        $returned = app()->call([$job, 'handle']);
+    })->not->toThrow(Throwable::class);
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($returned)->toBeFalse()
+        ->and($alert->message_id)->toBe($form->id)
+        ->and($alert->body)->toContain('Front desk stopped with an error')
+        ->and($alert->body)->not->toContain('could not be stored')
+        ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped with an error'])
+        ->and(textsSentToCustomers())->toBe([]);
+});
+
+it('adds nothing when failed() runs after the catch reported a form-only burst (D-11, D-20)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    $conversation = Conversation::factory()->create();
+    $form = Message::factory()->web()->for($conversation)->create(['body' => 'I smell gas in the basement']);
+    failureOnceLifeSafetyAlertThatBreaks();
+    $job = new ProcessInbound($form->id, $conversation->id, 'form-run');
+
+    app()->call([$job, 'handle']);
+    unserialize(serialize($job))->failed(new RuntimeException('timed out'));
+
+    expect(failureOnceAlertCount())->toBe(1)
+        ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped with an error']);
+});
+
+it('reports her text, not the newer web form, when a run that claimed both throws (D-20, research A6)', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    $conversation = Conversation::sole();
+    $text = Message::query()->where('direction', 'in')->sole();
+    $form = Message::factory()->web()->for($conversation)->create(['body' => 'Need AC looked at this week']);
+    $this->mock(RecordIntakeAnswers::class, fn ($mock) => $mock->shouldReceive('handle')->andThrow(new RuntimeException('database went away')));
+
+    runQueuedFrontDeskJobs();
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->sole();
+
+    expect($form->fresh()->handled_at)->not->toBeNull()
+        ->and($form->id)->toBeGreaterThan($text->id)
+        ->and($alert->message_id)->toBe($text->id)
+        ->and(failureOnceNotes())->toBe(['Front desk could not answer: it stopped with an error']);
+});
+
+it('still returns true, and reports her text, when a text-only run throws', function () {
+    User::factory()->withPhone('+12025550199')->create();
+    frontDeskCustomerTexts();
+    scriptFrontDeskReplies(['reply' => 'What is the system doing?', 'label' => 'intake_question']);
+    $this->mock(RecordIntakeAnswers::class, fn ($mock) => $mock->shouldReceive('handle')->andThrow(new RuntimeException('database went away')));
+
+    $job = Queue::pushed(ProcessInbound::class)->sole();
+    $returned = app()->call([$job, 'handle']);
+
+    expect($returned)->toBeTrue()
+        ->and(failureOnceAlertCount())->toBe(1);
 });
