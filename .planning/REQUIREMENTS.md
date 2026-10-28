@@ -69,7 +69,7 @@ Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 Their home since 2026-10-21; the backlog 999.5 carry notes point here.
 
 - [x] **ALRT-01**: Each owner alert is sent exactly once, with an atomic send claim and a unique de-duplication key (Phase 2 review WR-03, WR-04). The alert-timing and one-alert rules stand unchanged.
-- [ ] **ALRT-02**: A front-desk run that fails reports exactly the burst of texts it claimed, using a claim token stored on the claimed rows, not a time window in `ReportFrontDeskFailure` (Phase 2 review WR-22).
+- [x] **ALRT-02**: A front-desk run that fails reports exactly the burst of texts it claimed, using a claim token stored on the claimed rows, not a time window in `ReportFrontDeskFailure` (Phase 2 review WR-22).
 - [ ] **GATE-05**: `gate:export` reports only what went out (failed and queued sends are not counted as sent) and gives `original_text` the same way on every path, and it exports the `answered` resolution and the 02.1 fixed-reply kinds (Phase 2 review WR-09 and the 02.1 deferred note).
 
 ### Phone Design Pass
@@ -224,7 +224,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | WALK-03 | Phase 10 | Pending |
 | RECS-02 | Phase 9 | Pending |
 | ALRT-01 | Phase 6 | Complete |
-| ALRT-02 | Phase 6 | Pending |
+| ALRT-02 | Phase 6 | Complete |
 | GATE-05 | Phase 9 | Pending |
 | DSGN-01 | Phase 11 | Pending |
 | DSGN-02 | Phase 11 | Pending |
