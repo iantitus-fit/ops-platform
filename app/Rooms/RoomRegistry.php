@@ -4,6 +4,7 @@ namespace App\Rooms;
 
 use App\Icm\Loader;
 use Filament\Panel;
+use Filament\Widgets\Widget;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
@@ -49,6 +50,7 @@ class RoomRegistry
         $this->guardMorphMap($room);
         $this->guardHandles($room);
         $this->guardSections($room);
+        $this->guardClaimedWidgets($room);
         $this->guardTimelineEntries($room);
 
         $this->rooms[$room->key] = $room;
@@ -312,6 +314,49 @@ class RoomRegistry
 
             if ($section::roomKey() !== $room->key) {
                 throw new LogicException("Room [{$room->key}] lists section [{$section}], which belongs to room [{$section::roomKey()}].");
+            }
+        }
+    }
+
+    /**
+     * A claim is a pointer and never feeds widgetClasses() or addWidgetsTo(): the panel already finds the widget on its
+     * own. Unlike guardSections(), a class that does not exist is refused, because a claim names a widget the panel
+     * already has, so a typo shows at start-up (06 D-18). Each widget has one owner room, a room claims it once, and a
+     * room never both adds a widget in its sections and claims it, which would put it on the panel twice (06-REVIEW WR-04).
+     * An entry that is not a string is refused first, so it gets a readable error and never reaches the other checks
+     * (06-REVIEW IN-03).
+     */
+    private function guardClaimedWidgets(Room $room): void
+    {
+        $seen = [];
+
+        foreach ($room->claimedWidgets as $widget) {
+            if (! is_string($widget)) {
+                throw new LogicException("Room [{$room->key}] claims a widget that is not a class name.");
+            }
+
+            if (in_array($widget, $seen, true)) {
+                throw new LogicException("Room [{$room->key}] claims widget [{$widget}] more than once.");
+            }
+
+            if (in_array($widget, $room->sections, true)) {
+                throw new LogicException("Room [{$room->key}] both adds and claims widget [{$widget}]. Add it in sections, or claim it, not both.");
+            }
+
+            $seen[] = $widget;
+
+            if (! class_exists($widget)) {
+                throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which does not exist.");
+            }
+
+            if (! is_subclass_of($widget, Widget::class)) {
+                throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which is not a Filament widget. A room claims only a dashboard widget the panel already has.");
+            }
+
+            foreach ($this->rooms as $other) {
+                if (in_array($widget, $other->claimedWidgets, true)) {
+                    throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which room [{$other->key}] already claims. A widget has one owner room.");
+                }
             }
         }
     }

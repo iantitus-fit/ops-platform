@@ -18,6 +18,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\DebounceFor;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -50,9 +51,20 @@ class ProcessInbound implements ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
+     * Which run this is. Made when the job is built, so it is part of the queued payload and the fresh copy failed()
+     * runs on has it; a token chosen inside handle() would be lost (06 D-12, research Pitfall 4). Debounced copies each
+     * have their own, and only one runs. It has no default on purpose: a default would hand every older payload the
+     * same token.
+     */
+    public string $claimToken;
+
+    /**
      * Create a new job instance.
      */
-    public function __construct(public int $messageId, public int $conversationId) {}
+    public function __construct(public int $messageId, public int $conversationId, ?string $claimToken = null)
+    {
+        $this->claimToken = $claimToken ?? (string) Str::uuid();
+    }
 
     /**
      * Debounce by conversation, so every text in one conversation shares one waiting job.
@@ -76,37 +88,51 @@ class ProcessInbound implements ShouldQueue
      * Until a first business folder is live there is no agent to ask, so the burst is claimed and left quietly
      * (Pitfall 7) instead of failing the job.
      *
-     * Anything else that goes wrong inside the front desk is logged and reported to the owner as a note and an
-     * alert in fixed words (CR-01, AGNT-04). The claim is not released: part of the run may already have texted the
-     * customer, and a second run could text them again.
+     * Anything else that goes wrong after the claim, the alert for a dangerous web form included, is logged and reported
+     * to the owner as a note and an alert in fixed words (CR-01, AGNT-04), against the newest text message the run
+     * claimed, or its newest row when it claimed only a web form (06 D-20). The report is made once per claim token, so
+     * failed() finding it already made adds nothing (06 D-11). The claim is not released: part of the run may already
+     * have texted the customer, and a second run could text them again.
      *
      * @return bool true when the burst holds a text from the customer and went on to the front desk
      */
     public function handle(ClaimInboundBurst $claimInboundBurst, RunFrontDesk $runFrontDesk, ReportFrontDeskFailure $reportFrontDeskFailure, RaiseOwnerAlert $raiseOwnerAlert): bool
     {
-        $burst = $claimInboundBurst->handle($this->conversationId);
+        $burst = $claimInboundBurst->handle($this->conversationId, $this->claimToken);
 
         if ($burst->isEmpty()) {
             return false;
         }
 
-        $this->alertOwnerToDangerousForms($burst, $raiseOwnerAlert);
-
-        if (! $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms)) {
-            return false;
-        }
-
         try {
+            $this->alertOwnerToDangerousForms($burst, $raiseOwnerAlert);
+
+            if (! $this->holdsText($burst)) {
+                return false;
+            }
+
             $runFrontDesk->handle($burst->first()->conversation, $burst);
         } catch (NoActiveVersion) {
-            return true;
+            return $this->holdsText($burst);
         } catch (Throwable $exception) {
             report($exception);
 
-            $reportFrontDeskFailure->handle($burst->first()->conversation, $burst->last(), 'it stopped with an error', 'Front desk stopped with an error');
+            $reportFrontDeskFailure->handle($burst->first()->conversation, ReportFrontDeskFailure::subjectOf($burst), 'it stopped with an error', 'Front desk stopped with an error');
+
+            return $this->holdsText($burst);
         }
 
         return true;
+    }
+
+    /**
+     * Whether the burst holds a text message from the customer, as opposed to only web forms.
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function holdsText(Collection $burst): bool
+    {
+        return $burst->contains(fn (Message $message): bool => $message->channel === MessageChannel::Sms);
     }
 
     /**
@@ -135,9 +161,10 @@ class ProcessInbound implements ShouldQueue
      * customer cannot get two replies, and ReportFrontDeskFailure skips a text it already reported. The exception's
      * words are never copied into the note or the alert.
      *
-     * The text reported is the newest claimed customer text message at or before the one that queued this job. A newer
-     * text has its own job and has not been claimed, a web form is never answered by text, and an earlier burst's
-     * texts are older than this one's, so none of them are blamed for this run.
+     * The rows reported are the ones this run claimed, found by the claim token every claimed row carries (06 D-12). A
+     * text that arrived after the claim, an earlier run's texts and a keyword text handled on arrival carry another
+     * token or none, so none of them is blamed (WR-22). The newest text message is reported, or the newest row when the
+     * run claimed no text message (06 D-20). A run that claimed nothing has nothing to report (D-13).
      */
     public function failed(?Throwable $exception): void
     {
@@ -147,20 +174,18 @@ class ProcessInbound implements ShouldQueue
             return;
         }
 
-        $text = Message::query()
+        $burst = Message::query()
             ->where('conversation_id', $conversation->id)
             ->where('direction', MessageDirection::In)
             ->where('author', MessageAuthor::Customer)
-            ->where('channel', MessageChannel::Sms)
-            ->whereNotNull('handled_at')
-            ->where('id', '<=', $this->messageId)
-            ->latest('id')
-            ->first();
+            ->where('claim_token', $this->claimToken)
+            ->orderBy('id')
+            ->get();
 
-        if ($text === null) {
+        if ($burst->isEmpty()) {
             return;
         }
 
-        app(ReportFrontDeskFailure::class)->handle($conversation, $text, 'it stopped before finishing', 'Front desk stopped before answering');
+        app(ReportFrontDeskFailure::class)->handle($conversation, ReportFrontDeskFailure::subjectOf($burst), 'it stopped before finishing', 'Front desk stopped before answering');
     }
 }

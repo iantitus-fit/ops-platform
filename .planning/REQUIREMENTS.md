@@ -30,7 +30,7 @@ Every room in the floor plan meets these five.
 
 Ten rooms. Every new room meets the room standard and nothing more, except where a requirement below says otherwise. Property and subcontractors are open (Future Requirements).
 
-- [ ] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
+- [x] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Ian also approved (Phase 6 discuss, 2026-10-27, `06-CONTEXT.md` D-14) moving `RoomOwnershipTest`'s three triage-only tests (lines 77, 160 and 185 today) in a prep plan that lands before the front desk wrap. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
 - [ ] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
 - [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
 - [x] **ROOM-08**: Company knowledge room, to the room standard.
@@ -40,7 +40,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [x] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
-- [ ] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
+- [x] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
 
 ### Connectors
 
@@ -68,8 +68,8 @@ Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 
 Their home since 2026-10-21; the backlog 999.5 carry notes point here.
 
-- [ ] **ALRT-01**: Each owner alert is sent exactly once, with an atomic send claim and a unique de-duplication key (Phase 2 review WR-03, WR-04). The alert-timing and one-alert rules stand unchanged.
-- [ ] **ALRT-02**: A front-desk run that fails reports exactly the burst of texts it claimed, using a claim token stored on the claimed rows, not a time window in `ReportFrontDeskFailure` (Phase 2 review WR-22).
+- [x] **ALRT-01**: Each owner alert is sent exactly once, with an atomic send claim and a unique de-duplication key (Phase 2 review WR-03, WR-04). The alert-timing and one-alert rules stand unchanged.
+- [x] **ALRT-02**: A front-desk run that fails reports exactly the burst of texts it claimed, using a claim token stored on the claimed rows, not a time window in `ReportFrontDeskFailure` (Phase 2 review WR-22).
 - [ ] **GATE-05**: `gate:export` reports only what went out (failed and queued sends are not counted as sent) and gives `original_text` the same way on every path, and it exports the `answered` resolution and the 02.1 fixed-reply kinds (Phase 2 review WR-09 and the 02.1 deferred note).
 
 ### Phone Design Pass
@@ -201,7 +201,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-05 | Phase 4 | Complete |
 | PROJ-01 | Phase 7 | Pending |
 | PROJ-02 | Phase 7 | Pending |
-| ROOM-06 | Phase 6 | Pending |
+| ROOM-06 | Phase 6 | Complete |
 | ROOM-07 | Phase 7 | Pending |
 | LEAD-05 | Phase 7 | Pending |
 | ROOM-08 | Phase 5 | Complete |
@@ -211,7 +211,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-12 | Phase 8 | Pending |
 | ROOM-13 | Phase 9 | Pending |
 | ROOM-14 | Phase 5 | Complete |
-| ROOM-15 | Phase 6 | Pending |
+| ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
 | BOOK-01 | Phase 8 | Pending |
 | BOOK-02 | Phase 8 | Pending |
@@ -223,8 +223,8 @@ Which phases cover which requirements. Filled in by the roadmap.
 | WALK-02 | Phase 10 | Pending |
 | WALK-03 | Phase 10 | Pending |
 | RECS-02 | Phase 9 | Pending |
-| ALRT-01 | Phase 6 | Pending |
-| ALRT-02 | Phase 6 | Pending |
+| ALRT-01 | Phase 6 | Complete |
+| ALRT-02 | Phase 6 | Complete |
 | GATE-05 | Phase 9 | Pending |
 | DSGN-01 | Phase 11 | Pending |
 | DSGN-02 | Phase 11 | Pending |

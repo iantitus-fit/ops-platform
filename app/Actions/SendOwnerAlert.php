@@ -7,6 +7,7 @@ use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Events\CustomerRecordChanged;
 use App\Models\OwnerAlert;
+use Illuminate\Contracts\Database\Query\Builder;
 use Throwable;
 
 class SendOwnerAlert
@@ -21,6 +22,15 @@ class SendOwnerAlert
      */
     public const string OWNER_OPTED_OUT = 'Your phone opted out of texts (STOP). Text START to the business number to get alerts again.';
 
+    /**
+     * How long a send claim is respected, in minutes, measured from the claim. It is well above the
+     * text channel's 10-second request timeout (TwilioTextChannel), so a slow send that is still
+     * running is never taken again. A claim with no outcome after this long means its sender died,
+     * and the alert is sent again. The worst case is an urgent alert lost to a crash going out about
+     * 3 minutes late, when the every-minute sweep next runs (06 D-07).
+     */
+    public const int CLAIM_WAIT_MINUTES = 2;
+
     public function __construct(private readonly TextChannel $textChannel) {}
 
     /**
@@ -28,11 +38,18 @@ class SendOwnerAlert
      *
      * This never throws (D-19, Pitfall 17): the code that raises an alert is in the middle of
      * handling a customer, and a phone that refuses texts must not break that. A failure is
-     * stored on the alert (failed_at and the reason) so it is visible, never silent. An alert
-     * that has already ended is left alone, so calling this twice cannot text twice.
+     * stored on the alert (failed_at and the reason) so it is visible, never silent.
+     *
+     * The alert is claimed right before the text goes out, by one conditional update whose
+     * affected-row count decides who texts (06 D-07, WR-03). Two copies of one alert, or a second
+     * worker that reaches the alert while the first is still sending, therefore text it once. The
+     * in-memory check below is only a cheap first step: a stale copy still reads "open" after
+     * another sender ended the alert, so it cannot stop a duplicate on its own. A claim with no
+     * outcome is taken again after CLAIM_WAIT_MINUTES, so the only duplicate left is a crash after
+     * the carrier accepted the text and before the outcome was written (06 D-06, D-07).
      *
      * Whatever the outcome, the customer's timeline gets an owner_alerted entry saying what
-     * happened (D-19).
+     * happened (D-19), written only by the copy that ended the alert.
      */
     public function handle(OwnerAlert $alert): void
     {
@@ -43,6 +60,10 @@ class SendOwnerAlert
         if (blank($alert->to_phone)) {
             $this->recordFailure($alert, 'No phone on file');
 
+            return;
+        }
+
+        if (! $this->claimToSend($alert)) {
             return;
         }
 
@@ -60,18 +81,17 @@ class SendOwnerAlert
             return;
         }
 
-        try {
-            $alert->update(['sent_at' => now(), 'provider_message_id' => $providerMessageId]);
-        } catch (Throwable $exception) {
-            report($exception);
+        if ($this->end($alert, ['sent_at' => now(), 'provider_message_id' => $providerMessageId])) {
+            $this->addToTimeline($alert, 'Owner alerted by text: '.$alert->reason->plainWords());
         }
-
-        $this->addToTimeline($alert, 'Owner alerted by text: '.$alert->reason->plainWords());
     }
 
     /**
      * End a delayed alert without sending it, with the reason stored on the alert and shown on
-     * the customer's timeline. An alert that has already ended is left alone. This never throws.
+     * the customer's timeline. One conditional update does it, only while no outcome is written
+     * and the alert is not being sent: it has never been claimed or its claim is CLAIM_WAIT_MINUTES
+     * old. So a handled draft never ends an alert whose text is going out (Pitfall 8), and an alert
+     * that has already ended is left alone, with no second timeline entry. This never throws.
      */
     public function skip(OwnerAlert $alert, string $why): void
     {
@@ -79,13 +99,30 @@ class SendOwnerAlert
             return;
         }
 
+        $columns = ['skipped_at' => now(), 'failure' => $why];
+
         try {
-            $alert->update(['skipped_at' => now(), 'failure' => $why]);
+            $skipped = OwnerAlert::query()
+                ->whereKey($alert->id)
+                ->whereNull('sent_at')
+                ->whereNull('skipped_at')
+                ->whereNull('failed_at')
+                ->where(function (Builder $query): void {
+                    $query->whereNull('send_claimed_at')
+                        ->orWhere('send_claimed_at', '<=', now()->subMinutes(self::CLAIM_WAIT_MINUTES));
+                })
+                ->update($columns);
         } catch (Throwable $exception) {
             report($exception);
 
             return;
         }
+
+        if ($skipped !== 1) {
+            return;
+        }
+
+        $alert->forceFill($columns)->syncOriginal();
 
         $this->addToTimeline($alert, "Owner alert not sent: {$why}");
     }
@@ -103,13 +140,79 @@ class SendOwnerAlert
 
     private function recordFailure(OwnerAlert $alert, string $failure): void
     {
+        if ($this->end($alert, ['failed_at' => now(), 'failure' => $failure])) {
+            $this->addToTimeline($alert, "Owner alert not sent: {$failure}");
+        }
+    }
+
+    /**
+     * Take the alert to text it: one conditional update that sets send_claimed_at while no outcome
+     * is written and the alert has never been claimed or its claim is CLAIM_WAIT_MINUTES old. The
+     * number of rows it changed decides who sends: 1 means this sender may text, 0 means another
+     * sender has the alert or it has ended. A database error is reported and counts as not
+     * claimed, so this never throws.
+     */
+    private function claimToSend(OwnerAlert $alert): bool
+    {
+        $claimedAt = now();
+
         try {
-            $alert->update(['failed_at' => now(), 'failure' => $failure]);
+            $claimed = OwnerAlert::query()
+                ->whereKey($alert->id)
+                ->whereNull('sent_at')
+                ->whereNull('skipped_at')
+                ->whereNull('failed_at')
+                ->where(function (Builder $query): void {
+                    $query->whereNull('send_claimed_at')
+                        ->orWhere('send_claimed_at', '<=', now()->subMinutes(self::CLAIM_WAIT_MINUTES));
+                })
+                ->update(['send_claimed_at' => $claimedAt]);
         } catch (Throwable $exception) {
             report($exception);
+
+            return false;
         }
 
-        $this->addToTimeline($alert, "Owner alert not sent: {$failure}");
+        if ($claimed !== 1) {
+            return false;
+        }
+
+        $alert->forceFill(['send_claimed_at' => $claimedAt])->syncOriginalAttribute('send_claimed_at');
+
+        return true;
+    }
+
+    /**
+     * End the alert: one conditional update of these columns that changes the row only while
+     * sent_at, skipped_at and failed_at are all still null. When it changed the row the columns
+     * are put on the in-memory alert too, so a caller that reads $alert->sent_at (the safety
+     * check's claim) sees the outcome. Returns whether this call ended the alert; a database
+     * error is reported and counts as not ended, so this never throws.
+     *
+     * @param  array<string, mixed>  $columns
+     */
+    private function end(OwnerAlert $alert, array $columns): bool
+    {
+        try {
+            $ended = OwnerAlert::query()
+                ->whereKey($alert->id)
+                ->whereNull('sent_at')
+                ->whereNull('skipped_at')
+                ->whereNull('failed_at')
+                ->update($columns);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return false;
+        }
+
+        if ($ended !== 1) {
+            return false;
+        }
+
+        $alert->forceFill($columns)->syncOriginal();
+
+        return true;
     }
 
     /**

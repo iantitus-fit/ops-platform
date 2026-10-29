@@ -102,4 +102,15 @@ class MessageFactory extends Factory
             'channel' => MessageChannel::Web,
         ]);
     }
+
+    /**
+     * A customer message a front-desk run claimed: handled now, under that run's claim token.
+     */
+    public function claimedBy(string $claimToken): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'handled_at' => now(),
+            'claim_token' => $claimToken,
+        ]);
+    }
 }

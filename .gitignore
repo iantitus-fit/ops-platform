@@ -45,3 +45,6 @@ Thumbs.db
 # Pest browser plugin output (screenshots and traces).
 tests/Browser/Screenshots
 tests/Browser/Traces
+
+# GSD session lock (per-session, never committed).
+.planning/milestone.lock

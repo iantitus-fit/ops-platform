@@ -7,6 +7,7 @@ use App\Enums\AlertReason;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Models\OwnerAlert;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -19,6 +20,10 @@ use Illuminate\Foundation\Queue\Queueable;
  * hold a job; and a restart or a flushed queue cannot lose a pending alert, because the alert is
  * a row in the database (RESEARCH "Delayed alerts"). An alert that has already ended is never
  * picked up, so running the sweep twice cannot text twice.
+ *
+ * An alert another sender is texting is left alone, and one whose sender died is picked up again
+ * once its claim is CLAIM_WAIT_MINUTES old. So the sweep can run twice, or beside a send, and still
+ * cannot text twice, and a lost alert goes out about 3 minutes late at worst (06 D-06, D-07).
  */
 class SendDueAlerts implements ShouldQueue
 {
@@ -36,6 +41,10 @@ class SendDueAlerts implements ShouldQueue
             ->whereNull('skipped_at')
             ->whereNull('failed_at')
             ->where('due_at', '<=', now())
+            ->where(function (Builder $query): void {
+                $query->whereNull('send_claimed_at')
+                    ->orWhere('send_claimed_at', '<=', now()->subMinutes(SendOwnerAlert::CLAIM_WAIT_MINUTES));
+            })
             ->lazyById()
             ->each(function (OwnerAlert $alert) use ($sendOwnerAlert): void {
                 if ($this->draftWasHandled($alert)) {

@@ -65,6 +65,8 @@ class Message extends Model
             'gate' => 'array',
             'dispatched_at' => 'datetime',
             'handled_at' => 'datetime',
+            'failure_reported_at' => 'datetime',
+            'failure_report_claimed_at' => 'datetime',
             'resolution' => DraftResolution::class,
             'resolved_at' => 'datetime',
             'sent_at' => 'datetime',

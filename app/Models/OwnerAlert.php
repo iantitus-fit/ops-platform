@@ -12,7 +12,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One text to one person telling them something needs the owner. An alert ends in exactly one
  * of three ways: sent_at, skipped_at or failed_at (with the reason in failure). It never just
- * disappears (D-19).
+ * disappears (D-19). send_claimed_at is when a sender took the alert to text it; only a
+ * conditional update in SendOwnerAlert writes it, so it is not fillable (06 D-06, D-07).
+ * dedupe_key is the unique key a conversation alert is stored under so two workers cannot store
+ * one alert twice; business-wide alerts have none (06 D-08).
  */
 #[Fillable([
     'conversation_id',
@@ -28,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'failed_at',
     'failure',
     'provider_message_id',
+    'dedupe_key',
 ])]
 class OwnerAlert extends Model
 {
@@ -48,7 +52,19 @@ class OwnerAlert extends Model
             'sent_at' => 'datetime',
             'skipped_at' => 'datetime',
             'failed_at' => 'datetime',
+            'send_claimed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The one key a conversation alert is stored under: the conversation, the message, the
+     * reason and the person, the same four things RaiseOwnerAlert::alreadyRaised() compares.
+     * A missing message or person is written as 0 because NULLs never collide in a unique index
+     * on SQLite or Postgres and real ids start at 1 (06-RESEARCH Pitfall 6).
+     */
+    public static function dedupeKey(int $conversationId, ?int $messageId, AlertReason $reason, ?int $userId): string
+    {
+        return 'c'.$conversationId.':m'.($messageId ?? 0).':'.$reason->value.':u'.($userId ?? 0);
     }
 
     /**

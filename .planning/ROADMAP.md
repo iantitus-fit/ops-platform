@@ -31,7 +31,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [x] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record (completed 2026-10-23)
 - [x] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more (completed 2026-10-26)
-- [ ] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once
+- [x] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once (completed 2026-10-28)
 - [ ] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard
 - [ ] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it
 - [ ] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out
@@ -146,7 +146,29 @@ Plans:
   4. Each owner alert is texted exactly once, even when the job that sends it runs twice or two workers race for it (an atomic send claim and a unique de-duplication key). The alert-timing and one-alert rules behave as before.
   5. When a front-desk run fails, the owner is alerted for exactly the burst of texts that run claimed, using a claim token stored on the claimed rows, and a text that arrives afterward is not swept into that report.
 
-**Plans**: TBD
+**Plans**: 7/7 plans complete
+
+Plans:
+**Wave 1**
+- [x] 06-01-PLAN.md — D-14 prep: the line-185 case on a hand-built registry, then the three triage-only ownership tests removed (tests only)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 06-02-PLAN.md — Front desk wrap: provider, contract, boot test, text slot named as a string, claimedWidgets pointer and its guard; file count 23 to 24
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 06-03-PLAN.md — Team wrap: provider, contract that owns nothing, boot test, Drafts waiting claim, never left out; file count 24 to 25
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 06-04-PLAN.md — ALRT-01 send claim: one conditional update right before the text, 2-minute release, the sweep and skip() respect it
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 06-05-PLAN.md — ALRT-01 unique de-duplication key: createOrFirst on a nullable unique dedupe_key, backfill, business alerts keyless
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 06-06-PLAN.md — ALRT-02 claim token: made in ProcessInbound's constructor, written by the claim, failed() finds its burst by it
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 06-07-PLAN.md — ALRT-02 report once per token on every path, release on failure, form-only bursts reported on the catch path
 
 **Planning notes** (settle these in discuss-phase):
 - The wraps and the fixes are different kinds of change. The wraps land and pass the existing suite unchanged before any ALRT-01 or ALRT-02 work changes a test (criterion 1, Ian, 2026-10-21); keep the fixes out of the wrap plans.
@@ -294,7 +316,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 |-------|----------------|--------|-----------|
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
-| 6. Front Desk and Team Rooms | 0/TBD | Not started | - |
+| 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 0/TBD | Not started | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |

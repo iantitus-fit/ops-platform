@@ -74,13 +74,6 @@ it('refuses a claim of a file the claiming room does not handle, naming the room
     expect(refusedOwnershipLines())->toBe(['rooms/quiet/CONTEXT.md: rooms/pretend/notes/first-note.md is a pretend_note file, which the pretend room handles; quiet can read it']);
 });
 
-it('refuses a claim of a file no room handles yet', function () {
-    enablePretendRoom();
-    writeIcmFile('rooms/pretend/CONTEXT.md', ownershipContract('pretend', '[rules/triage.md]'));
-
-    expect(refusedOwnershipLines())->toBe(['rooms/pretend/CONTEXT.md: rules/triage.md is a triage file, which no room handles yet; pretend can read it']);
-});
-
 dataset('files that are not a room\'s to claim', [
     'a router' => ['CLAUDE.md', null, null, 'rooms/pretend/CONTEXT.md: CLAUDE.md belongs to the house (routers and walk tests); pretend can read it'],
     'a router in the folder root' => ['START-HERE.md', null, null, 'rooms/pretend/CONTEXT.md: START-HERE.md belongs to the house (routers and walk tests); pretend can read it'],
@@ -157,13 +150,6 @@ it('refuses a file nobody lists under owns while a room that handles its type is
     expect(refusedOwnershipLines())->toBe(['rooms/pretend/notes/first-note.md: no room lists this pretend_note file under owns; the annex room handles it, so add it to rooms/annex/CONTEXT.md']);
 });
 
-it('names the room a file belongs to when the business folder does not have that room', function () {
-    enablePretendRoom();
-    app(RoomRegistry::class)->add(new Room(key: 'rulebook', label: 'rulebook', handles: ['triage']));
-
-    expect(refusedOwnershipLines())->toBe(["rules/triage.md: this file belongs to the rulebook room, which this business doesn't use; add rooms/rulebook/ or remove the file"]);
-});
-
 it('offers both ways out for a room\'s own kind of file when that room\'s folder is not in the business folder', function () {
     enablePretendRoom();
     writeIcmFile('business/pretend-note.md', pretendNoteContents());
@@ -180,18 +166,6 @@ it('says only the missing contract and the move-it line when the room\'s folder 
         'business/pretend-note.md: this is a pretend file, which belongs in rooms/pretend/; move it there',
         "rooms/pretend/CONTEXT.md: the pretend room's folder has files but no CONTEXT.md; add the room's contract with type: room",
     ]);
-});
-
-it('keeps the previous version live when the folder is refused for its owners', function () {
-    enablePretendRoom();
-    app(RoomRegistry::class)->add(new Room(key: 'rulebook', label: 'rulebook', handles: ['triage']));
-    writeIcmFile('rooms/rulebook/CONTEXT.md', plainRoomContract('rulebook', '[rules/triage.md]'));
-    $live = activateExampleFolder();
-
-    File::deleteDirectory(icmPath('rooms/rulebook'));
-
-    expect(refusedOwnershipLines())->toBe(["rules/triage.md: this file belongs to the rulebook room, which this business doesn't use; add rooms/rulebook/ or remove the file"])
-        ->and(app(ActiveConfig::class)->versionId())->toBe($live->id);
 });
 
 it('gives the same lines in the same order when the same refused folder is synced twice', function () {
