@@ -383,7 +383,7 @@ Pest `arch()` can only say where a class is used, not whether a use is a write (
 
 | Old Approach | Current Approach | Impact |
 |--------------|------------------|--------|
-| `$fillable` property | `#[Fillable([...])]` attribute on models | House style (`app/Models/Contact.php:13-22`); use it on `Project`. |
+| `$fillable` property | `#[Fillable([...])]` attribute on models | House style (`app/Models/Contact.php:14-23`); use it on `Project`. |
 | Filament actions `->form()` | `->schema()` (with `->form()` kept as alias) | Either works in 5.10.1 [VERIFIED: vendor]. |
 | Relation managers editable on view pages | Read-only on view pages by default | Override `isReadOnly()` (Pattern 7). |
 
