@@ -15,6 +15,7 @@ use App\Rooms\Room;
 use App\Rooms\RoomRegistry;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
@@ -120,7 +121,7 @@ it('refuses a second project opened by a new lead for one contact', function () 
     Project::factory()->openedByLead()->create(['contact_id' => $contact->id]);
     Project::factory()->openedByLead()->create(['contact_id' => $other->id]);
 
-    expect(fn () => Project::factory()->openedByLead()->create(['contact_id' => $contact->id]))
+    expect(fn () => DB::transaction(fn () => Project::factory()->openedByLead()->create(['contact_id' => $contact->id])))
         ->toThrow(UniqueConstraintViolationException::class);
 
     expect(Project::query()->where('opened_by', ProjectActor::Lead)->count())->toBe(2);
