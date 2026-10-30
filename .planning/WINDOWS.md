@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 16
+open_count: 17
 waived_count: 1
 fixed_count: 19
-total_count: 36
-last_updated: 2026-10-30T17:30:20.550Z
+total_count: 37
+last_updated: 2026-10-30T18:55:35.664Z
 ---
 
 # Broken Windows Ledger
@@ -51,6 +51,7 @@ last_updated: 2026-10-30T17:30:20.550Z
 | 34 | 07 | unrun-verify | .github/workflows |  | 07-01: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectWordTest and ProjectWordSpecTest included (criterion 1 on Postgres) | open |  | 2026-10-30T12:37:24.851Z |  |
 | 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | open |  | 2026-10-30T15:45:59.200Z |  |
 | 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | open |  | 2026-10-30T17:30:20.550Z |  |
+| 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | open |  | 2026-10-30T18:55:35.664Z |  |
 
 ````json
 [
@@ -519,6 +520,19 @@ last_updated: 2026-10-30T17:30:20.550Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T17:30:20.550Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 37,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T18:55:35.664Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

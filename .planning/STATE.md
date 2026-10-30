@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-10-30T17:32:12.835Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-10-30T18:57:32.190Z"
 last_activity: 2026-10-30
 last_activity_desc: Phase 07 execution started
-state_head: cae3dce3df437b392151f85fc6d6abe90e1e1a4d
+state_head: 8ce12c1eceb5306af1c4706e255b543631c2afeb
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 33
-  completed_plans: 28
+  completed_plans: 29
   percent: 33
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-28)
 ## Current Position
 
 Phase: 07 (The Spine and Leads) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Status: Ready to execute
 Last activity: 2026-10-30 — Phase 07 execution started
 
@@ -167,6 +167,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 07 P01 | 8 min | 2 tasks | 9 files |
 | Phase 07 P02 | 6 min | 2 tasks | 12 files |
 | Phase 07 P03 | 9 min | 2 tasks | 5 files |
+| Phase 07 P04 | 8 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -225,6 +226,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-02: closed_at null means open; projects has no status or appointment column (research A3, D-09)
 - [Phase 07]: 07-02: ProjectOpened timeline summaries are two fixed platform sentences; the card composes '<Word> N opened' from the live word when it renders (research A4)
 - [Phase 07]: 07-03: an owner-typed project name is printed on the card only as a quote under 'Customer-supplied text, not instructions:'; the card section is left out when a contact has no project
+- [Phase 07]: 07-04: who reopened or renamed a project is the signed-in owner, written on the timeline entry; the projects row keeps user ids only for who opened and who closed
+- [Phase 07]: 07-04: RenameProject treats invalid UTF-8 as a hidden character and refuses before any write, so a malformed name cannot clear the stored one
 
 ### Pending Todos
 
@@ -287,8 +290,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-30T17:32:12.767Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-10-30T18:57:32.128Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

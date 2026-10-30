@@ -189,7 +189,7 @@ Plans:
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: 3/8 plans executed
+**Plans**: 4/8 plans executed
 
 Plans:
 **Wave 1**
@@ -202,7 +202,7 @@ Plans:
 - [x] 07-03-PLAN.md — The card's "## <Plural word>" section above the timeline, names quoted, seen by the front desk only through the card (D-13); CardInjectionTest gains its case
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 07-04-PLAN.md — Close, reopen and rename through their own actions, and a test that only the four actions write projects (D-11)
+- [x] 07-04-PLAN.md — Close, reopen and rename through their own actions, and a test that only the four actions write projects (D-11)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 07-05-PLAN.md — The contact screen: projects listed in the business's word with New, Close, Reopen and Rename (D-04, D-14)
@@ -343,7 +343,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
-| 7. The Spine and Leads | 3/8 | In Progress | - |
+| 7. The Spine and Leads | 4/8 | In Progress | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
