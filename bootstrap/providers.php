@@ -6,6 +6,7 @@ use App\Rooms\CompanyKnowledge\CompanyKnowledgeServiceProvider;
 use App\Rooms\ContentGeneration\ContentGenerationServiceProvider;
 use App\Rooms\FrontDesk\FrontDeskServiceProvider;
 use App\Rooms\GoogleBusinessProfile\GoogleBusinessProfileServiceProvider;
+use App\Rooms\Leads\LeadsServiceProvider;
 use App\Rooms\Marketing\MarketingServiceProvider;
 use App\Rooms\Money\MoneyServiceProvider;
 use App\Rooms\Team\TeamServiceProvider;
@@ -20,4 +21,5 @@ return [
     GoogleBusinessProfileServiceProvider::class,
     FrontDeskServiceProvider::class,
     TeamServiceProvider::class,
+    LeadsServiceProvider::class,
 ];

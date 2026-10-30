@@ -87,7 +87,7 @@ it('boots the front desk room', function (bool $empty) {
         ->and(array_count_values($panelWidgets)[PausedConversationsWaiting::class] ?? 0)->toBe(1);
 
     foreach (app(RoomRegistry::class)->all() as $registered) {
-        expect($registered->claimedWidgets)->not->toContain(NewLeads::class);
+        expect(in_array(NewLeads::class, $registered->claimedWidgets, true))->toBe($registered->key === 'leads');
     }
 
     $providers = require base_path('bootstrap/providers.php');
