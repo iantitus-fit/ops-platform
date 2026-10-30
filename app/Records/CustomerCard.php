@@ -251,6 +251,7 @@ class CustomerCard
             ActivityType::OptedIn => ['Opted back in to texts', 'System note:', $activity->summary],
             ActivityType::RoomEntry => $this->roomEntryParts($activity),
             ActivityType::ProjectOpened => $this->projectParts($activity, 'opened', $word, $projectNumbers),
+            ActivityType::ProjectClosed => $this->projectParts($activity, 'closed', $word, $projectNumbers),
         };
 
         return implode("\n", [
