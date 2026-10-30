@@ -189,7 +189,7 @@ Plans:
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: 5/8 plans executed
+**Plans**: 6/8 plans executed
 
 Plans:
 **Wave 1**
@@ -208,7 +208,7 @@ Plans:
 - [x] 07-05-PLAN.md — The contact screen: projects listed in the business's word with New, Close, Reopen and Rename (D-04, D-14)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 07-06-PLAN.md — The leads room at the standard: provider, contract, boot test, claims New leads, the WR-09 guard, marketing's web form sentence; file count 25 to 26, FrontDeskBootTest.php:90
+- [x] 07-06-PLAN.md — The leads room at the standard: provider, contract, boot test, claims New leads, the WR-09 guard, marketing's web form sentence; file count 25 to 26, FrontDeskBootTest.php:90
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 07-07-PLAN.md — The leads section: open projects with a keyboard link, an absolute date and their source or opener, axe clean (D-15, D-16)
@@ -343,7 +343,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
-| 7. The Spine and Leads | 5/8 | In Progress | - |
+| 7. The Spine and Leads | 6/8 | In Progress | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
