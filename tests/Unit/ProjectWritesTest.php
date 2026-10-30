@@ -18,7 +18,26 @@
  */
 function projectWritesIn(string $relativePath, string $source): array
 {
-    return [];
+    $call = static fn (string $methods): string => '(?:'.$methods.')\s*\(';
+
+    $rules = [
+        'a static model write' => '/(?<![A-Za-z0-9_])Project::'.$call('create|forceCreate|insert|insertOrIgnore|insertGetId|upsert|updateOrCreate|firstOrCreate|createOrFirst|updateOrInsert|destroy|truncate').'/',
+        'a query write' => '/(?<![A-Za-z0-9_])Project::query\(\)[^;]*->'.$call('update|delete|forceDelete|insert|upsert|increment|decrement|create|forceCreate|firstOrCreate|updateOrCreate|createOrFirst').'/',
+        'a new model' => '/\bnew\s+\\\\?(?:App\\\\Models\\\\)?Project\s*\(/',
+        'a relation write' => '/->projects\(\)[^;]*->'.$call('create|createMany|save|saveMany|update|delete|forceCreate|firstOrCreate|updateOrCreate|createOrFirst').'/',
+        'an instance write' => '/\$project->'.$call('save|update|delete|forceDelete|fill|forceFill|touch|increment|decrement|push').'/',
+        'raw table access' => '/DB::table\(\s*[\'"]projects[\'"]|\b(?:insert\s+into|update|delete\s+from)\s+[`"]?projects\b/i',
+    ];
+
+    $watched = str_starts_with($relativePath, 'app/Rooms/Leads/')
+        || (str_starts_with($relativePath, 'app/Filament/') && str_contains(basename($relativePath), 'Project'));
+
+    if ($watched) {
+        $rules['an Eloquent write in watched code'] = '/->'.$call('save|update|delete|forceDelete|fill|forceFill|touch|create|forceCreate').'/';
+        $rules['a Filament write action'] = '/\b(?:CreateAction|EditAction|DeleteAction|ForceDeleteAction|ReplicateAction|AssociateAction|DissociateAction|AttachAction|DetachAction|DeleteBulkAction|ForceDeleteBulkAction|DissociateBulkAction|DetachBulkAction)\b/';
+    }
+
+    return array_keys(array_filter($rules, static fn (string $pattern): bool => preg_match($pattern, $source) === 1));
 }
 
 /**
