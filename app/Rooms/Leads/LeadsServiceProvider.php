@@ -12,9 +12,10 @@ use App\Rooms\RoomServiceProvider;
  * and it writes nothing to records/ (07 D-17). It is optional: a business that leaves rooms/leads/ out still activates
  * and the room is simply off (07 D-03).
  *
- * It claims New leads as a pointer, so the widget stays where the admin panel puts it and looks the same (07 D-15). The
- * web form is shared and owned by no room, so it keeps taking leads while this room is off (07 D-19). The `needs` field
- * waits for the Phase 8 discuss (07 D-20). It has no register() or boot() in this plan.
+ * Its dashboard section lists the open projects (07 D-15). It claims New leads as a pointer, so the widget stays where
+ * the admin panel puts it and looks the same (07 D-15). The web form is shared and owned by no room, so it keeps taking
+ * leads while this room is off (07 D-19). The `needs` field waits for the Phase 8 discuss (07 D-20). It has no
+ * register() or boot() in this plan.
  */
 class LeadsServiceProvider extends RoomServiceProvider
 {
@@ -23,6 +24,7 @@ class LeadsServiceProvider extends RoomServiceProvider
         return new Room(
             key: 'leads',
             label: 'leads',
+            sections: [LeadsSection::class],
             claimedWidgets: [NewLeads::class],
         );
     }
