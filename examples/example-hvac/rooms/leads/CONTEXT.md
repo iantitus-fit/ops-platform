@@ -16,4 +16,6 @@ It reads business/lead-sources.md to show where each new lead's job came from, a
 
 The web form is shared and owned by no room, so it keeps taking leads while this room is off.
 
+Its dashboard section lists the open jobs, newest first, each with its customer, the day it opened and where it came from. It hides while this room is off, and every job stays on its customer's page and card.
+
 It has no outside system.

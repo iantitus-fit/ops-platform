@@ -88,6 +88,7 @@ class LeadsSection extends RoomSection
         $config = app(ActiveConfig::class);
         $word = $config->projectWord();
         $timezone = $config->displayTimezone();
+        $sourceNames = [];
 
         return Project::query()
             ->withNumber()
@@ -97,7 +98,7 @@ class LeadsSection extends RoomSection
             ->orderByDesc('id')
             ->limit(self::SHOWN)
             ->get()
-            ->map(function (Project $project) use ($word, $timezone): array {
+            ->map(function (Project $project) use ($config, $word, $timezone, &$sourceNames): array {
                 $opened = $project->opened_at->copy()->setTimezone($timezone);
 
                 return [
@@ -107,10 +108,26 @@ class LeadsSection extends RoomSection
                     'opened' => $opened->format('Y-m-d H:i'),
                     'datetime' => $opened->toIso8601String(),
                     'origin' => $project->opened_by === ProjectActor::Lead
-                        ? 'source '.$project->contact->lead_source_key
-                        : 'opened by '.$project->openedByUser?->name,
+                        ? 'source '.$this->sourceName((string) $project->contact->lead_source_key, $config, $sourceNames)
+                        : 'opened by '.($project->openedByUser?->name ?? 'a removed user'),
                 ];
             })
             ->all();
+    }
+
+    /**
+     * The name lead-sources.md gives a source key, else the key as written when the file does not list it, else
+     * "unknown" when the contact has no key (D-16). Each key is looked up once per draw, however many rows share it.
+     * Printed escaped, so a key a form supplied is only text.
+     *
+     * @param  array<string, string>  $known  keys already looked up, filled as rows are built
+     */
+    private function sourceName(string $key, ActiveConfig $config, array &$known): string
+    {
+        if ($key === '') {
+            return 'unknown';
+        }
+
+        return $known[$key] ??= $config->leadSource($key)['name'] ?? $key;
     }
 }
