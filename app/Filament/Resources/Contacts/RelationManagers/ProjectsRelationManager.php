@@ -2,11 +2,16 @@
 
 namespace App\Filament\Resources\Contacts\RelationManagers;
 
+use App\Actions\CloseProject;
 use App\Actions\OpenProject;
+use App\Actions\RenameProject;
+use App\Actions\ReopenProject;
 use App\Enums\ProjectActor;
 use App\Icm\ActiveConfig;
 use App\Models\Project;
+use DomainException;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -81,6 +86,46 @@ class ProjectsRelationManager extends RelationManager
                             ->title(e('Opened '.$project->label($word, $number)))
                             ->success()
                             ->send();
+                    }),
+            ])
+            ->recordActions([
+                Action::make('close')
+                    ->label('Close')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->visible(fn (Project $record): bool => $record->isOpen())
+                    ->action(function (Project $record): void {
+                        app(CloseProject::class)->handle($record, auth()->user());
+
+                        Notification::make()->title('Closed')->success()->send();
+                    }),
+                Action::make('reopen')
+                    ->label('Reopen')
+                    ->visible(fn (Project $record): bool => ! $record->isOpen())
+                    ->action(function (Project $record): void {
+                        app(ReopenProject::class)->handle($record, auth()->user());
+
+                        Notification::make()->title('Reopened')->success()->send();
+                    }),
+                Action::make('rename')
+                    ->label('Rename')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Name')
+                            ->maxLength(RenameProject::MAX_LENGTH),
+                    ])
+                    ->fillForm(fn (Project $record): array => ['name' => $record->name])
+                    ->action(function (Project $record, array $data): void {
+                        try {
+                            app(RenameProject::class)->handle($record, auth()->user(), $data['name'] ?? null);
+                        } catch (DomainException $exception) {
+                            // Filament renders a title as HTML, and the refusal is plain words about owner text.
+                            Notification::make()->title(e($exception->getMessage()))->danger()->send();
+
+                            return;
+                        }
+
+                        Notification::make()->title('Renamed')->success()->send();
                     }),
             ])
             ->emptyStateHeading('No '.mb_strtolower($word->plural()).' yet');
