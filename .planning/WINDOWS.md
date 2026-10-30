@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 17
+open_count: 19
 waived_count: 1
 fixed_count: 19
-total_count: 37
-last_updated: 2026-10-30T18:55:35.664Z
+total_count: 39
+last_updated: 2026-10-30T20:18:50.137Z
 ---
 
 # Broken Windows Ledger
@@ -52,6 +52,8 @@ last_updated: 2026-10-30T18:55:35.664Z
 | 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | open |  | 2026-10-30T15:45:59.200Z |  |
 | 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | open |  | 2026-10-30T17:30:20.550Z |  |
 | 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | open |  | 2026-10-30T18:55:35.664Z |  |
+| 38 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the close confirmation and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T20:18:50.026Z |  |
+| 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | open |  | 2026-10-30T20:18:50.137Z |  |
 
 ````json
 [
@@ -533,6 +535,32 @@ last_updated: 2026-10-30T18:55:35.664Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T18:55:35.664Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 38,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": "app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php",
+    "line": null,
+    "description": "07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the close confirmation and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T20:18:50.026Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 39,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T20:18:50.137Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
