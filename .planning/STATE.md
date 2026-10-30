@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-10-30T12:38:17.439Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-10-30T15:46:40.878Z"
 last_activity: 2026-10-30
 last_activity_desc: Phase 07 execution started
-state_head: a02c42ff8895b1a056ea6ccecc75befd8dee1a1e
+state_head: 6caee9a8cefb5ba6eef13c9f6962ca80ffccab59
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 33
-  completed_plans: 26
+  completed_plans: 27
   percent: 33
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-28)
 ## Current Position
 
 Phase: 07 (The Spine and Leads) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Status: Ready to execute
 Last activity: 2026-10-30 — Phase 07 execution started
 
@@ -165,6 +165,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 06 P06 | 6 min | 2 tasks | 10 files |
 | Phase 06 P07 | 9 min | 2 tasks | 7 files |
 | Phase 07 P01 | 8 min | 2 tasks | 9 files |
+| Phase 07 P02 | 6 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -220,6 +221,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-06: ProcessInbound makes its claim token in the constructor with no default (a default would give older payloads one shared token), the claim writes it with handled_at, and failed() finds its burst by token; a queue holding ProcessInbound jobs is drained before this lands
 - [Phase 06]: 06-07: a failed run is reported once per claim token by one conditional UPDATE on messages.failure_reported_at, taken on the token's report row (subjectOf of the token's rows) so all four callers share it; a report that throws gives the claim back and rethrows (02.1 IN-11); ProcessInbound's try now covers the dangerous-form alert so a form-only burst is reported on the catch path
 - [Phase 07]: 07-01: projectWord() falls back to Project with no live version or an older compiled version; missing-word line reads 'project_word is missing, and it is required; write one of ...'
+- [Phase 07]: 07-02: closed_at null means open; projects has no status or appointment column (research A3, D-09)
+- [Phase 07]: 07-02: ProjectOpened timeline summaries are two fixed platform sentences; the card composes '<Word> N opened' from the live word when it renders (research A4)
 
 ### Pending Todos
 
@@ -282,8 +285,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-30T12:38:17.373Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-10-30T15:46:40.808Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -21,7 +21,7 @@
     {
       "number": "7",
       "name": "The Spine and Leads",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "8",
@@ -54,5 +54,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 07 of 9 · 33% · executing"
   },
-  "updated_at": "2026-10-30T12:38:16.510Z"
+  "updated_at": "2026-10-30T15:46:39.705Z"
 }
