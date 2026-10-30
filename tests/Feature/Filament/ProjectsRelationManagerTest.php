@@ -10,6 +10,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -20,7 +21,7 @@ beforeEach(function () {
 /**
  * The contact screen's project list, mounted the way the contact page mounts it.
  */
-function projectsListFor(Contact $contact): Livewire\Features\SupportTesting\Testable
+function projectsListFor(Contact $contact): Testable
 {
     return Livewire::test(ProjectsRelationManager::class, [
         'ownerRecord' => $contact,
@@ -80,8 +81,11 @@ it('shows on the contact page', function () {
     activateExampleFolder();
     $contact = Contact::factory()->create();
 
-    $this->get(ContactResource::getUrl('view', ['record' => $contact]))
-        ->assertOk()
-        ->assertSee('Jobs')
-        ->assertSee('New job');
+    $this->get(ContactResource::getUrl('view', ['record' => $contact]))->assertOk();
+
+    // Filament draws a relation manager as its own lazy-loaded component, so the page itself holds only its place.
+    Livewire::test(ViewContact::class, ['record' => $contact->id])
+        ->assertSeeLivewire(ProjectsRelationManager::class);
+
+    expect(ContactResource::getRelations())->toBe([ProjectsRelationManager::class]);
 });
