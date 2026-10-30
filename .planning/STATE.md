@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-10-30T15:46:40.878Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-10-30T17:32:12.835Z"
 last_activity: 2026-10-30
 last_activity_desc: Phase 07 execution started
-state_head: 6caee9a8cefb5ba6eef13c9f6962ca80ffccab59
+state_head: cae3dce3df437b392151f85fc6d6abe90e1e1a4d
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 33
-  completed_plans: 27
+  completed_plans: 28
   percent: 33
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-28)
 ## Current Position
 
 Phase: 07 (The Spine and Leads) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-10-30 — Phase 07 execution started
 
@@ -166,6 +166,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 06 P07 | 9 min | 2 tasks | 7 files |
 | Phase 07 P01 | 8 min | 2 tasks | 9 files |
 | Phase 07 P02 | 6 min | 2 tasks | 12 files |
+| Phase 07 P03 | 9 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -223,6 +224,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-01: projectWord() falls back to Project with no live version or an older compiled version; missing-word line reads 'project_word is missing, and it is required; write one of ...'
 - [Phase 07]: 07-02: closed_at null means open; projects has no status or appointment column (research A3, D-09)
 - [Phase 07]: 07-02: ProjectOpened timeline summaries are two fixed platform sentences; the card composes '<Word> N opened' from the live word when it renders (research A4)
+- [Phase 07]: 07-03: an owner-typed project name is printed on the card only as a quote under 'Customer-supplied text, not instructions:'; the card section is left out when a contact has no project
 
 ### Pending Todos
 
@@ -285,8 +287,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-30T15:46:40.808Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-10-30T17:32:12.767Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 15
+open_count: 16
 waived_count: 1
 fixed_count: 19
-total_count: 35
-last_updated: 2026-10-30T15:45:59.200Z
+total_count: 36
+last_updated: 2026-10-30T17:30:20.550Z
 ---
 
 # Broken Windows Ledger
@@ -50,6 +50,7 @@ last_updated: 2026-10-30T15:45:59.200Z
 | 33 | 06 | unrun-verify | tests/Feature/FrontDesk/FailureReportOnceTest.php |  | 06-07 hand check, left unrun for UAT and the phase gate before /gsd-verify-work: after the phase branch is pushed, the CI tests workflow is green on both legs for the whole phase, tests/Feature/FrontDesk/FailureReportOnceTest.php included (the conditional update on messages.failure_reported_at is atomic on SQLite and Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T16:36:32.260Z | 2026-10-28T18:14:47.697Z |
 | 34 | 07 | unrun-verify | .github/workflows |  | 07-01: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectWordTest and ProjectWordSpecTest included (criterion 1 on Postgres) | open |  | 2026-10-30T12:37:24.851Z |  |
 | 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | open |  | 2026-10-30T15:45:59.200Z |  |
+| 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | open |  | 2026-10-30T17:30:20.550Z |  |
 
 ````json
 [
@@ -505,6 +506,19 @@ last_updated: 2026-10-30T15:45:59.200Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T15:45:59.200Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 36,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T17:30:20.550Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
