@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 19
+open_count: 20
 waived_count: 1
 fixed_count: 19
-total_count: 39
-last_updated: 2026-10-30T20:18:50.137Z
+total_count: 40
+last_updated: 2026-10-30T22:36:27.019Z
 ---
 
 # Broken Windows Ledger
@@ -54,6 +54,7 @@ last_updated: 2026-10-30T20:18:50.137Z
 | 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | open |  | 2026-10-30T18:55:35.664Z |  |
 | 38 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the close confirmation and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T20:18:50.026Z |  |
 | 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | open |  | 2026-10-30T20:18:50.137Z |  |
+| 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | open |  | 2026-10-30T22:36:27.019Z |  |
 
 ````json
 [
@@ -561,6 +562,19 @@ last_updated: 2026-10-30T20:18:50.137Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T20:18:50.137Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 40,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T22:36:27.019Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
