@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 20
+open_count: 22
 waived_count: 1
 fixed_count: 19
-total_count: 40
-last_updated: 2026-10-30T22:36:27.019Z
+total_count: 42
+last_updated: 2026-10-30T23:42:17.942Z
 ---
 
 # Broken Windows Ledger
@@ -55,6 +55,8 @@ last_updated: 2026-10-30T22:36:27.019Z
 | 38 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the close confirmation and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T20:18:50.026Z |  |
 | 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | open |  | 2026-10-30T20:18:50.137Z |  |
 | 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | open |  | 2026-10-30T22:36:27.019Z |  |
+| 41 | 07 | unrun-verify | resources/views/filament/rooms/leads-section.blade.php |  | 07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T23:42:17.829Z |  |
+| 42 | 07 | unrun-verify | .github/workflows |  | 07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres) | open |  | 2026-10-30T23:42:17.942Z |  |
 
 ````json
 [
@@ -575,6 +577,32 @@ last_updated: 2026-10-30T22:36:27.019Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T22:36:27.019Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 41,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": "resources/views/filament/rooms/leads-section.blade.php",
+    "line": null,
+    "description": "07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T23:42:17.829Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 42,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-30T23:42:17.942Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
