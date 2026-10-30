@@ -2,6 +2,7 @@
 
 namespace App\Icm;
 
+use App\Enums\ProjectWord;
 use App\Enums\VersionStatus;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\IcmVersion;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
  *
  * It answers from the compiled copy stored with the live version, never from the folder on disk.
  * Every accessor throws NoActiveVersion when nothing is live yet, except the ones that say they never throw:
- * displayTimezone(), hasRoom(), roomKeys(), roomContract() and roomOwnedFiles().
+ * displayTimezone(), projectWord(), hasRoom(), roomKeys(), roomContract() and roomOwnedFiles().
  */
 class ActiveConfig
 {
@@ -59,6 +60,20 @@ class ActiveConfig
             return $this->timezone();
         } catch (NoActiveVersion) {
             return config('app.timezone');
+        }
+    }
+
+    /**
+     * What this business calls a project (D-12): the word its business/profile.md names in project_word.
+     * It never throws, so a card or screen can draw before the first sync or under a version compiled before the field
+     * existed; both read as Project.
+     */
+    public function projectWord(): ProjectWord
+    {
+        try {
+            return ProjectWord::fromProfile($this->business()['project_word'] ?? null) ?? ProjectWord::Project;
+        } catch (NoActiveVersion) {
+            return ProjectWord::Project;
         }
     }
 
