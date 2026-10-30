@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\ProjectActor;
+use App\Enums\ProjectWord;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -91,5 +94,36 @@ class Project extends Model
     public function isOpen(): bool
     {
         return $this->closed_at === null;
+    }
+
+    /**
+     * Add each project's number: the count of that contact's projects with an id up to this one's, so a contact's
+     * first project is 1. N is the contact's own count in opening order and stays put because projects are never
+     * deleted on their own. The card and the screens all number the same way, and the database counts it in the one
+     * query, so no number is stored.
+     *
+     * @param  Builder<Project>  $query
+     */
+    #[Scope]
+    protected function withNumber(Builder $query): void
+    {
+        $query->select('projects.*')->addSelect([
+            'number' => self::query()
+                ->from('projects as numbered')
+                ->selectRaw('count(*)')
+                ->whereColumn('numbered.contact_id', 'projects.contact_id')
+                ->whereColumn('numbered.id', '<=', 'projects.id'),
+        ]);
+    }
+
+    /**
+     * What a screen calls this project: its name when the owner gave one, else the business's word and the number,
+     * such as "Job 2" (D-08).
+     */
+    public function label(ProjectWord $word, int $number): string
+    {
+        $name = trim((string) $this->name);
+
+        return $name !== '' ? $name : "{$word->singular()} {$number}";
     }
 }

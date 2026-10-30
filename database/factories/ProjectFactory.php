@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\ProjectActor;
 use App\Models\Contact;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -33,5 +34,39 @@ class ProjectFactory extends Factory
             'closed_by' => null,
             'closed_by_user_id' => null,
         ];
+    }
+
+    /**
+     * A project a new lead opened by itself (the automatic open).
+     */
+    public function openedByLead(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'opened_by' => ProjectActor::Lead,
+            'opened_by_user_id' => null,
+        ]);
+    }
+
+    /**
+     * A project a signed-in user opened by hand.
+     */
+    public function openedByUser(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'opened_by' => ProjectActor::User,
+            'opened_by_user_id' => $user->id,
+        ]);
+    }
+
+    /**
+     * A project that has been closed, by the given user when there is one.
+     */
+    public function closed(?User $user = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'closed_at' => now(),
+            'closed_by' => $user === null ? null : ProjectActor::User,
+            'closed_by_user_id' => $user?->id,
+        ]);
     }
 }
