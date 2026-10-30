@@ -252,6 +252,8 @@ class CustomerCard
             ActivityType::RoomEntry => $this->roomEntryParts($activity),
             ActivityType::ProjectOpened => $this->projectParts($activity, 'opened', $word, $projectNumbers),
             ActivityType::ProjectClosed => $this->projectParts($activity, 'closed', $word, $projectNumbers),
+            ActivityType::ProjectReopened => $this->projectParts($activity, 'reopened', $word, $projectNumbers),
+            ActivityType::ProjectRenamed => $this->projectParts($activity, 'renamed', $word, $projectNumbers),
         };
 
         return implode("\n", [

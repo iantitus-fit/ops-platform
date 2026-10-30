@@ -20,4 +20,6 @@ enum ActivityType: string
     case RoomEntry = 'room_entry';
     case ProjectOpened = 'project_opened';
     case ProjectClosed = 'project_closed';
+    case ProjectReopened = 'project_reopened';
+    case ProjectRenamed = 'project_renamed';
 }
