@@ -189,7 +189,33 @@ Plans:
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+**Wave 1**
+- [ ] 07-01-PLAN.md — The business's word: `project_word` in `business/profile.md`, checked by the sync, read by `ActiveConfig::projectWord()`, listed in SPEC (D-12)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 07-02-PLAN.md — The spine: the platform `projects` table (one lead project per contact, no appointment column), the owner's open through `OpenProject`, the timeline entry on the card
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 07-03-PLAN.md — The card's "## <Plural word>" section above the timeline, names quoted, seen by the front desk only through the card (D-13); CardInjectionTest gains its case
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 07-04-PLAN.md — Close, reopen and rename through their own actions, and a test that only the four actions write projects (D-11)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 07-05-PLAN.md — The contact screen: projects listed in the business's word with New, Close, Reopen and Rename (D-04, D-14)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 07-06-PLAN.md — The leads room at the standard: provider, contract, boot test, claims New leads, the WR-09 guard, marketing's web form sentence; file count 25 to 26, FrontDeskBootTest.php:90
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 07-07-PLAN.md — The leads section: open projects with a keyboard link, an absolute date and their source or opener, axe clean (D-15, D-16)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 07-08-PLAN.md — A new lead opens a project after the inbound commits, never two, never in the inbound's way, not for a first STOP (LEAD-05, D-01 to D-03, D-23); CardInjectionTest.php:90
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):

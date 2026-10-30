@@ -38,24 +38,28 @@ created: "2026-10-29"
 
 ## Per-Task Verification Map
 
-Filled from the plans as they land. Requirement-level map (from 07-RESEARCH.md § Validation Architecture):
+Filled from the plans (eight plans, one per wave, sequential because every plan updates docs/BLUEPRINT.md and the walk-through log in the same commit as its change). Each task writes its failing test first (tdd_mode); the plan's last task also runs the full suite.
 
-| Requirement | Behavior | Test Type | Automated Command | File Exists | Status |
-|-------------|----------|-----------|-------------------|-------------|--------|
-| PROJ-02 / criterion 1 | Sync accepts each listed word in any case; refuses missing and unlisted in plain words naming `business/profile.md` and the field; previous version stays live | feature | `php artisan test --compact tests/Feature/Projects/ProjectWordTest.php` | ❌ W0 | ⬜ pending |
-| PROJ-02 (D-12) | SPEC word table equals the code's word list | feature | `php artisan test --compact tests/Feature/Projects/ProjectWordSpecTest.php` | ❌ W0 | ⬜ pending |
-| PROJ-01 (D-08, D-09) | Project belongs to a contact and optionally a conversation; no appointment column; open or closed; "<word> N" numbering | feature | `php artisan test --compact tests/Feature/Projects/ProjectModelTest.php` | ❌ W0 | ⬜ pending |
-| D-11 | Four actions record who acted and add one timeline entry each; second-tab repeat adds none; contact status never changes | feature | `php artisan test --compact tests/Feature/Projects/ProjectActionsTest.php` | ❌ W0 | ⬜ pending |
-| D-11 | Nothing but the four actions writes the projects table | unit | `php artisan test --compact tests/Unit/ProjectWritesTest.php` | ❌ W0 | ⬜ pending |
-| PROJ-02 / criterion 2 (D-13) | Card section above the timeline in the business's word; omitted with no project; owner name quoted and neutralized | feature | `php artisan test --compact tests/Feature/Projects/ProjectCardTest.php tests/Feature/Records/CardInjectionTest.php` | ❌ W0 / ✅ | ⬜ pending |
-| criterion 2 | A business that sets "Matter" sees "Matter" on the card, contact screen and dashboard | feature | `ProjectCardTest`, `ProjectsRelationManagerTest`, `LeadsBootTest` | ❌ W0 | ⬜ pending |
-| LEAD-05 (D-01) | New-number text and non-matching form open one project; known number, matching form and factory contact open none | feature | `php artisan test --compact tests/Feature/Projects/OpenOnNewLeadTest.php` | ❌ W0 | ⬜ pending |
-| D-02 | Retry or duplicate never opens two; a failed dispatch never breaks the inbound; project links to the lead's conversation | feature | same file | ❌ W0 | ⬜ pending |
-| D-03 | Room off at arrival or at run time opens nothing; switching on later backfills nothing | feature | same file | ❌ W0 | ⬜ pending |
-| ROOM-07 / criterion 5 | Leads room boots empty and with the example folder; contract matches SPEC; reads lead sources and offers; writes no records; claims `NewLeads`; section axe-clean | feature + browser | `php artisan test --compact tests/Feature/Rooms/LeadsBootTest.php` | ❌ W0 | ⬜ pending |
-| D-15 (06 WR-09) | A room cannot claim a widget another room adds, in either registration order | unit | `php artisan test --compact tests/Unit/Rooms/RoomWidgetOwnershipTest.php` | ❌ W0 | ⬜ pending |
-| D-14 | New, Close, Reopen and Rename work from the contact screen | feature (Livewire) | `php artisan test --compact tests/Feature/Filament/ProjectsRelationManagerTest.php` | ❌ W0 | ⬜ pending |
-| criterion 4 | Front desk unchanged; only the D-22 test edits | regression | `php artisan test --compact tests/Feature/FrontDesk` then full suite | ✅ | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
+|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
+| 07-01-T1 | 01 | 1 | PROJ-02 / criterion 1 (D-12) | T-07-01, T-07-02 | Sync accepts the six words in any case; refuses missing and unlisted in one plain line naming `business/profile.md`, `project_word` and the choices; previous version stays live; `projectWord()` never throws | feature | `php artisan test --compact tests/Feature/Projects/ProjectWordTest.php tests/Feature/Icm` then full suite | ❌ W0 | ⬜ pending |
+| 07-01-T2 | 01 | 1 | PROJ-02 (D-12) | none | SPEC word table equals `ProjectWord::cases()` | feature | `php artisan test --compact tests/Feature/Projects tests/Feature/Rooms/SpecTablesTest.php` | ❌ W0 | ⬜ pending |
+| 07-02-T1 | 02 | 2 | PROJ-01 (D-06, D-08, D-10, D-11) | T-07-04, T-07-05 | Owner's open writes one project tied to the open conversation; card timeline shows "Job 1 opened" | feature | `php artisan test --compact tests/Feature/Projects/ProjectRecordTest.php tests/Feature/Records tests/Feature/Filament/ContactResourceTest.php` | ❌ W0 | ⬜ pending |
+| 07-02-T2 | 02 | 2 | PROJ-01 (D-05, D-09, D-10) | T-07-03 | No appointment column; any number by hand; one lead project per contact (partial unique index); numbering; owned by no room | feature | `php artisan test --compact tests/Feature/Projects tests/Feature/Records tests/Feature/Rooms/FrontDeskBootTest.php tests/Feature/Rooms/TeamBootTest.php` then full suite | ❌ W0 | ⬜ pending |
+| 07-03-T1 | 03 | 3 | PROJ-02 / criterion 2 (D-13) | T-07-07 | Card section above the timeline in the business's word; omitted with no project; front desk sees it through the card | feature | `php artisan test --compact tests/Feature/Projects tests/Feature/Records tests/Feature/FrontDesk` | ❌ W0 | ⬜ pending |
+| 07-03-T2 | 03 | 3 | PROJ-02 (D-08, D-13) | T-07-06 | Owner-typed name quoted under the untrusted label; cannot forge a heading (new CardInjectionTest case); Matter relabels | feature | same, then full suite | ✅ (case added) | ⬜ pending |
+| 07-04-T1 | 04 | 4 | PROJ-01 (D-05, D-11) | T-07-10 | Close records who and when; second tab adds no second entry | feature | `php artisan test --compact tests/Feature/Projects tests/Feature/Records` | ❌ W0 | ⬜ pending |
+| 07-04-T2 | 04 | 4 | PROJ-01 (D-05, D-07, D-08) | T-07-09 | Reopen and rename; names one line, at most 100, no hidden characters; status never changes; no alert or text | feature | same | ❌ W0 | ⬜ pending |
+| 07-04-T3 | 04 | 4 | PROJ-01 (D-11) | T-07-08 | Only the four actions write projects (non-vacuous scan); arch keeps them out of App\Ai | unit | `php artisan test --compact tests/Unit/ProjectWritesTest.php tests/Unit/ArchitectureTest.php tests/Feature/Projects` then full suite | ❌ W0 | ⬜ pending |
+| 07-05-T1 | 05 | 5 | PROJ-01 (D-04, D-14) | T-07-11, T-07-13 | Contact screen lists projects; "New <word>" opens one by hand; relation manager not read-only | feature (Livewire) | `php artisan test --compact tests/Feature/Filament/ProjectsRelationManagerTest.php tests/Feature/Filament/ContactResourceTest.php tests/Feature/Rooms/RoomTimelineTest.php tests/Unit/ProjectWritesTest.php` | ❌ W0 | ⬜ pending |
+| 07-05-T2 | 05 | 5 | PROJ-02 (D-05, D-08, D-14) | T-07-12 | Close, Reopen, Rename rows; Matter word; refused name escaped | feature (Livewire) | `php artisan test --compact tests/Feature/Filament tests/Feature/Projects tests/Unit/ProjectWritesTest.php tests/Feature/Rooms/RoomTimelineTest.php` then full suite | ❌ W0 | ⬜ pending |
+| 07-06-T1 | 06 | 6 | ROOM-07 / criterion 5 (D-03, D-15, D-17, D-18, D-20) | T-07-14, T-07-16 | Leads room boots, owns nothing, reads lead sources and offers, optional, claims New leads; `Pest.php:295` and `FrontDeskBootTest.php:90` the only test lines changed | feature | `php artisan test --compact tests/Feature/Rooms/LeadsBootTest.php tests/Feature/Rooms/FrontDeskBootTest.php tests/Feature/Rooms/TeamBootTest.php tests/Feature/Rooms/SpecTablesTest.php tests/Feature/Rooms/NeverLeftOutTest.php tests/Unit/Icm/NeverLeftOutTest.php` then full suite | ❌ W0 | ⬜ pending |
+| 07-06-T2 | 06 | 6 | ROOM-07 (D-15 WR-09, D-19) | T-07-15 | A widget one room adds cannot be claimed by another, either order | unit | `php artisan test --compact tests/Unit/Rooms tests/Feature/Rooms` then full suite | ❌ W0 | ⬜ pending |
+| 07-07-T1 | 07 | 7 | ROOM-07 (D-15, D-21, A11Y-01) | T-07-17 | Leads section lists open projects with a keyboard link and an absolute date; axe clean with and without projects | feature + browser | `php artisan test --compact tests/Feature/Rooms/LeadsBootTest.php tests/Feature/Rooms/RoomSectionTest.php tests/Feature/Rooms/RoomAccessibilityTest.php tests/Unit/ProjectWritesTest.php tests/Unit/ArchitectureTest.php` | ❌ W0 | ⬜ pending |
+| 07-07-T2 | 07 | 7 | PROJ-02 / criterion 2 (D-05, D-15, D-16) | T-07-18, T-07-19 | Lead source or opener per row; newest 20 and a total; Matter; hidden when room off while projects stay; failure line; flat query count | feature | `php artisan test --compact tests/Feature/Rooms tests/Feature/Filament/ProjectsRelationManagerTest.php tests/Unit/ProjectWritesTest.php` then full suite | ❌ W0 | ⬜ pending |
+| 07-08-T1 | 08 | 8 | LEAD-05 / criterion 2 (D-01, D-02, D-06) | T-07-20 | New-number text and unmatched form open one project after the commit; `CardInjectionTest.php:90` 4 to 6 | feature | `php artisan test --compact tests/Feature/Projects/OpenOnNewLeadTest.php tests/Feature/Records tests/Feature/Inbound tests/Unit/ProjectWritesTest.php` then full suite | ❌ W0 | ⬜ pending |
+| 07-08-T2 | 08 | 8 | LEAD-05 (D-01, D-04, D-07, D-23) | T-07-22, T-07-24 | Known number, matching form, factory contact and first STOP open nothing; START/HELP/picture-only open one; lead stays a Lead; no text or alert | feature | `php artisan test --compact tests/Feature/Projects/OpenOnNewLeadTest.php tests/Feature/Inbound tests/Feature/Filament/DashboardWidgetsTest.php` | ❌ W0 | ⬜ pending |
+| 07-08-T3 | 08 | 8 | LEAD-05 / criterion 4 (D-02, D-03) | T-07-20, T-07-21, T-07-23 | Room off at arrival or run time; no backfill; existing project; lost race (savepoint); queue down; open throws; retries | feature | `php artisan test --compact tests/Feature/Projects tests/Feature/Inbound tests/Feature/FrontDesk tests/Feature/Alerts tests/Feature/Records tests/Unit/ProjectWritesTest.php` then full suite | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,10 +67,10 @@ Filled from the plans as they land. Requirement-level map (from 07-RESEARCH.md �
 
 ## Wave 0 Requirements
 
-- [ ] `tests/Rooms/SpecTables.php`: add `projectWords()`
-- [ ] `database/factories/ProjectFactory.php` with open, closed, opened-by-lead and opened-by-user states
-- [ ] Every new test file named in the map above
-- [ ] Existing tests changed, named by file and line (D-22): `tests/Feature/Records/CardInjectionTest.php:90`, `tests/Feature/Rooms/FrontDeskBootTest.php:90`, `tests/Pest.php:295` (`exampleFolderFileCount()`, 25 to 26)
+- [ ] `tests/Rooms/SpecTables.php` stays unchanged: plan 07-01's ProjectWordSpecTest reads the SPEC rows with the public `SpecTables::rows()` and a file-local helper, so no shared test file is edited (D-22)
+- [ ] `database/factories/ProjectFactory.php` with openedByLead(), openedByUser(User) and closed(?User) states (plan 07-02)
+- [ ] Every new test file named in the map above: tests/Feature/Projects/{ProjectWordTest, ProjectWordSpecTest, ProjectRecordTest, ProjectCardTest, ProjectActionsTest, OpenOnNewLeadTest}.php, tests/Unit/ProjectWritesTest.php, tests/Feature/Filament/ProjectsRelationManagerTest.php, tests/Feature/Rooms/{LeadsBootTest, LeadsSectionTest}.php, tests/Unit/Rooms/RoomWidgetOwnershipTest.php
+- [ ] Existing tests changed, named by file and line (D-22): `tests/Feature/Records/CardInjectionTest.php:90` (plan 07-08; the file also gains one new case in plan 07-03, as D-13 names), `tests/Feature/Rooms/FrontDeskBootTest.php:90` (plan 07-06), `tests/Pest.php:295` (`exampleFolderFileCount()`, 25 to 26, plan 07-06). CONTEXT.md's `:36` is unchanged. The profile-fixture and marketing-CONTEXT.md allowances are unused (no such tests exist, grep verified at planning).
 
 ---
 
