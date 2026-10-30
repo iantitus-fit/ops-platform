@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
 status: executing
-stopped_at: Completed 07-06-PLAN.md
-last_updated: "2026-10-30T22:37:05.778Z"
+stopped_at: Completed 07-07-PLAN.md
+last_updated: "2026-10-30T23:43:13.630Z"
 last_activity: 2026-10-30
 last_activity_desc: Phase 07 execution started
-state_head: e7c9b19ab62d1aceeeda1f1d14c6d222ea6086ff
+state_head: 23c4b69c9ac4530b7c68d9e693bb6b3f93275e42
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 33
-  completed_plans: 31
+  completed_plans: 32
   percent: 33
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-28)
 ## Current Position
 
 Phase: 07 (The Spine and Leads) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-10-30 — Phase 07 execution started
 
@@ -170,6 +170,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 07 P04 | 8 min | 3 tasks | 9 files |
 | Phase 07 P05 | 12 min | 2 tasks | 5 files |
 | Phase 07 P06 | 25 min | 2 tasks | 12 files |
+| Phase 07 P07 | 9 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -232,6 +233,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-04: RenameProject treats invalid UTF-8 as a hidden character and refuses before any write, so a malformed name cannot clear the stored one
 - [Phase 07]: 07-05: the contact screen's project list is stock Filament with placeholder wording until Phase 11; its actions show whether or not the leads room is live (research A2); the page-level test asserts the lazy relation manager is mounted, not its text
 - [Phase 07]: 07-06: the leads room claims New leads as a pointer; RoomRegistry refuses a widget with two owner rooms in either registration order (06 WR-09 fixed)
+- [Phase 07]: 07-07: the leads section is capped at the newest 20 open projects with a total line, drawn by its own Blade view so the shared section view and RoomSection stay unchanged — An uncapped list would grow without bound until Phase 8 closes projects; every project stays on its contact's screen; a business-wide view is Phase 9's
 
 ### Pending Todos
 
@@ -294,8 +296,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-30T22:37:05.723Z
-Stopped at: Completed 07-06-PLAN.md
+Last session: 2026-10-30T23:43:13.566Z
+Stopped at: Completed 07-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

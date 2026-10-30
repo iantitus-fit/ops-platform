@@ -31,7 +31,7 @@ Every room in the floor plan meets these five.
 Ten rooms. Every new room meets the room standard and nothing more, except where a requirement below says otherwise. Property and subcontractors are open (Future Requirements).
 
 - [x] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Ian also approved (Phase 6 discuss, 2026-10-27, `06-CONTEXT.md` D-14) moving `RoomOwnershipTest`'s three triage-only tests (lines 77, 160 and 185 today) in a prep plan that lands before the front desk wrap. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
-- [ ] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
+- [x] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
 - [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
 - [x] **ROOM-08**: Company knowledge room, to the room standard.
 - [x] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
@@ -202,7 +202,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | PROJ-01 | Phase 7 | Pending |
 | PROJ-02 | Phase 7 | Pending |
 | ROOM-06 | Phase 6 | Complete |
-| ROOM-07 | Phase 7 | Pending |
+| ROOM-07 | Phase 7 | Complete |
 | LEAD-05 | Phase 7 | Pending |
 | ROOM-08 | Phase 5 | Complete |
 | ROOM-09 | Phase 5 | Complete |
