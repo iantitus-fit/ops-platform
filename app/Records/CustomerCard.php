@@ -5,6 +5,7 @@ namespace App\Records;
 use App\Enums\ActivityType;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
+use App\Enums\ProjectActor;
 use App\Enums\ProjectWord;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
@@ -12,9 +13,11 @@ use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
+use App\Models\Project;
 use App\Rooms\RoomRegistry;
 use App\Rooms\TimelineEntryType;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -62,7 +65,8 @@ class CustomerCard
     {
         $timezone = $this->activeConfig->displayTimezone();
         $word = $this->activeConfig->projectWord();
-        $projectNumbers = $this->projectNumbers($contact);
+        $projects = $contact->projects()->orderBy('id')->get();
+        $projectNumbers = $this->projectNumbers($projects);
 
         $lines = [
             '# '.$this->heading($contact),
@@ -77,6 +81,7 @@ class CustomerCard
             '- Last activity: '.$this->time($contact->last_activity_at, $timezone),
             '',
             ...$this->intakeAnswerLines($contact),
+            ...$this->projectLines($projects, $word, $timezone),
             '## Timeline (newest first)',
             '',
         ];
@@ -156,17 +161,48 @@ class CustomerCard
      * Each of the contact's project ids mapped to its place in opening order, 1 for the first. The card and the
      * screens number a contact's projects the same way, so "Job 2" means the same project everywhere.
      *
+     * @param  Collection<int, Project>  $projects  the contact's projects, oldest first
      * @return array<int, int>
      */
-    private function projectNumbers(Contact $contact): array
+    private function projectNumbers(Collection $projects): array
     {
         $numbers = [];
 
-        foreach ($contact->projects()->orderBy('id')->pluck('id')->values() as $position => $id) {
-            $numbers[(int) $id] = $position + 1;
+        foreach ($projects->values() as $position => $project) {
+            $numbers[(int) $project->id] = $position + 1;
         }
 
         return $numbers;
+    }
+
+    /**
+     * The section named with the business's plural word, such as "Jobs": one line per project in opening order, each
+     * with its number, whether it is open, when it was opened and whether a new lead or the owner opened it. No lines
+     * at all when the contact has no project, so that card is exactly what it was before projects (D-13). The section
+     * is a platform type drawn here, never a room entry, so it does not depend on any room being live.
+     *
+     * @param  Collection<int, Project>  $projects  the contact's projects, oldest first
+     * @return list<string>
+     */
+    private function projectLines(Collection $projects, ProjectWord $word, string $timezone): array
+    {
+        if ($projects->isEmpty()) {
+            return [];
+        }
+
+        $lines = ['## '.$word->plural(), ''];
+
+        foreach ($projects->values() as $position => $project) {
+            $number = $position + 1;
+            $state = $project->isOpen() ? 'open' : 'closed';
+            $by = $project->opened_by === ProjectActor::Lead ? 'by a new lead' : 'by the owner';
+
+            $lines[] = "- {$word->singular()} {$number}: {$state}, opened {$this->time($project->opened_at, $timezone)} {$by}";
+        }
+
+        $lines[] = '';
+
+        return $lines;
     }
 
     /**
