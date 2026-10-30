@@ -376,6 +376,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
   - re-alerts and a backup;
   - complaint routing;
   - the on-call switch.
+- Reopening and renaming a project record "the owner" on the timeline, as closing a conversation does, and the projects row keeps user ids only for who opened and closed it (Phase 7 plan 07-04). That is exact while an instance has one owner login; when staff logins arrive (999.5), reopen and rename record which user. Affects: team, sales.
 - **Idea:** the available/unavailable switch ([2.2 input §4](phase-2.2-owner-input.md#4-the-busy-team-member-and-whether-held-drafts-are-needed-at-all)), and showing who sent each message ([§5](phase-2.2-owner-input.md#5-who-sent-it)).
 
 **Depends on.** Knowledge.
