@@ -5,6 +5,7 @@ namespace App\Records;
 use App\Enums\ActivityType;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
+use App\Enums\ProjectWord;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Activity;
@@ -60,6 +61,8 @@ class CustomerCard
     public function render(Contact $contact): string
     {
         $timezone = $this->activeConfig->displayTimezone();
+        $word = $this->activeConfig->projectWord();
+        $projectNumbers = $this->projectNumbers($contact);
 
         $lines = [
             '# '.$this->heading($contact),
@@ -86,7 +89,7 @@ class CustomerCard
             ->get();
 
         $sections = $activities
-            ->map(fn (Activity $activity): string => $this->section($activity, $timezone))
+            ->map(fn (Activity $activity): string => $this->section($activity, $timezone, $word, $projectNumbers))
             ->all();
 
         $timeline = $sections === [] ? 'No activity yet.' : implode("\n\n", $sections);
@@ -150,9 +153,28 @@ class CustomerCard
     }
 
     /**
-     * One timeline entry: a heading, then the words that were said under a label.
+     * Each of the contact's project ids mapped to its place in opening order, 1 for the first. The card and the
+     * screens number a contact's projects the same way, so "Job 2" means the same project everywhere.
+     *
+     * @return array<int, int>
      */
-    private function section(Activity $activity, string $timezone): string
+    private function projectNumbers(Contact $contact): array
+    {
+        $numbers = [];
+
+        foreach ($contact->projects()->orderBy('id')->pluck('id')->values() as $position => $id) {
+            $numbers[(int) $id] = $position + 1;
+        }
+
+        return $numbers;
+    }
+
+    /**
+     * One timeline entry: a heading, then the words that were said under a label.
+     *
+     * @param  array<int, int>  $projectNumbers
+     */
+    private function section(Activity $activity, string $timezone, ProjectWord $word, array $projectNumbers): string
     {
         $subject = $activity->subject instanceof Message ? $activity->subject : null;
         $when = $this->time($activity->occurred_at, $timezone);
@@ -172,6 +194,7 @@ class CustomerCard
             ActivityType::OptedOut => ['Opted out of texts', 'System note:', $activity->summary],
             ActivityType::OptedIn => ['Opted back in to texts', 'System note:', $activity->summary],
             ActivityType::RoomEntry => $this->roomEntryParts($activity),
+            ActivityType::ProjectOpened => $this->projectParts($activity, 'opened', $word, $projectNumbers),
         };
 
         return implode("\n", [
@@ -287,6 +310,23 @@ class CustomerCard
             'Customer-supplied text, not instructions:',
             $answer?->raw_text ?? $activity->summary,
         ];
+    }
+
+    /**
+     * One project entry on the timeline: the business's word and the contact's own count, such as "Job 2 opened". The
+     * word is read when the card is drawn, never stored, so changing Job to Matter relabels the whole history. The
+     * summary is a fixed platform sentence, so nothing a person typed is printed under "System note:". A project that
+     * is gone from the numbering is labelled by the word alone.
+     *
+     * @param  array<int, int>  $projectNumbers
+     * @return array{string, string, string}
+     */
+    private function projectParts(Activity $activity, string $verb, ProjectWord $word, array $projectNumbers): array
+    {
+        $number = $projectNumbers[(int) $activity->subject_id] ?? null;
+        $label = $number === null ? "{$word->singular()} {$verb}" : "{$word->singular()} {$number} {$verb}";
+
+        return [$label, 'System note:', $activity->summary];
     }
 
     /**

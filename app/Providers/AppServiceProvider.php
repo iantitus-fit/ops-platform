@@ -11,6 +11,7 @@ use App\Models\Conversation;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\Models\Project;
 use App\Models\User;
 use App\Rooms\RoomRegistry;
 use App\SendRule\Classifier;
@@ -84,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
             'intake_answer' => IntakeAnswer::class,
             'message' => Message::class,
             'owner_alert' => OwnerAlert::class,
+            'project' => Project::class,
             'user' => User::class,
         ]);
 
