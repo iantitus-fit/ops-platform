@@ -67,6 +67,9 @@ Earlier decisions are cited as "02 D-nn", "02.1 D-nn", "04 D-nn", "05 D-nn" and 
 ### Tests
 - **D-22:** ROADMAP criterion 4 is reworded in the context commit to allow exactly these existing-test changes: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line (criterion 1); and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence (D-19). Every other existing test stays unchanged, and each plan names each changed test by file and line. A plan that needs any other existing test to change stops and brings it to Ian. Affects: all ten areas (test discipline), led by safety and compliance.
 
+### Settled during planning (2026-10-29)
+- **D-23:** Narrows D-01. The automatic open does nothing if the contact is opted out when the job runs, so a first-ever STOP from a never-seen number opens no project. `RecordInbound` creates the contact before it knows the text is a keyword and stays unedited; the check sits in the open job. START or HELP from a new number still opens a project, and the owner can close it. Affects: sales, customer communication, safety and compliance.
+
 ### Claude's Discretion
 - Whether the open is an Eloquent model observer, an event listener or a queued job dispatched after commit, how it retries, and how "never two" is enforced on SQLite and Postgres (a lock, a conditional insert or a unique index), within D-02 and D-03.
 - The profile field's key name, the plural strings, and the name's length bound.
