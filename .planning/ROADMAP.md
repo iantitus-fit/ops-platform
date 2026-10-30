@@ -189,11 +189,11 @@ Plans:
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: 8 plans
+**Plans**: 1/8 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 07-01-PLAN.md — The business's word: `project_word` in `business/profile.md`, checked by the sync, read by `ActiveConfig::projectWord()`, listed in SPEC (D-12)
+- [x] 07-01-PLAN.md — The business's word: `project_word` in `business/profile.md`, checked by the sync, read by `ActiveConfig::projectWord()`, listed in SPEC (D-12)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 07-02-PLAN.md — The spine: the platform `projects` table (one lead project per contact, no appointment column), the owner's open through `OpenProject`, the timeline entry on the card
@@ -343,7 +343,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
-| 7. The Spine and Leads | 0/TBD | Not started | - |
+| 7. The Spine and Leads | 1/8 | In Progress | - |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |

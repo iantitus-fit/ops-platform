@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-10-30T01:23:26.325Z"
-last_activity: 2026-10-28
-last_activity_desc: Phase 06 complete, transitioned to Phase 7
-state_head: 703d572519d107c235119593f5289cbae6c0727a
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-10-30T12:38:17.439Z"
+last_activity: 2026-10-30
+last_activity_desc: Phase 07 execution started
+state_head: a02c42ff8895b1a056ea6ccecc75befd8dee1a1e
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 33
-  completed_plans: 25
+  completed_plans: 26
   percent: 33
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-28)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 7 — The Spine and Leads
+**Current focus:** Phase 07 — The Spine and Leads
 
 ## Current Position
 
-Phase: 07 (The Spine and Leads) — READY TO EXECUTE
-Plan: Not started
+Phase: 07 (The Spine and Leads) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-10-28 — Phase 06 complete, transitioned to Phase 7
+Last activity: 2026-10-30 — Phase 07 execution started
 
 Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 
@@ -164,6 +164,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 06 P05 | 7 min | 2 tasks | 8 files |
 | Phase 06 P06 | 6 min | 2 tasks | 10 files |
 | Phase 06 P07 | 9 min | 2 tasks | 7 files |
+| Phase 07 P01 | 8 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -218,6 +219,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-05: each conversation alert is stored under one unique dedupe_key (c<conversation>:m<message|0>:<reason>:u<user|0>) through createOrFirst; business-wide alerts keep a NULL key (D-08)
 - [Phase 06]: 06-06: ProcessInbound makes its claim token in the constructor with no default (a default would give older payloads one shared token), the claim writes it with handled_at, and failed() finds its burst by token; a queue holding ProcessInbound jobs is drained before this lands
 - [Phase 06]: 06-07: a failed run is reported once per claim token by one conditional UPDATE on messages.failure_reported_at, taken on the token's report row (subjectOf of the token's rows) so all four callers share it; a report that throws gives the claim back and rethrows (02.1 IN-11); ProcessInbound's try now covers the dangerous-form alert so a form-only burst is reported on the catch path
+- [Phase 07]: 07-01: projectWord() falls back to Project with no live version or an older compiled version; missing-word line reads 'project_word is missing, and it is required; write one of ...'
 
 ### Pending Todos
 
@@ -280,9 +282,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-29T19:56:48.888Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-the-spine-and-leads/07-CONTEXT.md
+Last session: 2026-10-30T12:38:17.373Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
