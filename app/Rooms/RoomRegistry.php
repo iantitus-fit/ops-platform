@@ -299,11 +299,19 @@ class RoomRegistry
     /**
      * A section that exists as a class must be a RoomSection for this very room, because only a RoomSection hides
      * itself while its room is off (D-08). A class name that does not exist yet is let through, because registry tests
-     * use placeholder names.
+     * use placeholder names. A section another room already claims is refused too, because a widget has one owner room;
+     * the check runs against the rooms already registered and guardClaimedWidgets() does the reverse, so the order of
+     * bootstrap/providers.php never matters (06-REVIEW WR-09, 07 D-15).
      */
     private function guardSections(Room $room): void
     {
         foreach ($room->sections as $section) {
+            foreach ($this->rooms as $other) {
+                if (in_array($section, $other->claimedWidgets, true)) {
+                    throw new LogicException("Room [{$room->key}] adds widget [{$section}] in its sections, which room [{$other->key}] claims. A widget has one owner room.");
+                }
+            }
+
             if (! class_exists($section)) {
                 continue;
             }
@@ -324,7 +332,9 @@ class RoomRegistry
      * already has, so a typo shows at start-up (06 D-18). Each widget has one owner room, a room claims it once, and a
      * room never both adds a widget in its sections and claims it, which would put it on the panel twice (06-REVIEW WR-04).
      * An entry that is not a string is refused first, so it gets a readable error and never reaches the other checks
-     * (06-REVIEW IN-03).
+     * (06-REVIEW IN-03). A widget another room already registered in its sections is refused too, so a claim can never
+     * take over or double another room's widget; guardSections() does the reverse for a new room's sections, and between
+     * them the refusal fires in either registration order (06-REVIEW WR-09, 07 D-15).
      */
     private function guardClaimedWidgets(Room $room): void
     {
@@ -356,6 +366,10 @@ class RoomRegistry
             foreach ($this->rooms as $other) {
                 if (in_array($widget, $other->claimedWidgets, true)) {
                     throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which room [{$other->key}] already claims. A widget has one owner room.");
+                }
+
+                if (in_array($widget, $other->sections, true)) {
+                    throw new LogicException("Room [{$room->key}] claims widget [{$widget}], which room [{$other->key}] adds in its sections. A widget has one owner room.");
                 }
             }
         }

@@ -53,7 +53,7 @@ findings:
     title: "A report claim taken by a reporter that then dies is not recovered when `failed()` arrives inside the lease"
   - id: WR-09
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A room can claim a widget that another room adds in its sections, and the reverse"
   - id: IN-05
     severity: info
@@ -84,7 +84,7 @@ recorded: 2026-10-28T23:45:00.000Z
 | IN-02 | info | open | - (not in the current review) |
 | WR-07 | warning | skipped | accepted: on a mixed burst, a crash between the alert and the finished mark gives a second note and alert; this is the repeat case already recorded under WR-06, and a repeat is kept over a loss (02.1 IN-11) (Ian, 2026-10-28) |
 | WR-08 | warning | deferred | not fixed in Phase 6: a run that times out while its report is being written gets failed() at once, inside the 2-minute lease, so the claimed report stays unwritten; recorded in BLUEPRINT section 6 with the double-failure open item, which one scheduled sweep closes too (Ian, 2026-10-28) |
-| WR-09 | warning | open | no room adds sections today; check when the leads room lands in Phase 7; BLUEPRINT section 6 open item (Ian, 2026-10-28) |
+| WR-09 | warning | fixed | fixed in Phase 7 plan 07-06: RoomRegistry refuses it in either registration order (07 D-15) |
 | IN-05 | info | skipped | no action: the edit to migration 000006 was its comment only, and the migration was never on main (Ian, 2026-10-28) |
 | IN-06 | info | open | info; tests tied to exact SQL text (Ian, 2026-10-28) |
 
