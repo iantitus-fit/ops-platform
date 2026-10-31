@@ -105,6 +105,17 @@ class OpenProjectForNewLead implements ShouldQueue
     }
 
     /**
+     * Report an open that used up its tries (review IN-01), so a lead left without a project shows in the log. The
+     * expected skips above (room off, first message was STOP, already has a project) are not failures and log nothing.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        if ($exception !== null) {
+            report($exception);
+        }
+    }
+
+    /**
      * Whether the message the lead arrived with is the one that opted them out (D-23 as amended): RecordInbound puts
      * the opt-out on the timeline with that message as its subject. A STOP sent after a real first text does not count,
      * so that lead still gets a project; nothing is ever texted to an opted-out number (02 D-40).

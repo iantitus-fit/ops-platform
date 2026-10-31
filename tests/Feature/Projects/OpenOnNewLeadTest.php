@@ -355,6 +355,14 @@ it('never breaks the inbound when the open throws', function () {
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'open failed');
 });
 
+it('reports an open that fails for good', function () {
+    Exceptions::fake();
+
+    (new OpenProjectForNewLead(1))->failed(new RuntimeException('open gave up'));
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'open gave up');
+});
+
 it('retries a failed open', function () {
     $job = new OpenProjectForNewLead(1);
 
