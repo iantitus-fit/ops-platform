@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 22
+open_count: 23
 waived_count: 1
 fixed_count: 19
-total_count: 42
-last_updated: 2026-10-30T23:42:17.942Z
+total_count: 43
+last_updated: 2026-10-31T15:09:06.795Z
 ---
 
 # Broken Windows Ledger
@@ -57,6 +57,7 @@ last_updated: 2026-10-30T23:42:17.942Z
 | 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | open |  | 2026-10-30T22:36:27.019Z |  |
 | 41 | 07 | unrun-verify | resources/views/filament/rooms/leads-section.blade.php |  | 07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T23:42:17.829Z |  |
 | 42 | 07 | unrun-verify | .github/workflows |  | 07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres) | open |  | 2026-10-30T23:42:17.942Z |  |
+| 43 | 07 | unrun-verify | .github/workflows |  | 07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases) | open |  | 2026-10-31T15:09:06.795Z |  |
 
 ````json
 [
@@ -603,6 +604,19 @@ last_updated: 2026-10-30T23:42:17.942Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-30T23:42:17.942Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 43,
+    "kind": "unrun-verify",
+    "phase": "07",
+    "file": ".github/workflows",
+    "line": null,
+    "description": "07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-31T15:09:06.795Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

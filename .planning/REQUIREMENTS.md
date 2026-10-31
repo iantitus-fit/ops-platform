@@ -23,8 +23,8 @@ Every room in the floor plan meets these five.
 
 ### The Spine
 
-- [ ] **PROJ-01**: A Project record ties a piece of work to its contact and conversation, and its appointments hang off it (zero, one or many). Estimates and payments are not part of v2.0; they stay in backlog 999.1.
-- [ ] **PROJ-02**: `business/profile.md` has one field naming what the business calls a project (Job, Project, Matter), checked by the sync; the dashboard and the customer card use that word. The front desk sees it only because it loads that same card (DEC-03); its code, prompt and rules stay frozen. Card tests that change because a project now appears on the card change in the phase that adds the project, not in the front desk wrap.
+- [x] **PROJ-01**: A Project record ties a piece of work to its contact and conversation, and its appointments hang off it (zero, one or many). Estimates and payments are not part of v2.0; they stay in backlog 999.1.
+- [x] **PROJ-02**: `business/profile.md` has one field naming what the business calls a project (Job, Project, Matter), checked by the sync; the dashboard and the customer card use that word. The front desk sees it only because it loads that same card (DEC-03); its code, prompt and rules stay frozen. Card tests that change because a project now appears on the card change in the phase that adds the project, not in the front desk wrap.
 
 ### Rooms (the floor plan)
 
@@ -32,7 +32,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 
 - [x] **ROOM-06**: Front desk room: today's front desk wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Ian also approved (Phase 6 discuss, 2026-10-27, `06-CONTEXT.md` D-14) moving `RoomOwnershipTest`'s three triage-only tests (lines 77, 160 and 185 today) in a prep plan that lands before the front desk wrap. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: customer communication.)*
 - [x] **ROOM-07**: Leads room, to the room standard. It reads `business/lead-sources.md` and `business/offers/`, which the marketing room owns.
-- [ ] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
+- [x] **LEAD-05**: When a new lead arrives (a text from a new number or a web form), a project opens for that contact. It hooks in beside the inbound path and changes nothing the front desk does; the suite stays green on both databases. What happens when an existing customer starts a second job is settled in the leads phase discuss.
 - [x] **ROOM-08**: Company knowledge room, to the room standard.
 - [x] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
 - [x] **ROOM-10**: Content generation room, to the room standard, with no connector.
@@ -199,11 +199,11 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-03 | Phase 4 | Complete |
 | ROOM-04 | Phase 4 | Complete |
 | ROOM-05 | Phase 4 | Complete |
-| PROJ-01 | Phase 7 | Pending |
-| PROJ-02 | Phase 7 | Pending |
+| PROJ-01 | Phase 7 | Complete |
+| PROJ-02 | Phase 7 | Complete |
 | ROOM-06 | Phase 6 | Complete |
 | ROOM-07 | Phase 7 | Complete |
-| LEAD-05 | Phase 7 | Pending |
+| LEAD-05 | Phase 7 | Complete |
 | ROOM-08 | Phase 5 | Complete |
 | ROOM-09 | Phase 5 | Complete |
 | ROOM-10 | Phase 5 | Complete |
