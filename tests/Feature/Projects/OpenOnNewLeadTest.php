@@ -255,6 +255,20 @@ it('does nothing for a contact who already has a project', function () {
     expect(Project::sole()->opened_by)->toBe(ProjectActor::User);
 });
 
+it('opens a project for a lead whose first text was real and who texted STOP before the job ran', function () {
+    activateExampleFolder();
+    $job = openOnNewLeadHeldJob();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('e', 32), 'Body' => 'STOP', 'OptOutType' => 'STOP']))->assertOk();
+
+    app()->call([$job, 'handle']);
+
+    $contact = Contact::sole();
+
+    expect(Project::sole()->contact_id)->toBe($contact->id)
+        ->and($contact->isOptedOut())->toBeTrue();
+});
+
 it('leaves one project and one timeline entry when the job is retried', function () {
     activateExampleFolder();
     $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();

@@ -5,6 +5,7 @@ namespace App\Rooms\Leads;
 use App\Actions\OpenProject;
 use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
+use App\Models\Activity;
 use App\Models\Contact;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -19,9 +20,10 @@ use Throwable;
  * A crash between the commit and the push loses the open. The owner's New action and Phase 8 booking cover that, and a
  * sweep before the first client will catch it (Deferred, BLUEPRINT section 6).
  *
- * It does nothing for a contact who is opted out when it runs. RecordInbound records a first STOP in the same
- * transaction that creates the contact, so a lead whose first text was STOP gets no project (D-23). A first START or
- * HELP still opens one.
+ * It does nothing when the lead's first message was itself the STOP (D-23 as amended, review WR-01): RecordInbound
+ * records that opt-out with the message as its subject, in the same transaction that creates the contact. A lead who
+ * writes about a job and then texts STOP before the job runs still gets a project, and stays opted out. A first START
+ * or HELP still opens one.
  *
  * The room is checked when the job is queued and again when it runs: the room may be turned off in between (D-03), and
  * ActiveConfig is scoped, so a worker sees a sync made after the push.
@@ -86,7 +88,7 @@ class OpenProjectForNewLead implements ShouldQueue
 
         $contact = Contact::query()->find($this->contactId);
 
-        if ($contact === null || $contact->isOptedOut()) {
+        if ($contact === null) {
             return;
         }
 
@@ -95,10 +97,28 @@ class OpenProjectForNewLead implements ShouldQueue
             ->orderBy('id')
             ->first();
 
-        if ($arrival === null) {
+        if ($arrival === null || $this->arrivalWasStop($contact, $arrival)) {
             return;
         }
 
         $openProject->forNewLead($contact, $arrival);
+    }
+
+    /**
+     * Whether the message the lead arrived with is the one that opted them out (D-23 as amended): RecordInbound puts
+     * the opt-out on the timeline with that message as its subject. A STOP sent after a real first text does not count,
+     * so that lead still gets a project; nothing is ever texted to an opted-out number (02 D-40).
+     */
+    private function arrivalWasStop(Contact $contact, Activity $arrival): bool
+    {
+        if ($arrival->subject_type === null) {
+            return false;
+        }
+
+        return $contact->activities()
+            ->where('type', ActivityType::OptedOut->value)
+            ->where('subject_type', $arrival->subject_type)
+            ->where('subject_id', $arrival->subject_id)
+            ->exists();
     }
 }
