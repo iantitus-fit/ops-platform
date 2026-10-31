@@ -20,14 +20,21 @@ function projectWritesIn(string $relativePath, string $source): array
 {
     $call = static fn (string $methods): string => '(?:'.$methods.')\s*\(';
 
+    $instanceWrites = 'save|saveQuietly|update|updateQuietly|delete|deleteQuietly|forceDelete|forceDeleteQuietly|restore|forceFill|touch|increment|decrement|push';
+
     $rules = [
-        'a static model write' => '/(?<![A-Za-z0-9_])Project::'.$call('create|forceCreate|insert|insertOrIgnore|insertGetId|upsert|updateOrCreate|firstOrCreate|createOrFirst|updateOrInsert|destroy|truncate').'/',
-        'a query write' => '/(?<![A-Za-z0-9_])Project::query\(\)[^;]*->'.$call('update|delete|forceDelete|insert|upsert|increment|decrement|create|forceCreate|firstOrCreate|updateOrCreate|createOrFirst').'/',
+        'a static model write' => '/(?<![A-Za-z0-9_])Project::'.$call('create|forceCreate|insert|insertOrIgnore|insertGetId|upsert|updateOrCreate|firstOrCreate|createOrFirst|updateOrInsert|update|delete|forceDelete|destroy|truncate').'/',
+        'a write at the end of a static chain' => '/(?<![A-Za-z0-9_])Project::\w+\s*\([^;]*->'.$call('update|updateQuietly|delete|deleteQuietly|forceDelete|forceDeleteQuietly|restore|save|saveQuietly|insert|upsert|increment|decrement|create|forceCreate|firstOrCreate|updateOrCreate|createOrFirst|touch|push').'/',
         'a new model' => '/\bnew\s+\\\\?(?:App\\\\Models\\\\)?Project\s*\(/',
         'a relation write' => '/->projects\(\)[^;]*->'.$call('create|createMany|save|saveMany|update|delete|forceCreate|firstOrCreate|updateOrCreate|createOrFirst').'/',
-        'an instance write' => '/\$project->'.$call('save|update|delete|forceDelete|fill|forceFill|touch|increment|decrement|push').'/',
+        'an instance write' => '/\$project->'.$call($instanceWrites.'|fill').'/',
         'raw table access' => '/DB::table\(\s*[\'"]projects[\'"]|\b(?:insert\s+into|update|delete\s+from)\s+[`"]?projects\b/i',
     ];
+
+    // A file that imports the model may hold a project under any name, so any Eloquent write in it counts.
+    if (preg_match('/^use\s+App\\\\Models\\\\Project\s*;/m', $source) === 1) {
+        $rules['an Eloquent write in a file that imports Project'] = '/->'.$call($instanceWrites).'/';
+    }
 
     $watched = str_starts_with($relativePath, 'app/Rooms/Leads/')
         || (str_starts_with($relativePath, 'app/Filament/') && str_contains(basename($relativePath), 'Project'));
@@ -91,6 +98,11 @@ it('flags every kind of write, so the scan is not vacuous', function (string $pa
     'a Filament update on the contact screen' => ['app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php', '$record->update([]);'],
     'a Filament delete action on the contact screen' => ['app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php', 'DeleteAction::make()'],
     'an Eloquent save in the leads room' => ['app/Rooms/Leads/AnyClass.php', '$model->save();'],
+    'a static where update' => ['app/X.php', "Project::where('id', 1)->update([]);"],
+    'a found model delete' => ['app/X.php', 'Project::find(1)->delete();'],
+    'a static whereKey force delete' => ['app/X.php', 'Project::whereKey(1)->forceDelete();'],
+    'an update on a project held under another name' => ['app/X.php', "use App\\Models\\Project;\n\n\$job = \$contact->projects()->latest('id')->first();\n\$job->update(['name' => null]);"],
+    'a delete on a project held under another name' => ['app/X.php', "use App\\Models\\Project;\n\nfunction drop(Project \$job): void\n{\n    \$job->delete();\n}"],
 ]);
 
 it('passes reads', function (string $snippet) {
@@ -99,6 +111,8 @@ it('passes reads', function (string $snippet) {
     'a numbered read' => ["Project::query()->withNumber()->whereNull('closed_at')->get();"],
     'a relation read' => ["\$contact->projects()->orderBy('id')->get();"],
     'a locked read' => ['Project::query()->lockForUpdate()->find(1);'],
+    'a static where read' => ["Project::where('contact_id', 1)->orderBy('id')->get();"],
+    'a read in a file that imports Project' => ["use App\\Models\\Project;\n\n\$job = Project::query()->find(1);\n\$name = \$job->name;"],
 ]);
 
 it('passes a Filament form and an event name that only look like writes', function () {
