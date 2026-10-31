@@ -4,7 +4,7 @@ slug: "the-spine-and-leads"
 status: approved
 shadcn_initialized: false
 preset: none
-created: "2026-10-30"
+created: "2026-10-31"
 ---
 
 # Phase 07: UI Design Contract
@@ -112,4 +112,4 @@ The two Phase 7 surfaces as built:
 No gsd-ui-checker run: this file records an existing contract and asks for no design work. Layout and styling belong to
 Phase 11 (02.1 D-48).
 
-**Approval:** approved 2026-10-30 (Ian, D-21 as amended)
+**Approval:** approved 2026-10-31 (Ian, D-21 as amended)
