@@ -3,6 +3,7 @@
 namespace App\Rooms\Leads;
 
 use App\Filament\Widgets\NewLeads;
+use App\Models\Contact;
 use App\Rooms\Room;
 use App\Rooms\RoomServiceProvider;
 
@@ -15,7 +16,11 @@ use App\Rooms\RoomServiceProvider;
  * Its dashboard section lists the open projects (07 D-15). It claims New leads as a pointer, so the widget stays where
  * the admin panel puts it and looks the same (07 D-15). The web form is shared and owned by no room, so it keeps taking
  * leads while this room is off (07 D-19). The `needs` field waits for the Phase 8 discuss (07 D-20). It has no
- * register() or boot() in this plan.
+ * register() in this plan.
+ *
+ * boot() listens for a new contact, which is how the room learns of a new lead without a line changing in
+ * RecordInbound (07 D-02). The listener fires inside the inbound's transaction, so it only asks whether the room is
+ * live and queues the open for after the commit. boot() itself reads nothing.
  */
 class LeadsServiceProvider extends RoomServiceProvider
 {
@@ -27,5 +32,15 @@ class LeadsServiceProvider extends RoomServiceProvider
             sections: [LeadsSection::class],
             claimedWidgets: [NewLeads::class],
         );
+    }
+
+    /**
+     * Record the room's model nicknames, then listen for a contact being created.
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        Contact::created(fn (Contact $contact) => OpenProjectForNewLead::queueFor($contact));
     }
 }

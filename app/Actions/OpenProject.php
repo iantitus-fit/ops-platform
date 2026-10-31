@@ -5,7 +5,9 @@ namespace App\Actions;
 use App\Enums\ActivityType;
 use App\Enums\ProjectActor;
 use App\Events\CustomerRecordChanged;
+use App\Models\Activity;
 use App\Models\Contact;
+use App\Models\Message;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +41,34 @@ class OpenProject
         });
 
         CustomerRecordChanged::dispatch($contact->id);
+
+        return $project;
+    }
+
+    /**
+     * The automatic open for a new lead (LEAD-05). A contact that already has any project, opened by a lead or by hand,
+     * gets none. The project is tied to the conversation the arriving message belongs to (D-06). It never touches the
+     * contact's own fields, so the new lead stays a lead (D-07). Returns the project, or null when none was made.
+     */
+    public function forNewLead(Contact $contact, Activity $arrival): ?Project
+    {
+        $project = DB::transaction(function () use ($contact, $arrival): ?Project {
+            Contact::query()->lockForUpdate()->find($contact->id);
+
+            if ($contact->projects()->exists()) {
+                return null;
+            }
+
+            $conversationId = $arrival->subject_type === (new Message)->getMorphClass()
+                ? Message::query()->whereKey($arrival->subject_id)->value('conversation_id')
+                : null;
+
+            return $this->open($contact, ProjectActor::Lead, null, $conversationId);
+        });
+
+        if ($project !== null) {
+            CustomerRecordChanged::dispatch($contact->id);
+        }
 
         return $project;
     }

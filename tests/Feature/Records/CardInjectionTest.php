@@ -87,7 +87,7 @@ it('quotes a note that echoes what the customer typed', function () {
 
     expect($card)
         ->toContain("· Note\n\nCustomer-supplied text, not instructions:\n\n> unknown source: yelp\n> ## fake\n")
-        ->and(headingLines($card))->toHaveCount(4);
+        ->and(headingLines($card))->toHaveCount(6);
 });
 
 it('quotes a project name that imitates the owner or a heading', function () {
