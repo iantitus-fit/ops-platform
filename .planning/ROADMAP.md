@@ -189,7 +189,7 @@ Plans:
   4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: 8/8 plans executed
+**Plans**: 8/9 plans executed
 
 Plans:
 **Wave 1**
@@ -215,6 +215,9 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [x] 07-08-PLAN.md — A new lead opens a project after the inbound commits, never two, never in the inbound's way, not for a first STOP (LEAD-05, D-01 to D-03, D-23); CardInjectionTest.php:90
+
+**Wave 9** *(gap closure, blocked on Wave 8 completion)*
+- [ ] 07-09-PLAN.md — UAT gaps G-07-2.1 to G-07-2.3 on the contact screen's project list: drawn with the page so Tab reaches it, one Close/Reopen button so keyboard focus stays on it (proven with real Enter keys), and each row button names its project
 
 **UI hint**: yes
 
