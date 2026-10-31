@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\OpenProject;
 use App\Enums\ActivityType;
 use App\Enums\ContactStatus;
 use App\Enums\MessageDirection;
@@ -13,9 +14,14 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use App\Rooms\Leads\OpenProjectForNewLead;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Testing\Fakes\QueueFake;
 use Livewire\Livewire;
 
 /**
@@ -162,4 +168,182 @@ it('keeps the new lead a lead and in New leads, and texts and alerts no one', fu
         ->and(Message::query()->where('direction', MessageDirection::Out->value)->exists())->toBeFalse();
 
     Livewire::test(NewLeads::class)->assertCanSeeTableRecords([$contact]);
+});
+
+/**
+ * The folder with the leads room left out, as a business that does not use it would have it. Nothing is synced yet.
+ */
+function openOnNewLeadWithoutTheRoom(): void
+{
+    File::deleteDirectory(icmPath('rooms/leads'));
+}
+
+/**
+ * A text from a number the business has not seen, with the open held back so a test can run it by hand.
+ */
+function openOnNewLeadHeldJob(): OpenProjectForNewLead
+{
+    Queue::fake([ProcessInbound::class, OpenProjectForNewLead::class]);
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    return Queue::pushed(OpenProjectForNewLead::class)->first();
+}
+
+it('queues nothing while the leads room is off', function () {
+    openOnNewLeadWithoutTheRoom();
+    activateExampleFolder();
+    Queue::fake([ProcessInbound::class, OpenProjectForNewLead::class]);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    Queue::assertNotPushed(OpenProjectForNewLead::class);
+    expect(Project::count())->toBe(0);
+});
+
+it('queues one open carrying the new contact while the leads room is on', function () {
+    activateExampleFolder();
+    Queue::fake([ProcessInbound::class, OpenProjectForNewLead::class]);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    Queue::assertPushed(OpenProjectForNewLead::class, 1);
+    expect(Queue::pushed(OpenProjectForNewLead::class)->first()->contactId)->toBe(Contact::sole()->id);
+});
+
+it('opens nothing when the room is off by the time the job runs', function () {
+    activateExampleFolder();
+    $job = openOnNewLeadHeldJob();
+
+    openOnNewLeadWithoutTheRoom();
+    activateExampleFolder();
+
+    app()->call([$job, 'handle']);
+
+    expect(Project::count())->toBe(0);
+});
+
+it('backfills nothing when the room is turned on later', function () {
+    openOnNewLeadWithoutTheRoom();
+    activateExampleFolder();
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+    $earlier = Contact::sole();
+
+    File::copyDirectory(base_path('examples/example-hvac/rooms/leads'), icmPath('rooms/leads'));
+    activateExampleFolder();
+
+    expect(Project::count())->toBe(0);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('d', 32), 'From' => '+12025550188']))->assertOk();
+
+    $later = Contact::query()->where('phone_e164', '+12025550188')->sole();
+
+    expect($earlier->projects()->count())->toBe(0)
+        ->and(Project::sole()->contact_id)->toBe($later->id);
+});
+
+it('does nothing for a contact who already has a project', function () {
+    activateExampleFolder();
+    $job = openOnNewLeadHeldJob();
+    $contact = Contact::sole();
+
+    app(OpenProject::class)->byHand($contact, User::factory()->create());
+
+    app()->call([$job, 'handle']);
+
+    expect(Project::sole()->opened_by)->toBe(ProjectActor::User);
+});
+
+it('leaves one project and one timeline entry when the job is retried', function () {
+    activateExampleFolder();
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+    $contact = Contact::sole();
+
+    app()->call([new OpenProjectForNewLead($contact->id), 'handle']);
+
+    expect(Project::count())->toBe(1)
+        ->and(Activity::query()->where('type', ActivityType::ProjectOpened->value)->count())->toBe(1);
+});
+
+it('loses a race without an error and leaves one project', function () {
+    activateExampleFolder();
+    $job = openOnNewLeadHeldJob();
+    $contact = Contact::sole();
+    $raced = false;
+
+    DB::listen(function (QueryExecuted $query) use (&$raced, $contact): void {
+        if ($raced || ! str_starts_with(strtolower($query->sql), 'select') || ! str_contains($query->sql, 'from "projects"')) {
+            return;
+        }
+
+        $raced = true;
+
+        DB::table('projects')->insert([
+            'contact_id' => $contact->id,
+            'opened_by' => ProjectActor::Lead->value,
+            'opened_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    });
+
+    app()->call([$job, 'handle']);
+
+    expect($raced)->toBeTrue()
+        ->and(Project::count())->toBe(1)
+        ->and(Activity::query()->where('type', ActivityType::ProjectOpened->value)->count())->toBe(0);
+});
+
+it('never breaks the inbound when the open cannot be queued', function () {
+    activateExampleFolder();
+    Exceptions::fake();
+
+    $queue = new class(app(), [ProcessInbound::class], Queue::getFacadeRoot()) extends QueueFake
+    {
+        public function push($job, $data = '', $queue = null)
+        {
+            if ($job instanceof OpenProjectForNewLead) {
+                throw new RuntimeException('queue down');
+            }
+
+            return parent::push($job, $data, $queue);
+        }
+    };
+
+    Queue::swap($queue);
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    $queue->assertPushed(ProcessInbound::class);
+    expect(Message::count())->toBe(1)
+        ->and(Project::count())->toBe(0);
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'queue down');
+});
+
+it('never breaks the inbound when the open throws', function () {
+    activateExampleFolder();
+    Exceptions::fake();
+
+    $this->app->bind(OpenProject::class, fn () => new class extends OpenProject
+    {
+        public function forNewLead(Contact $contact, Activity $arrival): ?Project
+        {
+            throw new RuntimeException('open failed');
+        }
+    });
+
+    $this->post(route('webhooks.text.fake'), fakeTextPayload())->assertOk();
+
+    Queue::assertPushed(ProcessInbound::class, 1);
+    expect(Message::count())->toBe(1)
+        ->and(Project::count())->toBe(0);
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'open failed');
+});
+
+it('retries a failed open', function () {
+    $job = new OpenProjectForNewLead(1);
+
+    expect($job->tries)->toBe(5)
+        ->and($job->backoff())->toBe([5, 30, 120, 300]);
 });
