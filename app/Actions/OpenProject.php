@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\Message;
 use App\Models\Project;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -49,6 +50,10 @@ class OpenProject
      * The automatic open for a new lead (LEAD-05). A contact that already has any project, opened by a lead or by hand,
      * gets none. The project is tied to the conversation the arriving message belongs to (D-06). It never touches the
      * contact's own fields, so the new lead stays a lead (D-07). Returns the project, or null when none was made.
+     *
+     * "Already has a project" and "the database's one-lead-project index refused the insert" both mean already opened.
+     * The insert runs in a nested transaction, which is a savepoint, so on Postgres a refused insert does not spoil the
+     * outer transaction (the RecordInbound::openConversationFor() precedent).
      */
     public function forNewLead(Contact $contact, Activity $arrival): ?Project
     {
@@ -63,7 +68,11 @@ class OpenProject
                 ? Message::query()->whereKey($arrival->subject_id)->value('conversation_id')
                 : null;
 
-            return $this->open($contact, ProjectActor::Lead, null, $conversationId);
+            try {
+                return DB::transaction(fn (): Project => $this->open($contact, ProjectActor::Lead, null, $conversationId));
+            } catch (UniqueConstraintViolationException) {
+                return null;
+            }
         });
 
         if ($project !== null) {
