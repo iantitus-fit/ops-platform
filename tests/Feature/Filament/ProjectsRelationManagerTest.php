@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -66,6 +67,21 @@ it('opens a second job from the New action, tied to the open conversation and wi
         ->and(Message::query()->count())->toBe(0);
 
     projectsListFor($contact)->assertSee('Job 2');
+});
+
+it('asks before New opens a job, and opens nothing until it is confirmed', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+
+    projectsListFor($contact)
+        ->assertTableActionExists('new', fn (Action $action): bool => $action->isConfirmationRequired()
+            && $action->getModalHeading() === 'New job'
+            && $action->getModalDescription() === 'Open a new job for this customer? It takes the next number and cannot be deleted, only closed.'
+            && $action->getModalSubmitActionLabel() === 'Open job')
+        ->mountTableAction('new')
+        ->assertTableActionMounted('new');
+
+    expect(Project::query()->count())->toBe(0);
 });
 
 it('is not read-only on the contact screen', function () {

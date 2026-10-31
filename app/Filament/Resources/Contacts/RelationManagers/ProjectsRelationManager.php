@@ -77,6 +77,10 @@ class ProjectsRelationManager extends RelationManager
             ->headerActions([
                 Action::make('new')
                     ->label('New '.mb_strtolower($word->singular()))
+                    ->requiresConfirmation()
+                    ->modalHeading('New '.mb_strtolower($word->singular()))
+                    ->modalDescription('Open a new '.mb_strtolower($word->singular()).' for this customer? It takes the next number and cannot be deleted, only closed.')
+                    ->modalSubmitActionLabel('Open '.mb_strtolower($word->singular()))
                     ->action(function () use ($word): void {
                         $project = app(OpenProject::class)->byHand($this->getOwnerRecord(), auth()->user());
 

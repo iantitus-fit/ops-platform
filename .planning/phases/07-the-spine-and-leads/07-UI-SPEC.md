@@ -35,7 +35,7 @@ built; it is not an allowlist.
 | Component | Import path | Notes |
 |-----------|-------------|-------|
 | Relation manager table | `Filament\Resources\RelationManagers\RelationManager`, `Filament\Tables\Table`, `Filament\Tables\Columns\TextColumn` | The contact screen's projects list (`ProjectsRelationManager`, D-14) |
-| Actions | `Filament\Actions\Action` | New, Close (with Filament's confirmation), Reopen, Rename |
+| Actions | `Filament\Actions\Action` | New (with its own confirmation), Close (with Filament's confirmation), Reopen, Rename |
 | Text input | `Filament\Forms\Components\TextInput` | Rename's one field, capped at 100 characters (`RenameProject::MAX_LENGTH`) |
 | Notification | `Filament\Notifications\Notification` | The line after each action, and the rename refusal |
 | Widget and section | `<x-filament-widgets::widget>`, `<x-filament::section>` | The leads room's dashboard section (`LeadsSection`, D-15) |
@@ -69,17 +69,17 @@ wording pass in Phase 11. "Project" is the word in code; the screen uses the bus
 
 | Element | Copy |
 |---------|------|
-| Primary CTA | "New {word}" on the contact screen's projects list |
+| Primary CTA | "New {word}" on the contact screen's projects list, confirmed before it opens: heading "New {word}", "Open a new {word} for this customer? It takes the next number and cannot be deleted, only closed.", button "Open {word}" (review WR-03) |
 | Empty state heading | Contact screen: "No {words} yet". Leads section: "No open {words}." |
 | Empty state body | none |
 | Error state | Rename refusals: "A name can be at most 100 characters." and the hidden-character line. Leads section: the shared failure line, "This section could not load. The rest of the dashboard is fine." |
-| Destructive confirmation | Close: Filament's default confirmation. Reopen undoes it. |
+| Destructive confirmation | Close: Filament's default confirmation. Reopen undoes it. New: its own confirmation (Primary CTA row), because a project cannot be deleted. |
 
 The two Phase 7 surfaces as built:
 
 - **The contact screen's projects list** (D-14). The tab is titled with the business's plural word. Columns: the
-  project's label, Open or Closed, Opened, Opened by ("New lead" or the user's name), Closed. Actions: New, Close with a
-  confirmation, Reopen, and Rename capped at 100 characters. Every write goes through the four project actions (D-11).
+  project's label, Open or Closed, Opened, Opened by ("New lead" or the user's name), Closed. Actions: New and Close, each
+  with a confirmation, Reopen, and Rename capped at 100 characters. Every write goes through the four project actions (D-11).
 - **The leads room's dashboard section** (D-15, D-16). One row per open project, newest first: a link to the contact's
   screen, the project's label, "opened" with an absolute date in a `time` element, and its origin ("source {name}" or
   "opened by {name}"). It shows at most 20 rows (`LeadsSection::SHOWN`) and then "Showing the newest 20 of {n} open
