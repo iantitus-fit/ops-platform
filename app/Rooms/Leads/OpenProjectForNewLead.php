@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\DB;
  * A crash between the commit and the push loses the open. The owner's New action and Phase 8 booking cover that, and a
  * sweep before the first client will catch it (Deferred, BLUEPRINT section 6).
  *
+ * It does nothing for a contact who is opted out when it runs. RecordInbound records a first STOP in the same
+ * transaction that creates the contact, so a lead whose first text was STOP gets no project (D-23). A first START or
+ * HELP still opens one.
+ *
  * The job writes nothing itself: it asks OpenProject, the chokepoint for opening a project (D-11).
  */
 class OpenProjectForNewLead implements ShouldQueue
@@ -50,7 +54,7 @@ class OpenProjectForNewLead implements ShouldQueue
     {
         $contact = Contact::query()->find($this->contactId);
 
-        if ($contact === null) {
+        if ($contact === null || $contact->isOptedOut()) {
             return;
         }
 
