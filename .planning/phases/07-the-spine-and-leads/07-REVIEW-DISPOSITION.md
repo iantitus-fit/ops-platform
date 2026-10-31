@@ -5,19 +5,19 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The opt-out check runs when the job runs, not when the lead arrived, so a real lead can silently lose its project"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The \"only four actions write projects\" scan has easy-to-hit blind spots"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "\"New job\" has no confirmation or double-submit guard, and spurious projects cannot be removed"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The job drops work silently and has no `failed()` handler"
   - id: IN-02
     severity: info
@@ -29,9 +29,9 @@ findings:
     title: "Duplicated whitespace-collapse regex and an unused `$user` parameter"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The dashboard's opened time has no time-zone label"
-open: 7
+open: 2
 total: 7
 recorded: 2026-10-31T16:37:57.813Z
 ---
@@ -40,14 +40,16 @@ recorded: 2026-10-31T16:37:57.813Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| IN-01 | info | open | - |
+| WR-01 | warning | fixed | b8c90e5 (D-23 amended) |
+| WR-02 | warning | fixed | 1a4a7cf |
+| WR-03 | warning | fixed | f6bb22c |
+| IN-01 | info | fixed | 207916e |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
-| IN-04 | info | open | - |
+| IN-04 | info | deferred | Phase 11 wording pass (Ian, 2026-10-31); docs/BLUEPRINT.md section 1 open items |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
 Re-running the gate keeps every row it can. A row the current review no longer reports is kept and its Source cell flagged, so a finding does not leave this record silently. ONE exception: when a finding id is REUSED by a different finding, the earlier decision cannot keep a row — the id is taken — and it is dropped. A RECORDED decision (anything but `open`) is named on the console when that happens; a row still at `open` is replaced silently, because `open` records no decision to lose.
+
+Triage (Ian, 2026-10-31): WR-01, WR-02, WR-03 and IN-01 fixed test first, one commit each; IN-04 deferred to the Phase 11 wording pass; IN-02 and IN-03 stay open as info. UI review finding 3 (Rename's too-long message) fixed in b155df7 and noted in 07-UI-REVIEW.md.
