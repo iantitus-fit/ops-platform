@@ -170,7 +170,8 @@ it('refuses a name over 100 characters on the form', function () {
 
     projectsListFor($contact)
         ->callTableAction('rename', $project, ['name' => str_repeat('a', 101)])
-        ->assertHasTableActionErrors(['name' => 'max']);
+        ->assertHasTableActionErrors(['name' => 'max'])
+        ->assertHasTableActionErrors(['name' => 'A name can be at most 100 characters.']);
 
     expect($project->refresh()->name)->toBeNull();
 });

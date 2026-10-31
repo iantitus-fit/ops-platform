@@ -28,6 +28,7 @@ Phase 7 adds two screens: the contact screen's projects list (`ProjectsRelationM
 1. **Leads rows read as one run-on line.** `resources/views/filament/rooms/leads-section.blade.php` prints each row as "Name: Job 3, opened 2026-10-31 14:02, source X" in an unstyled `<ul>` (Preflight strips bullets and spacing). Layout is Phase 11's (D-48); log it there. The VoiceOver walk (WINDOWS 41) should confirm the row reads sensibly.
 2. **The status badge does not differ by state.** The `status` column in `ProjectsRelationManager.php` is `->badge()` with no `->color()`, so Open and Closed differ by text only. Text alone meets WCAG 1.4.1; a per-state color is a Phase 11 styling choice.
 3. **The too-long rename message is Filament's, not the contract's.** `TextInput::maxLength(RenameProject::MAX_LENGTH)` refuses 101 characters on the form with Filament's stock validation message (`tests/Feature/Filament/ProjectsRelationManagerTest.php:156` asserts the `max` error), so the owner never sees "A name can be at most 100 characters." That line is only reachable by calling `RenameProject` directly. 07-UI-SPEC.md's Error state row names it as the screen's copy, so the spec and the screen disagree. Either the field gets `->validationMessages(['max' => ...])` or the spec row is corrected; Ian's call.
+   **Fixed 2026-10-31 (Ian's triage):** the field now carries `->validationMessages(['max' => 'A name can be at most 100 characters.'])`, and `ProjectsRelationManagerTest` asserts the message beside the `max` rule.
 
 ## Minor
 

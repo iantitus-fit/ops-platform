@@ -116,7 +116,8 @@ class ProjectsRelationManager extends RelationManager
                     ->schema([
                         TextInput::make('name')
                             ->label('Name')
-                            ->maxLength(RenameProject::MAX_LENGTH),
+                            ->maxLength(RenameProject::MAX_LENGTH)
+                            ->validationMessages(['max' => 'A name can be at most '.RenameProject::MAX_LENGTH.' characters.']),
                     ])
                     ->fillForm(fn (Project $record): array => ['name' => $record->name])
                     ->action(function (Project $record, array $data): void {
