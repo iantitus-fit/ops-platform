@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\CloseProject;
 use App\Actions\OpenProject;
 use App\Actions\RenameProject;
 use App\Enums\ProjectActor;
@@ -11,6 +12,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use Dom\HTMLDocument;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Livewire\Features\SupportTesting\Testable;
@@ -20,6 +22,44 @@ beforeEach(function () {
     $this->owner = User::factory()->create(['name' => 'Ian Owner']);
     $this->actingAs($this->owner);
 });
+
+/**
+ * The row buttons of a rendered project list, in row order: each one's trimmed visible text, accessible name and
+ * wire:key. The link-styled buttons in the table body are the row actions.
+ *
+ * @return list<array{text: string, label: string|null, key: string|null}>
+ */
+function projectsRowButtons(string $html): array
+{
+    $buttons = [];
+
+    foreach (HTMLDocument::createFromString($html, LIBXML_NOERROR)->querySelectorAll('tbody button.fi-ac-link-action') as $button) {
+        $buttons[] = [
+            'text' => trim($button->textContent),
+            'label' => $button->getAttribute('aria-label'),
+            'key' => $button->getAttribute('wire:key'),
+        ];
+    }
+
+    return $buttons;
+}
+
+/**
+ * One contact with the three projects the button-name cases read: Job 1 open, Johnny open, Job 3 closed.
+ *
+ * @return array{0: Contact, 1: Project, 2: Project, 3: Project}
+ */
+function projectsNamedFixture(User $owner): array
+{
+    $contact = Contact::factory()->create();
+    $first = app(OpenProject::class)->byHand($contact, $owner);
+    $second = app(OpenProject::class)->byHand($contact, $owner);
+    app(RenameProject::class)->handle($second, $owner, 'Johnny');
+    $third = app(OpenProject::class)->byHand($contact, $owner);
+    app(CloseProject::class)->handle($third, $owner);
+
+    return [$contact, $first, $second, $third];
+}
 
 /**
  * The contact screen's project list, mounted the way the contact page mounts it.
@@ -223,4 +263,87 @@ it('lists every project for a contact with two open ones', function () {
         ->assertCanSeeTableRecords([$first, $second], inOrder: true)
         ->assertSee('Job 1')
         ->assertSee('Job 2');
+});
+
+it('names each row button by its project, visible text unchanged', function () {
+    activateExampleFolder();
+    [$contact] = projectsNamedFixture($this->owner);
+
+    projectsListFor($contact)
+        ->assertSeeHtml('aria-label="Close Job 1"')
+        ->assertSeeHtml('aria-label="Rename Job 1"')
+        ->assertSeeHtml('aria-label="Close Johnny"')
+        ->assertSeeHtml('aria-label="Rename Johnny"')
+        ->assertSeeHtml('aria-label="Reopen Job 3"')
+        ->assertSeeHtml('aria-label="Rename Job 3"');
+});
+
+it('puts the visible word first in every row button\'s name', function () {
+    activateExampleFolder();
+    [$contact] = projectsNamedFixture($this->owner);
+
+    $pairs = array_map(
+        fn (array $button): array => [$button['text'], $button['label']],
+        projectsRowButtons(projectsListFor($contact)->html()),
+    );
+
+    expect($pairs)->toBe([
+        ['Close', 'Close Job 1'],
+        ['Rename', 'Rename Job 1'],
+        ['Close', 'Close Johnny'],
+        ['Rename', 'Rename Johnny'],
+        ['Reopen', 'Reopen Job 3'],
+        ['Rename', 'Rename Job 3'],
+    ]);
+});
+
+it('names the button after a rename', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $project = app(OpenProject::class)->byHand($contact, $this->owner);
+
+    projectsListFor($contact)
+        ->assertSeeHtml('aria-label="Rename Job 1"')
+        ->callTableAction('rename', $project, ['name' => 'Renamed'])
+        ->assertSeeHtml('aria-label="Rename Renamed"')
+        ->assertDontSeeHtml('aria-label="Rename Job 1"');
+});
+
+it('escapes an owner-typed name in a button\'s name', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $hostile = app(OpenProject::class)->byHand($contact, $this->owner);
+    $name = 'Johnny "the <b>boss</b>" & co\'s &amp; <script>x</script>';
+    app(RenameProject::class)->handle($hostile, $this->owner, $name);
+    $ampersand = app(OpenProject::class)->byHand($contact, $this->owner);
+    app(RenameProject::class)->handle($ampersand, $this->owner, 'Smith & Sons');
+
+    $list = projectsListFor($contact)
+        ->assertSeeHtml('aria-label="'.e('Close '.$name).'"')
+        ->assertSeeHtml('aria-label="'.e('Rename '.$name).'"')
+        ->assertSeeHtml('aria-label="Close Smith &amp; Sons"')
+        ->assertDontSeeHtml('Smith &amp;amp; Sons')
+        ->assertDontSeeHtml('aria-label="Close Smith & Sons"');
+
+    $html = $list->html();
+    $labels = array_column(projectsRowButtons($html), 'label');
+    $document = HTMLDocument::createFromString($html, LIBXML_NOERROR);
+    $injectedScripts = array_filter(
+        iterator_to_array($document->querySelectorAll('script')),
+        fn ($script): bool => trim($script->textContent) === 'x',
+    );
+
+    expect($labels)->toContain('Close '.$name, 'Rename '.$name, 'Close Smith & Sons')
+        ->and($document->querySelectorAll('b')->length)->toBe(0)
+        ->and($injectedScripts)->toBe([]);
+});
+
+it('carries the names in the contact page\'s first response', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    app(OpenProject::class)->byHand($contact, $this->owner);
+
+    $this->get(ContactResource::getUrl('view', ['record' => $contact]))
+        ->assertOk()
+        ->assertSee('aria-label="Close Job 1"', false);
 });
