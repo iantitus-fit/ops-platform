@@ -95,17 +95,26 @@ it('is not read-only on the contact screen', function () {
     $list->assertTableActionVisible('new');
 });
 
-it('shows on the contact page', function () {
+it('shows on the contact page in its first response, so Tab can reach the list', function () {
     activateExampleFolder();
     $contact = Contact::factory()->create();
+    app(OpenProject::class)->byHand($contact, $this->owner);
+    app(OpenProject::class)->byHand($contact, $this->owner);
 
-    $this->get(ContactResource::getUrl('view', ['record' => $contact]))->assertOk();
-
-    // Filament draws a relation manager as its own lazy-loaded component, so the page itself holds only its place.
-    Livewire::test(ViewContact::class, ['record' => $contact->id])
-        ->assertSeeLivewire(ProjectsRelationManager::class);
+    $this->get(ContactResource::getUrl('view', ['record' => $contact]))
+        ->assertOk()
+        ->assertSee('Job 1', false)
+        ->assertSee('Job 2', false)
+        ->assertSee('Rename', false)
+        ->assertSee('New job', false)
+        ->assertDontSee('__lazyLoad', false);
 
     expect(ContactResource::getRelations())->toBe([ProjectsRelationManager::class]);
+});
+
+it('is not lazy', function () {
+    expect(ProjectsRelationManager::isLazy())->toBeFalse()
+        ->and(ProjectsRelationManager::getDefaultProperties())->not->toHaveKey('lazy');
 });
 
 it('closes and reopens from the row', function () {
