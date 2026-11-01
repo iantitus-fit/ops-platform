@@ -94,7 +94,7 @@ The two Phase 7 surfaces as built:
 | empty | projects list, leads section | ✅ covered | Each shows its empty line from the Copywriting Contract |
 | overflow | leads section | ✅ covered | At most 20 rows, then the total line |
 | long-text | rename | ✅ covered | A name over 100 characters is refused |
-| accessibility | both surfaces | ✅ covered | WCAG 2.2 AA: row links reachable by keyboard and dates shown as absolute dates (D-15); the axe check runs in the leads boot test (A11Y-01) |
+| accessibility | both surfaces | ✅ covered | WCAG 2.2 AA: row links reachable by keyboard and dates shown as absolute dates (D-15); the axe check runs in the leads boot test (A11Y-01); the contact screen's project list is drawn with the page, not loaded on scroll, so Tab reaches it from the top (WCAG 2.1.1, gap G-07-2.1, plan 07-09) |
 | accessibility | both surfaces | 🧪 backstop | Keyboard-only and VoiceOver walk at UAT (`.planning/WINDOWS.md` entries 38 and 41, from waves 5 and 7) |
 
 ---

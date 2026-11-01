@@ -30,6 +30,14 @@ class ProjectsRelationManager extends RelationManager
     protected static string $relationship = 'projects';
 
     /**
+     * Filament draws a relation manager lazily by default: the first response holds a placeholder that loads the
+     * table only when it scrolls into view. The placeholder has nothing focusable, so a keyboard user tabbed past it
+     * and the list never loaded (WCAG 2.1.1, UAT gap G-07-2.1). The dashboard widgets and room sections set the same
+     * flag (02-23, 04-RESEARCH).
+     */
+    protected static bool $isLazy = false;
+
+    /**
      * The tab's title is the business's plural word: "Jobs", "Matters".
      */
     public static function getTitle(Model $ownerRecord, string $pageClass): string
