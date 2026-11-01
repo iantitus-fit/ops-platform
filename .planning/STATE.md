@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 07
 current_phase_name: The Spine and Leads
-status: verifying
-stopped_at: Completed 07-08-PLAN.md
-last_updated: "2026-10-31T15:09:56.645Z"
-last_activity: 2026-10-31
+status: executing
+stopped_at: Completed 07-09-PLAN.md
+last_updated: "2026-11-01T15:42:02.119Z"
+last_activity: 2026-11-01
 last_activity_desc: Phase 07 execution started
-state_head: 53637218edf7f1cfacea8689a9951930481d7044
+state_head: 84e5c28fae8af12d74fcd82cbd6c0adf689d9842
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 34
+  completed_plans: 34
   percent: 33
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-28)
 ## Current Position
 
 Phase: 07 (The Spine and Leads) — EXECUTING
-Plan: 8 of 8
-Status: Phase complete — ready for verification
-Last activity: 2026-10-31 — Phase 07 execution started
+Plan: 2 of 9
+Status: Ready to execute
+Last activity: 2026-11-01 — Phase 07 execution started
 
 Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 
@@ -172,6 +172,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 07 P06 | 25 min | 2 tasks | 12 files |
 | Phase 07 P07 | 9 min | 2 tasks | 9 files |
 | Phase 07 P08 | 15 min | 3 tasks | 8 files |
+| Phase 07 P09 | 11 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -236,6 +237,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-06: the leads room claims New leads as a pointer; RoomRegistry refuses a widget with two owner rooms in either registration order (06 WR-09 fixed)
 - [Phase 07]: 07-07: the leads section is capped at the newest 20 open projects with a total line, drawn by its own Blade view so the shared section view and RoomSection stay unchanged — An uncapped list would grow without bound until Phase 8 closes projects; every project stays on its contact's screen; a business-wide view is Phase 9's
 - [Phase 07]: 07-08: the new-lead open pushes inside DB::afterCommit with its own try/catch, and checks the leads room at queue time and again at run time
+- [Phase 07]: 07-09: the Close/Reopen row button is one stable Filament action (toggle), gray while it reads Close and primary while it reads Reopen, so its wire:key never changes and keyboard focus stays on it; both directions confirm with a dialog naming the job, decided when pressed, with the direction carried to the submit (T-07-26 mitigated)
+- [Phase 07]: 07-09: a Filament relation manager or widget a keyboard must reach sets $isLazy to false; owner text in extraAttributes() goes through e() because Filament prints it unescaped
 
 ### Pending Todos
 
@@ -298,8 +301,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-31T15:09:56.589Z
-Stopped at: Completed 07-08-PLAN.md
+Last session: 2026-11-01T15:42:02.053Z
+Stopped at: Completed 07-09-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
