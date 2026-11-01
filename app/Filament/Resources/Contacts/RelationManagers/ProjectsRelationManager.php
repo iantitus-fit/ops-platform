@@ -7,6 +7,7 @@ use App\Actions\OpenProject;
 use App\Actions\RenameProject;
 use App\Actions\ReopenProject;
 use App\Enums\ProjectActor;
+use App\Enums\ProjectWord;
 use App\Icm\ActiveConfig;
 use App\Models\Project;
 use DomainException;
@@ -65,7 +66,7 @@ class ProjectsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('label')
                     ->label($word->singular())
-                    ->state(fn (Project $record): string => $record->label($word, (int) $record->number)),
+                    ->state(fn (Project $record): string => $this->rowLabel($record, $word)),
                 TextColumn::make('status')
                     ->badge()
                     ->state(fn (Project $record): string => $record->isOpen() ? 'Open' : 'Closed'),
@@ -104,6 +105,7 @@ class ProjectsRelationManager extends RelationManager
                 Action::make('close')
                     ->label('Close')
                     ->color('gray')
+                    ->extraAttributes(fn (Action $action, Project $record): array => $this->rowButtonName($action, $record, $word))
                     ->requiresConfirmation()
                     ->visible(fn (Project $record): bool => $record->isOpen())
                     ->action(function (Project $record): void {
@@ -113,6 +115,7 @@ class ProjectsRelationManager extends RelationManager
                     }),
                 Action::make('reopen')
                     ->label('Reopen')
+                    ->extraAttributes(fn (Action $action, Project $record): array => $this->rowButtonName($action, $record, $word))
                     ->visible(fn (Project $record): bool => ! $record->isOpen())
                     ->action(function (Project $record): void {
                         app(ReopenProject::class)->handle($record, auth()->user());
@@ -121,6 +124,7 @@ class ProjectsRelationManager extends RelationManager
                     }),
                 Action::make('rename')
                     ->label('Rename')
+                    ->extraAttributes(fn (Action $action, Project $record): array => $this->rowButtonName($action, $record, $word))
                     ->schema([
                         TextInput::make('name')
                             ->label('Name')
@@ -142,5 +146,29 @@ class ProjectsRelationManager extends RelationManager
                     }),
             ])
             ->emptyStateHeading('No '.mb_strtolower($word->plural()).' yet');
+    }
+
+    /**
+     * The one place the screen computes a row's label, shared by the label column and the buttons' names so they
+     * cannot disagree.
+     */
+    private function rowLabel(Project $record, ProjectWord $word): string
+    {
+        return $record->label($word, (int) $record->number);
+    }
+
+    /**
+     * A screen reader names each row's button by its project ('Close Job 1', 'Rename Johnny') while the visible word
+     * stays the same and comes first, so voice control's "click Close" still matches (WCAG 2.5.3). The name is built
+     * from the action's own label so it cannot drift from the visible text. e() is mandatory: Filament prints extra
+     * attributes without escaping (HasExtraAttributes) and a project name is owner text that may hold quotes and
+     * angle brackets (UAT gap G-07-2.3, T-07-25). The value rides on the row's withNumber() select, so it costs no
+     * query.
+     *
+     * @return array{aria-label: string}
+     */
+    private function rowButtonName(Action $action, Project $record, ProjectWord $word): array
+    {
+        return ['aria-label' => e($action->getLabel().' '.$this->rowLabel($record, $word))];
     }
 }

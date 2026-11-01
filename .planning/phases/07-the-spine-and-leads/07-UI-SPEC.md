@@ -35,7 +35,7 @@ built; it is not an allowlist.
 | Component | Import path | Notes |
 |-----------|-------------|-------|
 | Relation manager table | `Filament\Resources\RelationManagers\RelationManager`, `Filament\Tables\Table`, `Filament\Tables\Columns\TextColumn` | The contact screen's projects list (`ProjectsRelationManager`, D-14) |
-| Actions | `Filament\Actions\Action` | New (with its own confirmation), Close (with Filament's confirmation), Reopen, Rename |
+| Actions | `Filament\Actions\Action` | New (with its own confirmation), Close (with Filament's confirmation), Reopen, Rename; each row button carries an aria-label naming its project ("Close Job 1", "Rename Johnny"), visible text unchanged, owner text escaped (gap G-07-2.3, plan 07-09) |
 | Text input | `Filament\Forms\Components\TextInput` | Rename's one field, capped at 100 characters (`RenameProject::MAX_LENGTH`) |
 | Notification | `Filament\Notifications\Notification` | The line after each action, and the rename refusal |
 | Widget and section | `<x-filament-widgets::widget>`, `<x-filament::section>` | The leads room's dashboard section (`LeadsSection`, D-15) |
@@ -79,7 +79,8 @@ The two Phase 7 surfaces as built:
 
 - **The contact screen's projects list** (D-14). The tab is titled with the business's plural word. Columns: the
   project's label, Open or Closed, Opened, Opened by ("New lead" or the user's name), Closed. Actions: New and Close, each
-  with a confirmation, Reopen, and Rename capped at 100 characters. Every write goes through the four project actions (D-11).
+  with a confirmation, Reopen, and Rename capped at 100 characters; each row button carries an aria-label naming its
+  project ("Close Job 1", "Rename Johnny"), visible text unchanged, owner text escaped (gap G-07-2.3, plan 07-09). Every write goes through the four project actions (D-11).
 - **The leads room's dashboard section** (D-15, D-16). One row per open project, newest first: a link to the contact's
   screen, the project's label, "opened" with an absolute date in a `time` element, and its origin ("source {name}" or
   "opened by {name}"). It shows at most 20 rows (`LeadsSection::SHOWN`) and then "Showing the newest 20 of {n} open
