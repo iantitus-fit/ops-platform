@@ -27,6 +27,8 @@ v2.0 Model Home: Phase 5 Standard Rooms completed 2026-10-26 (9 plans; UAT 2 of 
 
 v2.0 Model Home: Phase 6 Front Desk and Team Rooms completed 2026-10-28 (7 plans; verification 5/5; Postgres full suite green in a local run, CI pgsql leg still to confirm after the push, WINDOWS.md entries 30 to 33). The front desk and the team are rooms in the example business with no behavior change, every owner alert is texted once (an atomic send claim, a unique de-duplication key), and a failed front-desk run is reported once, against the burst its run claimed. The review left four warnings open for Ian (06-REVIEW.md WR-01 to WR-04).
 
+v2.0 Model Home: Phase 7 The Spine and Leads completed 2026-11-01 (9 plans, 07-09 closing three UAT gaps on the contact screen; UAT complete; verification 5/5; CI green on both databases, run 41337489371). Every new lead opens a project in the business's own word (`project_word` in `business/profile.md`), tied to its contact and conversation; the owner opens, closes, reopens and renames projects from the contact screen through four actions, and the leads room lists open projects on the dashboard. The contact screen's keyboard, focus and button-name checks run as browser tests in CI; the live VoiceOver listen moved to the Phase 11 owner-screen pass (A11Y-03). Review findings left open as info: IN-02, IN-03, IN-06, IN-08 to IN-11 (07-REVIEW-DISPOSITION.md).
+
 ## Current Milestone: v2.0 Model Home
 
 **Goal:** A cookie-cutter house that is a starting point for any business: every room built to one standard around the project, so a business is set up by walking the rooms and furnishing them at setup. Wording, policies and which rooms a business uses are the business's own decisions, not built in.
@@ -61,6 +63,7 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ Two systems never own the same kind of record: connector files declare `owns` and `reads`, live only in `connectors/`, and a folder where two of them own one kind is refused in plain words while the previous version stays live (CONN-07) — Phase 4, v2.0
 - ✓ The first real rooms meet the standard in the example business: company knowledge, marketing (owns the lead sources and offers; its "live today" line asks the front desk's own rule), content generation (no connector), Google Business Profile (a read-only slot bound to a fake that sends nothing, one categories file of at most nine additional categories) and money (no slot, no payment records; its notes file refuses card and 9-digit numbers in one digit-free line). Leaving out company knowledge or marketing is refused by name, a file name with a hidden character is refused with the character marked, and a room section that fails shows one line instead of taking down the dashboard (ROOM-08 to ROOM-11, ROOM-14) — Phase 5, v2.0
 - ✓ The front desk and the team are rooms at the standard with no behavior change: the front desk owns the sending, replies, triage and agent files and claims the two dashboard widgets it acts on; the team owns no file, reads three and owns the owner alerts; leaving either out is refused by name (ROOM-06, ROOM-15). Every owner alert is texted exactly once, with a send claim released after two minutes and one stored alert per conversation, message, reason and user; a failed front-desk run is reported once per claim token, against the burst its run claimed, a form-only burst included (ALRT-01, ALRT-02) — Phase 6, v2.0
+- ✓ The spine: every new lead opens a project named in the business's own word (Job, Project, Matter, Case, Work order, Engagement, checked by the sync), tied to its contact and conversation and shown on the customer card; the owner opens a second project, closes, reopens and renames from the contact screen, each through one action that records who did it, and nothing else writes projects; the front desk is unchanged (PROJ-01, PROJ-02). The leads room is at the standard, optional, and lists the newest open projects on the dashboard (ROOM-07, LEAD-05) — Phase 7, v2.0
 
 ### Active
 
@@ -292,4 +295,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-10-28 after Phase 6*
+*Last updated: 2026-11-01 after Phase 7*
