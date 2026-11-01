@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 17
+open_count: 16
 waived_count: 1
-fixed_count: 27
+fixed_count: 28
 total_count: 45
-last_updated: 2026-11-01T17:51:08.895Z
+last_updated: 2026-11-01T18:26:57.546Z
 ---
 
 # Broken Windows Ledger
@@ -52,13 +52,13 @@ last_updated: 2026-11-01T17:51:08.895Z
 | 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T15:45:59.200Z | 2026-11-01T17:51:08.314Z |
 | 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T17:30:20.550Z | 2026-11-01T17:51:08.413Z |
 | 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T18:55:35.664Z | 2026-11-01T17:51:08.505Z |
-| 38 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the New and Close confirmations and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA; New confirmation added by review WR-03) | open |  | 2026-10-30T20:18:50.026Z |  |
+| 38 | 11 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the New and Close confirmations and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA; New confirmation added by review WR-03) | open | Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI | 2026-10-30T20:18:50.026Z |  |
 | 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T20:18:50.137Z | 2026-11-01T17:51:08.604Z |
 | 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T22:36:27.019Z | 2026-11-01T17:51:08.708Z |
-| 41 | 07 | unrun-verify | resources/views/filament/rooms/leads-section.blade.php |  | 07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T23:42:17.829Z |  |
+| 41 | 07 | unrun-verify | resources/views/filament/rooms/leads-section.blade.php |  | 07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA) | fixed | Evidence: Phase 7 UAT test 3, passed 2026-10-31 (07-UAT.md) | 2026-10-30T23:42:17.829Z | 2026-11-01T18:26:57.546Z |
 | 42 | 07 | unrun-verify | .github/workflows |  | 07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T23:42:17.942Z | 2026-11-01T17:51:08.804Z |
 | 43 | 07 | unrun-verify | .github/workflows |  | 07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-31T15:09:06.795Z | 2026-11-01T17:51:08.895Z |
-| 44 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3) | open |  | 2026-11-01T15:36:26.960Z |  |
+| 44 | 11 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3) | open | Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI | 2026-11-01T15:36:26.960Z |  |
 | 45 | 07 | unrun-verify | .github/workflows |  | 07-09: after Ian pushes the phase branch, the CI tests workflow is green on both legs with ProjectsRelationManagerTest and ProjectsRelationManagerKeyboardTest included (the focus proof in Chromium on SQLite and Postgres) | open |  | 2026-11-01T15:36:34.622Z |  |
 
 ````json
@@ -547,12 +547,12 @@ last_updated: 2026-11-01T17:51:08.895Z
   {
     "id": 38,
     "kind": "unrun-verify",
-    "phase": "07",
+    "phase": "11",
     "file": "app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php",
     "line": null,
     "description": "07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the New and Close confirmations and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA; New confirmation added by review WR-03)",
     "status": "open",
-    "reason": "",
+    "reason": "Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI",
     "recorded_at": "2026-10-30T20:18:50.026Z",
     "resolved_at": null,
     "milestone": "v2.0"
@@ -590,10 +590,10 @@ last_updated: 2026-11-01T17:51:08.895Z
     "file": "resources/views/filament/rooms/leads-section.blade.php",
     "line": null,
     "description": "07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: Phase 7 UAT test 3, passed 2026-10-31 (07-UAT.md)",
     "recorded_at": "2026-10-30T23:42:17.829Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T18:26:57.546Z",
     "milestone": "v2.0"
   },
   {
@@ -625,12 +625,12 @@ last_updated: 2026-11-01T17:51:08.895Z
   {
     "id": 44,
     "kind": "unrun-verify",
-    "phase": "07",
+    "phase": "11",
     "file": "app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php",
     "line": null,
     "description": "07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3)",
     "status": "open",
-    "reason": "",
+    "reason": "Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI",
     "recorded_at": "2026-11-01T15:36:26.960Z",
     "resolved_at": null,
     "milestone": "v2.0"
