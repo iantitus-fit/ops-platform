@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 07-the-spine-and-leads
 source: [07-VERIFICATION.md]
 started: 2026-10-31T18:05:00Z
-updated: 2026-10-31T21:32:16.651Z
+updated: 2026-11-01T19:18:47.768Z
 ---
 
 ## Current Test
@@ -44,7 +44,9 @@ blocked: 0
 
 - gap_id: G-07-2.1
   truth: "The contact screen's project list is reachable by Tab from the top of the page (WCAG 2.1.1)"
-  status: failed
+  status: resolved
+  resolved_by: 07-09-PLAN.md
+  resolved_at: 2026-11-01
   reason: "User reported: Not reachable by Tab: the Jobs list is a lazy-loaded relation manager that loads only when scrolled into view, so tabbing from the top goes from the breadcrumb straight out of the page. Every dashboard widget and room section already sets $isLazy = false; ProjectsRelationManager does not. Blocks keyboard use (WCAG 2.1.1)."
   severity: blocker
   test: 2
@@ -61,7 +63,9 @@ blocked: 0
 
 - gap_id: G-07-2.2
   truth: "After Close or Reopen is confirmed, focus lands on the row's replacement action (Reopen after Close, Close after Reopen), never the top of the page (WCAG 2.4.3)"
-  status: failed
+  status: resolved
+  resolved_by: 07-09-PLAN.md
+  resolved_at: 2026-11-01
   reason: "User reported: Focus lost after Close: confirming Close replaces the row's Close button with Reopen, so focus has nowhere to return and drops to the top of the page (the next Tab lands on Skip to content). Reopen likely does the same. Focus should land on the row's replacement action (Reopen after Close, Close after Reopen), never the top of the page (WCAG 2.4.3)."
   severity: major
   test: 2
@@ -80,7 +84,9 @@ blocked: 0
 
 - gap_id: G-07-2.3
   truth: "Each row action's accessible name names its project by label (\"Close Johnny\", \"Reopen Job 1\", \"Rename Job 2\"), visible text unchanged"
-  status: failed
+  status: resolved
+  resolved_by: 07-09-PLAN.md
+  resolved_at: 2026-11-01
   reason: "User reported: Ian wants each row button to name its job for screen readers: \"Close Johnny\", \"Reopen Job 1\", \"Rename Job 2\", using the job's label, with the visible text unchanged."
   severity: major
   test: 2
