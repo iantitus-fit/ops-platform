@@ -3,6 +3,7 @@
 use App\Actions\CloseProject;
 use App\Actions\OpenProject;
 use App\Actions\RenameProject;
+use App\Enums\ActivityType;
 use App\Enums\ProjectActor;
 use App\Filament\Resources\Contacts\ContactResource;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
@@ -157,29 +158,136 @@ it('is not lazy', function () {
         ->and(ProjectsRelationManager::getDefaultProperties())->not->toHaveKey('lazy');
 });
 
-it('closes and reopens from the row', function () {
+it('closes and reopens from one row button that keeps its place', function () {
     activateExampleFolder();
     $contact = Contact::factory()->create();
     $project = app(OpenProject::class)->byHand($contact, $this->owner);
 
-    projectsListFor($contact)
-        ->assertTableActionVisible('close', $project)
-        ->assertTableActionHidden('reopen', $project)
-        ->callTableAction('close', $project)
-        ->assertNotified();
+    $buttonFor = function (Testable $list, string $label): array {
+        $matches = array_values(array_filter(
+            projectsRowButtons($list->html()),
+            fn (array $button): bool => $button['label'] === $label,
+        ));
+
+        expect($matches)->toHaveCount(1);
+
+        return $matches[0];
+    };
+
+    $list = projectsListFor($contact)
+        ->assertTableActionExists('toggle')
+        ->assertTableActionDoesNotExist('close')
+        ->assertTableActionDoesNotExist('reopen')
+        ->assertTableActionHasLabel('toggle', 'Close', $project)
+        ->assertTableActionHasColor('toggle', 'gray', $project);
+
+    $closeButton = $buttonFor($list, 'Close Job 1');
+
+    expect($closeButton['key'])->toContain('.actions.toggle.');
+
+    $list->callTableAction('toggle', $project)->assertNotified('Closed');
 
     $project->refresh();
 
     expect($project->closed_at)->not->toBeNull()
         ->and($project->closed_by_user_id)->toBe($this->owner->id);
 
-    projectsListFor($contact)
-        ->assertSee('Closed')
-        ->assertTableActionVisible('reopen', $project)
-        ->assertTableActionHidden('close', $project)
-        ->callTableAction('reopen', $project);
+    $reopenButton = $buttonFor($list, 'Reopen Job 1');
+
+    expect($reopenButton['text'])->toBe('Reopen')
+        ->and($reopenButton['key'])->toBe($closeButton['key']);
+
+    $list->assertTableActionHasLabel('toggle', 'Reopen', $project)
+        ->assertTableActionHasColor('toggle', 'primary', $project)
+        ->callTableAction('toggle', $project)
+        ->assertNotified('Reopened');
 
     expect($project->refresh()->closed_at)->toBeNull();
+
+    $closeAgain = $buttonFor($list, 'Close Job 1');
+
+    expect($closeAgain['text'])->toBe('Close')
+        ->and($closeAgain['key'])->toBe($closeButton['key']);
+});
+
+it('asks before closing and before reopening, naming the job', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $johnny = app(OpenProject::class)->byHand($contact, $this->owner);
+    app(RenameProject::class)->handle($johnny, $this->owner, 'Johnny');
+    $closed = app(OpenProject::class)->byHand($contact, $this->owner);
+    app(CloseProject::class)->handle($closed, $this->owner);
+
+    $list = projectsListFor($contact)
+        ->assertTableActionExists('toggle', fn (Action $action): bool => $action->isConfirmationRequired(), $johnny)
+        ->assertTableActionExists('toggle', fn (Action $action): bool => $action->isConfirmationRequired(), $closed)
+        ->mountTableAction('toggle', $johnny)
+        ->assertTableActionMounted('toggle');
+
+    $dialog = $list->instance()->getMountedAction();
+
+    expect((string) $dialog->getModalHeading())->toBe('Close Johnny?')
+        ->and((string) $dialog->getModalDescription())->toBe('Johnny will be marked closed. You can reopen it at any time.')
+        ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Close')
+        ->and($johnny->refresh()->closed_at)->toBeNull();
+
+    $list->unmountTableAction()->mountTableAction('toggle', $closed);
+
+    $dialog = $list->instance()->getMountedAction();
+
+    expect((string) $dialog->getModalHeading())->toBe('Reopen Job 2?')
+        ->and((string) $dialog->getModalDescription())->toBe('Job 2 will be marked open again. You can close it at any time.')
+        ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Reopen')
+        ->and($closed->refresh()->closed_at)->not->toBeNull();
+
+    foreach (['Close Johnny?', 'Reopen Job 2?', 'Johnny will be marked closed. You can reopen it at any time.', 'Job 2 will be marked open again. You can close it at any time.', 'Close', 'Reopen'] as $copy) {
+        expect($copy)->not->toContain('!')->not->toContain("\u{2014}");
+    }
+});
+
+it('opens the Reopen confirmation when the page still shows Close for a project closed elsewhere, and cancelling changes nothing', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $project = app(OpenProject::class)->byHand($contact, $this->owner);
+
+    $list = projectsListFor($contact)->assertSeeHtml('aria-label="Close Job 1"');
+
+    app(CloseProject::class)->handle($project, $this->owner);
+
+    $closedAt = $project->refresh()->closed_at;
+    $activities = $contact->activities()->count();
+
+    $list->mountTableAction('toggle', $project);
+
+    expect((string) $list->instance()->getMountedAction()->getModalHeading())->toBe('Reopen Job 1?');
+
+    $list->unmountTableAction()->assertNotNotified('Reopened');
+
+    $project->refresh();
+
+    expect($project->closed_at->equalTo($closedAt))->toBeTrue()
+        ->and($project->closed_by_user_id)->toBe($this->owner->id)
+        ->and($contact->activities()->count())->toBe($activities);
+});
+
+it('does what the dialog said when the project changes while it is open', function () {
+    activateExampleFolder();
+    $contact = Contact::factory()->create();
+    $project = app(OpenProject::class)->byHand($contact, $this->owner);
+
+    $list = projectsListFor($contact)->mountTableAction('toggle', $project);
+
+    expect((string) $list->instance()->getMountedAction()->getModalHeading())->toBe('Close Job 1?');
+
+    app(CloseProject::class)->handle($project, $this->owner);
+
+    $activities = $contact->activities()->count();
+
+    $list->callMountedTableAction();
+
+    expect($project->refresh()->closed_at)->not->toBeNull()
+        ->and($contact->activities()->count())->toBe($activities)
+        ->and($contact->activities()->where('type', ActivityType::ProjectReopened)->count())->toBe(0);
 });
 
 it('renames from the row, and an empty name goes back to the word and number', function () {
