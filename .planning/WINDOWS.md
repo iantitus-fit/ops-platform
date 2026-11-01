@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 25
+open_count: 17
 waived_count: 1
-fixed_count: 19
+fixed_count: 27
 total_count: 45
-last_updated: 2026-11-01T15:36:34.622Z
+last_updated: 2026-11-01T17:51:08.895Z
 ---
 
 # Broken Windows Ledger
@@ -48,16 +48,16 @@ last_updated: 2026-11-01T15:36:34.622Z
 | 31 | 06 | unrun-verify | tests/Feature/Alerts/AlertDedupeKeyTest.php |  | 06-05 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/Alerts/AlertDedupeKeyTest.php green (the refused duplicate inside the test's transaction is survived through createOrFirst's savepoint, and many NULL keys sit under the unique index; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/Alerts) | fixed |  | 2026-10-28T15:46:45.038Z | 2026-10-28T18:14:47.506Z |
 | 32 | 06 | unrun-verify | tests/Feature/FrontDesk/ClaimTokenTest.php |  | 06-06 hand check, left unrun for UAT: after the phase branch is pushed, the CI pgsql leg runs tests/Feature/FrontDesk/ClaimTokenTest.php and FrontDeskFailureTest.php green (the claim_token column, its (conversation_id, claim_token) index and the token-matched failed() lookup on Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact tests/Feature/FrontDesk/ClaimTokenTest.php tests/Feature/FrontDesk/FrontDeskFailureTest.php) | fixed |  | 2026-10-28T16:14:33.573Z | 2026-10-28T18:14:47.601Z |
 | 33 | 06 | unrun-verify | tests/Feature/FrontDesk/FailureReportOnceTest.php |  | 06-07 hand check, left unrun for UAT and the phase gate before /gsd-verify-work: after the phase branch is pushed, the CI tests workflow is green on both legs for the whole phase, tests/Feature/FrontDesk/FailureReportOnceTest.php included (the conditional update on messages.failure_reported_at is atomic on SQLite and Postgres 17; local option: docker postgres:17 on port 55432, DB_CONNECTION=pgsql, php artisan test --compact) | fixed |  | 2026-10-28T16:36:32.260Z | 2026-10-28T18:14:47.697Z |
-| 34 | 07 | unrun-verify | .github/workflows |  | 07-01: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectWordTest and ProjectWordSpecTest included (criterion 1 on Postgres) | open |  | 2026-10-30T12:37:24.851Z |  |
-| 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | open |  | 2026-10-30T15:45:59.200Z |  |
-| 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | open |  | 2026-10-30T17:30:20.550Z |  |
-| 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | open |  | 2026-10-30T18:55:35.664Z |  |
+| 34 | 07 | unrun-verify | .github/workflows |  | 07-01: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectWordTest and ProjectWordSpecTest included (criterion 1 on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T12:37:24.851Z | 2026-11-01T17:50:58.522Z |
+| 35 | 07 | unrun-verify | .github/workflows |  | 07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T15:45:59.200Z | 2026-11-01T17:51:08.314Z |
+| 36 | 07 | unrun-verify | .github/workflows |  | 07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T17:30:20.550Z | 2026-11-01T17:51:08.413Z |
+| 37 | 07 | unrun-verify | .github/workflows |  | 07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T18:55:35.664Z | 2026-11-01T17:51:08.505Z |
 | 38 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-05: UAT keyboard-only and VoiceOver walk of a contact screen with two projects: the list is reachable, New, Close, Reopen and Rename work without a mouse, the New and Close confirmations and the rename form take focus and return it, and each button has an accessible name (CLAUDE.md WCAG 2.2 AA; New confirmation added by review WR-03) | open |  | 2026-10-30T20:18:50.026Z |  |
-| 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | open |  | 2026-10-30T20:18:50.137Z |  |
-| 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | open |  | 2026-10-30T22:36:27.019Z |  |
+| 39 | 07 | unrun-verify | .github/workflows |  | 07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T20:18:50.137Z | 2026-11-01T17:51:08.604Z |
+| 40 | 07 | unrun-verify | .github/workflows |  | 07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T22:36:27.019Z | 2026-11-01T17:51:08.708Z |
 | 41 | 07 | unrun-verify | resources/views/filament/rooms/leads-section.blade.php |  | 07-07: UAT keyboard-only and VoiceOver walk of /admin with three open projects: each row's contact link is reached by Tab, announced with the contact's name, opens the contact screen, and the opened date is read as a date (D-15, CLAUDE.md WCAG 2.2 AA) | open |  | 2026-10-30T23:42:17.829Z |  |
-| 42 | 07 | unrun-verify | .github/workflows |  | 07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres) | open |  | 2026-10-30T23:42:17.942Z |  |
-| 43 | 07 | unrun-verify | .github/workflows |  | 07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases) | open |  | 2026-10-31T15:09:06.795Z |  |
+| 42 | 07 | unrun-verify | .github/workflows |  | 07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-30T23:42:17.942Z | 2026-11-01T17:51:08.804Z |
+| 43 | 07 | unrun-verify | .github/workflows |  | 07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-31T15:09:06.795Z | 2026-11-01T17:51:08.895Z |
 | 44 | 07 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3) | open |  | 2026-11-01T15:36:26.960Z |  |
 | 45 | 07 | unrun-verify | .github/workflows |  | 07-09: after Ian pushes the phase branch, the CI tests workflow is green on both legs with ProjectsRelationManagerTest and ProjectsRelationManagerKeyboardTest included (the focus proof in Chromium on SQLite and Postgres) | open |  | 2026-11-01T15:36:34.622Z |  |
 
@@ -499,10 +499,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-01: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectWordTest and ProjectWordSpecTest included (criterion 1 on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T12:37:24.851Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:50:58.522Z",
     "milestone": "v2.0"
   },
   {
@@ -512,10 +512,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-02: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectRecordTest included, in particular 'refuses a second project opened by a new lead for one contact' (the partial unique index projects_one_lead_project_per_contact on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T15:45:59.200Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.314Z",
     "milestone": "v2.0"
   },
   {
@@ -525,10 +525,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-03: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectCardTest and CardInjectionTest included (the card's project section and the quoted project name on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T17:30:20.550Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.413Z",
     "milestone": "v2.0"
   },
   {
@@ -538,10 +538,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-04: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectActionsTest and ProjectWritesTest included (close, reopen and rename under a row lock, and the write-confinement scan, on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T18:55:35.664Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.505Z",
     "milestone": "v2.0"
   },
   {
@@ -564,10 +564,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-05: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with ProjectsRelationManagerTest included (the contact screen's project list and its New, Close, Reopen and Rename actions on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T20:18:50.137Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.604Z",
     "milestone": "v2.0"
   },
   {
@@ -577,10 +577,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-06: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest, FrontDeskBootTest and RoomWidgetOwnershipTest included (ROOM-05 on Postgres for the leads room)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T22:36:27.019Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.708Z",
     "milestone": "v2.0"
   },
   {
@@ -603,10 +603,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-07: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green with LeadsBootTest (axe included) and LeadsSectionTest included (the leads section on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-30T23:42:17.942Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.804Z",
     "milestone": "v2.0"
   },
   {
@@ -616,10 +616,10 @@ last_updated: 2026-11-01T15:36:34.622Z
     "file": ".github/workflows",
     "line": null,
     "description": "07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Evidence: CI run 41226007469 (Ian, 2026-11-01)",
     "recorded_at": "2026-10-31T15:09:06.795Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-01T17:51:08.895Z",
     "milestone": "v2.0"
   },
   {
