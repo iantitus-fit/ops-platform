@@ -31,6 +31,9 @@ created: "2026-10-31"
 | signed-in user to /admin | The dashboard lists contacts across the business | Contact names |
 | customer text or web form to RecordInbound | Untrusted inbound creates contacts (RecordInbound unchanged) | Phone, email, message |
 | RecordInbound's transaction to the leads room's hook, and the queue to OpenProjectForNewLead | The hook runs inside the inbound's transaction; the job runs later, maybe after the room was turned off | Contact id |
+| owner-typed project name to the row buttons' HTML attributes (07-09) | Filament prints extraAttributes values unescaped | Project name inside aria-label |
+| browser to the contact screen's row actions (07-09) | Signed-in button presses; the page may be stale (a second tab) | Close/Reopen direction |
+| contact page request to the projects query (07-09) | The list now renders inside the page's own request ($isLazy = false) | Project rows |
 
 ---
 
@@ -62,6 +65,9 @@ created: "2026-10-31"
 | T-07-22 | Spoofing | a web form typing a known customer's phone or email | medium | mitigate | A matching form creates no contact, so no project opens; `OpenOnNewLeadTest` covers a phone written another way and an email in another case | closed |
 | T-07-23 | Elevation of privilege | an agent writing projects | medium | mitigate | The job only calls `OpenProject`; `ProjectWritesTest` covers `App\Rooms\Leads` and keeps the actions out of agent code | closed |
 | T-07-24 | Tampering (compliance) | a project for a contact who texted STOP first | low | mitigate | The job returns when the contact is opted out when it runs (D-23); STOP case in `OpenOnNewLeadTest` | closed |
+| T-07-25 | Tampering | aria-label built from an owner-typed project name (rowButtonName) | medium | mitigate | `ProjectsRelationManager::rowButtonName()` returns `['aria-label' => e(...)]`; `ProjectsRelationManagerTest` "escapes an owner-typed name in a button's name" asserts the exact escaped attribute and that no b or script element is injected (07-09) | closed |
+| T-07-26 | Tampering | the one Close/Reopen button reads the project's state when pressed | low | mitigate | The `toggle` action's heading, description and `fillForm` `direction` are decided from `$record->isOpen()` when pressed; the Hidden `direction` field carries the stated direction to the submit; `CloseProject` and `ReopenProject` re-read under `lockForUpdate` and do nothing when already in that state; tests "opens the Reopen confirmation when the page still shows Close for a project closed elsewhere, and cancelling changes nothing" and "does what the dialog said when the project changes while it is open" (07-09) | closed |
+| T-07-27 | Denial of service | the projects list drawn inside the contact page's request ($isLazy false) | low | accept | See AR-7-04 | closed |
 | T-07-SC | Tampering | npm/pip/cargo installs | high | accept | See AR-7-03 | closed |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
@@ -76,7 +82,8 @@ created: "2026-10-31"
 |---------|------------|-----------|-------------|------|
 | AR-7-01 | T-07-07 | The card section shows only what the card's readers (the owner's AI and the front desk for this same customer) already may see: open or closed, dates and who opened it; no other customer's data | Plan-time threat model (07-03) | 2026-10-29 |
 | AR-7-02 | T-07-18 | /admin is behind the panel's auth middleware (AdminAccessTest), and New leads already shows the same names and phones to the same users | Plan-time threat model (07-07) | 2026-10-29 |
-| AR-7-03 | T-07-SC | The phase installs no package; composer and npm manifests and lock files are unchanged from main | Plan-time threat model (07-01 to 07-08) | 2026-10-29 |
+| AR-7-03 | T-07-SC | The phase installs no package; composer and npm manifests and lock files are unchanged from main (rechecked after 07-09 on 2026-11-01) | Plan-time threat model (07-01 to 07-09) | 2026-10-29 |
+| AR-7-04 | T-07-27 | A failing projects query now fails the contact page instead of only the list's own request; it is the same database the rest of the page reads, the query is one select with a correlated count bounded by one contact's projects, and the dashboard widgets and room sections already draw this way (02-23, 05 D-32) | Plan-time threat model (07-09) | 2026-11-01 |
 
 *Accepted risks do not resurface in future audit runs.*
 
@@ -87,6 +94,7 @@ created: "2026-10-31"
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-10-31 | 25 | 25 | 0 | secure-phase orchestrator (ASVS L1 grep-depth check; auditor not spawned per the short-circuit rule) |
+| 2026-11-01 | 28 | 28 | 0 | secure-phase after gap plan 07-09 (T-07-25 to T-07-27 added; ASVS L1 grep-depth check; auditor not spawned per the short-circuit rule) |
 
 ---
 
@@ -97,4 +105,12 @@ created: "2026-10-31"
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-10-31
+**Approval:** verified 2026-10-31; re-verified 2026-11-01 after gap plan 07-09
+
+## Security Audit 2026-11-01
+
+| Metric | Count |
+|---|---|
+| Threats found | 28 |
+| Closed | 28 |
+| Open | 0 |
