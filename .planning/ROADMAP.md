@@ -32,7 +32,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 4: Room Standard** - Any room can be added to the business folder and checked, registered and tested the same way, and two systems can never own the same kind of record (completed 2026-10-23)
 - [x] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more (completed 2026-10-26)
 - [x] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once (completed 2026-10-28)
-- [ ] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard
+- [x] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard (completed 2026-11-01)
 - [ ] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it
 - [ ] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out
 - [ ] **Phase 10: Walk Tests and the Gate** - No folder change goes live until scripted customers have walked through it, and Dana books end to end
@@ -186,10 +186,39 @@ Plans:
   1. `business/profile.md` has one field naming what the business calls a project (Job, Project, Matter). The sync accepts a valid word and refuses a missing or invalid one in plain words that name the file and the field, with the previous version staying live.
   2. A text from a new number, or a web form lead, opens a project for that contact. The project is tied to the contact and the conversation, shows on the customer card and in the dashboard, and uses the business's word (a business that sets "Matter" sees "Matter").
   3. A project is ready to carry appointments, zero, one or many. The appointment records themselves arrive with booking, which attaches them in Phase 8.
-  4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are card tests that now show a project, and the suite is green on SQLite and Postgres.
+  4. The front desk behaves exactly as before, and it sees the project only because it loads the same customer card. The only existing tests that change are: card tests that now show a project; the `exampleFolderFileCount()` number (04 D-16); `tests/Feature/Rooms/FrontDeskBootTest.php:90`'s New leads guard (06 D-03); `profile.md` fixtures written from scratch, changed only by adding the new field line; and tests that assert the text of marketing's `CONTEXT.md`, changed only to the new sentence. Each plan names each changed test by file and line, a plan that needs any other existing test to change stops and brings it to Ian, and the suite is green on SQLite and Postgres (07 D-22).
   5. The leads room meets the standard (folder, `CONTEXT.md`, example file, module, boot test) and reads the lead sources and offers that marketing owns.
 
-**Plans**: TBD
+**Plans**: 9/9 plans complete
+
+Plans:
+**Wave 1**
+- [x] 07-01-PLAN.md — The business's word: `project_word` in `business/profile.md`, checked by the sync, read by `ActiveConfig::projectWord()`, listed in SPEC (D-12)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 07-02-PLAN.md — The spine: the platform `projects` table (one lead project per contact, no appointment column), the owner's open through `OpenProject`, the timeline entry on the card
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 07-03-PLAN.md — The card's "## <Plural word>" section above the timeline, names quoted, seen by the front desk only through the card (D-13); CardInjectionTest gains its case
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 07-04-PLAN.md — Close, reopen and rename through their own actions, and a test that only the four actions write projects (D-11)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 07-05-PLAN.md — The contact screen: projects listed in the business's word with New, Close, Reopen and Rename (D-04, D-14)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 07-06-PLAN.md — The leads room at the standard: provider, contract, boot test, claims New leads, the WR-09 guard, marketing's web form sentence; file count 25 to 26, FrontDeskBootTest.php:90
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 07-07-PLAN.md — The leads section: open projects with a keyboard link, an absolute date and their source or opener, axe clean (D-15, D-16)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 07-08-PLAN.md — A new lead opens a project after the inbound commits, never two, never in the inbound's way, not for a first STOP (LEAD-05, D-01 to D-03, D-23); CardInjectionTest.php:90
+
+**Wave 9** *(gap closure, blocked on Wave 8 completion)*
+- [x] 07-09-PLAN.md — UAT gaps G-07-2.1 to G-07-2.3 on the contact screen's project list: drawn with the page so Tab reaches it, one Close/Reopen button so keyboard focus stays on it (proven with real Enter keys), and each row button names its project
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
@@ -317,7 +346,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 4. Room Standard | 9/9 | Complete    | 2026-10-23 |
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
-| 7. The Spine and Leads | 0/TBD | Not started | - |
+| 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 0/TBD | Not started | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Contacts;
 
 use App\Filament\Resources\Contacts\Pages\ListContacts;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
+use App\Filament\Resources\Contacts\RelationManagers\ProjectsRelationManager;
 use App\Filament\Resources\Contacts\Schemas\ContactInfolist;
 use App\Filament\Resources\Contacts\Tables\ContactsTable;
 use App\Models\Contact;
@@ -47,6 +48,16 @@ class ContactResource extends Resource
     public static function table(Table $table): Table
     {
         return ContactsTable::configure($table);
+    }
+
+    /**
+     * The contact's projects, listed under the details with the actions that open, close, reopen and rename them.
+     */
+    public static function getRelations(): array
+    {
+        return [
+            ProjectsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

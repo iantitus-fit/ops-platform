@@ -4,6 +4,7 @@ namespace App\Icm;
 
 use App\Enums\AlertReason;
 use App\Enums\IcmFileKind;
+use App\Enums\ProjectWord;
 use App\Enums\ReplyLabel;
 use App\Rooms\RoomRegistry;
 use App\SendRule\CodeChecks;
@@ -145,6 +146,7 @@ class Validator
         }
 
         array_push($errors, ...match ($file->type) {
+            'business' => $this->businessErrors($file),
             'hours' => $this->hoursErrors($file),
             'lead_sources' => $this->repeatedKeyErrors($file, 'sources', 'sources has more than one entry with key'),
             'service' => $this->repeatedKeyErrors($file, 'intake', 'intake has more than one question with key'),
@@ -158,6 +160,29 @@ class Validator
         });
 
         return $errors;
+    }
+
+    /**
+     * The project word (D-12). It is checked here rather than by a Laravel rule because the stock "in" rule compares
+     * the exact case, so "JOB" would be refused, and its message does not list the choices. A word is accepted when
+     * ProjectWord::fromProfile() finds it; nothing, an empty text or only spaces is reported as missing, and anything
+     * else is reported against the six choices.
+     *
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function businessErrors(IcmFile $file): array
+    {
+        $word = $file->frontMatter['project_word'] ?? null;
+
+        if (ProjectWord::fromProfile($word) !== null) {
+            return [];
+        }
+
+        if ($word === null || (is_string($word) && trim($word) === '')) {
+            return [$this->error($file->path, 'project_word', 'project_word is missing, and it is required; write one of '.implode(', ', ProjectWord::choices()))];
+        }
+
+        return [$this->error($file->path, 'project_word', PlainWords::render('In', ProjectWord::choices(), 'project_word', $word))];
     }
 
     /**

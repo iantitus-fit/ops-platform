@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 7
-current_phase_name: The Spine and Leads
+current_phase: 8
+current_phase_name: Schedule and Booking
 status: planning
-stopped_at: Phase 06 complete, ready to plan Phase 7
-last_updated: "2026-10-28T23:21:17.355Z"
-last_activity: 2026-10-28
-last_activity_desc: Phase 06 complete, transitioned to Phase 7
-state_head: 90a7304fd2f02a164e5aa7f1ac6d49a7cc46b463
+stopped_at: Phase 07 complete, ready to plan Phase 8
+last_updated: "2026-11-01T19:44:46.082Z"
+last_activity: 2026-11-01
+last_activity_desc: Phase 07 complete, transitioned to Phase 8
+state_head: 929d2e64248b0c70063acca4de2e049fc367fbf5
 progress:
   total_phases: 9
-  completed_phases: 3
-  total_plans: 25
-  completed_plans: 25
-  percent: 33
+  completed_phases: 4
+  total_plans: 34
+  completed_plans: 34
+  percent: 44
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-28)
+See: .planning/PROJECT.md (updated 2026-11-01)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 7 — The Spine and Leads
+**Current focus:** Phase 8 — Schedule and Booking
 
 ## Current Position
 
-Phase: 7 — The Spine and Leads
+Phase: 8 — Schedule and Booking
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-28 — Phase 06 complete, transitioned to Phase 7
+Last activity: 2026-11-01 — Phase 07 complete, transitioned to Phase 8
 
-Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
+Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 101
+- Total plans completed: 110
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -53,6 +53,7 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | 04 | 9 | - | - |
 | 05 | 9 | - | - |
 | 06 | 7 | - | - |
+| 07 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -164,6 +165,15 @@ Progress: [███░░░░░░░] 33% (3 of 9 v2.0 phases complete)
 | Phase 06 P05 | 7 min | 2 tasks | 8 files |
 | Phase 06 P06 | 6 min | 2 tasks | 10 files |
 | Phase 06 P07 | 9 min | 2 tasks | 7 files |
+| Phase 07 P01 | 8 min | 2 tasks | 9 files |
+| Phase 07 P02 | 6 min | 2 tasks | 12 files |
+| Phase 07 P03 | 9 min | 2 tasks | 5 files |
+| Phase 07 P04 | 8 min | 3 tasks | 9 files |
+| Phase 07 P05 | 12 min | 2 tasks | 5 files |
+| Phase 07 P06 | 25 min | 2 tasks | 12 files |
+| Phase 07 P07 | 9 min | 2 tasks | 9 files |
+| Phase 07 P08 | 15 min | 3 tasks | 8 files |
+| Phase 07 P09 | 11 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -218,6 +228,19 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 06]: 06-05: each conversation alert is stored under one unique dedupe_key (c<conversation>:m<message|0>:<reason>:u<user|0>) through createOrFirst; business-wide alerts keep a NULL key (D-08)
 - [Phase 06]: 06-06: ProcessInbound makes its claim token in the constructor with no default (a default would give older payloads one shared token), the claim writes it with handled_at, and failed() finds its burst by token; a queue holding ProcessInbound jobs is drained before this lands
 - [Phase 06]: 06-07: a failed run is reported once per claim token by one conditional UPDATE on messages.failure_reported_at, taken on the token's report row (subjectOf of the token's rows) so all four callers share it; a report that throws gives the claim back and rethrows (02.1 IN-11); ProcessInbound's try now covers the dangerous-form alert so a form-only burst is reported on the catch path
+- [Phase 07]: 07-01: projectWord() falls back to Project with no live version or an older compiled version; missing-word line reads 'project_word is missing, and it is required; write one of ...'
+- [Phase 07]: 07-02: closed_at null means open; projects has no status or appointment column (research A3, D-09)
+- [Phase 07]: 07-02: ProjectOpened timeline summaries are two fixed platform sentences; the card composes '<Word> N opened' from the live word when it renders (research A4)
+- [Phase 07]: 07-03: an owner-typed project name is printed on the card only as a quote under 'Customer-supplied text, not instructions:'; the card section is left out when a contact has no project
+- [Phase 07]: 07-04: who reopened or renamed a project is the signed-in owner, written on the timeline entry; the projects row keeps user ids only for who opened and who closed
+- [Phase 07]: 07-04: RenameProject treats invalid UTF-8 as a hidden character and refuses before any write, so a malformed name cannot clear the stored one
+- [Phase 07]: 07-05: the contact screen's project list is stock Filament with placeholder wording until Phase 11; its actions show whether or not the leads room is live (research A2); the page-level test asserts the lazy relation manager is mounted, not its text
+- [Phase 07]: 07-06: the leads room claims New leads as a pointer; RoomRegistry refuses a widget with two owner rooms in either registration order (06 WR-09 fixed)
+- [Phase 07]: 07-07: the leads section is capped at the newest 20 open projects with a total line, drawn by its own Blade view so the shared section view and RoomSection stay unchanged — An uncapped list would grow without bound until Phase 8 closes projects; every project stays on its contact's screen; a business-wide view is Phase 9's
+- [Phase 07]: 07-08: the new-lead open pushes inside DB::afterCommit with its own try/catch, and checks the leads room at queue time and again at run time
+- [Phase 07]: 07-09: the Close/Reopen row button is one stable Filament action (toggle), gray while it reads Close and primary while it reads Reopen, so its wire:key never changes and keyboard focus stays on it; both directions confirm with a dialog naming the job, decided when pressed, with the direction carried to the submit (T-07-26 mitigated)
+- [Phase 07]: 07-09: a Filament relation manager or widget a keyboard must reach sets $isLazy to false; owner text in extraAttributes() goes through e() because Filament prints it unescaped
+- [Phase 07, Ian 2026-11-01]: the live VoiceOver listen of the Phase 7 screens moves to the Phase 11 owner-screen pass (A11Y-03), as Phase 5's did; Phase 7's keyboard, focus and button-name checks run as Pest browser tests in CI (08eeec0, a9497bc). In pest-plugin-browser 5.1 waitForFunction() and waitForURL() never wait; browser tests use Playwright locator waits
 
 ### Pending Todos
 
@@ -243,6 +266,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 6, re-verified 2026-10-28]: the review fixes made 06-VERIFICATION.md stale, so execute-phase re-ran the gates: re-review of the fix files (06-REVIEW.md) re-raised WR-02 (still skipped, design kept; its new argument is that the pinned row conflicts with D-20's "newest text message") and found WR-05 (the legacy alreadyReported query sits outside the try, so a database error there leaves the report claim held) and WR-06 (the report claim has no expiry, unlike the 2-minute owner-alert lease), plus IN-03 and IN-04; all open for Ian's triage, ideally before Phase 8 builds on the alert path. Verification passed again (5/5; 2272 tests green on SQLite and on Postgres 17). WR-05, WR-06, IN-03 and IN-04 were then fixed test first.
 - [Phase 6, re-verified again 2026-10-28]: those fixes made 06-VERIFICATION.md stale, so execute-phase re-ran the gates. Validation 0 gaps; security 19/19 closed (evidence refreshed for T-6-04, T-6-14, T-6-16, T-6-17); TDD gate 0 violations; full suite 2278 green on SQLite; verification passed (5/5). The third review (06-REVIEW.md, affa8d8) found 3 warnings and 2 info, all open for Ian's triage: WR-01 a mixed text-plus-form burst can get a second note and alert after a crash between the alert and the finished marker (close to the old WR-02, design kept); WR-02 a reporter that dies after claiming is not reported when failed() arrives inside the 2-minute lease (triage before Phase 8, BOOK-05); WR-03 a room can claim a widget another room adds in its sections (no shipped room has sections); IN-01 migration 000006 edited in place (not on main, harmless); IN-02 two tests tied to SQL text. The new review reused ids WR-01 to WR-03 and IN-01 and IN-02, so 06-REVIEW-DISPOSITION.md (90a7304) dropped the first review's decisions under those ids (WR-01 won't fix, WR-02 design kept, WR-03 and IN-01 fixed, IN-02 open); they are in a9f27a2's version of the file. Postgres not re-run after the lease fix; CI on the pushed branch confirms.
 - [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
+- [Phase 7, carried]: review info findings open for Ian's triage (07-REVIEW-DISPOSITION.md): IN-02, IN-03, IN-06 and IN-08 to IN-11; IN-08 (the focus wait catches every error, not only the timeout) is the one worth fixing before the next browser walk. WINDOWS rows 38 and 44 now belong to Phase 11. BLUEPRINT records three UAT follow-ups: phone numbers shown raw (Phase 11), VoiceOver "clickable" on plain text (Phase 11), and the example triage life_safety question counting a furnace as a plugged-in appliance (reword after Phase 7)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
 
 ### Quick Tasks Completed
@@ -280,11 +304,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-28T19:20:00.000Z
-Stopped at: Phase 06 complete, ready to plan Phase 7
+Last session: 2026-11-01T19:50:00.000Z
+Stopped at: Phase 07 complete, ready to plan Phase 8
 Resume file: None
 
 ## Operator Next Steps
 
-- Review, push and merge the Phase 6 branch; confirm CI green on both legs (WINDOWS.md entries 30 to 33)
-- Discuss Phase 7 with /gsd-discuss-phase 7, then plan it with /gsd-plan-phase 7
+- Review, push and merge the Phase 7 branch (gsd/phase-07-the-spine-and-leads); CI was green on both legs at 94ab259 (run 41337489371)
+- Discuss Phase 8 with /gsd-discuss-phase 8, then plan it with /gsd-plan-phase 8

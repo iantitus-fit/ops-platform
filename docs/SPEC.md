@@ -265,11 +265,26 @@ These are the platform's own. A connector may list them under `reads` but never 
 
 Texts stay the platform's because the sent message is the platform's own row and every automated send goes through `OutboundSender`. Conversations, owner alerts and drafts are on neither list, so a connector file naming one is refused like any other unknown word. Both lists are the code's lists (`OwnableKind` and `PlatformKind`), and a test fails if SPEC and the code disagree (D-14). Moving a kind from this list onto the first is its own decision with Ian.
 
+### What a business calls a project
+
+`business/profile.md` names in `project_word` what this business calls a piece of work, from this list only, matched without regard to letter case. The customer card, the contact screen and the dashboard show it, and screens set the casing (Phase 7, D-12).
+
+| Word | Plural |
+|---|---|
+| `Job` | `Jobs` |
+| `Project` | `Projects` |
+| `Matter` | `Matters` |
+| `Case` | `Cases` |
+| `Work order` | `Work orders` |
+| `Engagement` | `Engagements` |
+
+The list is `ProjectWord` in code, and a test fails if SPEC and the code disagree. Adding a word is a code change plus a row here; removing one breaks any live folder that uses it.
+
 ### File types (the front matter contract)
 
 | type | File | Required front matter | What the engine does with it |
 |---|---|---|---|
-| business | business/profile.md | name, phone, timezone, service_area (list) | Identity in every agent prompt; timezone for all scheduling |
+| business | business/profile.md | name, phone, timezone, service_area (list), project_word (one word from What a business calls a project, any letter case) | Identity in every agent prompt; timezone for all scheduling; project_word names a project on the customer card, the contact screen and the dashboard |
 | hours | business/hours.md | weekly (mon to sun: open/close or closed), closures (dates), booking_lead_minutes | Availability for booking |
 | lead_sources | business/lead-sources.md | sources: list of key, name, cost_cents_per_lead | Attribution and cost per lead on every contact |
 | knowledge | business/faq.md and others | none beyond type | Body is read by agents as reference |

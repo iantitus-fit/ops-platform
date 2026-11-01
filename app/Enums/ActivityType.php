@@ -18,4 +18,8 @@ enum ActivityType: string
     case OptedOut = 'opted_out';
     case OptedIn = 'opted_in';
     case RoomEntry = 'room_entry';
+    case ProjectOpened = 'project_opened';
+    case ProjectClosed = 'project_closed';
+    case ProjectReopened = 'project_reopened';
+    case ProjectRenamed = 'project_renamed';
 }

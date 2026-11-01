@@ -70,6 +70,16 @@ class Contact extends Model
     }
 
     /**
+     * Every project this contact has, open or closed.
+     *
+     * @return HasMany<Project, $this>
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    /**
      * The timeline entries for this contact.
      *
      * @return HasMany<Activity, $this>
