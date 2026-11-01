@@ -13,6 +13,7 @@ use App\Rooms\RoomRegistry;
 use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\File;
+use Pest\Browser\Playwright\Page;
 use Tests\Rooms\RoomSectionAxe;
 use Tests\Rooms\SpecTables;
 
@@ -151,3 +152,84 @@ it('finds no accessibility violation in the leads section', function (bool $with
     'with no open project' => [false],
     'with an open project' => [true],
 ]);
+
+/**
+ * The most Tab presses the dashboard walk may take from the top of /admin to the last of three leads rows. The panel's
+ * own controls and the room sections above the leads come first, so the cap leaves room for them without letting the
+ * walk wander.
+ */
+const LEADS_KEYBOARD_TAB_CAP = 60;
+
+/**
+ * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
+ */
+function leadsKeyboardPress(Page $browser, string $key): void
+{
+    $browser->keyDown($key);
+    $browser->keyUp($key);
+}
+
+/**
+ * The contact name of the leads row link that has focus now, or null when focus is anywhere else.
+ */
+function leadsKeyboardFocusedRow(Page $browser): ?string
+{
+    $name = $browser->evaluate(<<<'JS'
+() => {
+  const element = document.activeElement;
+  return element.matches('[data-leads-row] a') ? element.innerText.trim() : null;
+}
+JS);
+
+    return is_string($name) ? $name : null;
+}
+
+/**
+ * The keyboard walk of the dashboard (UAT test 3, WINDOWS row 41), as a browser test: from the top of /admin, Tab
+ * reaches each leads row's link in the order the section lists them, newest first, and Enter on a row opens that
+ * contact's page. Real Chromium and real keys, with Playwright's own waiting.
+ */
+it('reaches each leads row by Tab in order and opens its contact with Enter', function () {
+    activateExampleFolder();
+
+    $owner = User::factory()->create(['name' => 'Ian Owner']);
+    $this->actingAs($owner);
+
+    $contacts = [];
+
+    foreach (['Avery Lane' => '2026-10-29 09:00', 'Blake Moreno' => '2026-10-29 10:00', 'Casey Ortiz' => '2026-10-29 11:00'] as $name => $openedAt) {
+        $this->travelTo(Carbon::parse($openedAt, 'America/Chicago'));
+        $contacts[$name] = Contact::factory()->create(['name' => $name]);
+        app(OpenProject::class)->byHand($contacts[$name], $owner);
+    }
+
+    $this->travelBack();
+
+    $page = visit('/admin');
+    $page->assertSee('Casey Ortiz');
+    $browser = $page->page();
+
+    $reached = [];
+    $presses = 0;
+
+    while ($presses < LEADS_KEYBOARD_TAB_CAP && count($reached) < 3) {
+        leadsKeyboardPress($browser, 'Tab');
+        $presses++;
+
+        $row = leadsKeyboardFocusedRow($browser);
+
+        if ($row !== null && end($reached) !== $row) {
+            $reached[] = $row;
+        }
+    }
+
+    expect($reached)->toBe(['Casey Ortiz', 'Blake Moreno', 'Avery Lane']);
+
+    leadsKeyboardPress($browser, 'Enter');
+
+    // The contact page is open once its project list's New job button is on it. Playwright's own locator wait is used
+    // because the plugin's waitForURL() never reads Playwright's answer in pest-plugin-browser 5.1, so it does not wait.
+    $browser->getByRole('button', ['name' => 'New job', 'exact' => true])->waitFor(['state' => 'attached']);
+
+    $page->assertPathIs(ContactResource::getUrl('view', ['record' => $contacts['Avery Lane']], isAbsolute: false));
+});
