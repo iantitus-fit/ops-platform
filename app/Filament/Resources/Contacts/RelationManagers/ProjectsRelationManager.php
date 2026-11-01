@@ -12,6 +12,7 @@ use App\Icm\ActiveConfig;
 use App\Models\Project;
 use DomainException;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -102,22 +103,41 @@ class ProjectsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('close')
-                    ->label('Close')
-                    ->color('gray')
+                /*
+                 * Livewire matches elements between renders by wire:key, and Filament puts the action's name in each
+                 * row button's key, so two actions (Close, then Reopen) meant the morph replaced the focused button and
+                 * focus fell to the page (UAT gap G-07-2.2, WCAG 2.4.3). One action keeps one key, so Filament's own
+                 * focus return finds a live button after either confirmation. The per-row colour keeps the as-built
+                 * look (gray while it reads Close, the default primary while it reads Reopen) and does not touch the
+                 * key. Both directions ask first, and the dialog names the job and says what will happen, decided when
+                 * the owner presses: a stale page (a second tab) shows the truth before anything changes, and the
+                 * submit does what the dialog said or nothing (T-07-26, mitigated).
+                 */
+                Action::make('toggle')
+                    ->label(fn (Project $record): string => $record->isOpen() ? 'Close' : 'Reopen')
+                    ->color(fn (Project $record): string => $record->isOpen() ? 'gray' : 'primary')
                     ->extraAttributes(fn (Action $action, Project $record): array => $this->rowButtonName($action, $record, $word))
                     ->requiresConfirmation()
-                    ->visible(fn (Project $record): bool => $record->isOpen())
-                    ->action(function (Project $record): void {
-                        app(CloseProject::class)->handle($record, auth()->user());
+                    ->modalHeading(fn (Project $record): string => ($record->isOpen() ? 'Close ' : 'Reopen ').$this->rowLabel($record, $word).'?')
+                    ->modalDescription(fn (Project $record): string => $record->isOpen()
+                        ? $this->rowLabel($record, $word).' will be marked closed. You can reopen it at any time.'
+                        : $this->rowLabel($record, $word).' will be marked open again. You can close it at any time.')
+                    ->modalSubmitActionLabel(fn (Project $record): string => $record->isOpen() ? 'Close' : 'Reopen')
+                    ->schema([
+                        Hidden::make('direction')
+                            ->required()
+                            ->in(['close', 'reopen']),
+                    ])
+                    ->fillForm(fn (Project $record): array => ['direction' => $record->isOpen() ? 'close' : 'reopen'])
+                    ->action(function (Project $record, array $data): void {
+                        if ($data['direction'] === 'close') {
+                            app(CloseProject::class)->handle($record, auth()->user());
 
-                        Notification::make()->title('Closed')->success()->send();
-                    }),
-                Action::make('reopen')
-                    ->label('Reopen')
-                    ->extraAttributes(fn (Action $action, Project $record): array => $this->rowButtonName($action, $record, $word))
-                    ->visible(fn (Project $record): bool => ! $record->isOpen())
-                    ->action(function (Project $record): void {
+                            Notification::make()->title('Closed')->success()->send();
+
+                            return;
+                        }
+
                         app(ReopenProject::class)->handle($record, auth()->user());
 
                         Notification::make()->title('Reopened')->success()->send();

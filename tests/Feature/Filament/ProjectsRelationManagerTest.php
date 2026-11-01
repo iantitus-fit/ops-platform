@@ -221,12 +221,12 @@ it('asks before closing and before reopening, naming the job', function () {
     $list = projectsListFor($contact)
         ->assertTableActionExists('toggle', fn (Action $action): bool => $action->isConfirmationRequired(), $johnny)
         ->assertTableActionExists('toggle', fn (Action $action): bool => $action->isConfirmationRequired(), $closed)
-        ->mountTableAction('toggle', $johnny)
-        ->assertTableActionMounted('toggle');
+        ->mountTableAction('toggle', $johnny);
 
     $dialog = $list->instance()->getMountedAction();
 
-    expect((string) $dialog->getModalHeading())->toBe('Close Johnny?')
+    expect($dialog->getName())->toBe('toggle')
+        ->and((string) $dialog->getModalHeading())->toBe('Close Johnny?')
         ->and((string) $dialog->getModalDescription())->toBe('Johnny will be marked closed. You can reopen it at any time.')
         ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Close')
         ->and($johnny->refresh()->closed_at)->toBeNull();
