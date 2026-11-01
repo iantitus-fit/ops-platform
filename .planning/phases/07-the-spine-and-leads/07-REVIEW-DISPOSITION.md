@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: IN-08
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The focus wait swallows every error, not only its timeout"
   - id: IN-09
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The dashboard walk's Tab cap is not measured"
   - id: IN-10
     severity: info
@@ -17,7 +17,7 @@ findings:
     title: "The new docblocks cite ledger rows and review ids that have already moved"
   - id: IN-11
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The key-press helper is written twice"
   - id: IN-05
     severity: info
@@ -59,7 +59,7 @@ findings:
     severity: info
     disposition: deferred
     title: "The dashboard's opened time has no time-zone label"
-open: 7
+open: 4
 total: 14
 recorded: 2026-11-01T19:20:45.610Z
 ---
@@ -68,10 +68,10 @@ recorded: 2026-11-01T19:20:45.610Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| IN-08 | info | open | - |
-| IN-09 | info | open | - |
-| IN-10 | info | open | - |
-| IN-11 | info | open | - |
+| IN-08 | info | deferred | Phase 8's first browser walk (the booking page, A11Y-02), fixed together there (Ian, review round 3); docs/BLUEPRINT.md section 10: the focus wait rethrows anything but a timeout |
+| IN-09 | info | deferred | Phase 8's first browser walk (the booking page, A11Y-02), fixed together there (Ian, review round 3); docs/BLUEPRINT.md section 10: the dashboard Tab cap is measured and recorded |
+| IN-10 | info | open | Folded into IN-06 (Ian, review round 3): docblocks citing WINDOWS row numbers go stale like other plan and gap ids |
+| IN-11 | info | deferred | Phase 8's first browser walk (the booking page, A11Y-02), fixed together there (Ian, review round 3); docs/BLUEPRINT.md section 10: the key-press helper moves to tests/Pest.php |
 | IN-05 | info | fixed | 08eeec0 (Playwright locator waits, 5-second timeout, replace the fixed 2-second loops) (not in the current review) |
 | IN-06 | info | open | - (not in the current review) |
 | IN-07 | info | fixed | 08eeec0 (Tab walk from the top of the page to New job, on a desktop window and on a phone) (not in the current review) |
@@ -90,3 +90,5 @@ Re-running the gate keeps every row it can. A row the current review no longer r
 Triage (Ian, 2026-10-31): WR-01, WR-02, WR-03 and IN-01 fixed test first, one commit each; IN-04 deferred to the Phase 11 wording pass; IN-02 and IN-03 stay open as info. UI review finding 3 (Rename's too-long message) fixed in b155df7 and noted in 07-UI-REVIEW.md.
 
 Triage (Ian, 2026-11-01): IN-05 and IN-07 fixed in 08eeec0, which turns the contact screen's keyboard and screen reader walk into browser tests; a9497bc adds the dashboard's leads walk. IN-06 stays open as info.
+
+Triage (Ian, 2026-11-01, review round 3; stop rule: no locked-rule or correctness finding among them): IN-08, IN-09 and IN-11 deferred to Phase 8's first browser walk (the booking page, A11Y-02), fixed together there: the focus wait rethrows anything but a timeout, the dashboard Tab cap is measured and recorded, and the key-press helper moves to tests/Pest.php. IN-10 is folded into IN-06, open as info.
