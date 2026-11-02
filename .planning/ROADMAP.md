@@ -242,7 +242,57 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: TBD
+**Plans**: 16 plans
+
+Plans:
+**Wave 1**
+- [ ] 08-01-PLAN.md — The records: one appointments table behind two scoped models (A3) with its shape held by the database on both drivers, hashed booking links, one send row per lead time, the switch columns, and the appointment-writes scan
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 08-02-PLAN.md — OutboundSender: automatic texts need a customer who texted or agreed (D-21, every reached test found by probe and re-pointed), the booking text kind (D-26) and the booking-link reading rule
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 08-03-PLAN.md — The change-request alert in the one-alert order (D-34), the booked alert's words and timing (D-33), change_request right away in the example, and no text ever writes an appointment (D-04)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 08-04-PLAN.md — The schedule and booking room at the standard: provider, booking file and its checks, example folder, SPEC rows, boot test, section; D-36 and D-37 sync refusals; file count 26 to 28
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 08-05-PLAN.md — Availability (BOOK-01): hours, closures, lead from the next opening, length, step, range, buffer on appointments only, capacity as a count, both daylight-saving days
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 08-06-PLAN.md — Book by hand from the contact screen's Appointments tab: the booking lock and re-check, the job never guessed or reopened, owner times in the business zone
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 08-07-PLAN.md — The link token and the page booking: hashed, superseded, revocable, at most once, states in U-14's order, the job by D-23, ProjectActor::Customer, the booked alert once
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 08-08-PLAN.md — The customer booking page (Livewire, phone-first, UI-SPEC): pick, check, book, every state, rate limits inside the component, the contract scan, the CI front-end build (Ian pushes)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 08-09-PLAN.md — The link in the conversation: a scheduling reply carries the owner's link line under D-01 and D-02; the example front desk offers a visit after intake (D-05)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 08-10-PLAN.md — The booking page in a real browser (A11Y-02): keyboard at desktop and 375, time names, focus moves, 48 px targets, axe on every state; 07 IN-08, IN-09, IN-11
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 08-11-PLAN.md — When the confirmation and reminders are due: the send window, the move to the window before, the silent skips, one row per moment
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 08-12-PLAN.md — The scheduler sends them (BOOK-04): the owner-alert claim reused, the unread wait and drop, one note per refusal and no alert, a platform-started conversation
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 08-13-PLAN.md — Cancel, mark done (with the optional close) and the visit note on the contact screen; no job closes with a visit ahead (D-25); the tab by keyboard
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 08-14-PLAN.md — The Schedule screen grouped by the business's day, Block time and Remove block, the dashboard's next five visits, the six named writers complete
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 08-15-PLAN.md — Contacts by hand (D-19), the automatic-texts switch and the reply-box line (D-20), the next appointment on the contact screen
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 08-16-PLAN.md — Appointments on the customer card and timeline (D-38, D-39), no booking changes a status (D-41), and the phase's audit of every changed test line
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
