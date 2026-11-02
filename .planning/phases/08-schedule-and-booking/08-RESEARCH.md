@@ -619,6 +619,17 @@ Per Ian's planning note: sweep first, re-point in the same plan, each named by f
 4. **Should the phase be split?** Ian's note: if the planner recommends splitting, stop and bring it to him. Assessment: no split recommended. The pieces are coupled (token → Book → alert → texts → room) and splitting would leave a booking page without its reminders. Plan count is high (expect roughly 10 to 12 plans in about 6 waves). If Ian prefers a split, the only clean seam is "texts and alerts plumbing" (D-21, D-26, D-33, D-34 plus tables) versus "page, owner screens, room", but BOOK-02's success criterion needs both. Surface this to Ian; do not decide it here.
 5. **UI-SPEC "unresolved" row:** appointments tab paging is unspecified; use Filament's stock relation-manager pagination and add a three-row-plus test; no decision needed.
 
+### Resolved by Ian (2026-11-02, before planning)
+
+These answers bind the plans the same as a CONTEXT decision.
+
+- **A1, yes.** Every confirmation and reminder goes through `ComposeAutomatedText`: the sign-off always, and the AI disclosure when it is the conversation's first automated text (Phase 2 D-50). The owner-written line from the booking file is the body, and the budget counts the wrapped text.
+- **A2, appointments only.** The drive buffer (D-08) follows each appointment's span and the new span. A block carries no buffer of its own.
+- **A3, one table, on two conditions.**
+  - Two models over the one `appointments` table, each scoped to its kind: an appointment model and a block model. The customer card, the timeline and the contact screen use only the appointment model and never see a block.
+  - The per-kind shape is held by the named actions, which are already under the appointment-writes test, and by a test that an appointment row always has a contact, a project and a service while a block row never does. Add a database constraint as well, where both SQLite and Postgres allow it; the planner picks how.
+- **Split.** Research recommends none. Ian's planning note still stands: if the planner recommends a split, it stops and brings it to Ian before writing any plan.
+
 ## Environment Availability
 
 | Dependency | Required By | Available | Version | Fallback |
