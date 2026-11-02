@@ -32,6 +32,8 @@ composer run setup
 `setup` installs the PHP packages, creates `.env`, generates the app key,
 creates the SQLite database, runs migrations and builds front-end assets.
 
+`CACHE_STORE` must be a shared store, `database` (the `.env.example` default) or `redis`, because the booking lock that stops two customers taking the same time lives there (`08-RESEARCH.md` A4).
+
 ## 3. Connect Claude Code to Laravel
 
 ```sh
