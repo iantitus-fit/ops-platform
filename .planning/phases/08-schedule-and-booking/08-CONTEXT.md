@@ -109,7 +109,7 @@ Two IDs repeat across phases and are always written with their phase: D-41 (02 D
 - **D-43:** The booking page gets the axe check and Pest browser tests in CI: keyboard order, Tab reach at desktop width and at 375, focus moving to the confirmation, each time named with its day and time, and errors as text beside the field. The live keyboard-only and VoiceOver walk happens at Phase 8 UAT, where 200% zoom and the 24-pixel tap targets are checked (criterion 6). The owner screens (the schedule page, the contact screen's appointment actions and dialogs, and the room section) get the axe check and browser tests for keyboard and focus in CI now; their live VoiceOver listen moves to the Phase 11 owner-screen pass (A11Y-03), as Phases 5 and 7 did. 07 IN-08, IN-09 and IN-11 (07-REVIEW-DISPOSITION.md) land with this first walk: the focus wait in `ProjectsRelationManagerKeyboardTest` rethrows anything but a timeout, the dashboard walk's Tab cap in `LeadsBootTest` is measured and recorded, and the key-press helper moves to `tests/Pest.php`. `08-UI-SPEC.md`, from `/gsd-ui-phase 8`, covers the booking page in full, phone-first, and records the stock-Filament contract for the owner screens in short, as `07-UI-SPEC.md` did (07 D-21 as amended, 07-CONTEXT.md). Reduced motion is the UI-SPEC's. The booking page has a place for a privacy notice and an accessibility statement; their wording comes from the attorney list before the first client, and the tour's fictional business uses plain placeholder wording until then. Affects: safety and compliance, customer communication, operations.
 
 ### Before a real client
-- **D-44:** The attorney list (BLUEPRINT section 10) gains: whether texting the business, or booking on the page, is enough consent for confirmations and reminders, for every contact; whether a customer's spoken yes on a call is enough (D-20); how the A2P registration describes that opt-in; and the wording of the booking page's privacy notice and accessibility statement. "The hours booking reminders may go out" is already on it and now bounds D-29's window. Affects: safety and compliance, customer communication.
+- **D-44 [informational]:** The attorney list (BLUEPRINT section 10) gains: whether texting the business, or booking on the page, is enough consent for confirmations and reminders, for every contact; whether a customer's spoken yes on a call is enough (D-20); how the A2P registration describes that opt-in; and the wording of the booking page's privacy notice and accessibility statement. "The hours booking reminders may go out" is already on it and now bounds D-29's window. Affects: safety and compliance, customer communication.
 
 ### Claude's Discretion
 - Names: the booking file's name and field keys, the new reasons, the new `ProjectActor` value, the new message kind, the actions, tables and columns, in the house style.
@@ -122,6 +122,17 @@ Two IDs repeat across phases and are always written with their phase: D-41 (02 D
 - The room's `CONTEXT.md` body and its `reads` list (folder paths only), from D-35.
 
 </decisions>
+
+<planning_notes>
+## Planning notes (Ian, 2026-11-02)
+- D-04 and D-41 are covered by tests in the plans they touch: no inbound text creates or changes an appointment; a booking leaves the contact's status unchanged.
+- A plan that changes shared code (OutboundSender, RunFrontDesk's alert order, CustomerCard, CloseProject, the example folder, ContactResource) first sweeps for existing tests the change would hollow out (a count or "nothing sent" assertion that would pass without running its branch) and re-points them in that same plan, each named by file and line, as Phases 6 and 7 did.
+- A queued job that gains a required field drains the queue first (BLUEPRINT section 10).
+- No new package without Ian's approval (04 D-18): if research recommends one, name it and stop before planning on it.
+- Wave order: the new tables, the OutboundSender changes (D-21, D-26) and the alert changes (D-33, D-34) land in early waves, so CI proves them on Postgres before the waves that build on them. Ian pushes between waves.
+- Browser tests use Playwright locator waits only; in pest-plugin-browser 5.1 waitForFunction() and waitForURL() never wait (STATE.md, Phase 7).
+- If the planner recommends splitting the phase, stop and bring it to Ian before any plan is written.
+</planning_notes>
 
 <canonical_refs>
 ## Canonical References
