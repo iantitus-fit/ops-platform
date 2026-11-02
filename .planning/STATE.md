@@ -5,11 +5,11 @@ milestone_name: Model Home
 current_phase: 8
 current_phase_name: Schedule and Booking
 status: planning
-stopped_at: Phase 8 context gathered
-last_updated: "2026-11-02T14:22:19.505Z"
+stopped_at: Phase 8 UI-SPEC approved
+last_updated: "2026-11-02T15:26:25.815Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: 15b541a9560f5b877983cd94402955148037e00d
+state_head: aeede75aaabe4f5dfe2e47684d408bf1f04e5f59
 progress:
   total_phases: 9
   completed_phases: 4
@@ -304,9 +304,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T14:22:19.410Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-schedule-and-booking/08-CONTEXT.md
+Last session: 2026-11-02T15:26:25.724Z
+Stopped at: Phase 8 UI-SPEC approved
+Resume file: .planning/phases/08-schedule-and-booking/08-UI-SPEC.md
 
 ## Operator Next Steps
 
