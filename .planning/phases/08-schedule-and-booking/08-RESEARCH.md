@@ -628,6 +628,7 @@ These answers bind the plans the same as a CONTEXT decision.
 - **A3, one table, on two conditions.**
   - Two models over the one `appointments` table, each scoped to its kind: an appointment model and a block model. The customer card, the timeline and the contact screen use only the appointment model and never see a block.
   - The per-kind shape is held by the named actions, which are already under the appointment-writes test, and by a test that an appointment row always has a contact, a project and a service while a block row never does. Add a database constraint as well, where both SQLite and Postgres allow it; the planner picks how.
+- **A6, reversed (later the same day).** An owner-approved `scheduling` draft does carry the link, added at approval through the owner reply path, never into the draft body. Recorded as D-45 in `08-CONTEXT.md`, amending D-01.
 - **Split.** Research recommends none. Ian's planning note still stands: if the planner recommends a split, it stops and brings it to Ian before writing any plan.
 
 ## Environment Availability
