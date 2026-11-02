@@ -270,7 +270,7 @@ Plans:
 - [ ] 08-08-PLAN.md — The customer booking page (Livewire, phone-first, UI-SPEC): pick, check, book, every state, rate limits inside the component, the contract scan, the CI front-end build (Ian pushes)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 08-09-PLAN.md — The link in the conversation: a scheduling reply carries the owner's link line under D-01 and D-02; the example front desk offers a visit after intake (D-05)
+- [ ] 08-09-PLAN.md — The link in the conversation: a scheduling reply carries the owner's link line under D-01 and D-02; an owner-approved scheduling draft gets it at approval, with a box to leave it off (D-45); the example front desk offers a visit after intake (D-05)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 08-10-PLAN.md — The booking page in a real browser (A11Y-02): keyboard at desktop and 375, time names, focus moves, 48 px targets, axe on every state; 07 IN-08, IN-09, IN-11
