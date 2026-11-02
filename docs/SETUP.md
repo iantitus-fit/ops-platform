@@ -179,3 +179,16 @@ set these five keys in `.env` and `TEXT_CHANNEL=twilio`:
 
 The two URLs must match what is typed into the Twilio Console exactly, or every
 webhook is refused. `.env.example` has the same keys with a note.
+
+## 12. Setting up a business: checks the sync cannot make
+
+The sync checks the shape of a business's folder, but some facts it cannot
+verify. Check these by hand for each business before it goes live.
+
+- **`phone` in `business/profile.md` is the business's texting number on the
+  platform**, the number the platform texts from (Ian, 2026-11-02). The
+  booking page's "text us" lines link to it, so a customer who taps one lands
+  in the platform's thread with the front desk and the change-request alert.
+  Send a text to that number and confirm it arrives in the dashboard thread.
+  A business without a number the platform can text from is not a fit.
+  (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
