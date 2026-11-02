@@ -224,7 +224,7 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - What happens when an existing customer starts a second job (LEAD-05) is open: a new project, the same project, or a question for the owner.
 - Service history by address: whether history hangs off the person, the service address or both, and how an address match under a different name is handled (`docs/BLUEPRINT.md`, Ideas inbox, "Service history by address").
-- Where the appointment table and the project-to-appointment link first appear (here or in Phase 8) is open. PROJ-01 is mapped to this phase, but its appointment clause is only proven when booking attaches an appointment in Phase 8.
+- Settled by 07 D-09 (`.planning/phases/07-the-spine-and-leads/07-CONTEXT.md`): the appointment table and the project-to-appointment link arrive in Phase 8, with the link on the appointment. PROJ-01 is mapped to this phase, but its appointment clause is only proven when booking attaches an appointment in Phase 8.
 - What the card and the dashboard show for a project (a line on the card, a list, a screen of its own). Estimates and payments are not part of it (backlog 999.1).
 - Research behind the shape: `docs/research/contractor-operations-2026-10-19.md` (roofing, HVAC, remodel, landscaping contract).
 - Not decided here: a multi-year contract above several projects, a property room, subcontractors, regions.

@@ -259,7 +259,7 @@ Deploy notes (Ian, 2026-10-18, Phase 02.1 UAT test 4). Carry these into the firs
 Decided:
 
 - Filament 5 for the back office, Livewire for customer pages (DEC-08, `docs/DECISIONS.md` 2026-10-10).
-- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 3's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11). Reopened by the v2.0 phone design pass (Ian, 2026-10-21; Key Decisions), except the booking page's own UI-SPEC, built phone-first, which stands.
+- The admin stays stock Filament with a brand pass before screenshots, not a custom theme. A UI-SPEC only for Phase 8's customer booking page. GSD's UI safety gate stays on (Ian, 2026-10-11). Reopened by the v2.0 phone design pass (Ian, 2026-10-21; Key Decisions), except the booking page's own UI-SPEC, built phone-first, which stands.
 - No styling changes until Ian's phone walk (02.1 D-48, `.planning/WINDOWS.md` entry 13).
 - The Needs you card shows the customer's last message above the draft, and the thread runs oldest first (Phase 2 G-02-1.1).
 - Customer-facing strings: no exclamation points and no em dashes (02.1 D-41).
