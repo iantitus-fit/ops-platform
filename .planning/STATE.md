@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-11-03T17:29:43.004Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-11-03T17:39:45.838Z"
 last_activity: 2026-11-03
 last_activity_desc: Phase 08 execution started
-state_head: 264c77d3e1d59e7edc65cfcf8d0e6cb22f911837
+state_head: 898d36682d0cde59f3d05a2896e0377f68ef2479
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 34
+  completed_plans: 35
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 1 of 16
-Status: Executing Phase 08
+Plan: 2 of 16
+Status: Ready to execute
 Last activity: 2026-11-03 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -174,6 +174,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 07 P07 | 9 min | 2 tasks | 9 files |
 | Phase 07 P08 | 15 min | 3 tasks | 8 files |
 | Phase 07 P09 | 11 min | 3 tasks | 7 files |
+| Phase 08 P01 | 12 min | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -241,6 +242,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-09: the Close/Reopen row button is one stable Filament action (toggle), gray while it reads Close and primary while it reads Reopen, so its wire:key never changes and keyboard focus stays on it; both directions confirm with a dialog naming the job, decided when pressed, with the direction carried to the submit (T-07-26 mitigated)
 - [Phase 07]: 07-09: a Filament relation manager or widget a keyboard must reach sets $isLazy to false; owner text in extraAttributes() goes through e() because Filament prints it unescaped
 - [Phase 07, Ian 2026-11-01]: the live VoiceOver listen of the Phase 7 screens moves to the Phase 11 owner-screen pass (A11Y-03), as Phase 5's did; Phase 7's keyboard, focus and button-name checks run as Pest browser tests in CI (08eeec0, a9497bc). In pest-plugin-browser 5.1 waitForFunction() and waitForURL() never wait; browser tests use Playwright locator waits
+- [Phase 08]: 08-01: one shape expression in the migration is the Postgres CHECK and, with NEW. prefixes, the SQLite triggers; a removed block stays as a cancelled row; contacts store only the owner's automatic-texts switch
 
 ### Pending Todos
 
@@ -304,9 +306,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T15:26:25.724Z
-Stopped at: Phase 8 UI-SPEC approved
-Resume file: .planning/phases/08-schedule-and-booking/08-UI-SPEC.md
+Last session: 2026-11-03T17:39:45.680Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
