@@ -354,7 +354,7 @@ it('sends one text when the queued job runs twice (AGNT-02 concurrency)', functi
 });
 
 it('keeps a failed send on the record and raises it, when the channel will not take the text', function () {
-    $conversation = Conversation::factory()->for(Contact::factory()->create(['phone_e164' => '+12025550123']))->create();
+    $conversation = Conversation::factory()->for(Contact::factory()->agreedToAutomaticTexts()->create(['phone_e164' => '+12025550123']))->create();
     $this->mock(TextChannel::class, function (MockInterface $channel) {
         $channel->shouldReceive('name')->andReturn('fake');
         $channel->shouldReceive('send')->andThrow(new RuntimeException('carrier down'));
@@ -392,9 +392,9 @@ it('makes an automated send wait for the lock and give up, but an owner send fai
 
 it('says why a conversation cannot be written to', function () {
     $sender = app(OutboundSender::class);
-    $open = Conversation::factory()->for(Contact::factory()->create(['phone_e164' => '+12025550123']))->create();
+    $open = Conversation::factory()->for(Contact::factory()->agreedToAutomaticTexts()->create(['phone_e164' => '+12025550123']))->create();
     $closed = Conversation::factory()->for(Contact::factory()->create(['phone_e164' => '+12025550124']))->create(['status' => ConversationStatus::Closed]);
-    $noPhone = Conversation::factory()->for(Contact::factory()->create(['phone_e164' => null]))->create();
+    $noPhone = Conversation::factory()->for(Contact::factory()->agreedToAutomaticTexts()->create(['phone_e164' => null]))->create();
 
     expect($sender->whyBlocked($open, SendOrigin::Automated))->toBeNull()
         ->and($sender->whyBlocked($closed, SendOrigin::Automated))->toBeString()->toContain('closed')

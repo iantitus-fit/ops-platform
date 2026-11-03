@@ -61,6 +61,12 @@ class OutboundSender
     public const string NO_READING = 'Not sent without the safety check: ';
 
     /**
+     * The sentence for an automated text to a customer who has not texted the business and whose automatic texts the
+     * owner has not turned on (D-21).
+     */
+    public const string NOT_AGREED = 'The customer has not texted the business or agreed to automatic texts.';
+
+    /**
      * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
      */
     private const string NO_READING_WHY = "A text was stopped because the safety check had not read the customer's message";
@@ -134,6 +140,11 @@ class OutboundSender
      *
      * A customer who texted STOP is refused first, for every origin: the owner's reply, an approved draft and the
      * life-safety line included (D-40). The owner is alerted separately so they can call.
+     *
+     * An automated text also needs a customer who has texted the business or whose automatic texts the owner turned on
+     * (D-21). That rule is for automated texts only: the owner's reply and the life-safety line keep today's rules, and
+     * ProcessInbound keeps its own per-conversation rule (02 D-41). It sits after the closed and paused checks, so those
+     * keep their own reasons, and before the no-phone check.
      */
     public function whyBlocked(Conversation $conversation, SendOrigin $origin): ?string
     {
@@ -152,6 +163,10 @@ class OutboundSender
 
         if ($origin === SendOrigin::Automated && $conversation->isPaused()) {
             return 'The assistant is paused in this conversation.';
+        }
+
+        if ($origin === SendOrigin::Automated && ! $contact->mayGetAutomaticTexts()) {
+            return self::NOT_AGREED;
         }
 
         if (blank($contact->phone_e164)) {
