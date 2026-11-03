@@ -31,6 +31,14 @@ enum MessageKind: string
     case CodeAnswer = 'code_answer';
 
     /**
+     * A text the platform starts about a booked appointment, the confirmation or a reminder. Code writes it from an
+     * owner line in the booking file, never the model's words. It goes out with no reading of a customer text, only
+     * under the conditions OutboundSender checks (D-26, Ian's amendment of 02.1 D-49). It starts no wait and is not
+     * built from owner-written sentences.
+     */
+    case BookingText = 'booking_text';
+
+    /**
      * The kinds that start a wait: the customer was told the owner will answer, so no second full holding reply goes
      * out while that question is still open (D-14, D-30).
      *

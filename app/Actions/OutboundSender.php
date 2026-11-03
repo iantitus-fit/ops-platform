@@ -40,6 +40,11 @@ use Throwable;
  * attached to its gate (gate.customer_reading). The safety line is the one exception and is never asked for one. A
  * reading marked missing counts as no reading at all (Ian, 2026-10-16). A refused send is never sent and the owner
  * is told: a text with no reading raises safety_check_missing, always right away and once per customer text.
+ *
+ * One kind of text is the exception beside the safety line (D-26, Ian's amendment of 02.1 D-49): a booking text, the
+ * confirmation or a reminder about a booked appointment, is written by code from an owner line and carries none of the
+ * model's words, so it goes out with no reading of a customer text. It does so only while its appointment is booked and
+ * still ahead and no customer text in the conversation is waiting unread (refuseBookingText()).
  */
 class OutboundSender
 {
@@ -65,6 +70,24 @@ class OutboundSender
      * owner has not turned on (D-21).
      */
     public const string NOT_AGREED = 'The customer has not texted the business or agreed to automatic texts.';
+
+    /**
+     * How the sentence begins when a booking text was refused because it did not hold what D-26 asks of it: it must name
+     * an appointment of this customer, and name its parts with none of the model's words among them.
+     */
+    public const string BOOKING_TEXT_REFUSED = 'Not sent: ';
+
+    /**
+     * The sentence for a booking text whose appointment is no longer booked or no longer ahead. The text will never be
+     * right to send, so a caller drops it (D-26).
+     */
+    public const string APPOINTMENT_NOT_AHEAD = 'Not sent: the appointment is no longer booked or no longer ahead.';
+
+    /**
+     * The sentence for a booking text held back because a text from the customer in this conversation is still waiting
+     * to be read. The text may be right to send once that one is read, so a caller tries again later (D-26).
+     */
+    public const string UNREAD_CUSTOMER_TEXT = 'Not sent yet: an earlier text from the customer is still waiting to be read.';
 
     /**
      * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
@@ -216,7 +239,11 @@ class OutboundSender
         }
 
         if ($origin === SendOrigin::Automated) {
-            $this->refuseWithoutReading($conversation, $attributes);
+            if ($this->kindOf($attributes) === MessageKind::BookingText) {
+                $this->refuseBookingText($conversation, $attributes);
+            } else {
+                $this->refuseWithoutReading($conversation, $attributes);
+            }
         }
 
         $summary = $attributes['activity_summary'] ?? null;
@@ -330,6 +357,56 @@ class OutboundSender
     }
 
     /**
+     * Refuse a booking text that does not meet D-26, with no reading asked for and no owner alert raised (D-27): the
+     * owner reads a refused confirmation or reminder as a timeline note the caller writes, never as an alert.
+     *
+     * The text must name an appointment of this conversation's customer (meta.appointment_id) and name its parts
+     * (meta.parts) with none of the model's words among them; otherwise the sentence begins with BOOKING_TEXT_REFUSED.
+     * Then the appointment must be booked and start after now, or the sentence is APPOINTMENT_NOT_AHEAD: the caller
+     * drops the text for good. Last, no inbound text in the conversation may still be unread (handled_at null), or the
+     * sentence is UNREAD_CUSTOMER_TEXT: the caller waits and tries again. A text whose run is already in progress has
+     * been claimed (handled_at set), and the reply lock covers that run. The appointment is reached through the
+     * customer's own appointments, so another customer's visit is never found.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws DomainException
+     */
+    private function refuseBookingText(Conversation $conversation, array $attributes): void
+    {
+        $appointmentId = data_get($attributes, 'meta.appointment_id');
+
+        if (! is_int($appointmentId)) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED.'a booking text must name its appointment.');
+        }
+
+        $parts = data_get($attributes, 'meta.parts');
+
+        if (! is_array($parts) || $parts === [] || in_array('model_words', $parts, true)) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED.'a booking text must name its parts and carry no words from the model.');
+        }
+
+        $appointment = $conversation->contact->appointments()->whereKey($appointmentId)->first();
+
+        if ($appointment === null) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED."the appointment is not this customer's.");
+        }
+
+        if (! $appointment->isBooked() || $appointment->starts_at->lte(now())) {
+            throw new DomainException(self::APPOINTMENT_NOT_AHEAD);
+        }
+
+        $unread = $conversation->messages()
+            ->where('direction', MessageDirection::In->value)
+            ->whereNull('handled_at')
+            ->exists();
+
+        if ($unread) {
+            throw new DomainException(self::UNREAD_CUSTOMER_TEXT);
+        }
+    }
+
+    /**
      * Refuse an automated text that lacks what its gate must carry (D-45, D-49), tell the owner, and stop. A text with
      * no reading of the customer's text, or one marked missing, raises safety_check_missing; the owner is told at once
      * at any hour, once per customer text. A text that has a reading but lacks something else raises front_desk_failed,
@@ -373,6 +450,7 @@ class OutboundSender
             $why = match ($part) {
                 'code_sentences' => $reading->allowsOwnerSentences() ? null : "an owner sentence needs a clean reading of the customer's text",
                 'model_words' => $this->whyModelWordsAreBlocked($attributes, $reading),
+                'booking_link' => $reading->allowsOwnerSentences() ? null : "a booking link needs a clean reading of the customer's text",
                 default => null,
             };
 
@@ -404,13 +482,28 @@ class OutboundSender
             return array_values(array_filter($parts, is_string(...)));
         }
 
-        $kind = $attributes['kind'] ?? null;
-        $kind = is_string($kind) ? MessageKind::tryFrom($kind) : $kind;
+        $kind = $this->kindOf($attributes);
 
         return match (true) {
             $kind === null || $kind === MessageKind::AgentReply => ['model_words'],
             in_array($kind, [MessageKind::CodeAnswer, MessageKind::PartialHolding, MessageKind::CheckInReply, MessageKind::AddedInfoReply], true) => ['code_sentences', 'model_words'],
             default => [],
+        };
+    }
+
+    /**
+     * The kind a text is recorded with, whether the caller handed the enum or its string, or null when it names none.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function kindOf(array $attributes): ?MessageKind
+    {
+        $kind = $attributes['kind'] ?? null;
+
+        return match (true) {
+            $kind instanceof MessageKind => $kind,
+            is_string($kind) => MessageKind::tryFrom($kind),
+            default => null,
         };
     }
 
