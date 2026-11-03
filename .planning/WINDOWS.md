@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 16
+open_count: 17
 waived_count: 1
 fixed_count: 29
-total_count: 46
-last_updated: 2026-11-03T17:38:51.980Z
+total_count: 47
+last_updated: 2026-11-03T22:59:31.752Z
 ---
 
 # Broken Windows Ledger
@@ -61,6 +61,7 @@ last_updated: 2026-11-03T17:38:51.980Z
 | 44 | 11 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3) | open | Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI | 2026-11-01T15:36:26.960Z |  |
 | 45 | 07 | unrun-verify | .github/workflows |  | 07-09: after Ian pushes the phase branch, the CI tests workflow is green on both legs with ProjectsRelationManagerTest and ProjectsRelationManagerKeyboardTest included (the focus proof in Chromium on SQLite and Postgres) | fixed | Evidence: CI run 41337489371 on 94ab259, pest (sqlite) and pest (pgsql) both success, ProjectsRelationManagerKeyboardTest and the leads walk passing on each | 2026-11-01T15:36:34.622Z | 2026-11-01T19:17:48.605Z |
 | 46 | 08 | unrun-verify | tests/Feature/Booking/AppointmentTableTest.php |  | 08-01: after Ian pushes the phase branch, the CI pgsql leg is green, in particular AppointmentTableTest 'refuses a row of the wrong shape' (the CHECK constraint) and the two unique-constraint cases | open |  | 2026-11-03T17:38:51.980Z |  |
+| 47 | 08 | unrun-verify | tests/Feature/Booking/AutomaticTextsRuleTest.php |  | Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY | open |  | 2026-11-03T22:59:31.752Z |  |
 
 ````json
 [
@@ -659,6 +660,19 @@ last_updated: 2026-11-03T17:38:51.980Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-03T17:38:51.980Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 47,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AutomaticTextsRuleTest.php",
+    "line": null,
+    "description": "Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-03T22:59:31.752Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
