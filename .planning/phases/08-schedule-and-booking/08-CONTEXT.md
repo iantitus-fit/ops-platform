@@ -133,6 +133,7 @@ Two IDs repeat across phases and are always written with their phase: D-41 (02 D
 - Wave order: the new tables, the OutboundSender changes (D-21, D-26) and the alert changes (D-33, D-34) land in early waves, so CI proves them on Postgres before the waves that build on them. Ian pushes between waves.
 - Browser tests use Playwright locator waits only; in pest-plugin-browser 5.1 waitForFunction() and waitForURL() never wait (STATE.md, Phase 7).
 - If the planner recommends splitting the phase, stop and bring it to Ian before any plan is written.
+- From wave 2 on, any wave that adds a migration or relies on a database lock also runs the full suite on the local Postgres 17 from `docs/SETUP.md` (section 5) before it is reported done (Ian, 2026-11-03, after CI run 41691002115).
 </planning_notes>
 
 <canonical_refs>
