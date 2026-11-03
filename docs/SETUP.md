@@ -85,6 +85,8 @@ docker rm -f ops-pg-test
 Give the container a few seconds to start before the second command. GitHub
 Actions runs both databases on every push (`.github/workflows/tests.yml`).
 
+Migration checks (`migrate:fresh`, `migrate:rollback`) run with `--env=testing`, against a local, gitignored `.env.testing` (SQLite `:memory:`, its own `APP_KEY`), so they never touch `database/database.sqlite`.
+
 ## 6. First commit
 
 ```sh
