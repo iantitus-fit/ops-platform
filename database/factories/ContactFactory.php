@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\ContactStatus;
 use App\Models\Contact;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -62,6 +63,17 @@ class ContactFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'sms_opted_out_at' => now(),
+        ]);
+    }
+
+    /**
+     * A contact the owner has switched automatic texts on for (D-20).
+     */
+    public function agreedToAutomaticTexts(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'automatic_texts_on_at' => now(),
+            'automatic_texts_on_by_user_id' => User::factory(),
         ]);
     }
 

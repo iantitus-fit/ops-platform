@@ -8,6 +8,7 @@ use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'acquisition_cost_cents',
     'last_activity_at',
     'sms_opted_out_at',
+    'automatic_texts_on_at',
+    'automatic_texts_on_by_user_id',
 ])]
 class Contact extends Model
 {
@@ -38,6 +41,7 @@ class Contact extends Model
             'acquisition_cost_cents' => 'integer',
             'last_activity_at' => 'datetime',
             'sms_opted_out_at' => 'datetime',
+            'automatic_texts_on_at' => 'datetime',
         ];
     }
 
@@ -47,6 +51,16 @@ class Contact extends Model
     public function isOptedOut(): bool
     {
         return $this->sms_opted_out_at !== null;
+    }
+
+    /**
+     * The signed-in user who turned automatic texts on for this contact, when one did (D-20).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function automaticTextsTurnedOnBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'automatic_texts_on_by_user_id');
     }
 
     /**

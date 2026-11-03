@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A customer's appointment for one job: a start and an end, both UTC (D-06), with the service copied from the folder at
@@ -118,6 +119,16 @@ class Appointment extends Model
     public function bookedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'booked_by_user_id');
+    }
+
+    /**
+     * The confirmation and reminder texts for this appointment, one per lead time (D-31).
+     *
+     * @return HasMany<BookingSend, $this>
+     */
+    public function sends(): HasMany
+    {
+        return $this->hasMany(BookingSend::class);
     }
 
     /**
