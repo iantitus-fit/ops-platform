@@ -190,7 +190,9 @@ See `key-files` above. Notable: `database/migrations/2026_11_02_000003_add_kind_
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. Two small additions inside the plan's intent: indexes on `contact_id` and `project_id` were added to the appointments migration (listed in the plan's step 3), and `Hidden` was used as an attribute (`#[Hidden(['token_hash'])]`), which the installed Laravel (13.35) supports.
+The plan's tasks ran as written. Two small additions inside the plan's intent: indexes on `contact_id` and `project_id` were added to the appointments migration (listed in the plan's step 3), and `Hidden` was used as an attribute (`#[Hidden(['token_hash'])]`), which the installed Laravel (13.35) supports.
+
+- **An existing test the new foreign key forced to change, which the plan did not list (found by CI after the plan closed).** `tests/Feature/Rooms/LeadsSectionTest.php:185`, 'it shows one line when the section cannot load', broke the leads section with `Schema::drop('projects')`. The new `appointments.project_id` foreign key points at `projects`, so Postgres refuses that drop (`SQLSTATE[2BP01]`, CI run 41691002115, pgsql leg). SQLite allows it while no row points at the table, so local runs passed. The test now renames the table instead, which both databases allow and which still makes the section fail to load. The same CI run also caught this plan's own `AppointmentTableTest` 'it keeps one send per appointment and lead time', whose expected duplicate now runs in its own savepoint (`DB::transaction`), so Postgres does not abort the rest of the test.
 
 ## Issues Encountered
 

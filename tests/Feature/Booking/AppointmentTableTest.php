@@ -154,7 +154,7 @@ it('keeps one send per appointment and lead time', function () {
 
     BookingSend::factory()->for($appointment)->create(['lead_minutes' => 1440]);
 
-    expect(fn () => BookingSend::factory()->for($appointment)->create(['lead_minutes' => 1440]))
+    expect(fn () => DB::transaction(fn () => BookingSend::factory()->for($appointment)->create(['lead_minutes' => 1440])))
         ->toThrow(UniqueConstraintViolationException::class);
 
     BookingSend::factory()->for($appointment)->confirmation()->create();
