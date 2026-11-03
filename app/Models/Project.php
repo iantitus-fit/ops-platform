@@ -11,11 +11,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A piece of work for one contact. The table is the platform's own, not a room's (04 D-23, D-10). Only OpenProject,
  * CloseProject, ReopenProject and RenameProject write it (D-11). Appointments attach to a project in Phase 8, with the
- * link on the appointment, so this model holds no appointment (D-09).
+ * link on the appointment, so this model holds no appointment column, only the appointments() relation (D-09).
  */
 #[Fillable([
     'contact_id',
@@ -86,6 +87,17 @@ class Project extends Model
     public function closedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by_user_id');
+    }
+
+    /**
+     * Every appointment booked for this job. This is the scoped Appointment model, so a block never shows here (A3).
+     * The link lives on the appointment (07 D-09).
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
     }
 
     /**

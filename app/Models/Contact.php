@@ -80,6 +80,17 @@ class Contact extends Model
     }
 
     /**
+     * Every appointment this contact has. This is the scoped Appointment model, so a block never shows here (A3). The
+     * link between a contact and an appointment lives on the appointment (07 D-09).
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /**
      * The timeline entries for this contact.
      *
      * @return HasMany<Activity, $this>
