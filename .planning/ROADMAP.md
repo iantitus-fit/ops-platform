@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 2/16 plans executed
+**Plans**: 3/16 plans executed
 
 Plans:
 **Wave 1**
@@ -252,7 +252,7 @@ Plans:
 - [x] 08-02-PLAN.md — OutboundSender: automatic texts need a customer who texted or agreed (D-21, every reached test found by probe and re-pointed), the booking text kind (D-26) and the booking-link reading rule
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 08-03-PLAN.md — The change-request alert in the one-alert order (D-34), the booked alert's words and timing (D-33), change_request right away in the example, and no text ever writes an appointment (D-04)
+- [x] 08-03-PLAN.md — The change-request alert in the one-alert order (D-34), the booked alert's words and timing (D-33), change_request right away in the example, and no text ever writes an appointment (D-04)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 08-04-PLAN.md — The schedule and booking room at the standard: provider, booking file and its checks, example folder, SPEC rows, boot test, section; D-36 and D-37 sync refusals; file count 26 to 28
@@ -397,7 +397,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 2/16 | In Progress | - |
+| 8. Schedule and Booking | 3/16 | In Progress | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |

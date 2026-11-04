@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-11-03T23:23:34.981Z"
-last_activity: 2026-11-03
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-11-04T21:34:36.924Z"
+last_activity: 2026-11-04
 last_activity_desc: Phase 08 execution started
-state_head: 294b1ec85fe5fb1109a39276a7409adba851b4f4
+state_head: 65bbe6e4f22e0aefa64ed73c489fde691eb791c6
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 36
+  completed_plans: 37
   percent: 44
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 3 of 16
+Plan: 4 of 16
 Status: Ready to execute
-Last activity: 2026-11-03 — Phase 08 execution started
+Last activity: 2026-11-04 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 
@@ -176,6 +176,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 07 P09 | 11 min | 3 tasks | 7 files |
 | Phase 08 P01 | 12 min | 3 tasks | 23 files |
 | Phase 08 P02 | 44 min | 3 tasks | 10 files |
+| Phase 08 P03 | 55 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -246,6 +247,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-01: one shape expression in the migration is the Postgres CHECK and, with NEW. prefixes, the SQLite triggers; a removed block stays as a cancelled row; contacts store only the owner's automatic-texts switch
 - [Phase 08]: 08-02: has-texted is derived from inbound SMS minus the opting-out STOP, nothing stored; D-21 sits after the paused check and before the no-phone check
 - [Phase 08]: 08-02: a booking text refusal is a class-constant sentence: UNREAD_CUSTOMER_TEXT means wait, APPOINTMENT_NOT_AHEAD means drop; no owner alert (D-26, D-27)
+- [Phase 08]: 08-03: change_request swaps in for draft_waiting and check_in, gives way to complaint, asked_for_person, life_safety, paused_message, front_desk_failed; raised at run end if no alert stored; appointment_booked quotes no customer text
 
 ### Pending Todos
 
@@ -309,8 +311,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T23:23:34.900Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-11-04T21:34:36.857Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

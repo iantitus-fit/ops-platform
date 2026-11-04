@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 17
+open_count: 18
 waived_count: 1
 fixed_count: 29
-total_count: 47
-last_updated: 2026-11-03T22:59:31.752Z
+total_count: 48
+last_updated: 2026-11-04T21:33:34.964Z
 ---
 
 # Broken Windows Ledger
@@ -62,6 +62,7 @@ last_updated: 2026-11-03T22:59:31.752Z
 | 45 | 07 | unrun-verify | .github/workflows |  | 07-09: after Ian pushes the phase branch, the CI tests workflow is green on both legs with ProjectsRelationManagerTest and ProjectsRelationManagerKeyboardTest included (the focus proof in Chromium on SQLite and Postgres) | fixed | Evidence: CI run 41337489371 on 94ab259, pest (sqlite) and pest (pgsql) both success, ProjectsRelationManagerKeyboardTest and the leads walk passing on each | 2026-11-01T15:36:34.622Z | 2026-11-01T19:17:48.605Z |
 | 46 | 08 | unrun-verify | tests/Feature/Booking/AppointmentTableTest.php |  | 08-01: after Ian pushes the phase branch, the CI pgsql leg is green, in particular AppointmentTableTest 'refuses a row of the wrong shape' (the CHECK constraint) and the two unique-constraint cases | open |  | 2026-11-03T17:38:51.980Z |  |
 | 47 | 08 | unrun-verify | tests/Feature/Booking/AutomaticTextsRuleTest.php |  | Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY | open |  | 2026-11-03T22:59:31.752Z |  |
+| 48 | 08 | unrun-verify | tests/Feature/Alerts/ChangeRequestAlertTest.php |  | 08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally) | open |  | 2026-11-04T21:33:34.964Z |  |
 
 ````json
 [
@@ -673,6 +674,19 @@ last_updated: 2026-11-03T22:59:31.752Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-03T22:59:31.752Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 48,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Alerts/ChangeRequestAlertTest.php",
+    "line": null,
+    "description": "08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-04T21:33:34.964Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
