@@ -20,6 +20,18 @@ enum AlertReason: string
     case SafetyCheckMissing = 'safety_check_missing';
 
     /**
+     * A customer booked a visit on the booking page (Phase 8 D-33). Its text names the visit and quotes no customer text.
+     */
+    case AppointmentBooked = 'appointment_booked';
+
+    /**
+     * A customer with a booked visit ahead texted about scheduling (Phase 8 D-34). It takes the place of draft_waiting
+     * and check_in for that text and gives way to complaint, asked_for_person, life_safety, paused_message and
+     * front_desk_failed.
+     */
+    case ChangeRequest = 'change_request';
+
+    /**
      * Every event as the text an owner writes in the folder.
      *
      * @return list<string>
@@ -46,6 +58,8 @@ enum AlertReason: string
             self::CheckIn => 'Customer checked in',
             self::SafetyCheckDown => 'Safety check is down',
             self::SafetyCheckMissing => 'Safety check did not run',
+            self::AppointmentBooked => 'Visit booked',
+            self::ChangeRequest => 'Booked customer asked about the visit',
         };
     }
 }

@@ -11,18 +11,19 @@ use Illuminate\Support\Carbon;
 
 /**
  * Tuesday 2026-11-03 at 11:00 in the business zone (open), the owner with a phone, and Dana on file. A visit is
- * booked for her on Thursday 2026-11-05 at 10:00 in the business zone unless the test says otherwise (D-34).
+ * booked for her on Thursday 2026-11-05 at 10:00 in the business zone unless the test says otherwise (D-34). Both
+ * moments are set in UTC, because the app stores and compares UTC.
  */
 function changeRequestBookedDana(string $now = '2026-11-03 11:00', ?string $visitStarts = '2026-11-05 10:00', string $state = 'booked'): Contact
 {
-    test()->travelTo(Carbon::parse($now, 'America/Chicago'));
+    test()->travelTo(Carbon::parse($now, 'America/Chicago')->utc());
 
     User::factory()->withPhone('+12025550199')->create();
     $dana = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
 
     if ($visitStarts !== null) {
         $project = Project::factory()->for($dana)->create();
-        $appointment = Appointment::factory()->for($dana)->for($project)->at(Carbon::parse($visitStarts, 'America/Chicago'))->create([
+        $appointment = Appointment::factory()->for($dana)->for($project)->at(Carbon::parse($visitStarts, 'America/Chicago')->utc())->create([
             'service_slug' => 'ac-repair',
             'service_name' => 'AC repair',
         ]);

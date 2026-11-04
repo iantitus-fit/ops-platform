@@ -154,11 +154,33 @@ class RunFrontDesk
     private ?CustomerReading $reading = null;
 
     /**
+     * The highest owner_alerts id for the conversation when the run began, or 0 when it had none. An alert with a higher
+     * id was stored during this run, whichever class raised it (D-34, research Pitfall 9). Set at the top of every
+     * handle() call.
+     */
+    private int $alertIdAtStart = 0;
+
+    /**
+     * The booked visit this run's text is about, described for the owner, or null when the text is not a change request
+     * (D-34). Set once the agent has answered, and reset at the top of every handle() call.
+     */
+    private ?string $changeRequestVisit = null;
+
+    /**
+     * The newest customer text the run claimed: the subject of a change request, so its alert keys to the inbound text
+     * (D-34). Set at the top of every handle() call.
+     */
+    private ?Message $newestCustomerText = null;
+
+    /**
      * @param  Collection<int, Message>  $burst  The customer's texts this run claimed, oldest first. Must not be empty.
      */
     public function handle(Conversation $conversation, Collection $burst): void
     {
         $this->reading = null;
+        $this->alertIdAtStart = (int) OwnerAlert::query()->where('conversation_id', $conversation->id)->max('id');
+        $this->changeRequestVisit = null;
+        $this->newestCustomerText = $burst->last();
 
         $this->answerDanger($burst);
 
@@ -235,6 +257,21 @@ class RunFrontDesk
             return;
         }
 
+        $this->changeRequestVisit = $this->visitAskedAbout($conversation, $run->reply->label);
+
+        $this->answerFromAgentReply($agent, $run, $conversation, $burst, $waiting);
+        $this->raiseChangeRequestWhenNoAlertWent($conversation);
+    }
+
+    /**
+     * Everything a normal run does once the agent has answered and no danger or request for a person ended it: record
+     * the intake answers, look up prices, decide send or draft, and send or store. Its early returns end only this
+     * part, so handle() can ask afterwards whether the run raised any alert at all (D-34).
+     *
+     * @param  Collection<int, Message>  $burst
+     */
+    private function answerFromAgentReply(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, ?Message $waiting): void
+    {
         $newAnswers = $this->recordIntakeAnswers->handle($conversation, $run->reply, $burst->last());
         $this->fillEmptyName($conversation, $run->reply->customerName, $burst->last());
 
@@ -400,6 +437,93 @@ class RunFrontDesk
     }
 
     /**
+     * The contact's earliest booked visit still ahead, described as "AC repair, Thursday, November 5 at 10:00 AM" in the
+     * business zone, when this text is about scheduling; otherwise null (D-34). A text is about scheduling when the
+     * reading's intent is the owner's `scheduling` intent or the agent labeled its reply scheduling. The visit is read
+     * through the contact's appointments() relation, so this class never imports the Appointment model: it writes
+     * messages and never an appointment (D-04).
+     */
+    private function visitAskedAbout(Conversation $conversation, ReplyLabel $label): ?string
+    {
+        if (($this->reading()->answers['intent'] ?? null) !== 'scheduling' && $label !== ReplyLabel::Scheduling) {
+            return null;
+        }
+
+        $visit = $conversation->contact->appointments()->booked()->ahead()->orderBy('starts_at')->first();
+
+        if ($visit === null) {
+            return null;
+        }
+
+        $start = $visit->starts_at->copy()->setTimezone($this->activeConfig->displayTimezone());
+
+        return $visit->service_name.', '.$start->format('l, F j').' at '.$start->format('g:i A');
+    }
+
+    /**
+     * Raise an owner alert, putting the change request in the place of draft_waiting or check_in when the text is a
+     * change request (D-34). The one-alert order, highest first: complaint, asked_for_person, life_safety,
+     * paused_message and front_desk_failed, then change_request, then draft_waiting and check_in. So the swap happens
+     * only for those two reasons, only when the run found a visit, and only when none of the higher ones was stored for
+     * this conversation since the run began; any other alert is raised exactly as it was. The change request is keyed to
+     * the newest inbound text, not to the draft, so a burst of texts raises one (research Pitfall 9).
+     */
+    private function alertOrChangeRequest(Conversation $conversation, AlertReason $reason, ?Message $subject, string $why): void
+    {
+        $swappable = in_array($reason, [AlertReason::DraftWaiting, AlertReason::CheckIn], true);
+
+        if ($swappable && $this->changeRequestVisit !== null && ! $this->higherAlertRaised($conversation)) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::ChangeRequest, $this->newestCustomerText, 'Asked about the booked visit: '.$this->changeRequestVisit);
+
+            return;
+        }
+
+        $this->raiseOwnerAlert->handle($conversation, $reason, $subject, $why);
+    }
+
+    /**
+     * Whether an alert that outranks the change request was stored for this conversation since the run began (D-34).
+     * Other classes raise some of these, such as SendLifeSafetyLine and ReportFrontDeskFailure, so the table is asked
+     * rather than a flag passed through every call site.
+     */
+    private function higherAlertRaised(Conversation $conversation): bool
+    {
+        return OwnerAlert::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('id', '>', $this->alertIdAtStart)
+            ->whereIn('reason', [
+                AlertReason::Complaint->value,
+                AlertReason::AskedForPerson->value,
+                AlertReason::LifeSafety->value,
+                AlertReason::PausedMessage->value,
+                AlertReason::FrontDeskFailed->value,
+            ])
+            ->exists();
+    }
+
+    /**
+     * When the run ended normally with this text a change request and no alert of any kind was stored for the
+     * conversation during it, such as a scheduling reply that was sent, the owner still hears about the visit (D-34).
+     * Any alert already brings the owner to the thread, so one customer text raises one alert. A run that threw never
+     * gets here; the failure report stands (06 D-07).
+     */
+    private function raiseChangeRequestWhenNoAlertWent(Conversation $conversation): void
+    {
+        if ($this->changeRequestVisit === null) {
+            return;
+        }
+
+        $alertWent = OwnerAlert::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('id', '>', $this->alertIdAtStart)
+            ->exists();
+
+        if (! $alertWent) {
+            $this->raiseOwnerAlert->handle($conversation, AlertReason::ChangeRequest, $this->newestCustomerText, 'Asked about the booked visit: '.$this->changeRequestVisit);
+        }
+    }
+
+    /**
      * Close the waiting draft as answered because the text with the price sentence for it went out (D-21). The text must
      * have been sent: a draft is never closed on a send that failed, so it stays with the owner. A send that was only
      * refused is stored by sendCodeAnswer() as a draft that replaces the waiting one and keeps its words, so nothing is
@@ -551,7 +675,7 @@ class RunFrontDesk
 
             if (! $sent instanceof Verdict) {
                 if ($sent !== null && $checkIn) {
-                    $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+                    $this->alertOrChangeRequest($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
                 }
 
                 return;
@@ -904,7 +1028,7 @@ class RunFrontDesk
         }
 
         if ($alertsOwner) {
-            $this->raiseOwnerAlert->handle($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
+            $this->alertOrChangeRequest($conversation, AlertReason::CheckIn, $burst->last(), 'Customer checked in');
         }
     }
 
@@ -1550,7 +1674,7 @@ class RunFrontDesk
         CustomerRecordChanged::dispatch($conversation->contact->id);
 
         if ($this->ownerNeedsAlertFor($alertReason, $replacedChain)) {
-            $this->raiseOwnerAlert->handle($conversation, $alertReason, $draft, $plainReason);
+            $this->alertOrChangeRequest($conversation, $alertReason, $draft, $plainReason);
         }
 
         if ($sendHolding && ! $verdict->lifeSafety && ! $conversation->refresh()->isPaused()) {
