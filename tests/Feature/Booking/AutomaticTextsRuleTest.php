@@ -7,6 +7,8 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
 
 /**
  * A lead who came in through the website form: no text from the customer, so they have never texted the business.
@@ -87,6 +89,33 @@ it('never counts a first STOP, and counts a later START (D-20)', function () {
     automaticTextsRuleCustomerTexts('START', 'c', '+12025550188');
 
     expect($contact->refresh()->hasTextedBusiness())->toBeTrue();
+});
+
+/**
+ * The query on messages must name this customer's conversations by their ids, not through a subquery on
+ * conversations. With the subquery, PostgreSQL can start from every customer text in the table and read the whole
+ * conversations table again for each one; in the D-46 invariant test that cost up to a second a send and added about
+ * nine minutes to the PostgreSQL suite. The shape of the query is what decides that plan, so the shape is what this
+ * checks: a timing would be slow to run and would not fail reliably.
+ */
+it('reads only this customer\'s conversations, named by id, to decide whether they texted (D-20)', function () {
+    Message::factory()->count(20)->create();
+
+    $conversation = Conversation::factory()->create();
+    $earlier = Conversation::factory()->closed()->for($conversation->contact)->create();
+    Message::factory()->for($conversation)->create();
+
+    $queries = [];
+    DB::listen(function (QueryExecuted $query) use (&$queries): void {
+        $queries[] = $query;
+    });
+
+    expect($conversation->contact->hasTextedBusiness())->toBeTrue();
+
+    $onMessages = collect($queries)->sole(fn (QueryExecuted $query): bool => str_contains($query->sql, 'from "messages"'));
+
+    expect($onMessages->sql)->not->toContain('from "conversations"')
+        ->and($onMessages->bindings)->toContain($conversation->id, $earlier->id);
 });
 
 it('leaves the owner and the safety line alone (D-21)', function () {
