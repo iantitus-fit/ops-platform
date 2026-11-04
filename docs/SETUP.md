@@ -85,7 +85,7 @@ docker rm -f ops-pg-test
 Give the container a few seconds to start before the second command. GitHub
 Actions runs both databases on every push (`.github/workflows/tests.yml`).
 
-Migration checks (`migrate:fresh`, `migrate:rollback`) run with `--env=testing`, against a local, gitignored `.env.testing` (SQLite `:memory:`, its own `APP_KEY`), so they never touch `database/database.sqlite`.
+Migration checks (`migrate:fresh`, `migrate:rollback`, then `migrate` again) run with `--env=testing`, against a local, gitignored `.env.testing` (its own `APP_KEY`, and `DB_DATABASE=database/testing.sqlite`), so they never touch `database/database.sqlite`. The scratch file must be a real file, not `:memory:`: each artisan command is a new process, and an in-memory database starts empty every time, so a rollback would have nothing to undo. Create it once with `touch database/testing.sqlite` (gitignored by `database/.gitignore`); `migrate --no-interaction` will not create it. `php artisan test` is unaffected: `phpunit.xml` sets `DB_DATABASE` to `:memory:` before `.env.testing` is read, and an existing value is never replaced.
 
 ## 6. First commit
 
