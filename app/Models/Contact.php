@@ -63,11 +63,14 @@ class Contact extends Model
      * message over SMS in any of this contact's conversations counts, unless that very message is the one that opted
      * the contact out, so a first text that is STOP never counts and a later START does. A web form, a call or an
      * email is not a text.
+     *
+     * The conversation ids are read first and handed to the messages query as a list, never as a subquery: given the
+     * subquery, PostgreSQL could start from every customer text in the table and read conversations again for each one.
      */
     public function hasTextedBusiness(): bool
     {
         return Message::query()
-            ->whereIn('conversation_id', $this->conversations()->select('conversations.id'))
+            ->whereIn('conversation_id', $this->conversations()->pluck('id')->all())
             ->where('direction', MessageDirection::In->value)
             ->where('channel', MessageChannel::Sms->value)
             ->where('author', MessageAuthor::Customer->value)
