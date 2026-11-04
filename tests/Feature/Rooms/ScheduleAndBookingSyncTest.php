@@ -28,6 +28,14 @@ function layScheduleConnector(string $field): void
 }
 
 /**
+ * A moment given in the business's zone (Chicago), as UTC, which is how appointments are stored (D-06).
+ */
+function chicagoMoment(string $local): Carbon
+{
+    return Carbon::parse($local, 'America/Chicago')->utc();
+}
+
+/**
  * Drop the schedule and booking room from the business folder.
  */
 function dropScheduleRoom(): void
@@ -74,10 +82,10 @@ it('lets the room off and a connector owning the schedule pass', function () {
  */
 function bookTwoVisitsAhead(): void
 {
-    test()->travelTo(Carbon::parse('2026-11-03 12:00', 'America/Chicago'));
+    test()->travelTo(chicagoMoment('2026-11-03 12:00'));
 
-    Appointment::factory()->at(Carbon::parse('2026-11-06 09:00', 'America/Chicago'))->create();
-    Appointment::factory()->at(Carbon::parse('2026-11-05 10:00', 'America/Chicago'))->create();
+    Appointment::factory()->at(chicagoMoment('2026-11-06 09:00'))->create();
+    Appointment::factory()->at(chicagoMoment('2026-11-05 10:00'))->create();
 }
 
 it('refuses dropping the room with a visit booked ahead', function () {
@@ -94,8 +102,8 @@ it('refuses dropping the room with a visit booked ahead', function () {
 
 it('says one booked visit in the singular', function () {
     activateExampleFolder();
-    test()->travelTo(Carbon::parse('2026-11-03 12:00', 'America/Chicago'));
-    Appointment::factory()->at(Carbon::parse('2026-11-05 10:00', 'America/Chicago'))->create();
+    test()->travelTo(chicagoMoment('2026-11-03 12:00'));
+    Appointment::factory()->at(chicagoMoment('2026-11-05 10:00'))->create();
     dropScheduleRoom();
 
     $this->artisan('icm:sync')->assertExitCode(1);
@@ -105,7 +113,7 @@ it('says one booked visit in the singular', function () {
 
 it('drops the room when no visit is ahead', function (Closure $lay) {
     activateExampleFolder();
-    test()->travelTo(Carbon::parse('2026-11-03 12:00', 'America/Chicago'));
+    test()->travelTo(chicagoMoment('2026-11-03 12:00'));
     $lay();
     dropScheduleRoom();
 
@@ -121,7 +129,7 @@ it('drops the room when no visit is ahead', function (Closure $lay) {
 
 it('blocks on a visit one minute ahead', function () {
     activateExampleFolder();
-    test()->travelTo(Carbon::parse('2026-11-03 12:00', 'America/Chicago'));
+    test()->travelTo(chicagoMoment('2026-11-03 12:00'));
     Appointment::factory()->at(now()->addMinute())->create();
     dropScheduleRoom();
 
@@ -131,7 +139,7 @@ it('blocks on a visit one minute ahead', function () {
 });
 
 it('skips the check with no live version', function () {
-    test()->travelTo(Carbon::parse('2026-11-03 12:00', 'America/Chicago'));
+    test()->travelTo(chicagoMoment('2026-11-03 12:00'));
     Appointment::factory()->at(now()->addDay())->create();
     dropScheduleRoom();
 

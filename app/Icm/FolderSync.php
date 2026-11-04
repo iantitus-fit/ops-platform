@@ -63,6 +63,14 @@ class FolderSync
 
         $report = $this->validator->validate($folder);
 
+        // Built here from this sync's own registry, not injected: the constructor keeps its four parameters, so a
+        // FolderSync wired by hand with a test-only registry still works and gets no check for a room it lacks.
+        $dropErrors = (new RoomDropChecks($this->rooms, new RoomChecks($this->rooms)))->errors($folder, $active);
+
+        if ($dropErrors !== []) {
+            $report = new ValidationReport([...$report->errors, ...$dropErrors]);
+        }
+
         if ($report->hasErrors()) {
             return $this->reject($folder, $report, $fileCount, $fingerprint, $active, $root);
         }
