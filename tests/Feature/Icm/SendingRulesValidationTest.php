@@ -7,7 +7,7 @@ use App\Icm\ActiveConfig;
 use App\Models\IcmVersion;
 use Illuminate\Support\Facades\File;
 
-const OWNER_ALERT_BLOCK = "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, check_in]\n  after_hours: next_opening\n";
+const OWNER_ALERT_BLOCK = "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, change_request, check_in]\n  after_hours: next_opening\n";
 
 /*
 | Each row: file to change, text to find, text to put in its place, and the exact line the owner must see.
