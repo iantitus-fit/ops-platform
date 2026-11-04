@@ -45,6 +45,10 @@ class OwnerAlertText
      * Assemble the alert: who and why, what the customer last wrote, the draft when there is
      * one, a blank line, and the link to the conversation (D-22: the conversation, never a
      * draft, so an older alert still opens the newest draft).
+     *
+     * A booked-visit alert (D-33) names the visit and quotes nothing: its subject is the outbound message that carried
+     * the booking link, and the customer's last text may be days old, so a quote under "Visit booked" would mislead
+     * (research Pitfall 8). It leaves out both the "They wrote:" line and the "Draft:" line.
      */
     public function build(Conversation $conversation, AlertReason $reason, ?Message $subject, ?string $why): string
     {
@@ -54,13 +58,14 @@ class OwnerAlertText
         $who = $name !== '' ? $name : ($contact->phone_e164 ?: 'A customer');
         $lines = ["{$who}: ".(filled($why) ? trim($why) : $reason->plainWords())];
 
-        $customerText = $this->cut($this->clean($this->lastCustomerText($conversation)), self::CUSTOMER_LENGTH);
+        $quotes = $reason !== AlertReason::AppointmentBooked;
+        $customerText = $quotes ? $this->cut($this->clean($this->lastCustomerText($conversation)), self::CUSTOMER_LENGTH) : '';
 
         if ($customerText !== '') {
             $lines[] = "They wrote: \"{$customerText}\"";
         }
 
-        if ($subject !== null && $subject->status === MessageStatus::Draft) {
+        if ($quotes && $subject !== null && $subject->status === MessageStatus::Draft) {
             $draft = $this->cut($this->clean($subject->body), self::DRAFT_LENGTH);
 
             if ($draft !== '') {
