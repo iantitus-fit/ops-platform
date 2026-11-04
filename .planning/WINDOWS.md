@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 18
+open_count: 19
 waived_count: 1
 fixed_count: 29
-total_count: 48
-last_updated: 2026-11-04T21:33:34.964Z
+total_count: 49
+last_updated: 2026-11-04T23:25:40.426Z
 ---
 
 # Broken Windows Ledger
@@ -63,6 +63,7 @@ last_updated: 2026-11-04T21:33:34.964Z
 | 46 | 08 | unrun-verify | tests/Feature/Booking/AppointmentTableTest.php |  | 08-01: after Ian pushes the phase branch, the CI pgsql leg is green, in particular AppointmentTableTest 'refuses a row of the wrong shape' (the CHECK constraint) and the two unique-constraint cases | open |  | 2026-11-03T17:38:51.980Z |  |
 | 47 | 08 | unrun-verify | tests/Feature/Booking/AutomaticTextsRuleTest.php |  | Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY | open |  | 2026-11-03T22:59:31.752Z |  |
 | 48 | 08 | unrun-verify | tests/Feature/Alerts/ChangeRequestAlertTest.php |  | 08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally) | open |  | 2026-11-04T21:33:34.964Z |  |
+| 49 | 08 | unrun-verify | tests/Feature/Rooms/ScheduleAndBookingSyncTest.php |  | 08-04: CI pgsql leg for the D-37 cases (RoomDropChecks, the first sync check that reads the database) not run; needs Ian to push the phase branch | open |  | 2026-11-04T23:25:37.212Z |  |
 
 ````json
 [
@@ -687,6 +688,19 @@ last_updated: 2026-11-04T21:33:34.964Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-04T21:33:34.964Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 49,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Rooms/ScheduleAndBookingSyncTest.php",
+    "line": null,
+    "description": "08-04: CI pgsql leg for the D-37 cases (RoomDropChecks, the first sync check that reads the database) not run; needs Ian to push the phase branch",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-04T23:25:37.212Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

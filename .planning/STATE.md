@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-11-04T23:02:55.049Z"
+stopped_at: Completed 08-04-PLAN.md
+last_updated: "2026-11-04T23:26:44.199Z"
 last_activity: 2026-11-04
 last_activity_desc: Phase 08 execution started
-state_head: 3b0dfa122dc2d9ed9112cb6b35b14088c567adaa
+state_head: 8631ad74e60106ee8ce7d6324f9b640097cea5fd
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 37
+  completed_plans: 38
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 4 of 16
-Status: Executing Phase 08
+Plan: 5 of 16
+Status: Ready to execute
 Last activity: 2026-11-04 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -177,6 +177,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P01 | 12 min | 3 tasks | 23 files |
 | Phase 08 P02 | 44 min | 3 tasks | 10 files |
 | Phase 08 P03 | 55 min | 3 tasks | 11 files |
+| Phase 08 P04 | continuation | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -248,6 +249,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-02: has-texted is derived from inbound SMS minus the opting-out STOP, nothing stored; D-21 sits after the paused check and before the no-phone check
 - [Phase 08]: 08-02: a booking text refusal is a class-constant sentence: UNREAD_CUSTOMER_TEXT means wait, APPOINTMENT_NOT_AHEAD means drop; no owner alert (D-26, D-27)
 - [Phase 08]: 08-03: change_request swaps in for draft_waiting and check_in, gives way to complaint, asked_for_person, life_safety, paused_message, front_desk_failed; raised at run end if no alert stored; appointment_booked quotes no customer text
+- [Phase 08]: 08-04: booking file placeholders are {link} once, {day} and {time} once each, {service} at most once; refusal messages never quote the owner's line
+- [Phase 08]: 08-04: RoomDropChecks (D-37) is built inside FolderSync::sync() from its own registry so the constructor keeps four parameters
 
 ### Pending Todos
 
@@ -311,8 +314,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-04T21:34:36.857Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-11-04T23:26:44.135Z
+Stopped at: Completed 08-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
