@@ -8,7 +8,7 @@
  * RoomAccessibilityTest precedent). The day an agent books, cancels or marks done, the plan that adds it adds a
  * chokepoint (CLAUDE.md, the OutboundSender pattern), not another allowed file here.
  *
- * No action writes yet, so the allowed list below is empty. Each action plan adds its own file to it.
+ * Each action plan adds its own file to the allowed list below. BookAppointment is the first.
  *
  * Unit tests do not boot Laravel, so paths come from dirname(__DIR__, 2) and plain PHP file functions. Pest functions
  * are global, so these helpers carry their own names beside projectWritesIn().
@@ -85,7 +85,7 @@ function appointmentWritersUnderApp(): array
 it('only the named actions write the appointments table', function () {
     // Each action plan adds its own file here: 08-06 BookAppointment; 08-13 CancelAppointment, MarkAppointmentDone,
     // EditVisitNote; 08-14 BlockTime, RemoveBlock.
-    expect(appointmentWritersUnderApp())->toBe([]);
+    expect(appointmentWritersUnderApp())->toBe(['app/Actions/BookAppointment.php']);
 });
 
 it('flags every kind of write, so the scan is not vacuous', function (string $path, string $snippet) {
