@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-07-PLAN.md
-last_updated: "2026-11-05T21:33:29.651Z"
+stopped_at: Completed 08-08-PLAN.md
+last_updated: "2026-11-05T21:53:57.848Z"
 last_activity: 2026-11-05
 last_activity_desc: Phase 08 execution started
-state_head: 209fd559b92cec75231d6278b16592f4d911a0da
+state_head: 96d9cc3cddfa54020aadf46996af4d64a165f00c
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 41
+  completed_plans: 42
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 8 of 16
-Status: Executing Phase 08
+Plan: 9 of 16
+Status: Ready to execute
 Last activity: 2026-11-05 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -181,6 +181,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P05 | 7 min | 3 tasks | 6 files |
 | Phase 08 P06 | 12 min | 3 tasks | 10 files |
 | Phase 08 P07 | 45 min | 3 tasks | 15 files |
+| Phase 08 P08 | 17 min | 3 tasks | 26 files |
 
 ## Accumulated Context
 
@@ -260,6 +261,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-07: fromLink() judges the link with ResolveBookingLink::closedState() on the row re-read under the lock (no plain token, no open-times list), so a just-taken last time is taken(), not a closed link
 - [Phase 08]: 08-07: a page booking's job is the conversation's only open job, else the contact's only open job, else a new job opened as ProjectActor::Customer; the four ProjectActor readers are three-arm matches with no default
 - [Phase 08]: 08-07: the booked alert's subject is the link's message_id or the conversation's message whose meta.booking_link_id names it; with neither, a LogicException (link id, never the token) is reported and nothing is raised
+- [Phase 08]: 08-08: the booking page keeps the picker in the DOM, hidden, while a time is checked, and each day's details element is wire:ignore.self, so open days and focus return need no server bookkeeping
+- [Phase 08]: 08-08: the booking page limits taps inside choose() and book() (20 a minute per token hash and IP) as well as the GET (30 a minute per IP), because Livewire taps skip route throttles; KeepBookingLinkPrivate sits before the throttle so the 429 carries the private headers
 
 ### Pending Todos
 
@@ -323,8 +326,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-05T18:39:23.834Z
-Stopped at: Completed 08-07-PLAN.md
+Last session: 2026-11-05T21:53:57.779Z
+Stopped at: Completed 08-08-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

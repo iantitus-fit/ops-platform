@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 23
+open_count: 26
 waived_count: 1
 fixed_count: 29
-total_count: 53
-last_updated: 2026-11-05T18:38:12.712Z
+total_count: 56
+last_updated: 2026-11-05T21:52:54.864Z
 ---
 
 # Broken Windows Ledger
@@ -68,6 +68,9 @@ last_updated: 2026-11-05T18:38:12.712Z
 | 51 | 08 | unrun-verify | tests/Feature/Booking/BookAppointmentTest.php |  | 08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock. | open |  | 2026-11-05T17:47:56.902Z |  |
 | 52 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor | open |  | 2026-11-05T17:47:56.988Z |  |
 | 53 | 08 | unrun-verify | app/Actions/BookAppointment.php |  | 08-07: CI pgsql leg after Ian pushes the phase branch; in particular PageBookingTest's job choice under the row lock, BookingLinkTokenTest's at-most-once savepoint and the meta->booking_link_id JSON read; not run by the executor (SQLite only) | open |  | 2026-11-05T18:38:12.712Z |  |
+| 54 | 08 | unrun-verify | .github/workflows/tests.yml |  | 08-08: after Ian pushes the phase branch, the CI sqlite and pgsql legs are green and the new Build the front end step ran before the tests | open |  | 2026-11-05T21:52:43.906Z |  |
+| 55 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: Phase 8 UAT keyboard-only and VoiceOver walk of the booking page, 200 percent zoom and the 24 px floor (48 px chosen) on a phone (criterion 6, D-43) | open |  | 2026-11-05T21:52:43.993Z |  |
+| 56 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: the page's browser-side behavior is untested until plan 08-10: focus lands on the Check your time and You are booked headings and the error line, Choose a different time returns focus to the tapped time (Alpine lastTime), wire:loading sets aria-disabled while booking, and a day the customer opened stays open after a re-render (wire:ignore.self) | open |  | 2026-11-05T21:52:54.864Z |  |
 
 ````json
 [
@@ -757,6 +760,45 @@ last_updated: 2026-11-05T18:38:12.712Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-05T18:38:12.712Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 54,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": ".github/workflows/tests.yml",
+    "line": null,
+    "description": "08-08: after Ian pushes the phase branch, the CI sqlite and pgsql legs are green and the new Build the front end step ran before the tests",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:43.906Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 55,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-08: Phase 8 UAT keyboard-only and VoiceOver walk of the booking page, 200 percent zoom and the 24 px floor (48 px chosen) on a phone (criterion 6, D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:43.993Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 56,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-08: the page's browser-side behavior is untested until plan 08-10: focus lands on the Check your time and You are booked headings and the error line, Choose a different time returns focus to the tapped time (Alpine lastTime), wire:loading sets aria-disabled while booking, and a day the customer opened stays open after a re-render (wire:ignore.self)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:54.864Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
