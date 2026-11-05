@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/BookingPageHelpers.php';
+
 use App\Livewire\BookingPage;
 use App\Models\Contact;
 use App\Models\Conversation;
