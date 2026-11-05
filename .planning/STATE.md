@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-04-PLAN.md
-last_updated: "2026-11-05T16:40:09.283Z"
+stopped_at: Completed 08-05-PLAN.md
+last_updated: "2026-11-05T16:50:53.590Z"
 last_activity: 2026-11-05
 last_activity_desc: Phase 08 execution started
-state_head: 4fe1d33dc7e2595bf8232d64d07d747c57671ba9
+state_head: d1a43fb11e5b0e76995c53bc8cff19e79ccc12c4
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 38
+  completed_plans: 39
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 5 of 16
-Status: Executing Phase 08
+Plan: 6 of 16
+Status: Ready to execute
 Last activity: 2026-11-05 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -178,6 +178,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P02 | 44 min | 3 tasks | 10 files |
 | Phase 08 P03 | 55 min | 3 tasks | 11 files |
 | Phase 08 P04 | continuation | 3 tasks | 18 files |
+| Phase 08 P05 | 7 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -251,6 +252,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-03: change_request swaps in for draft_waiting and check_in, gives way to complaint, asked_for_person, life_safety, paused_message, front_desk_failed; raised at run end if no alert stored; appointment_booked quotes no customer text
 - [Phase 08]: 08-04: booking file placeholders are {link} once, {day} and {time} once each, {service} at most once; refusal messages never quote the owner's line
 - [Phase 08]: 08-04: RoomDropChecks (D-37) is built inside FolderSync::sync() from its own registry so the constructor keeps four parameters
+- [Phase 08]: 08-05: Availability reads booked rows once per range and applies one PHP overlap rule (appointments carry the drive buffer at their end, blocks none); offers() compares the exact instant; fixtures store spans in UTC
 
 ### Pending Todos
 
@@ -314,8 +316,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-04T23:26:44.135Z
-Stopped at: Completed 08-04-PLAN.md
+Last session: 2026-11-05T16:50:53.523Z
+Stopped at: Completed 08-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
