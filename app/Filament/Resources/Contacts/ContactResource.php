@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Contacts;
 
 use App\Filament\Resources\Contacts\Pages\ListContacts;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
+use App\Filament\Resources\Contacts\RelationManagers\AppointmentsRelationManager;
 use App\Filament\Resources\Contacts\RelationManagers\ProjectsRelationManager;
 use App\Filament\Resources\Contacts\Schemas\ContactInfolist;
 use App\Filament\Resources\Contacts\Tables\ContactsTable;
@@ -51,12 +52,14 @@ class ContactResource extends Resource
     }
 
     /**
-     * The contact's projects, listed under the details with the actions that open, close, reopen and rename them.
+     * The contact's projects, listed under the details with the actions that open, close, reopen and rename them, then
+     * the contact's appointments with the action that books one by hand.
      */
     public static function getRelations(): array
     {
         return [
             ProjectsRelationManager::class,
+            AppointmentsRelationManager::class,
         ];
     }
 
