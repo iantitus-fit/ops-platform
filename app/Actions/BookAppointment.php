@@ -15,8 +15,10 @@ use App\Rooms\RecordRoomEntry;
 use App\Rooms\ScheduleAndBooking\Availability;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
+use App\Rooms\ScheduleAndBooking\ResolveBookingLink;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -53,6 +55,7 @@ class BookAppointment
         private readonly OpenProject $openProject,
         private readonly RecordRoomEntry $recordRoomEntry,
         private readonly RaiseOwnerAlert $raiseOwnerAlert,
+        private readonly ResolveBookingLink $resolveBookingLink,
     ) {}
 
     /**
@@ -178,7 +181,9 @@ class BookAppointment
     {
         $link = BookingLink::query()->with('appointment')->lockForUpdate()->find($link->id) ?? throw BookingRefused::linkClosed();
 
-        if ($link->appointment !== null || $link->revoked_at !== null || $link->superseded_at !== null || $link->expires_at->lessThanOrEqualTo($now)) {
+        // The link's own state, judged on the row held here. It never asks for the open-times list, so a just-taken last
+        // time falls through to offers() below and reads as taken(), not as a closed link (D-07, U-09).
+        if ($this->resolveBookingLink->closedState($link, $now) !== null) {
             throw BookingRefused::linkClosed();
         }
 
@@ -192,17 +197,23 @@ class BookAppointment
 
         $projectId = $this->jobIdForPageBooking($contact, $link);
 
-        $appointment = $contact->appointments()->create([
-            'project_id' => $projectId,
-            'booking_link_id' => $link->id,
-            'service_slug' => $service['slug'],
-            'service_name' => $service['name'],
-            'starts_at' => $startsAt->utc(),
-            'ends_at' => $startsAt->addMinutes((int) $service['duration_minutes'])->utc(),
-            'state' => AppointmentState::Booked,
-            'booked_by' => AppointmentActor::Customer,
-            'booked_at' => $now,
-        ]);
+        // The unique booking_link_id index is the backstop if a state check ever loses a race: the insert runs in its own
+        // savepoint, so on Postgres a refused insert does not spoil the outer transaction.
+        try {
+            $appointment = DB::transaction(fn (): Appointment => $contact->appointments()->create([
+                'project_id' => $projectId,
+                'booking_link_id' => $link->id,
+                'service_slug' => $service['slug'],
+                'service_name' => $service['name'],
+                'starts_at' => $startsAt->utc(),
+                'ends_at' => $startsAt->addMinutes((int) $service['duration_minutes'])->utc(),
+                'state' => AppointmentState::Booked,
+                'booked_by' => AppointmentActor::Customer,
+                'booked_at' => $now,
+            ]));
+        } catch (UniqueConstraintViolationException) {
+            throw BookingRefused::linkClosed();
+        }
 
         $zone = $this->config->timezone();
 
