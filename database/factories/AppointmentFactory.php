@@ -80,12 +80,17 @@ class AppointmentFactory extends Factory
 
     /**
      * An appointment that starts at the given moment and lasts the given number of minutes.
+     *
+     * The moment is converted to UTC before it is stored: Eloquent saves a date as its wall time and drops the zone, so a
+     * business-zone start would otherwise be stored hours off. The caller's own date is left unchanged.
      */
     public function at(CarbonInterface $start, int $minutes = 90): static
     {
+        $startsAt = $start->copy()->utc();
+
         return $this->state(fn (array $attributes) => [
-            'starts_at' => $start,
-            'ends_at' => $start->copy()->addMinutes($minutes),
+            'starts_at' => $startsAt,
+            'ends_at' => $startsAt->copy()->addMinutes($minutes),
         ]);
     }
 }
