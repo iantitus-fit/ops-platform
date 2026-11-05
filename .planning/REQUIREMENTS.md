@@ -50,7 +50,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 
 Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 
-- [ ] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
+- [x] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
 - [ ] **BOOK-02**: The agent texts a booking link for services with `book_online: true`; the customer opens a Livewire page, taps one of the offered times, and gets a confirmed appointment without typing.
 - [ ] **BOOK-03**: Appointments are stored as records and appear on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen (DEC-08: inbox, schedule, money).
 - [ ] **BOOK-04**: The customer receives reminders before the appointment, sent by the scheduler. *(derived: SPEC says "reminders"; timing, send window, which conversation and exactly-once settled in `.planning/phases/08-schedule-and-booking/08-CONTEXT.md` D-26 and D-29 to D-31)*
@@ -213,7 +213,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-14 | Phase 5 | Complete |
 | ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
-| BOOK-01 | Phase 8 | Pending |
+| BOOK-01 | Phase 8 | Complete |
 | BOOK-02 | Phase 8 | Pending |
 | BOOK-03 | Phase 8 | Pending |
 | BOOK-04 | Phase 8 | Pending |

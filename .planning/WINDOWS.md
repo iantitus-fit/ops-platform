@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 20
+open_count: 22
 waived_count: 1
 fixed_count: 29
-total_count: 50
-last_updated: 2026-11-05T16:49:15.386Z
+total_count: 52
+last_updated: 2026-11-05T17:47:56.988Z
 ---
 
 # Broken Windows Ledger
@@ -65,6 +65,8 @@ last_updated: 2026-11-05T16:49:15.386Z
 | 48 | 08 | unrun-verify | tests/Feature/Alerts/ChangeRequestAlertTest.php |  | 08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally) | open |  | 2026-11-04T21:33:34.964Z |  |
 | 49 | 08 | unrun-verify | tests/Feature/Rooms/ScheduleAndBookingSyncTest.php |  | 08-04: CI pgsql leg for the D-37 cases (RoomDropChecks, the first sync check that reads the database) not run; needs Ian to push the phase branch | open |  | 2026-11-04T23:25:37.212Z |  |
 | 50 | 08 | unrun-verify | tests/Feature/Booking/AvailabilityTest.php |  | 08-05: CI pgsql leg for AvailabilityTest's overlap and DST cases (timestamp comparisons on Postgres) not run; needs Ian to push the phase branch | open |  | 2026-11-05T16:49:15.386Z |  |
+| 51 | 08 | unrun-verify | tests/Feature/Booking/BookAppointmentTest.php |  | 08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock. | open |  | 2026-11-05T17:47:56.902Z |  |
+| 52 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor | open |  | 2026-11-05T17:47:56.988Z |  |
 
 ````json
 [
@@ -715,6 +717,32 @@ last_updated: 2026-11-05T16:49:15.386Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-05T16:49:15.386Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 51,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookAppointmentTest.php",
+    "line": null,
+    "description": "08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T17:47:56.902Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 52,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php",
+    "line": null,
+    "description": "08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T17:47:56.988Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
