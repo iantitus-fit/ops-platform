@@ -6,6 +6,9 @@ use App\Enums\ActivityType;
 use App\Enums\AlertReason;
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Enums\ProjectActor;
+use App\Filament\Resources\Contacts\Pages\ViewContact;
+use App\Filament\Resources\Contacts\RelationManagers\ProjectsRelationManager;
 use App\Models\Appointment;
 use App\Models\BookingLink;
 use App\Models\Contact;
@@ -14,8 +17,10 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use App\Records\CustomerCard;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 /**
  * A moment on the example business's wall clock (America/Chicago), as the customer taps it.
@@ -27,11 +32,11 @@ function pageBookingChicago(string $dateTime): CarbonImmutable
 
 /**
  * The live example folder, the clock at Tuesday 2026-11-03 11:00 in the shop's zone, an owner with a phone, and Dana
- * Whitfield, who texted: her open conversation and Job 1 open and tied to it.
+ * Whitfield, who texted: her open conversation and no job yet.
  *
- * @return array{0: Contact, 1: Conversation, 2: Project}
+ * @return array{0: Contact, 1: Conversation}
  */
-function pageBookingSetUp(): array
+function pageBookingBase(): array
 {
     activateExampleFolder();
     test()->travelTo(pageBookingChicago('2026-11-03 11:00'));
@@ -41,6 +46,19 @@ function pageBookingSetUp(): array
     $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
     $conversation = Conversation::factory()->for($contact)->create();
     Message::factory()->for($conversation)->create(['body' => 'My AC is blowing warm air']);
+
+    return [$contact, $conversation];
+}
+
+/**
+ * The base, plus Job 1 open and tied to her conversation.
+ *
+ * @return array{0: Contact, 1: Conversation, 2: Project}
+ */
+function pageBookingSetUp(): array
+{
+    [$contact, $conversation] = pageBookingBase();
+
     $job = Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => $conversation->id]);
 
     return [$contact, $conversation, $job];
@@ -119,4 +137,103 @@ it('stores only the hash of the token (D-12)', function () {
 
     expect(collect($row)->contains(fn ($value): bool => $value === $token))->toBeFalse()
         ->and(Appointment::query()->count())->toBe(0);
+});
+
+/**
+ * Book Thursday 10:00 through a link minted on the conversation.
+ */
+function pageBookingBookThursday(Conversation $conversation): Appointment
+{
+    [$link] = pageBookingMint($conversation);
+
+    return app(BookAppointment::class)->fromLink($link, pageBookingChicago('2026-11-05 10:00'), CarbonImmutable::now());
+}
+
+it('uses the conversation\'s only open job (D-23 step 1)', function () {
+    [$contact, $conversation, $job] = pageBookingSetUp();
+    $elsewhere = Conversation::factory()->closed()->for($contact)->create();
+    Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => $elsewhere->id]);
+
+    $appointment = pageBookingBookThursday($conversation);
+
+    expect($appointment->project_id)->toBe($job->id)
+        ->and(Project::query()->count())->toBe(2);
+});
+
+it('uses the contact\'s only open job when none is tied to the conversation (D-23 step 2)', function () {
+    [$contact, $conversation] = pageBookingBase();
+    $job = Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => null]);
+
+    $appointment = pageBookingBookThursday($conversation);
+
+    expect($appointment->project_id)->toBe($job->id)
+        ->and(Project::query()->count())->toBe(1);
+});
+
+it('opens a new job instead of guessing between two (D-23 step 3, D-22)', function () {
+    [$contact, $conversation] = pageBookingBase();
+    $first = Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => null]);
+    $second = Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => null]);
+
+    $appointment = pageBookingBookThursday($conversation);
+    $opened = Project::query()->findOrFail($appointment->project_id);
+
+    expect($opened->id)->not->toBe($first->id)->not->toBe($second->id)
+        ->and($opened->opened_by)->toBe(ProjectActor::Customer)
+        ->and($opened->opened_by_user_id)->toBeNull()
+        ->and($opened->conversation_id)->toBe($conversation->id)
+        ->and($opened->closed_at)->toBeNull()
+        ->and($contact->activities()->where('type', ActivityType::ProjectOpened->value)->where('subject_id', $opened->id)->sole()->summary)
+        ->toBe('Opened by the customer on the booking page');
+});
+
+it('never reopens a closed job and opens a new one when there is none', function (string $setup) {
+    [$contact, $conversation] = pageBookingBase();
+
+    $closed = $setup === 'closed'
+        ? Project::factory()->closed()->create(['contact_id' => $contact->id, 'conversation_id' => $conversation->id])
+        : null;
+
+    $appointment = pageBookingBookThursday($conversation);
+
+    expect($appointment->project_id)->not->toBe($closed?->id)
+        ->and(Project::query()->findOrFail($appointment->project_id)->opened_by)->toBe(ProjectActor::Customer)
+        ->and($closed?->fresh()->closed_at)->toBe($closed === null ? null : $closed->fresh()->closed_at)
+        ->and(Project::query()->whereNull('closed_at')->count())->toBe(1);
+})->with(['every job closed' => ['closed'], 'no job at all' => ['none']]);
+
+it('lands every page booking on an open job of the link\'s contact (invariant)', function (string $setup) {
+    [$contact, $conversation] = pageBookingBase();
+
+    match ($setup) {
+        'tied' => Project::factory()->create(['contact_id' => $contact->id, 'conversation_id' => $conversation->id]),
+        'only open' => Project::factory()->create(['contact_id' => $contact->id]),
+        'two open' => Project::factory()->count(2)->create(['contact_id' => $contact->id]),
+    };
+
+    $appointment = pageBookingBookThursday($conversation);
+    $project = Project::query()->findOrFail($appointment->project_id);
+
+    expect($project->contact_id)->toBe($contact->id)
+        ->and($project->closed_at)->toBeNull();
+
+    if ($setup === 'two open') {
+        expect($project->opened_by)->toBe(ProjectActor::Customer)
+            ->and(Project::query()->where('contact_id', $contact->id)->count())->toBe(3);
+    }
+})->with(['tied' => ['tied'], 'only open' => ['only open'], 'two open' => ['two open']]);
+
+it('names the customer wherever a job\'s opener shows (D-22, Pitfall 4)', function () {
+    [$contact] = pageBookingBase();
+    $owner = User::factory()->create();
+    $this->actingAs($owner);
+    Project::factory()->create(['contact_id' => $contact->id, 'opened_by' => ProjectActor::Customer]);
+
+    expect(app(CustomerCard::class)->render($contact->fresh()))
+        ->toContain('opened 2026-11-03 11:00 by the customer on the booking page');
+
+    Livewire::test(ProjectsRelationManager::class, ['ownerRecord' => $contact, 'pageClass' => ViewContact::class])
+        ->assertSee('Customer, booking page');
+
+    $this->get('/admin')->assertOk()->assertSee('opened by the customer on the booking page');
 });
