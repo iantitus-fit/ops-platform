@@ -16,6 +16,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Text;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -124,6 +125,7 @@ class AppointmentsRelationManager extends RelationManager
                     ->rows(3)
                     ->maxLength(BookAppointment::NOTE_MAX_LENGTH)
                     ->validationMessages(['max' => 'A note can be at most '.BookAppointment::NOTE_MAX_LENGTH.' characters.']),
+                Text::make($this->confirmationStatus()),
             ])
             ->action(function (array $data): void {
                 $config = app(ActiveConfig::class);
@@ -200,6 +202,23 @@ class AppointmentsRelationManager extends RelationManager
     private function openProjects(): Collection
     {
         return $this->contact()->projects()->withNumber()->whereNull('closed_at')->orderBy('id')->get();
+    }
+
+    /**
+     * The one line under the form saying whether a confirmation text will go out (U-25). It is a forecast the owner
+     * reads, not a send: plans 08-11 and 08-12 send the text, and only to a customer who may get automatic texts. An
+     * opted-out customer is named first, then one who has not agreed, then a business with no booking file.
+     */
+    private function confirmationStatus(): string
+    {
+        $contact = $this->contact();
+
+        return match (true) {
+            $contact->isOptedOut() => 'No confirmation text will go out. This customer has opted out.',
+            ! $contact->mayGetAutomaticTexts() => 'No confirmation text will go out. This customer has not agreed to automatic texts.',
+            BookingSettings::fromConfig(app(ActiveConfig::class)) === null => 'No confirmation text will go out. Customer texts for booking are off until rooms/schedule_and_booking/booking.md is added.',
+            default => 'A confirmation text will go out.',
+        };
     }
 
     /**

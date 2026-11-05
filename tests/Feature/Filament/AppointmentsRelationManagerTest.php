@@ -262,6 +262,17 @@ it('shows the Appointments tab empty state and two visits on one job', function 
         ->assertDontSee('No appointments yet');
 });
 
+/**
+ * The open Book by hand dialog's form as it renders. The standalone tab test does not draw the modal, so the mounted
+ * schema is rendered directly.
+ */
+function appointmentsTabDialogHtml(Testable $tab): string
+{
+    $livewire = $tab->mountTableAction('bookByHand')->instance();
+
+    return $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
+}
+
 it('says whether a confirmation text will go out', function (string $case, string $sentence) {
     $folder = $case === 'no booking file' ? fn () => File::delete(icmPath('rooms/schedule_and_booking/booking.md')) : null;
     [$texted] = appointmentsTabSetUp($folder);
@@ -272,9 +283,7 @@ it('says whether a confirmation text will go out', function (string $case, strin
         'opted out' => Contact::factory()->optedOut()->create(),
     };
 
-    appointmentsTab($contact)
-        ->mountTableAction('bookByHand')
-        ->assertSee($sentence);
+    expect(appointmentsTabDialogHtml(appointmentsTab($contact)))->toContain($sentence);
 })->with([
     'a contact who texted' => ['texted', 'A confirmation text will go out.'],
     'a web-form contact with the switch off' => ['web form', 'No confirmation text will go out. This customer has not agreed to automatic texts.'],
