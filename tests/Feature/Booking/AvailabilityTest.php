@@ -63,9 +63,7 @@ function availabilityAppointment(string $start, int $minutes = 90): Appointment
  */
 function availabilityBlock(string $start, int $minutes): ScheduleBlock
 {
-    $startsAt = availabilityChicago($start)->utc();
-
-    return ScheduleBlock::factory()->create(['starts_at' => $startsAt, 'ends_at' => $startsAt->addMinutes($minutes)]);
+    return ScheduleBlock::factory()->at(availabilityChicago($start), $minutes)->create();
 }
 
 /**
@@ -199,10 +197,7 @@ it('ignores cancelled and done appointments and removed blocks', function () {
     activateExampleFolder();
     Appointment::factory()->cancelled()->at(availabilityChicago('2026-11-03 12:00')->utc(), 90)->create();
     Appointment::factory()->done()->at(availabilityChicago('2026-11-03 10:00')->utc(), 90)->create();
-    $removed = availabilityChicago('2026-11-03 13:00')->utc();
-    ScheduleBlock::factory()->create([
-        'starts_at' => $removed,
-        'ends_at' => $removed->addHour(),
+    ScheduleBlock::factory()->at(availabilityChicago('2026-11-03 13:00'), 60)->create([
         'state' => AppointmentState::Cancelled,
         'cancelled_by' => AppointmentActor::User,
         'cancelled_by_user_id' => User::factory(),
