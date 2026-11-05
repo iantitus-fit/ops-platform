@@ -49,11 +49,12 @@ it("offers the example weekday's starts for AC repair", function () {
 });
 
 /**
- * A booked appointment holding the span from $start for $minutes, both given on the business wall clock.
+ * A booked appointment holding the span from $start for $minutes, both given on the business wall clock. The span is
+ * stored in UTC, which is how every real write stores it.
  */
 function availabilityAppointment(string $start, int $minutes = 90): Appointment
 {
-    return Appointment::factory()->at(availabilityChicago($start), $minutes)->create();
+    return Appointment::factory()->at(availabilityChicago($start)->utc(), $minutes)->create();
 }
 
 /**
@@ -61,7 +62,7 @@ function availabilityAppointment(string $start, int $minutes = 90): Appointment
  */
 function availabilityBlock(string $start, int $minutes): ScheduleBlock
 {
-    $startsAt = availabilityChicago($start);
+    $startsAt = availabilityChicago($start)->utc();
 
     return ScheduleBlock::factory()->create(['starts_at' => $startsAt, 'ends_at' => $startsAt->addMinutes($minutes)]);
 }
@@ -195,9 +196,9 @@ it('gives a block no buffer of its own', function () {
 
 it('ignores cancelled and done appointments and removed blocks', function () {
     activateExampleFolder();
-    Appointment::factory()->cancelled()->at(availabilityChicago('2026-11-03 12:00'), 90)->create();
-    Appointment::factory()->done()->at(availabilityChicago('2026-11-03 10:00'), 90)->create();
-    $removed = availabilityChicago('2026-11-03 13:00');
+    Appointment::factory()->cancelled()->at(availabilityChicago('2026-11-03 12:00')->utc(), 90)->create();
+    Appointment::factory()->done()->at(availabilityChicago('2026-11-03 10:00')->utc(), 90)->create();
+    $removed = availabilityChicago('2026-11-03 13:00')->utc();
     ScheduleBlock::factory()->create([
         'starts_at' => $removed,
         'ends_at' => $removed->addHour(),

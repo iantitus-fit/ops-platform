@@ -4,6 +4,8 @@ namespace App\Rooms\ScheduleAndBooking;
 
 use App\Icm\ActiveConfig;
 use App\Icm\BusinessClock;
+use App\Models\Appointment;
+use App\Models\ScheduleBlock;
 use Carbon\CarbonImmutable;
 
 /**
@@ -50,6 +52,7 @@ class Availability
         $duration = (int) $service['duration_minutes'];
         $zone = $this->config->timezone();
         $firstDay = $now->setTimezone($zone)->setTime(12, 0);
+        $booked = $this->bookedSpans($firstDay->startOfDay(), $firstDay->addDays($settings->daysAhead + 1), $settings->driveBufferMinutes);
         $days = [];
 
         for ($offset = 0; $offset < $settings->daysAhead; $offset++) {
@@ -67,7 +70,7 @@ class Availability
                     continue;
                 }
 
-                if ($this->isFree($start, $start->addMinutes($duration), $settings->driveBufferMinutes)) {
+                if ($this->overlapsIn($booked, $start, $start->addMinutes($duration), $settings->driveBufferMinutes) < self::CAPACITY) {
                     $starts[] = $start;
                 }
             }
@@ -81,11 +84,76 @@ class Availability
     }
 
     /**
-     * Whether a span has free time for one more job. For now every span counts as free; the overlap rule follows.
+     * Whether a span has free time for one more job: fewer booked appointments and blocks overlap it than CAPACITY
+     * allows (D-07). Booking by hand passes a buffer of 0.
      */
     public function isFree(CarbonImmutable $start, CarbonImmutable $end, int $bufferMinutes): bool
     {
-        return true;
+        return $this->overlapCount($start, $end, $bufferMinutes) < self::CAPACITY;
+    }
+
+    /**
+     * How many booked appointments and blocks overlap a span. The drive buffer sits after an appointment (D-08) and
+     * after the new span, so it counts at the end of each appointment and at the end of the new span; a block carries
+     * no buffer of its own (Ian's A2 answer), only the new span's end buffer counts against it. Each model is read once
+     * with bounds computed here and bound as UTC instants, so no SQL date math is needed and it runs the same on SQLite
+     * and Postgres.
+     */
+    public function overlapCount(CarbonImmutable $start, CarbonImmutable $end, int $bufferMinutes): int
+    {
+        return $this->overlapsIn($this->bookedSpans($start, $end, $bufferMinutes), $start, $end, $bufferMinutes);
+    }
+
+    /**
+     * The booked appointment and block spans that could touch any span between $from and $to once the buffer is added,
+     * as instants. Cancelled and done appointments and removed blocks hold no time and are left out (D-14).
+     *
+     * @return array{appointments: list<array{CarbonImmutable, CarbonImmutable}>, blocks: list<array{CarbonImmutable, CarbonImmutable}>}
+     */
+    private function bookedSpans(CarbonImmutable $from, CarbonImmutable $to, int $bufferMinutes): array
+    {
+        $touchesFrom = $from->subMinutes($bufferMinutes)->utc();
+        $touchesTo = $to->addMinutes($bufferMinutes)->utc();
+
+        $spans = static fn ($rows): array => $rows
+            ->map(static fn ($row): array => [CarbonImmutable::instance($row->starts_at), CarbonImmutable::instance($row->ends_at)])
+            ->all();
+
+        return [
+            'appointments' => $spans(Appointment::query()->booked()
+                ->where('starts_at', '<', $touchesTo)->where('ends_at', '>', $touchesFrom)
+                ->get(['starts_at', 'ends_at'])),
+            'blocks' => $spans(ScheduleBlock::query()->booked()
+                ->where('starts_at', '<', $touchesTo)->where('ends_at', '>', $touchesFrom)
+                ->get(['starts_at', 'ends_at'])),
+        ];
+    }
+
+    /**
+     * The one overlap rule, applied to spans already read (D-07, D-08, A2). An appointment overlaps when it starts
+     * before the new span's end plus the buffer and its own end plus the buffer is after the new start. A block
+     * overlaps when it starts before the new span's end plus the buffer and ends after the new start.
+     *
+     * @param  array{appointments: list<array{CarbonImmutable, CarbonImmutable}>, blocks: list<array{CarbonImmutable, CarbonImmutable}>}  $booked
+     */
+    private function overlapsIn(array $booked, CarbonImmutable $start, CarbonImmutable $end, int $bufferMinutes): int
+    {
+        $bufferedEnd = $end->addMinutes($bufferMinutes);
+        $count = 0;
+
+        foreach ($booked['appointments'] as [$startsAt, $endsAt]) {
+            if ($startsAt < $bufferedEnd && $endsAt->addMinutes($bufferMinutes) > $start) {
+                $count++;
+            }
+        }
+
+        foreach ($booked['blocks'] as [$startsAt, $endsAt]) {
+            if ($startsAt < $bufferedEnd && $endsAt > $start) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**
