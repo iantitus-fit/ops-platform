@@ -185,10 +185,20 @@ function invariantPostAndRun(string $number, string $body): void
 
 /**
  * The conversation of a customer number, or null before the customer has texted.
+ *
+ * Two lookups, each on an index: the contact by its unique phone number, then the conversation by contact_id. A single
+ * whereHas() query is an EXISTS that PostgreSQL can run by walking every conversation, and a slice adds 180 customers
+ * inside one transaction, so that form grew slower with every combination (over half the file's time on PostgreSQL).
  */
 function invariantConversation(string $number): ?Conversation
 {
-    return Conversation::query()->whereHas('contact', fn ($contact) => $contact->where('phone_e164', $number))->first();
+    $contactId = Contact::query()->where('phone_e164', $number)->value('id');
+
+    if ($contactId === null) {
+        return null;
+    }
+
+    return Conversation::query()->where('contact_id', $contactId)->first();
 }
 
 /**
