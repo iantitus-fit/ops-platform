@@ -84,6 +84,26 @@ class Availability
     }
 
     /**
+     * Whether a start is one the server offers at the moment passed in (T-08-18). The list is recomputed here, never trusted from the
+     * browser, and the exact instant is compared, so a start a minute off, one that has passed, one on a closure and one
+     * that was taken after the page was drawn are all refused. Booking by hand does not call this; it asks isFree().
+     *
+     * @param  array<string, mixed>  $service
+     */
+    public function offers(array $service, CarbonImmutable $start, CarbonImmutable $now): bool
+    {
+        $day = $start->setTimezone($this->config->timezone())->toDateString();
+
+        foreach ($this->openStarts($service, $now)[$day] ?? [] as $offered) {
+            if ($offered->equalTo($start)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Whether a span has free time for one more job: fewer booked appointments and blocks overlap it than CAPACITY
      * allows (D-07). Booking by hand passes a buffer of 0.
      */
