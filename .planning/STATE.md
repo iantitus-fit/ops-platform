@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-06-PLAN.md
-last_updated: "2026-11-05T18:25:04.348Z"
+stopped_at: Completed 08-07-PLAN.md
+last_updated: "2026-11-05T18:39:23.907Z"
 last_activity: 2026-11-05
 last_activity_desc: Phase 08 execution started
-state_head: cb64e097c8390131d98043fde6eb1bac5da7d11a
+state_head: b7cec474e57c5f448df2d229ef990093111adc92
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 40
+  completed_plans: 41
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 7 of 16
-Status: Executing Phase 08
+Plan: 8 of 16
+Status: Ready to execute
 Last activity: 2026-11-05 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -180,6 +180,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P04 | continuation | 3 tasks | 18 files |
 | Phase 08 P05 | 7 min | 3 tasks | 6 files |
 | Phase 08 P06 | 12 min | 3 tasks | 10 files |
+| Phase 08 P07 | 45 min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -256,6 +257,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-05: Availability reads booked rows once per range and applies one PHP overlap rule (appointments carry the drive buffer at their end, blocks none); offers() compares the exact instant; fixtures store spans in UTC
 - [Phase 08]: 08-06: Book by hand modal heading is plain text (Blade escapes it); notification titles keep e()
 - [Phase 08]: 08-06: the visit_booked timeline entry is written inside the booking transaction with the appointment row
+- [Phase 08]: 08-07: fromLink() judges the link with ResolveBookingLink::closedState() on the row re-read under the lock (no plain token, no open-times list), so a just-taken last time is taken(), not a closed link
+- [Phase 08]: 08-07: a page booking's job is the conversation's only open job, else the contact's only open job, else a new job opened as ProjectActor::Customer; the four ProjectActor readers are three-arm matches with no default
+- [Phase 08]: 08-07: the booked alert's subject is the link's message_id or the conversation's message whose meta.booking_link_id names it; with neither, a LogicException (link id, never the token) is reported and nothing is raised
 
 ### Pending Todos
 
@@ -319,8 +323,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-05T17:48:48.852Z
-Stopped at: Completed 08-06-PLAN.md
+Last session: 2026-11-05T18:39:23.834Z
+Stopped at: Completed 08-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

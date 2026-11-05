@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 22
+open_count: 23
 waived_count: 1
 fixed_count: 29
-total_count: 52
-last_updated: 2026-11-05T17:47:56.988Z
+total_count: 53
+last_updated: 2026-11-05T18:38:12.712Z
 ---
 
 # Broken Windows Ledger
@@ -67,6 +67,7 @@ last_updated: 2026-11-05T17:47:56.988Z
 | 50 | 08 | unrun-verify | tests/Feature/Booking/AvailabilityTest.php |  | 08-05: CI pgsql leg for AvailabilityTest's overlap and DST cases (timestamp comparisons on Postgres) not run; needs Ian to push the phase branch | open |  | 2026-11-05T16:49:15.386Z |  |
 | 51 | 08 | unrun-verify | tests/Feature/Booking/BookAppointmentTest.php |  | 08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock. | open |  | 2026-11-05T17:47:56.902Z |  |
 | 52 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor | open |  | 2026-11-05T17:47:56.988Z |  |
+| 53 | 08 | unrun-verify | app/Actions/BookAppointment.php |  | 08-07: CI pgsql leg after Ian pushes the phase branch; in particular PageBookingTest's job choice under the row lock, BookingLinkTokenTest's at-most-once savepoint and the meta->booking_link_id JSON read; not run by the executor (SQLite only) | open |  | 2026-11-05T18:38:12.712Z |  |
 
 ````json
 [
@@ -743,6 +744,19 @@ last_updated: 2026-11-05T17:47:56.988Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-05T17:47:56.988Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 53,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Actions/BookAppointment.php",
+    "line": null,
+    "description": "08-07: CI pgsql leg after Ian pushes the phase branch; in particular PageBookingTest's job choice under the row lock, BookingLinkTokenTest's at-most-once savepoint and the meta->booking_link_id JSON read; not run by the executor (SQLite only)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T18:38:12.712Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
