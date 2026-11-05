@@ -123,3 +123,8 @@ it('passes a Filament form and an event name that only look like writes', functi
 
     expect(appointmentWritesIn($path, '$action->fillForm(fn () => []); $this->created(fn () => null);'))->toBe([]);
 });
+
+// Each later action (cancel, mark done, edit the note, block, remove a block) joins this list when its plan adds it.
+arch('no agent code books, cancels or marks a visit done')
+    ->expect(['App\Ai', 'App\SendRule'])
+    ->not->toUse(['App\Actions\BookAppointment']);

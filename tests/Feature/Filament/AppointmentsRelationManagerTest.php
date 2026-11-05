@@ -11,6 +11,7 @@ use App\Models\Contact;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
+use App\Models\ScheduleBlock;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
@@ -259,4 +260,53 @@ it('shows the Appointments tab empty state and two visits on one job', function 
         ->assertSee('Friday, November 6, 2026 at 10:00 AM')
         ->assertSee('Furnace repair')
         ->assertDontSee('No appointments yet');
+});
+
+it('says whether a confirmation text will go out', function (string $case, string $sentence) {
+    $folder = $case === 'no booking file' ? fn () => File::delete(icmPath('rooms/schedule_and_booking/booking.md')) : null;
+    [$texted] = appointmentsTabSetUp($folder);
+
+    $contact = match ($case) {
+        'texted', 'no booking file' => $texted,
+        'web form' => Contact::factory()->create(),
+        'opted out' => Contact::factory()->optedOut()->create(),
+    };
+
+    appointmentsTab($contact)
+        ->mountTableAction('bookByHand')
+        ->assertSee($sentence);
+})->with([
+    'a contact who texted' => ['texted', 'A confirmation text will go out.'],
+    'a web-form contact with the switch off' => ['web form', 'No confirmation text will go out. This customer has not agreed to automatic texts.'],
+    'an opted-out contact' => ['opted out', 'No confirmation text will go out. This customer has opted out.'],
+    'no booking file' => ['no booking file', 'No confirmation text will go out. Customer texts for booking are off until rooms/schedule_and_booking/booking.md is added.'],
+]);
+
+it('never shows a block on the tab', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)->create();
+    ScheduleBlock::factory()->at(CarbonImmutable::parse('2026-11-05 13:00', 'America/Chicago'), 120)->create(['note' => 'Truck in the shop']);
+
+    appointmentsTab($contact)
+        ->assertCanSeeTableRecords([$visit])
+        ->assertCountTableRecords(1)
+        ->assertDontSee('Truck in the shop');
+});
+
+it('escapes a hostile visit note', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)->create(['note' => '"><script>alert(1)</script>']);
+
+    appointmentsTab($contact)
+        ->assertDontSee('<script>alert(1)</script>', false)
+        ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false);
+});
+
+it('has no Filament create, edit or delete action', function () {
+    [$contact] = appointmentsTabSetUp();
+
+    appointmentsTab($contact)
+        ->assertTableActionDoesNotExist('create')
+        ->assertTableActionDoesNotExist('edit')
+        ->assertTableActionDoesNotExist('delete');
 });
