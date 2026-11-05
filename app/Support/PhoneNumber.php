@@ -37,4 +37,19 @@ class PhoneNumber
 
         return $phoneNumberUtil->format($number, PhoneNumberFormat::E164);
     }
+
+    /**
+     * An E.164 number the way a customer reads it in the United States, such as "(312) 555-0147". A value that does not
+     * parse comes back as it was given.
+     */
+    public static function national(string $e164): string
+    {
+        $phoneNumberUtil = PhoneNumberUtil::getInstance();
+
+        try {
+            return $phoneNumberUtil->format($phoneNumberUtil->parse($e164), PhoneNumberFormat::NATIONAL);
+        } catch (NumberParseException) {
+            return $e164;
+        }
+    }
 }

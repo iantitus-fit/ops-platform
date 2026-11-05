@@ -7,3 +7,35 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@theme inline {
+    --color-page: var(--color-white);
+    --color-surface: var(--color-stone-50);
+    --color-ink: var(--color-stone-900);
+    --color-ink-muted: var(--color-stone-700);
+    --color-line: var(--color-stone-500);
+    --color-line-soft: var(--color-stone-300);
+    --color-accent: var(--color-amber-800);
+    --color-accent-strong: var(--color-amber-900);
+    --color-on-accent: var(--color-white);
+    --color-danger: var(--color-red-800);
+    --color-focus: var(--color-stone-900);
+
+    --text-body: 1rem;
+    --text-body--line-height: 1.5;
+    --text-heading: 1.5rem;
+    --text-heading--line-height: 1.2;
+    --text-display: 2rem;
+    --text-display--line-height: 1.2;
+}
+
+@layer base {
+    :focus-visible {
+        outline: 3px solid var(--color-focus);
+        outline-offset: 2px;
+    }
+
+    summary::-webkit-details-marker {
+        display: none;
+    }
+}
