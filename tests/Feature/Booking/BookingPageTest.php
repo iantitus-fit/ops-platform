@@ -250,10 +250,18 @@ it('renders an unknown token and a revoked one the same (T-08-26)', function () 
     [$link, $revoked] = bookingPageMint($conversation);
     app(MintBookingLink::class)->revoke($link);
 
-    $unknownHtml = $this->get(route('booking.show', str_repeat('b', 64)))->getContent();
-    $revokedHtml = $this->get(route('booking.show', $revoked))->getContent();
+    $shown = fn (string $html): array => (function (DOMXPath $xpath): array {
+        return [
+            $xpath->query('//title')->item(0)->textContent,
+            bookingPageWithoutLivewireIds($xpath->document->saveHTML($xpath->query('//main')->item(0))),
+        ];
+    })(bookingPageXpath($html));
 
-    expect(bookingPageWithoutLivewireIds($unknownHtml))->toBe(bookingPageWithoutLivewireIds($revokedHtml));
+    $unknown = $shown($this->get(route('booking.show', str_repeat('b', 64)))->getContent());
+    $revoked = $shown($this->get(route('booking.show', $revoked))->getContent());
+
+    expect($unknown[1])->toContain('This link does not work')
+        ->and($unknown)->toBe($revoked);
 });
 
 it('shows the visit after booking, never times (U-14)', function () {
@@ -421,7 +429,7 @@ it('puts the Book button in a busy state while a booking is in flight (U-20)', f
     expect($button)->not->toBeNull()
         ->and($button->getAttribute('wire:loading.attr'))->toBe('aria-disabled')
         ->and($button->hasAttribute('disabled'))->toBeFalse()
-        ->and($xpath->query('.//span[@wire:loading and normalize-space(.)="Booking your time"]', $button)->length)->toBe(1);
+        ->and($xpath->query('.//span[@*[name()="wire:loading"] and normalize-space(.)="Booking your time"]', $button)->length)->toBe(1);
 });
 
 it('stores one appointment when Book is called twice and shows the booked view', function () {

@@ -15,6 +15,7 @@ use App\Support\PhoneNumber;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\RateLimiter;
 use IntlDateFormatter;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
@@ -51,6 +52,10 @@ class BookingPage extends Component
     #[Locked]
     public int $pickerVersion = 0;
 
+    /** True when this token and address have tapped too often in the last minute (U-19). */
+    #[Locked]
+    public bool $rateLimited = false;
+
     public function mount(string $token): void
     {
         $this->token = $token;
@@ -62,6 +67,10 @@ class BookingPage extends Component
      */
     public function choose(string $startIso): void
     {
+        if (! $this->withinLimit()) {
+            return;
+        }
+
         $now = CarbonImmutable::now();
         $lookup = app(ResolveBookingLink::class)->handle($this->token, $now);
 
@@ -98,7 +107,7 @@ class BookingPage extends Component
      */
     public function book(BookAppointment $bookAppointment): void
     {
-        if ($this->chosen === null) {
+        if (! $this->withinLimit() || $this->chosen === null) {
             return;
         }
 
@@ -142,21 +151,24 @@ class BookingPage extends Component
         $checking = $this->chosen !== null && $state === BookingPageState::Picker;
         $serviceName = (string) ($lookup->service['name'] ?? $lookup->appointment?->service_name ?? '');
         $businessName = (string) $business['name'];
+        $phone = (string) $business['phone'];
+        $phoneText = PhoneNumber::national($phone);
 
         return view('livewire.booking-page', [
             'state' => $state,
             'checking' => $checking,
             'businessName' => $businessName,
             'serviceName' => $serviceName,
-            'phone' => (string) $business['phone'],
-            'phoneText' => PhoneNumber::national((string) $business['phone']),
+            'rateLimited' => $this->rateLimited,
+            'phone' => $phone,
+            'phoneText' => $phoneText,
             'zoneLine' => 'All times are in '.$this->zoneName($zone).'.',
             'days' => $state === BookingPageState::Picker ? $this->daysFrom($lookup, $zone) : [],
             'chosenTime' => $checking ? $this->visitFrom(CarbonImmutable::parse((string) $this->chosen), $zone) : null,
             'visit' => $lookup->appointment !== null ? $this->visitFrom($lookup->appointment->starts_at, $zone) : null,
         ])
-            ->title($this->titleFor($state, $serviceName, $businessName))
-            ->layoutData(['businessName' => $businessName]);
+            ->title($this->titleFor($this->rateLimited ? null : $state, $serviceName, $businessName))
+            ->layoutData(['businessName' => $businessName, 'phone' => $phone, 'phoneText' => $phoneText]);
     }
 
     /**
@@ -264,12 +276,37 @@ class BookingPage extends Component
         return is_string($name) && $name !== '' ? $name : $zone;
     }
 
-    private function titleFor(BookingPageState $state, string $serviceName, string $businessName): string
+    /**
+     * The page title: the service on the picker, "Your visit" for a visit, otherwise the heading the page shows. A null
+     * state is the rate-limited notice.
+     */
+    private function titleFor(?BookingPageState $state, string $serviceName, string $businessName): string
     {
-        return match ($state) {
-            BookingPageState::Picker => 'Book '.$serviceName.' | '.$businessName,
-            BookingPageState::Booked, BookingPageState::Cancelled, BookingPageState::Done => 'Your visit | '.$businessName,
-            BookingPageState::NoTimes, BookingPageState::ServiceUnavailable, BookingPageState::Expired, BookingPageState::Replaced, BookingPageState::DoesNotWork => $businessName,
+        $heading = match ($state) {
+            null => 'Please wait a moment',
+            BookingPageState::Picker => 'Book '.$serviceName,
+            BookingPageState::Booked, BookingPageState::Cancelled, BookingPageState::Done => 'Your visit',
+            BookingPageState::NoTimes => 'No times are open',
+            BookingPageState::ServiceUnavailable => 'We cannot book this online',
+            BookingPageState::Expired => 'This link has expired',
+            BookingPageState::Replaced => 'This link was replaced',
+            BookingPageState::DoesNotWork => 'This link does not work',
         };
+
+        return $heading.' | '.$businessName;
+    }
+
+    /**
+     * Count this tap against the page's own limit: 20 a minute for one link from one address. The route's limiter only
+     * covers opening the page, and every tap after that is a request to Livewire, so the count is kept here (U-19,
+     * T-08-33). The limit lifts by itself when the minute is up.
+     */
+    private function withinLimit(): bool
+    {
+        $key = 'booking:'.hash('sha256', $this->token).':'.request()->ip();
+
+        $this->rateLimited = ! RateLimiter::attempt($key, 20, fn (): bool => true, 60);
+
+        return ! $this->rateLimited;
     }
 }

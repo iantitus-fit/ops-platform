@@ -7,6 +7,7 @@ use App\Http\Controllers\TwilioTextWebhookController;
 use App\Http\Middleware\EnsureLocalEnvironment;
 use App\Http\Middleware\EnsureTextDriverIsFake;
 use App\Http\Middleware\EnsureTextDriverIsTwilio;
+use App\Http\Middleware\KeepBookingLinkPrivate;
 use App\Http\Middleware\ValidateTwilioSignature;
 use App\Livewire\BookingPage;
 use App\Livewire\DevChat;
@@ -37,4 +38,5 @@ Route::livewire('/dev/chat', DevChat::class)
     ->name('dev.chat');
 
 Route::livewire('/book/{token}', BookingPage::class)
+    ->middleware([KeepBookingLinkPrivate::class, 'throttle:booking'])
     ->name('booking.show');

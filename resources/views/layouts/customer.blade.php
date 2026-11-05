@@ -21,8 +21,14 @@
             </div>
         </header>
 
-        <main class="mx-auto max-w-xl px-4 pb-12 pt-6">
+        <main class="mx-auto max-w-xl px-4 pb-8 pt-6">
+            <noscript>
+                <p class="mb-6 break-words">This page needs JavaScript to show times. Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> to book.</p>
+            </noscript>
+
             {{ $slot }}
         </main>
+
+        <x-booking.footer :business-name="$businessName" :phone="$phone" :phone-text="$phoneText" />
     </body>
 </html>
