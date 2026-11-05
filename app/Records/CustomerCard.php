@@ -197,7 +197,11 @@ class CustomerCard
         foreach ($projects->values() as $position => $project) {
             $number = $position + 1;
             $state = $project->isOpen() ? 'open' : 'closed';
-            $by = $project->opened_by === ProjectActor::Lead ? 'by a new lead' : 'by the owner';
+            $by = match ($project->opened_by) {
+                ProjectActor::Lead => 'by a new lead',
+                ProjectActor::User => 'by the owner',
+                ProjectActor::Customer => 'by the customer on the booking page',
+            };
 
             $bullet = "- {$word->singular()} {$number}: {$state}, opened {$this->time($project->opened_at, $timezone)} {$by}";
 

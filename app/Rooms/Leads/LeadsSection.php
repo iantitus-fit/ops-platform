@@ -107,9 +107,11 @@ class LeadsSection extends RoomSection
                     'label' => $project->label($word, (int) $project->number),
                     'opened' => $opened->format('Y-m-d H:i'),
                     'datetime' => $opened->toIso8601String(),
-                    'origin' => $project->opened_by === ProjectActor::Lead
-                        ? 'source '.$this->sourceName((string) $project->contact->lead_source_key, $config, $sourceNames)
-                        : 'opened by '.($project->openedByUser?->name ?? 'a removed user'),
+                    'origin' => match ($project->opened_by) {
+                        ProjectActor::Lead => 'source '.$this->sourceName((string) $project->contact->lead_source_key, $config, $sourceNames),
+                        ProjectActor::User => 'opened by '.($project->openedByUser?->name ?? 'a removed user'),
+                        ProjectActor::Customer => 'opened by the customer on the booking page',
+                    },
                 ];
             })
             ->all();

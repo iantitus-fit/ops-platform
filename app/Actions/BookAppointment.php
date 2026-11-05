@@ -190,14 +190,10 @@ class BookAppointment
 
         $contact = $link->contact;
 
-        $project = $contact->projects()
-            ->whereNull('closed_at')
-            ->where('conversation_id', $link->conversation_id)
-            ->lockForUpdate()
-            ->first() ?? throw BookingRefused::projectNotOpen();
+        $projectId = $this->jobIdForPageBooking($contact, $link);
 
         $appointment = $contact->appointments()->create([
-            'project_id' => $project->id,
+            'project_id' => $projectId,
             'booking_link_id' => $link->id,
             'service_slug' => $service['slug'],
             'service_name' => $service['name'],
@@ -219,6 +215,31 @@ class BookAppointment
         );
 
         return $appointment;
+    }
+
+    /**
+     * The job a page booking lands on, without guessing (D-23): the open job tied to the link's conversation when there
+     * is exactly one; otherwise the contact's only open job; otherwise a new one opened as the customer. A closed job is
+     * never reopened. Called inside the transaction, with the chosen job's row locked. The jobs are reached through the
+     * contact's own projects() relation, and only the chosen job's id is returned.
+     */
+    private function jobIdForPageBooking(Contact $contact, BookingLink $link): int
+    {
+        $open = fn () => $contact->projects()->whereNull('closed_at')->lockForUpdate();
+
+        $tied = $open()->where('conversation_id', $link->conversation_id)->get();
+
+        if ($tied->count() === 1) {
+            return $tied->first()->id;
+        }
+
+        $only = $open()->get();
+
+        if ($only->count() === 1) {
+            return $only->first()->id;
+        }
+
+        return $this->openProject->forBookingPage($contact, $link->conversation_id)->id;
     }
 
     /**

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * One of the four writers of projects (D-11). Opening a project is not an agent action, so no checks-passed record is
- * kept; it records who opened it and puts one entry on the customer's timeline. The entry's summary is one of two fixed
+ * kept; it records who opened it and puts one entry on the customer's timeline. The entry's summary is one of three fixed
  * platform sentences: it carries neither the business's word for a project nor owner-typed text, because the word is
  * read when the card is drawn and a project's name is quoted only in the card's project section (research A4).
  * Opening never changes the contact's status (D-07).
@@ -39,6 +39,24 @@ class OpenProject
                 $user,
                 $contact->openConversation()->value('id'),
             );
+        });
+
+        CustomerRecordChanged::dispatch($contact->id);
+
+        return $project;
+    }
+
+    /**
+     * A customer's booking on the page needs a new job, so one opens for them, tied to the conversation the link was
+     * sent in (D-22). It is the third step of BookAppointment's job choice and never reopens a closed job. The contact
+     * row is locked first, as in the other opens.
+     */
+    public function forBookingPage(Contact $contact, int $conversationId): Project
+    {
+        $project = DB::transaction(function () use ($contact, $conversationId): Project {
+            Contact::query()->lockForUpdate()->find($contact->id);
+
+            return $this->open($contact, ProjectActor::Customer, null, $conversationId);
         });
 
         CustomerRecordChanged::dispatch($contact->id);
@@ -98,7 +116,11 @@ class OpenProject
 
         $contact->activities()->create([
             'type' => ActivityType::ProjectOpened,
-            'summary' => $openedBy === ProjectActor::User ? 'Opened by the owner' : 'Opened by a new lead',
+            'summary' => match ($openedBy) {
+                ProjectActor::User => 'Opened by the owner',
+                ProjectActor::Lead => 'Opened by a new lead',
+                ProjectActor::Customer => 'Opened by the customer on the booking page',
+            },
             'subject_type' => $project->getMorphClass(),
             'subject_id' => $project->id,
             'occurred_at' => $openedAt,

@@ -198,7 +198,7 @@ it('never reopens a closed job and opens a new one when there is none', function
 
     expect($appointment->project_id)->not->toBe($closed?->id)
         ->and(Project::query()->findOrFail($appointment->project_id)->opened_by)->toBe(ProjectActor::Customer)
-        ->and($closed?->fresh()->closed_at)->toBe($closed === null ? null : $closed->fresh()->closed_at)
+        ->and($closed === null || $closed->fresh()->closed_at !== null)->toBeTrue()
         ->and(Project::query()->whereNull('closed_at')->count())->toBe(1);
 })->with(['every job closed' => ['closed'], 'no job at all' => ['none']]);
 

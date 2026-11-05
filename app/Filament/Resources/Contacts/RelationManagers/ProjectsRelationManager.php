@@ -76,9 +76,11 @@ class ProjectsRelationManager extends RelationManager
                     ->dateTime(timezone: $timezone),
                 TextColumn::make('opened_by')
                     ->label('Opened by')
-                    ->state(fn (Project $record): string => $record->opened_by === ProjectActor::Lead
-                        ? 'New lead'
-                        : ($record->openedByUser?->name ?? 'A removed user')),
+                    ->state(fn (Project $record): string => match ($record->opened_by) {
+                        ProjectActor::Lead => 'New lead',
+                        ProjectActor::User => $record->openedByUser?->name ?? 'A removed user',
+                        ProjectActor::Customer => 'Customer, booking page',
+                    }),
                 TextColumn::make('closed_at')
                     ->label('Closed')
                     ->dateTime(timezone: $timezone)
