@@ -2,11 +2,14 @@
 
 namespace App\Actions;
 
+use App\Enums\AlertReason;
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
+use App\Models\BookingLink;
 use App\Models\Contact;
+use App\Models\Message;
 use App\Models\User;
 use App\Rooms\RecordRoomEntry;
 use App\Rooms\ScheduleAndBooking\Availability;
@@ -16,6 +19,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use LogicException;
+use Throwable;
 
 /**
  * The named action that books a visit, and the only writer of the appointments table beside the ones later plans add
@@ -47,6 +52,7 @@ class BookAppointment
         private readonly Availability $availability,
         private readonly OpenProject $openProject,
         private readonly RecordRoomEntry $recordRoomEntry,
+        private readonly RaiseOwnerAlert $raiseOwnerAlert,
     ) {}
 
     /**
@@ -74,6 +80,36 @@ class BookAppointment
             throw BookingRefused::noteTooLong();
         }
 
+        return $this->underLock(fn (): Appointment => $this->store($contact, $user, $service, $startsAt, $projectId, $note === '' ? null : $note));
+    }
+
+    /**
+     * The customer books the time they tapped on the booking page, through their link (D-13, D-15). The link row is
+     * provenance, not a checks-passed record: a page booking is the customer's tap, not an agent action.
+     *
+     * Inside the same lock and one transaction as booking by hand, the link must still be able to book and the tapped
+     * time must still be one Availability offers (D-07); either failing refuses with nothing stored. The booked alert to
+     * the owner is raised after the transaction commits, so a booking that rolls back alerts no one (D-33).
+     *
+     * @throws BookingRefused when the link is closed, the service is gone, the time is no longer offered, or another
+     *                        booking holds the lock.
+     */
+    public function fromLink(BookingLink $link, CarbonImmutable $startsAt, CarbonImmutable $now): Appointment
+    {
+        $appointment = $this->underLock(fn (): Appointment => $this->storeFromLink($link, $startsAt, $now));
+
+        $this->alertOwner($link, $appointment);
+
+        return $appointment;
+    }
+
+    /**
+     * Run a booking write under the one booking lock and a transaction (D-07).
+     *
+     * @param  callable(): Appointment  $write
+     */
+    private function underLock(callable $write): Appointment
+    {
         $lock = Cache::lock('schedule:book', 10);
 
         try {
@@ -83,7 +119,7 @@ class BookAppointment
         }
 
         try {
-            return DB::transaction(fn (): Appointment => $this->store($contact, $user, $service, $startsAt, $projectId, $note === '' ? null : $note));
+            return DB::transaction($write);
         } finally {
             $lock->release();
         }
@@ -132,5 +168,92 @@ class BookAppointment
         );
 
         return $appointment;
+    }
+
+    /**
+     * The page booking, called inside the lock and a transaction: re-read the link, refuse a closed one, re-check the
+     * time with Availability::offers(), pick the job, write the row and its one timeline entry.
+     */
+    private function storeFromLink(BookingLink $link, CarbonImmutable $startsAt, CarbonImmutable $now): Appointment
+    {
+        $link = BookingLink::query()->with('appointment')->lockForUpdate()->find($link->id) ?? throw BookingRefused::linkClosed();
+
+        if ($link->appointment !== null || $link->revoked_at !== null || $link->superseded_at !== null || $link->expires_at->lessThanOrEqualTo($now)) {
+            throw BookingRefused::linkClosed();
+        }
+
+        $service = $this->config->service($link->service_slug) ?? throw BookingRefused::linkClosed();
+
+        if (! $this->availability->offers($service, $startsAt, $now)) {
+            throw BookingRefused::taken();
+        }
+
+        $contact = $link->contact;
+
+        $project = $contact->projects()
+            ->whereNull('closed_at')
+            ->where('conversation_id', $link->conversation_id)
+            ->lockForUpdate()
+            ->first() ?? throw BookingRefused::projectNotOpen();
+
+        $appointment = $contact->appointments()->create([
+            'project_id' => $project->id,
+            'booking_link_id' => $link->id,
+            'service_slug' => $service['slug'],
+            'service_name' => $service['name'],
+            'starts_at' => $startsAt->utc(),
+            'ends_at' => $startsAt->addMinutes((int) $service['duration_minutes'])->utc(),
+            'state' => AppointmentState::Booked,
+            'booked_by' => AppointmentActor::Customer,
+            'booked_at' => $now,
+        ]);
+
+        $zone = $this->config->timezone();
+
+        $this->recordRoomEntry->handle(
+            $contact,
+            'schedule_and_booking',
+            'visit_booked',
+            'Booked by the customer on the booking page: '.$service['name'].', '.BookingSettings::dayText($startsAt, $zone).' at '.BookingSettings::timeText($startsAt, $zone).'.',
+            $appointment,
+        );
+
+        return $appointment;
+    }
+
+    /**
+     * Tell the owner a visit was booked, once, on the text that carried the link (D-33, BOOK-05). The subject is the
+     * link's message_id, or else the conversation's message whose meta.booking_link_id names the link, so a crash between
+     * the send and the back-fill still finds it. With no such message nothing is raised and the problem is reported:
+     * never an alert keyed to message 0 (02.1 IN-11). A failure to alert is reported and never undoes the booking.
+     */
+    private function alertOwner(BookingLink $link, Appointment $appointment): void
+    {
+        try {
+            $link = $link->fresh(['message', 'conversation']) ?? $link;
+
+            $subject = $link->message ?? Message::query()
+                ->where('conversation_id', $link->conversation_id)
+                ->where('meta->booking_link_id', $link->id)
+                ->orderBy('id')
+                ->first();
+
+            if ($subject === null) {
+                report(new LogicException("Booking link {$link->id} has no carrying message, so no booked alert was raised."));
+
+                return;
+            }
+
+            $zone = $this->config->timezone();
+
+            $this->raiseOwnerAlert->handle(
+                $link->conversation,
+                AlertReason::AppointmentBooked,
+                $subject,
+                $appointment->service_name.', '.BookingSettings::dayText($appointment->starts_at, $zone).' at '.BookingSettings::timeText($appointment->starts_at, $zone),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 }

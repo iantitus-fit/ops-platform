@@ -72,4 +72,13 @@ class BookingRefused extends DomainException
     {
         return new self('Another booking is being made. Try again.');
     }
+
+    /**
+     * The booking link cannot book a time now: it was used, revoked, replaced, expired, or its service is no longer
+     * bookable online (D-02, D-13).
+     */
+    public static function linkClosed(): self
+    {
+        return new self('This link cannot book a time now.');
+    }
 }
