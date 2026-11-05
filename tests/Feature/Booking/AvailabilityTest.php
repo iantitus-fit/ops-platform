@@ -3,6 +3,7 @@
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
 use App\Icm\ActiveConfig;
+use App\Icm\BusinessClock;
 use App\Models\Appointment;
 use App\Models\ScheduleBlock;
 use App\Models\User;
@@ -282,4 +283,77 @@ it('reads no clock and no folder, and writes nothing', function () {
     $source = File::get(app_path('Rooms/ScheduleAndBooking/Availability.php'));
 
     expect($source)->not->toMatch('/\bnow\s*\(|::now\s*\(|CarbonImmutable::parse|Carbon::parse|icm\.path|file_get_contents|File::|Storage::|Loader/');
+});
+
+/**
+ * A folder open every day from 00:00 to 06:00 with no lead time, a 60-minute step and no drive buffer, so the only
+ * thing a daylight-saving day can change is which instants fit between opening and closing. Returns a 60-minute service.
+ *
+ * @return array<string, mixed>
+ */
+function availabilityEarlyFolder(): array
+{
+    $days = collect(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
+        ->map(fn (string $day): string => '  '.$day.': {open: "00:00", close: "06:00"}')
+        ->implode("\n");
+
+    writeIcmFile('business/hours.md', "---\ntype: hours\nweekly:\n{$days}\nclosures: []\nbooking_lead_minutes: 0\n---\nOpen early.\n");
+    availabilityBookingFile(buffer: 0);
+    activateExampleFolder();
+
+    return array_merge(availabilityService(), ['duration_minutes' => 60]);
+}
+
+/**
+ * The offered starts of one day as UTC H:i, so two instants that read alike on the wall clock stay apart.
+ *
+ * @param  list<CarbonImmutable>  $starts
+ * @return list<string>
+ */
+function availabilityUtcTimes(array $starts): array
+{
+    return array_map(fn (CarbonImmutable $start): string => $start->utc()->format('H:i'), $starts);
+}
+
+it('never offers the missing hour on the spring-forward day', function () {
+    $service = availabilityEarlyFolder();
+
+    $days = app(Availability::class)->openStarts($service, availabilityChicago('2026-03-07 12:00'));
+    $starts = $days['2026-03-08'];
+    $window = app(BusinessClock::class)->openWindowOn($starts[0]);
+
+    expect(availabilityUtcTimes($starts))->toBe(['06:00', '07:00', '08:00', '09:00', '10:00'])
+        ->and(availabilityTimes($days, '2026-03-08'))->toBe(['00:00', '01:00', '03:00', '04:00', '05:00'])
+        ->and(end($starts)->addMinutes(60)->equalTo($window['close']))->toBeTrue();
+});
+
+it('offers distinct increasing instants on the fall-back day', function () {
+    $service = availabilityEarlyFolder();
+
+    $days = app(Availability::class)->openStarts($service, availabilityChicago('2026-10-31 12:00'));
+    $starts = $days['2026-11-01'];
+    $window = app(BusinessClock::class)->openWindowOn($starts[0]);
+    $gaps = array_map(fn (int $i): int => $starts[$i]->getTimestamp() - $starts[$i - 1]->getTimestamp(), range(1, count($starts) - 1));
+
+    expect(availabilityUtcTimes($starts))->toBe(['05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00'])
+        ->and($gaps)->toBe(array_fill(0, 6, 3600))
+        ->and(end($starts)->addMinutes(60)->equalTo($window['close']))->toBeTrue();
+});
+
+it('answers the tap-time question', function () {
+    activateExampleFolder();
+    $availability = app(Availability::class);
+    $service = availabilityService();
+    $now = availabilityChicago('2026-11-02 22:00');
+    $start = availabilityChicago('2026-11-03 11:00');
+
+    expect($availability->offers($service, $start, $now))->toBeTrue()
+        ->and($availability->offers($service, $start->utc(), $now))->toBeTrue()
+        ->and($availability->offers($service, $start->addMinute(), $now))->toBeFalse()
+        ->and($availability->offers($service, availabilityChicago('2026-11-03 09:00'), availabilityChicago('2026-11-03 16:30')))->toBeFalse()
+        ->and($availability->offers($service, availabilityChicago('2026-11-26 10:00'), availabilityChicago('2026-11-23 07:00')))->toBeFalse();
+
+    availabilityAppointment('2026-11-03 11:00', 90);
+
+    expect($availability->offers($service, $start, $now))->toBeFalse();
 });
