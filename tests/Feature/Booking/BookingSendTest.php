@@ -1,12 +1,16 @@
 <?php
 
+use App\Actions\BookAppointment;
+use App\Actions\MintBookingLink;
 use App\Actions\OpenConversationForText;
+use App\Actions\SendBookingText;
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageKind;
 use App\Enums\PausedReason;
+use App\Enums\SyncOutcome;
 use App\Icm\ActiveConfig;
 use App\Icm\FolderSync;
 use App\Jobs\SendDueBookingTexts;
@@ -18,6 +22,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
@@ -361,4 +366,270 @@ it('ends a row with a note when the booking file is gone', function () {
     expect(textsSentToCustomers())->toBeEmpty()
         ->and($reminder->fresh()->skipped_at)->not->toBeNull()
         ->and(bookingSendNotes())->toBe(['Reminder text not sent: the booking file is not in the business folder.']);
+});
+
+/**
+ * Dana's visit text rows made again on a fresh row, claimed this many seconds ago by another sender.
+ */
+function bookingSendClaimedSecondsAgo(BookingSend $row, int $seconds): void
+{
+    BookingSend::query()->whereKey($row->id)->update(['send_claimed_at' => now()->utc()->subSeconds($seconds)]);
+}
+
+/**
+ * The texts the fake channel sent to the customer's own number.
+ *
+ * @return list<string>
+ */
+function bookingSendTextsTo(Contact $contact): array
+{
+    return collect(textsSentToCustomers())->where('to', $contact->phone_e164)->pluck('body')->values()->all();
+}
+
+/**
+ * Dana, who texted and has read everything, with the clock on the given wall time. No booking row is written; the booking
+ * itself writes them. Her only conversation already had an automated text, so no AI disclosure rides along.
+ *
+ * @return array{0: Contact, 1: Conversation}
+ */
+function bookingSendCustomerAt(string $wallTime): array
+{
+    activateExampleFolder();
+    test()->travelTo(bookingSendChicago($wallTime)->utc());
+
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield']);
+    $conversation = Conversation::factory()->for($contact)->create();
+    Message::factory()->for($conversation)->create(['handled_at' => now()]);
+    Message::factory()->for($conversation)->outbound()->create();
+
+    return [$contact, $conversation];
+}
+
+it('sends a row once when two senders race', function (int $secondsAgo, bool $sends) {
+    [, , , $reminder] = bookingSendSetUp();
+
+    bookingSendClaimedSecondsAgo($reminder, $secondsAgo);
+
+    app(SendBookingText::class)->handle(BookingSend::query()->find($reminder->id));
+
+    expect(textsSentToCustomers())->toHaveCount($sends ? 1 : 0)
+        ->and($reminder->fresh()->sent_at !== null)->toBe($sends);
+})->with([
+    'claimed a minute ago' => [60, false],
+    'claimed 1 minute 59 seconds ago' => [119, false],
+    'claimed exactly 2 minutes ago' => [120, true],
+]);
+
+it('texts once when two stale copies of one row are both sent', function () {
+    [, , , $reminder] = bookingSendSetUp();
+    $first = BookingSend::query()->find($reminder->id);
+    $second = BookingSend::query()->find($reminder->id);
+
+    app(SendBookingText::class)->handle($first);
+    app(SendBookingText::class)->handle($second);
+
+    expect(textsSentToCustomers())->toHaveCount(1);
+});
+
+it('sends one text when the sweep enters while the first sender is mid-send', function () {
+    [, , , $reminder] = bookingSendSetUp();
+
+    $channel = new class extends FakeTextChannel
+    {
+        public ?Closure $whileSending = null;
+
+        public function send(string $toE164, string $body): string
+        {
+            $hook = $this->whileSending;
+            $this->whileSending = null;
+
+            if ($hook !== null) {
+                $hook();
+            }
+
+            return parent::send($toE164, $body);
+        }
+    };
+
+    $channel->whileSending = fn () => app(SendBookingText::class)->handle(BookingSend::query()->find($reminder->id));
+
+    app()->instance(TextChannel::class, $channel);
+
+    app(SendBookingText::class)->handle($reminder);
+
+    expect($channel->sent())->toHaveCount(1)
+        ->and($reminder->fresh()->sent_at)->not->toBeNull();
+});
+
+it('checks again before resending a released row (D-31)', function () {
+    [, , $appointment, $reminder] = bookingSendSetUp();
+
+    bookingSendClaimedSecondsAgo($reminder, 180);
+    Appointment::query()->whereKey($appointment->id)->update(['state' => 'cancelled']);
+
+    bookingSendSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($reminder->fresh()->skipped_at)->not->toBeNull()
+        ->and(bookingSendNotes())->toBeEmpty();
+});
+
+it('holds a row outside the send window and moves its due time (D-29)', function (string $now, string $movedTo, string $opening) {
+    [, , , $reminder] = bookingSendSetUp();
+    $this->travelTo(bookingSendChicago($now)->utc());
+    BookingSend::query()->whereKey($reminder->id)->update(['due_at' => now()->utc()]);
+
+    bookingSendSweep();
+
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->sent_at)->toBeNull()
+        ->and($row->skipped_at)->toBeNull()
+        ->and($row->send_claimed_at)->toBeNull()
+        ->and($row->due_at->format('Y-m-d H:i'))->toBe($movedTo);
+
+    $this->travelTo(bookingSendChicago($opening)->utc());
+    bookingSendSweep();
+
+    expect(textsSentToCustomers())->toHaveCount(1)
+        ->and($reminder->fresh()->sent_at)->not->toBeNull();
+})->with([
+    'before the window opens' => ['2026-11-04 07:00', '2026-11-04 14:00', '2026-11-04 08:00'],
+    'after the window closes' => ['2026-11-04 21:00', '2026-11-05 14:00', '2026-11-05 08:00'],
+]);
+
+it('sends a row due exactly when the window closes (D-29)', function () {
+    [, , , $reminder] = bookingSendSetUp();
+    $this->travelTo(bookingSendChicago('2026-11-04 20:00')->utc());
+    BookingSend::query()->whereKey($reminder->id)->update(['due_at' => now()->utc()]);
+
+    bookingSendSweep();
+
+    expect(textsSentToCustomers())->toHaveCount(1);
+});
+
+it('sends a row that ignores the window at any hour (D-28)', function () {
+    [, , $appointment] = bookingSendSetUp();
+    $this->travelTo(bookingSendChicago('2026-11-04 22:00')->utc());
+
+    BookingSend::factory()->confirmation()->for($appointment)->create(['ignores_window' => true]);
+    BookingSend::query()->where('lead_minutes', 1440)->delete();
+
+    bookingSendSweep();
+
+    expect(textsSentToCustomers())->toHaveCount(1);
+});
+
+it('confirms a page booking at once whatever the hour (D-28)', function () {
+    [$contact, $conversation] = bookingSendCustomerAt('2026-11-03 22:00');
+
+    [$link] = app(MintBookingLink::class)->handle($conversation, 'ac-repair', CarbonImmutable::now());
+    $carrier = Message::factory()->for($conversation)->outbound()->create([
+        'body' => 'Here is the link to book.',
+        'meta' => ['booking_link_id' => $link->id],
+    ]);
+    app(MintBookingLink::class)->attachMessage($link, $carrier);
+
+    $appointment = app(BookAppointment::class)->fromLink($link->fresh(), bookingSendChicago('2026-11-05 10:00'), CarbonImmutable::now());
+
+    $confirmation = $appointment->sends()->where('lead_minutes', 0)->sole();
+
+    expect(bookingSendTextsTo($contact))->toHaveCount(1)
+        ->and(bookingSendTextsTo($contact)[0])->toStartWith('You are booked for AC repair on Thursday, November 5 at 10:00 AM.')
+        ->and($confirmation->sent_at)->not->toBeNull();
+});
+
+it('confirms a hand booking at once inside the window and later outside it (D-28)', function () {
+    [$contact] = bookingSendCustomerAt('2026-11-03 11:00');
+    $owner = User::factory()->create();
+
+    $inside = app(BookAppointment::class)->byHand($contact, $owner, 'ac-repair', bookingSendChicago('2026-11-05 10:00'), null, null);
+
+    expect(bookingSendTextsTo($contact))->toHaveCount(1)
+        ->and($inside->sends()->where('lead_minutes', 0)->sole()->sent_at)->not->toBeNull();
+
+    $this->travelTo(bookingSendChicago('2026-11-03 21:00')->utc());
+
+    $outside = app(BookAppointment::class)->byHand($contact, $owner, 'ac-repair', bookingSendChicago('2026-11-06 10:00'), null, null);
+
+    expect(bookingSendTextsTo($contact))->toHaveCount(1)
+        ->and($outside->sends()->where('lead_minutes', 0)->sole()->sent_at)->toBeNull();
+
+    $this->travelTo(bookingSendChicago('2026-11-04 08:00')->utc());
+    bookingSendSweep();
+
+    expect(bookingSendTextsTo($contact))->toHaveCount(2)
+        ->and(bookingSendTextsTo($contact)[1])->toStartWith('You are booked for AC repair on Friday, November 6 at 10:00 AM.')
+        ->and($outside->sends()->where('lead_minutes', 0)->sole()->sent_at)->not->toBeNull();
+});
+
+it('never undoes a booking when the immediate send throws', function () {
+    [$contact] = bookingSendCustomerAt('2026-11-03 11:00');
+    $owner = User::factory()->create();
+    $real = app(SendBookingText::class);
+
+    app()->bind(SendBookingText::class, fn () => new class extends SendBookingText
+    {
+        public function __construct() {}
+
+        public function handle(BookingSend $send): void
+        {
+            throw new RuntimeException('the sender is down');
+        }
+    });
+
+    Exceptions::fake();
+
+    $appointment = app(BookAppointment::class)->byHand($contact, $owner, 'ac-repair', bookingSendChicago('2026-11-05 10:00'), null, null);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the sender is down');
+
+    $confirmation = $appointment->sends()->where('lead_minutes', 0)->sole();
+
+    expect(Appointment::query()->whereKey($appointment->id)->exists())->toBeTrue()
+        ->and($confirmation->sent_at)->toBeNull();
+
+    $real->handle($confirmation);
+
+    expect(bookingSendTextsTo($contact))->toHaveCount(1)
+        ->and($confirmation->fresh()->sent_at)->not->toBeNull();
+});
+
+it('does nothing while the room is off', function () {
+    [, , $appointment, $reminder] = bookingSendSetUp();
+
+    Appointment::query()->whereKey($appointment->id)->update([
+        'starts_at' => now()->utc()->subHour(),
+        'ends_at' => now()->utc()->subMinutes(30),
+    ]);
+
+    File::deleteDirectory(icmPath('rooms/schedule_and_booking'));
+    expect(app(FolderSync::class)->run()->outcome)->toBe(SyncOutcome::Activated)
+        ->and(app(ActiveConfig::class)->hasRoom('schedule_and_booking'))->toBeFalse();
+
+    bookingSendSweep();
+
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->send_claimed_at)->toBeNull()
+        ->and($row->sent_at)->toBeNull()
+        ->and($row->skipped_at)->toBeNull()
+        ->and($row->failed_at)->toBeNull();
+});
+
+it('never sends a cancelled visit\'s pending rows', function () {
+    [, , $appointment, $reminder] = bookingSendSetUp();
+    $confirmation = BookingSend::factory()->confirmation()->for($appointment)->create();
+
+    Appointment::query()->whereKey($appointment->id)->update(['state' => 'cancelled']);
+
+    bookingSendSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($reminder->fresh()->skipped_at)->not->toBeNull()
+        ->and($confirmation->fresh()->skipped_at)->not->toBeNull()
+        ->and(bookingSendNotes())->toBeEmpty()
+        ->and(OwnerAlert::query()->count())->toBe(0);
 });
