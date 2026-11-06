@@ -17,7 +17,9 @@ use Tests\Rooms\RoomSectionAxe;
  * The booking page in a real browser (A11Y-02, Phase 8 criterion 6, D-43): keyboard order and reach, the time buttons'
  * names, where focus goes after each step, and the sizes of the controls, at desktop width and at 375 CSS px. Real
  * Chromium and real keys, because focus and the accessible name are what the browser makes of the markup, which a
- * Livewire test cannot see. Every wait is Playwright's own locator wait. They run in CI on both databases with no skip.
+ * Livewire test cannot see. axe runs on every state with the wcag2a, wcag2aa, wcag21aa and wcag22aa tags and the
+ * target-size rule (pageAxeReport() in tests/Pest.php). Every wait is Playwright's own locator wait. They run in CI on
+ * both databases with no skip.
  */
 
 /**

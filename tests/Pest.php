@@ -555,3 +555,34 @@ function expectFocusOn(Page $browser, string $name): void
 
     expect(focusedName($browser))->toBe($name);
 }
+
+/**
+ * Run axe on the whole document of the page now open, the way RoomSectionAxe runs it on one room section: the WCAG 2.2
+ * Level AA tags (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa) with the target-size rule switched on. axe is the copy the
+ * Pest browser plugin puts on every page. Hand the result to RoomSectionAxe::assertClean(). Shared here so the owner
+ * screens' browser tests in 08-13 and 08-14 reuse it.
+ *
+ * @return array{checked: int, violations: list<array{id: string, impact: ?string, help: string, targets: list<mixed>}>}
+ */
+function pageAxeReport(Page $page): array
+{
+    $options = json_encode([
+        'runOnly' => ['type' => 'tag', 'values' => ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']],
+        'rules' => ['target-size' => ['enabled' => true]],
+    ], JSON_THROW_ON_ERROR);
+
+    $report = $page->evaluate(<<<JS
+async () => {
+  const results = await window.axe.run(document, {$options});
+  return {
+    checked: results.passes.length + results.incomplete.length + results.violations.length,
+    violations: results.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help, targets: v.nodes.map(n => n.target) })),
+  };
+}
+JS);
+
+    return [
+        'checked' => (int) ($report['checked'] ?? 0),
+        'violations' => $report['violations'] ?? [],
+    ];
+}
