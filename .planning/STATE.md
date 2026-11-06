@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-11-PLAN.md
-last_updated: "2026-11-06T23:01:27.115Z"
+stopped_at: Completed 08-12-PLAN.md
+last_updated: "2026-11-06T23:18:28.702Z"
 last_activity: 2026-11-06
 last_activity_desc: Phase 08 execution started
-state_head: 78d5b1115a37cb4dae3db0c811e188f5f0e25d34
+state_head: 16ae9bf481d2b3adefcbde16b906a98e2532df0e
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 45
+  completed_plans: 46
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 12 of 16
-Status: Executing Phase 08
+Plan: 13 of 16
+Status: Ready to execute
 Last activity: 2026-11-06 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -185,6 +185,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P09 | 33 min | 4 tasks | 14 files |
 | Phase 08 P10 | 21 min | 3 tasks | 8 files |
 | Phase 08 P11 | 11 min | 3 tasks | 6 files |
+| Phase 08 P12 | 15 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -272,6 +273,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-10: the time button's visible time is aria-hidden and one hidden span holds the whole name, because a block-level hidden span made the browser add a space before the comma; no aria-label
 - [Phase 08]: 08-10: LEADS_KEYBOARD_TAB_CAP is 23, measured 11 presses on desktop and 13 on a phone, plus a margin of 10
 - [Phase 08]: 08-11: ReminderSchedule is pure and zone-agnostic; BookAppointment writes each due_at in UTC because the datetime cast stores the instance's own wall time; a reminder at or before the booking moment gets no row; collapsed reminders keep the larger lead
+- [Phase 08]: 08-12: a booking text's send window is judged to the minute with both ends inside, every moment the sender writes or compares is UTC, an unread customer text gives the claim back and never times out into a send, and the copy that ends a row writes its note
 
 ### Pending Todos
 
@@ -335,8 +337,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-06T21:10:10.260Z
-Stopped at: Completed 08-11-PLAN.md
+Last session: 2026-11-06T23:18:28.628Z
+Stopped at: Completed 08-12-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 32
+open_count: 33
 waived_count: 1
 fixed_count: 29
-total_count: 62
-last_updated: 2026-11-06T21:09:25.495Z
+total_count: 63
+last_updated: 2026-11-06T23:17:17.534Z
 ---
 
 # Broken Windows Ledger
@@ -77,6 +77,7 @@ last_updated: 2026-11-06T21:09:25.495Z
 | 60 | 08 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 08-10: after Ian pushes the phase branch (with 08-08's build step), the CI browser tests (BookingPageBrowserTest, LeadsBootTest, ProjectsRelationManagerKeyboardTest) pass on both the sqlite and pgsql legs against the styled page; proven locally only | open |  | 2026-11-06T16:10:17.272Z |  |
 | 61 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-10: Phase 8 UAT on the booking page: a keyboard-only and VoiceOver walk, 200 percent zoom, and tap targets on a real phone (criterion 6, D-43); Phase 11 re-checks at 375 and 390 | open |  | 2026-11-06T16:10:17.364Z |  |
 | 62 | 08 | unrun-verify | tests/Feature/Booking/BookingSendRowsTest.php |  | 08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT) | open |  | 2026-11-06T21:09:25.495Z |  |
+| 63 | 08 | unrun-verify | tests/Feature/Booking/BookingSendTest.php |  | 08-12: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookingSendTest's claim race, the lease boundary and the conversation savepoint | open |  | 2026-11-06T23:17:17.534Z |  |
 
 ````json
 [
@@ -883,6 +884,19 @@ last_updated: 2026-11-06T21:09:25.495Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-06T21:09:25.495Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 63,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingSendTest.php",
+    "line": null,
+    "description": "08-12: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookingSendTest's claim race, the lease boundary and the conversation savepoint",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T23:17:17.534Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
