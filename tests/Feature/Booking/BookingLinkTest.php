@@ -19,6 +19,8 @@ use App\Models\User;
 use App\SendRule\CustomerReading;
 use App\SendRule\ReplyParts;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -252,6 +254,28 @@ it('adds no link when the reply names no service and the intake answers point to
     expect(textsSentToCustomers())->toHaveCount(1)
         ->and(textsSentToCustomers()[0]['body'])->toBe(composedFirstReply('We can get a tech out this week.'))
         ->and(BookingLink::query()->count())->toBe(0);
+});
+
+/**
+ * Postgres refuses SELECT DISTINCT with an ORDER BY on a column the query does not select (42P10), and SQLite allows it,
+ * so the intake answers' own id order must not ride along on the distinct service query.
+ */
+it('asks the intake answers for their services without an order Postgres refuses beside distinct (D-02)', function () {
+    $intakeQueries = [];
+    DB::listen(function (QueryExecuted $query) use (&$intakeQueries): void {
+        if (str_contains($query->sql, 'from "intake_answers"') && str_contains($query->sql, 'distinct')) {
+            $intakeQueries[] = $query->sql;
+        }
+    });
+
+    bookingLinkRunsScheduling(
+        reply: ['service_slug' => null],
+        beforeRun: fn (Contact $contact, Conversation $conversation) => IntakeAnswer::factory()->create(['conversation_id' => $conversation->id, 'icm_version_id' => app(ActiveConfig::class)->versionId(), 'service_slug' => 'ac-repair']),
+    );
+
+    expect($intakeQueries)->not->toBeEmpty()
+        ->and(collect($intakeQueries)->filter(fn (string $sql): bool => str_contains($sql, 'order by'))->all())->toBe([])
+        ->and(BookingLink::sole()->service_slug)->toBe('ac-repair');
 });
 
 it('adds no link when the reply names no service and nothing points to one (D-02)', function () {
