@@ -4,6 +4,8 @@ use App\Actions\ComposeAutomatedText;
 use App\Actions\MintBookingLink;
 use App\Actions\OutboundSender;
 use App\Actions\SendCombinedReply;
+use App\Ai\AgentFile;
+use App\Ai\FrontDeskPrompt;
 use App\Enums\AppointmentState;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
@@ -416,4 +418,15 @@ it('records no service on a held scheduling draft whose reply named none, nor on
     bookingLinkCustomerTextsAgain('How much is a new unit?', ['reply' => 'Mike will text you a price.', 'label' => 'price', 'service_slug' => 'ac-repair', 'touches_waiting' => true]);
 
     expect(Message::query()->where('status', MessageStatus::Draft->value)->sole()->meta)->not->toHaveKey('service_slug');
+});
+
+it('tells the front desk, in the owner\'s own words, to offer a visit once intake is done (D-05)', function () {
+    activateExampleFolder();
+
+    $line = 'Once the last intake question is answered, it offers to book a visit.';
+    $config = app(ActiveConfig::class);
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
+
+    expect($config->agent('sms')['body'])->toContain($line)
+        ->and(app(FrontDeskPrompt::class)->instructions(AgentFile::forChannel($config, 'sms'), $contact))->toContain($line);
 });
