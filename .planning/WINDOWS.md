@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 31
+open_count: 32
 waived_count: 1
 fixed_count: 29
-total_count: 61
-last_updated: 2026-11-06T16:10:17.364Z
+total_count: 62
+last_updated: 2026-11-06T21:09:25.495Z
 ---
 
 # Broken Windows Ledger
@@ -76,6 +76,7 @@ last_updated: 2026-11-06T16:10:17.364Z
 | 59 | 08 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | 08-09: Phase 8 UAT on a held scheduling draft: the approve step reads 'A booking link for {service} will be added' with the box checked; Send texts the link after the words, with the box off it texts none; on a complaint-read scheduling draft the box starts unchecked (D-45) | open |  | 2026-11-06T15:13:39.311Z |  |
 | 60 | 08 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 08-10: after Ian pushes the phase branch (with 08-08's build step), the CI browser tests (BookingPageBrowserTest, LeadsBootTest, ProjectsRelationManagerKeyboardTest) pass on both the sqlite and pgsql legs against the styled page; proven locally only | open |  | 2026-11-06T16:10:17.272Z |  |
 | 61 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-10: Phase 8 UAT on the booking page: a keyboard-only and VoiceOver walk, 200 percent zoom, and tap targets on a real phone (criterion 6, D-43); Phase 11 re-checks at 375 and 390 | open |  | 2026-11-06T16:10:17.364Z |  |
+| 62 | 08 | unrun-verify | tests/Feature/Booking/BookingSendRowsTest.php |  | 08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT) | open |  | 2026-11-06T21:09:25.495Z |  |
 
 ````json
 [
@@ -869,6 +870,19 @@ last_updated: 2026-11-06T16:10:17.364Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-06T16:10:17.364Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 62,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingSendRowsTest.php",
+    "line": null,
+    "description": "08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T21:09:25.495Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
