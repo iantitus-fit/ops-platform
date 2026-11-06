@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 26
+open_count: 29
 waived_count: 1
 fixed_count: 29
-total_count: 56
-last_updated: 2026-11-05T21:52:54.864Z
+total_count: 59
+last_updated: 2026-11-06T15:13:39.311Z
 ---
 
 # Broken Windows Ledger
@@ -71,6 +71,9 @@ last_updated: 2026-11-05T21:52:54.864Z
 | 54 | 08 | unrun-verify | .github/workflows/tests.yml |  | 08-08: after Ian pushes the phase branch, the CI sqlite and pgsql legs are green and the new Build the front end step ran before the tests | open |  | 2026-11-05T21:52:43.906Z |  |
 | 55 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: Phase 8 UAT keyboard-only and VoiceOver walk of the booking page, 200 percent zoom and the 24 px floor (48 px chosen) on a phone (criterion 6, D-43) | open |  | 2026-11-05T21:52:43.993Z |  |
 | 56 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: the page's browser-side behavior is untested until plan 08-10: focus lands on the Check your time and You are booked headings and the error line, Choose a different time returns focus to the tapped time (Alpine lastTime), wire:loading sets aria-disabled while booking, and a day the customer opened stays open after a re-render (wire:ignore.self) | open |  | 2026-11-05T21:52:54.864Z |  |
+| 57 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkTest.php |  | 08-09: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkTest, ApprovedDraftBookingLinkTest, tests/Feature/Filament/DraftBookingLinkKeyboardTest.php and the front-desk tests | open |  | 2026-11-06T15:13:39.136Z |  |
+| 58 | 08 | unrun-verify | examples/example-hvac/agents/front-desk.md |  | 08-09: Phase 8 UAT in Dev chat: after the last intake answer the front desk's offer comes back labeled scheduling and carries the link (D-05) | open |  | 2026-11-06T15:13:39.223Z |  |
+| 59 | 08 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | 08-09: Phase 8 UAT on a held scheduling draft: the approve step reads 'A booking link for {service} will be added' with the box checked; Send texts the link after the words, with the box off it texts none; on a complaint-read scheduling draft the box starts unchecked (D-45) | open |  | 2026-11-06T15:13:39.311Z |  |
 
 ````json
 [
@@ -799,6 +802,45 @@ last_updated: 2026-11-05T21:52:54.864Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-05T21:52:54.864Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 57,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkTest.php",
+    "line": null,
+    "description": "08-09: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkTest, ApprovedDraftBookingLinkTest, tests/Feature/Filament/DraftBookingLinkKeyboardTest.php and the front-desk tests",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.136Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 58,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "examples/example-hvac/agents/front-desk.md",
+    "line": null,
+    "description": "08-09: Phase 8 UAT in Dev chat: after the last intake answer the front desk's offer comes back labeled scheduling and carries the link (D-05)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.223Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 59,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/conversation-thread.blade.php",
+    "line": null,
+    "description": "08-09: Phase 8 UAT on a held scheduling draft: the approve step reads 'A booking link for {service} will be added' with the box checked; Send texts the link after the words, with the box off it texts none; on a complaint-read scheduling draft the box starts unchecked (D-45)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.311Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
