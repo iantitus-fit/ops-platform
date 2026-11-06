@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 9/16 plans executed
+**Plans**: 10/16 plans executed
 
 Plans:
 **Wave 1**
@@ -273,7 +273,7 @@ Plans:
 - [x] 08-09-PLAN.md — The link in the conversation: a scheduling reply carries the owner's link line under D-01 and D-02; an owner-approved scheduling draft gets it at approval, with a box to leave it off (D-45); the example front desk offers a visit after intake (D-05)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 08-10-PLAN.md — The booking page in a real browser (A11Y-02): keyboard at desktop and 375, time names, focus moves, 48 px targets, axe on every state; 07 IN-08, IN-09, IN-11
+- [x] 08-10-PLAN.md — The booking page in a real browser (A11Y-02): keyboard at desktop and 375, time names, focus moves, 48 px targets, axe on every state; 07 IN-08, IN-09, IN-11
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 08-11-PLAN.md — When the confirmation and reminders are due: the send window, the move to the window before, the silent skips, one row per moment
@@ -397,7 +397,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 9/16 | In Progress | - |
+| 8. Schedule and Booking | 10/16 | In Progress | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |

@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-09-PLAN.md
-last_updated: "2026-11-06T15:52:02.707Z"
+stopped_at: Completed 08-10-PLAN.md
+last_updated: "2026-11-06T16:16:44.004Z"
 last_activity: 2026-11-06
 last_activity_desc: Phase 08 execution started
-state_head: 7cbbb23ed1b9a4365d9ba35643f22d2486e367f6
+state_head: be9177fd2887533d30a9deab8a786e7eaa9aaf1a
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 43
+  completed_plans: 44
   percent: 44
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 10 of 16
-Status: Executing Phase 08
+Plan: 11 of 16
+Status: Ready to execute
 Last activity: 2026-11-06 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -183,6 +183,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P07 | 45 min | 3 tasks | 15 files |
 | Phase 08 P08 | 17 min | 3 tasks | 26 files |
 | Phase 08 P09 | 33 min | 4 tasks | 14 files |
+| Phase 08 P10 | 21 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -267,6 +268,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-09: ServiceToBook::handle() and whyNoLink() share one private check(), so the agent's send and the owner's approval of a held draft cannot drift on D-01, D-02 or D-45
 - [Phase 08]: 08-09: the write that restores superseded booking links lives in MintBookingLink::restoreSuperseded(), keeping app/Rooms/ScheduleAndBooking free of Eloquent writes that AppointmentWritesTest scans for
 - [Phase 08]: 08-09: the sweep probes found no pre-existing test reaching the booking link on the agent path or the approval path, so no existing test was re-pointed or changed
+- [Phase 08]: 08-10: the time button's visible time is aria-hidden and one hidden span holds the whole name, because a block-level hidden span made the browser add a space before the comma; no aria-label
+- [Phase 08]: 08-10: LEADS_KEYBOARD_TAB_CAP is 23, measured 11 presses on desktop and 13 on a phone, plus a margin of 10
 
 ### Pending Todos
 
@@ -330,8 +333,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-06T15:14:54.071Z
-Stopped at: Completed 08-09-PLAN.md
+Last session: 2026-11-06T16:16:43.938Z
+Stopped at: Completed 08-10-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
