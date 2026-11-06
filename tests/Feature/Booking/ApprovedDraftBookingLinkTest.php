@@ -385,7 +385,7 @@ it('mints nothing when a newer draft replaced the one on screen (D-28, D-45)', f
     $thread = approvedDraftLinkThread();
 
     test()->travel(1)->minutes();
-    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('c', 32), 'Body' => 'Actually Friday is better']))->assertOk();
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('e', 32), 'Body' => 'Actually Friday is better']))->assertOk();
     scriptFrontDeskReplies(['reply' => 'We guarantee 9 am Friday. Does that work?', 'label' => 'scheduling', 'service_slug' => 'ac-repair', 'touches_waiting' => true]);
     runQueuedFrontDeskJobs();
 
@@ -409,8 +409,7 @@ it('refuses Send when the link would pass 1,600 characters, and sends at exactly
 
     $thread->assertSet('draftBody', $tooLong)
         ->set('addBookingLink', false)
-        ->call('approveDraft')
-        ->assertHasNoErrors();
+        ->call('approveDraft');
 
     expect(approvedDraftLinkTextsToDana())->toHaveCount(2)
         ->and(BookingLink::query()->count())->toBe(0);

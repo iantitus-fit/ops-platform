@@ -12,7 +12,7 @@ use Pest\Browser\Playwright\Page;
  * one Tab from the draft box reaches the checkbox, a screen reader announces it by the line that says what it does, and
  * Space unticks it. Real keys, because the faults that matter here live in focus order and in the accessibility tree.
  * The rest of the Needs you block waits for Phase 11 (02.1 D-48), so axe is scoped to the box's own wrapper. Every wait
- * is Playwright's own (pest-plugin-browser 5.1's waitForFunction() and waitForURL() never wait, STATE.md Phase 7).
+ * is Playwright's own locator wait, because the plugin's function and URL waits return at once in version 5.1 (STATE.md Phase 7).
  */
 const DRAFT_LINK_KEYBOARD_LABEL = 'A booking link for AC repair will be added';
 

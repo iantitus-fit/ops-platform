@@ -50,10 +50,13 @@ class ResolveDraft
      * A draft that was replaced or already handled is refused before anything is checked about the text, so the
      * owner is told the customer wrote again even when their edit also had a problem.
      *
+     * `$addBookingLink` only asks (D-45): the approve step that drew the booking link line passes the owner's box. It
+     * defaults to false so no other caller asks for a link, and SendOwnerReply decides, checking every condition again.
+     *
      * @throws DomainException when the draft is gone, another reply is being sent, or the channel failed
      * @throws ValidationException when the text cannot or should not go out
      */
-    public function approve(Message $draft, User $by, ?string $body = null): Message
+    public function approve(Message $draft, User $by, ?string $body = null, bool $addBookingLink = false): Message
     {
         $draft->refresh();
 
@@ -63,7 +66,7 @@ class ResolveDraft
 
         $edited = $body !== null && trim($body) !== trim($draft->body);
 
-        return $this->sendOwnerReply->sendDraft($draft, $body ?? $draft->body, $by, $edited);
+        return $this->sendOwnerReply->sendDraft($draft, $body ?? $draft->body, $by, $edited, $addBookingLink);
     }
 
     /**

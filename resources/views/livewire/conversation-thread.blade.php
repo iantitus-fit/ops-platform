@@ -34,6 +34,12 @@
                         <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>
                     @enderror
                     <p style="font-size: 0.875rem;">The sign-off (and the AI note on a first text) is added when it sends.</p>
+                    @if ($bookingLinkService !== null)
+                        <div data-booking-link-choice style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="checkbox" id="add-booking-link" wire:model="addBookingLink" style="width: 1.5rem; height: 1.5rem; flex-shrink: 0;">
+                            <label for="add-booking-link">A booking link for {{ $bookingLinkService }} will be added</label>
+                        </div>
+                    @endif
                     <div style="display: flex; gap: 0.5rem;">
                         <x-filament::button type="submit" wire:target="approveDraft" wire:loading.attr="disabled">{{ $this->customerWroteAgain ? 'Send anyway' : 'Send' }}</x-filament::button>
                         <x-filament::button type="button" color="gray" wire:click="discardDraft" wire:target="discardDraft" wire:loading.attr="disabled" wire:confirm="Discard this draft? Nothing will be sent to the customer.">Discard</x-filament::button>
