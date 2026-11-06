@@ -15,6 +15,7 @@ use App\Rooms\RecordRoomEntry;
 use App\Rooms\ScheduleAndBooking\Availability;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
+use App\Rooms\ScheduleAndBooking\ReminderSchedule;
 use App\Rooms\ScheduleAndBooking\ResolveBookingLink;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -170,6 +171,8 @@ class BookAppointment
             $appointment,
         );
 
+        $this->writeSendRows($appointment, $startsAt, false);
+
         return $appointment;
     }
 
@@ -225,7 +228,35 @@ class BookAppointment
             $appointment,
         );
 
+        $this->writeSendRows($appointment, $startsAt, true);
+
         return $appointment;
+    }
+
+    /**
+     * Store one row per text this booking will send: the confirmation and each reminder, with the due time worked out
+     * once, now (D-28, D-29, D-31). Called inside the booking transaction, so a booking that rolls back leaves no rows.
+     * With no booking file nothing customer-facing goes out, so no rows are written (D-03).
+     */
+    private function writeSendRows(Appointment $appointment, CarbonImmutable $startsAt, bool $pageBooking): void
+    {
+        $settings = BookingSettings::fromConfig($this->config);
+
+        if ($settings === null) {
+            return;
+        }
+
+        $rows = ReminderSchedule::rows(
+            $startsAt,
+            CarbonImmutable::instance($appointment->booked_at),
+            $pageBooking,
+            $settings,
+            $this->config->timezone(),
+        );
+
+        foreach ($rows as $row) {
+            $appointment->sends()->create([...$row, 'due_at' => $row['due_at']->utc()]);
+        }
     }
 
     /**
