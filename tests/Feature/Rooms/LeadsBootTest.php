@@ -154,11 +154,13 @@ it('finds no accessibility violation in the leads section', function (bool $with
 ]);
 
 /**
- * The most Tab presses the dashboard walk may take from the top of /admin to the last of three leads rows. The panel's
- * own controls and the room sections above the leads come first, so the cap leaves room for them without letting the
- * walk wander.
+ * The most Tab presses the dashboard walk may take from the top of /admin to the last of three leads rows. This was
+ * measured on 2026-11-06 (plan 08-10, review item 07 IN-09): the walk took 11 presses on a desktop window and 13 on a
+ * phone, so the cap is the larger, 13, plus a margin of 10. The margin leaves room for one more room section above the
+ * leads without letting the walk wander; a walk that takes more than 23 presses means focus left the page or the
+ * order changed, and should fail.
  */
-const LEADS_KEYBOARD_TAB_CAP = 60;
+const LEADS_KEYBOARD_TAB_CAP = 23;
 
 /**
  * The contact name of the leads row link that has focus now, or null when focus is anywhere else.
