@@ -94,6 +94,14 @@ it('swallows only its own timeout and then reports what has focus', function () 
 
     waitForFocusSelector($browser, '#missing:focus', 300);
 
-    expect(fn () => expectFocusOn($browser, 'Check your time'))
-        ->toThrow(ExpectationFailedException::class, 'Stub');
+    $failure = null;
+
+    try {
+        expectFocusOn($browser, 'Check your time');
+    } catch (ExpectationFailedException $caught) {
+        $failure = $caught;
+    }
+
+    expect($failure)->toBeInstanceOf(ExpectationFailedException::class)
+        ->and($failure->getComparisonFailure()->getActual())->toBe('Stub');
 });

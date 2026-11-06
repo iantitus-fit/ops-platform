@@ -161,15 +161,6 @@ it('finds no accessibility violation in the leads section', function (bool $with
 const LEADS_KEYBOARD_TAB_CAP = 60;
 
 /**
- * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
- */
-function leadsKeyboardPress(Page $browser, string $key): void
-{
-    $browser->keyDown($key);
-    $browser->keyUp($key);
-}
-
-/**
  * The contact name of the leads row link that has focus now, or null when focus is anywhere else.
  */
 function leadsKeyboardFocusedRow(Page $browser): ?string
@@ -213,7 +204,7 @@ it('reaches each leads row by Tab in order and opens its contact with Enter', fu
     $presses = 0;
 
     while ($presses < LEADS_KEYBOARD_TAB_CAP && count($reached) < 3) {
-        leadsKeyboardPress($browser, 'Tab');
+        pressKey($browser, 'Tab');
         $presses++;
 
         $row = leadsKeyboardFocusedRow($browser);
@@ -225,7 +216,7 @@ it('reaches each leads row by Tab in order and opens its contact with Enter', fu
 
     expect($reached)->toBe(['Casey Ortiz', 'Blake Moreno', 'Avery Lane']);
 
-    leadsKeyboardPress($browser, 'Enter');
+    pressKey($browser, 'Enter');
 
     // The contact page is open once its project list's New job button is on it. Playwright's own locator wait is used
     // because the plugin's waitForURL() never reads Playwright's answer in pest-plugin-browser 5.1, so it does not wait.

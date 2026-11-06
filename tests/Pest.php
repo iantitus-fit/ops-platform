@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Pest\Browser\Playwright\Page;
+use PHPUnit\Framework\ExpectationFailedException;
 use Tests\Rooms\PretendRoom\PretendRoomServiceProvider;
 use Tests\TestCase;
 
@@ -455,4 +457,101 @@ function rejectedErrors(): array
     $rejected = IcmVersion::query()->where('status', VersionStatus::Rejected->value)->latest('id')->firstOrFail();
 
     return $rejected->errors;
+}
+
+/**
+ * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
+ * The one copy every browser test shares (07 IN-11).
+ */
+function pressKey(Page $browser, string $key): void
+{
+    $browser->keyDown($key);
+    $browser->keyUp($key);
+}
+
+/**
+ * A name as a test compares it: every run of white space, a non-breaking space (U+00A0) too, one plain space. The
+ * booking page puts a non-breaking space before AM and PM so a time never breaks across two lines (U-10), and a name
+ * comparison should not depend on which space the markup used. Only the comparison is normalized; the markup keeps its
+ * non-breaking space.
+ */
+function normalizedName(string $name): string
+{
+    return trim(preg_replace('/[\s\x{00A0}]+/u', ' ', $name) ?? $name);
+}
+
+/**
+ * What has keyboard focus now: its aria-label, else its name from its content, else its tag name ("BODY" is focus
+ * fallen to the page). The content name is built the way the browser builds one: the text inside the element, the
+ * visually hidden text too (a screen reader reads it), and nothing that is display:none, visibility:hidden, hidden or
+ * aria-hidden; an element that is not inline is set off by a space on each side, as Playwright does when it computes a
+ * role's name, so a hidden day text that the browser draws as a block shows up here as the stray space it is. Every
+ * non-breaking space is a plain space and every run of white space one space, so a test writes
+ * '10:00 AM, Tuesday, November 3' and still matches the page's non-breaking space (see normalizedName()).
+ */
+function focusedName(Page $browser): string
+{
+    $name = $browser->evaluate(<<<'JS'
+() => {
+  const element = document.activeElement;
+  if (element === document.body || element === document.documentElement) {
+    return element.tagName;
+  }
+  const label = (element.getAttribute('aria-label') ?? '').trim();
+  if (label !== '') {
+    return label;
+  }
+  const skipped = (node) => {
+    const style = getComputedStyle(node);
+    return node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden';
+  };
+  const read = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE || skipped(node)) {
+      return '';
+    }
+    const inner = Array.from(node.childNodes).map(read).join('');
+    return getComputedStyle(node).display === 'inline' ? inner : ' ' + inner + ' ';
+  };
+  const text = Array.from(element.childNodes).map(read).join('');
+  return text.replace(/\s+/g, ' ').trim() || element.tagName;
+}
+JS);
+
+    return normalizedName((string) $name);
+}
+
+/**
+ * Wait, through Playwright's own locator waiting, until $selector is on the page, and swallow only that wait's own
+ * timeout: the caller's next line says what was found instead. Any other error (a selector Playwright cannot parse, a
+ * page that has gone) is rethrown, because an error hidden here would turn a broken page into a pass or a misleading
+ * comparison (07 IN-08, T-08-42). The plugin's function wait and URL wait are not used: in pest-plugin-browser 5.1
+ * they never read Playwright's answer, so they return at once without waiting (STATE.md, Phase 7). A timeout surfaces as an ExpectationFailedException whose message starts "Timeout 5000ms exceeded".
+ */
+function waitForFocusSelector(Page $browser, string $selector, int $timeoutMs = 5000): void
+{
+    try {
+        $browser->locator($selector)->waitFor(['state' => 'attached', 'timeout' => $timeoutMs]);
+    } catch (ExpectationFailedException $failure) {
+        if (preg_match('/^(?:[\w.]+: )?Timeout \d+ms exceeded/', $failure->getMessage()) !== 1) {
+            throw $failure;
+        }
+    }
+}
+
+/**
+ * Wait until the focused element is the one named $name (by its aria-label, or by its exact text when it has none),
+ * then compare focusedName() with the name, both normalized the same way. When the wait runs out the comparison names
+ * what has focus instead, so a failure reads as the fault it found. The one copy every browser test shares (07 IN-11).
+ */
+function expectFocusOn(Page $browser, string $name): void
+{
+    $name = normalizedName($name);
+    $quoted = json_encode($name, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    waitForFocusSelector($browser, "[aria-label={$quoted}]:focus, :focus:not([aria-label]):text-is({$quoted})");
+
+    expect(focusedName($browser))->toBe($name);
 }
