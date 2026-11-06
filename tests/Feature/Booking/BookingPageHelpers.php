@@ -101,9 +101,10 @@ function bookingPageResync(Closure $changeFolder): void
 
 /**
  * A page's HTML with the parts Livewire makes fresh on every request (its ids and snapshot) taken out, so two pages can
- * be compared.
+ * be compared. DOMDocument::saveHTML() quotes a value holding JSON with double quotes and &quot; under one libxml
+ * version and with single quotes under another (CI run 42136244127), so both quote styles are taken out.
  */
 function bookingPageWithoutLivewireIds(string $html): string
 {
-    return preg_replace('/\swire:(snapshot|effects|id)="[^"]*"/', '', $html) ?? $html;
+    return preg_replace('/\swire:(snapshot|effects|id)=(?:"[^"]*"|\'[^\']*\')/', '', $html) ?? $html;
 }
