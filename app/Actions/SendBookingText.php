@@ -115,6 +115,18 @@ class SendBookingText
             return;
         }
 
+        $zone = $this->config->timezone();
+
+        if (! $send->ignores_window) {
+            $opening = $this->nextOpening($settings, $zone);
+
+            if ($opening !== null) {
+                $this->moveTo($send, $claimedAt, $opening);
+
+                return;
+            }
+        }
+
         $contact = $visit->contact;
         $conversation = $contact->openConversation()->first();
 
@@ -135,7 +147,6 @@ class SendBookingText
             $conversation = $this->openConversationForText->handle($contact);
         }
 
-        $zone = $this->config->timezone();
         $when = BookingSettings::dayText($visit->starts_at, $zone).' at '.BookingSettings::timeText($visit->starts_at, $zone);
 
         $line = $send->lead_minutes > 0
@@ -165,6 +176,45 @@ class SendBookingText
         }
 
         $this->end($send, ['sent_at' => $this->now(), 'message_id' => $message->id]);
+    }
+
+    /**
+     * The next moment the send window opens when now is outside it, or null when now is inside it (D-29). Both ends of the
+     * window count as inside, judged to the minute, so a row due exactly when the window closes goes out even when the
+     * sweep reaches it a few seconds late. Days are calendar days on the business wall clock (D-11), so a daylight-saving
+     * change cannot move the wall time by an hour.
+     */
+    private function nextOpening(BookingSettings $settings, string $zone): ?Carbon
+    {
+        $local = now()->setTimezone($zone)->startOfMinute();
+        $opens = $local->copy()->setTimeFromTimeString($settings->sendWindowStart);
+        $closes = $local->copy()->setTimeFromTimeString($settings->sendWindowEnd);
+
+        if ($local->greaterThanOrEqualTo($opens) && $local->lessThanOrEqualTo($closes)) {
+            return null;
+        }
+
+        return $local->lessThan($opens) ? $opens : $local->copy()->addDay()->setTimeFromTimeString($settings->sendWindowStart);
+    }
+
+    /**
+     * Hold a row that came due outside the send window until the window next opens: one conditional update that moves
+     * due_at (stored in UTC) and gives the claim back, only while no outcome is written and the claim is still this
+     * sender's (D-29, D-31). The sweep then leaves the row alone until its new due time.
+     */
+    private function moveTo(BookingSend $send, Carbon $claimedAt, Carbon $opening): void
+    {
+        try {
+            BookingSend::query()
+                ->whereKey($send->id)
+                ->whereNull('sent_at')
+                ->whereNull('skipped_at')
+                ->whereNull('failed_at')
+                ->where('send_claimed_at', $claimedAt)
+                ->update(['due_at' => $opening->copy()->utc(), 'send_claimed_at' => null]);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**

@@ -42,6 +42,8 @@ use Throwable;
  * A closed job is refused and never reopened (D-25). Booking never changes the contact's status (D-41) and raises no
  * owner alert (D-33). With no booking file there is no drive buffer (D-03). The service's slug and name are copied from
  * the folder onto the row (D-42), so later edits to the folder do not rewrite history.
+ *
+ * Right after a booking commits, its confirmation text is sent at once when it is due (D-28), through SendBookingText.
  */
 class BookAppointment
 {
@@ -57,6 +59,7 @@ class BookAppointment
         private readonly RecordRoomEntry $recordRoomEntry,
         private readonly RaiseOwnerAlert $raiseOwnerAlert,
         private readonly ResolveBookingLink $resolveBookingLink,
+        private readonly SendBookingText $sendBookingText,
     ) {}
 
     /**
@@ -84,7 +87,11 @@ class BookAppointment
             throw BookingRefused::noteTooLong();
         }
 
-        return $this->underLock(fn (): Appointment => $this->store($contact, $user, $service, $startsAt, $projectId, $note === '' ? null : $note));
+        $appointment = $this->underLock(fn (): Appointment => $this->store($contact, $user, $service, $startsAt, $projectId, $note === '' ? null : $note));
+
+        $this->sendConfirmationNow($appointment);
+
+        return $appointment;
     }
 
     /**
@@ -103,8 +110,32 @@ class BookAppointment
         $appointment = $this->underLock(fn (): Appointment => $this->storeFromLink($link, $startsAt, $now));
 
         $this->alertOwner($link, $appointment);
+        $this->sendConfirmationNow($appointment);
 
         return $appointment;
+    }
+
+    /**
+     * Send the confirmation right after the booking commits when it is already due (D-28): a page booking's whatever the
+     * hour, a hand booking's inside the send window. A hand booking made outside the window has its confirmation due at
+     * the next opening, so nothing goes now and the sweep sends it then. The sweep is the backstop for a send that fails
+     * here, and the row's claim makes the two safe together, so one text goes out. A failure is reported and never undoes
+     * the booking (D-28).
+     */
+    private function sendConfirmationNow(Appointment $appointment): void
+    {
+        try {
+            $confirmation = $appointment->sends()
+                ->where('lead_minutes', 0)
+                ->where('due_at', '<=', now()->utc())
+                ->first();
+
+            if ($confirmation !== null) {
+                $this->sendBookingText->handle($confirmation);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**
