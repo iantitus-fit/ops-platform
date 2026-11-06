@@ -72,6 +72,23 @@ class MintBookingLink
     }
 
     /**
+     * Put back the links a mint superseded, when the text that carried the new link never went out (D-12, D-45). Only a
+     * link that is still unbooked, unrevoked and unexpired is put back; a link the customer booked from, or that
+     * stopped working meanwhile, stays as it is.
+     *
+     * @param  list<int>  $ids  The ids of the links the mint superseded.
+     */
+    public function restoreSuperseded(array $ids): void
+    {
+        BookingLink::query()
+            ->whereIn('id', $ids)
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->whereDoesntHave('appointment')
+            ->update(['superseded_at' => null]);
+    }
+
+    /**
      * Record the text that carried the link, so a booking can alert the owner on it (D-33).
      */
     public function attachMessage(BookingLink $link, Message $message): void

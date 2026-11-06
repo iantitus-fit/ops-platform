@@ -22,11 +22,15 @@ use App\Enums\ReplyLabel;
 use App\Enums\SendOrigin;
 use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
+use App\Models\BookingLink;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
+use App\Rooms\ScheduleAndBooking\ServiceToBook;
+use App\Rooms\ScheduleAndBooking\WithdrawUnsentLink;
 use App\SendRule\AsksForPerson;
 use App\SendRule\CustomerReading;
 use App\SendRule\DecideSendOrDraft;
@@ -43,6 +47,7 @@ use DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Answers one claimed burst of customer texts: the agent writes a reply, the send rule decides, and the reply is
@@ -145,6 +150,9 @@ class RunFrontDesk
         private readonly OfferSentences $offerSentences,
         private readonly ResolveDraft $resolveDraft,
         private readonly ReadCustomerText $readCustomerText,
+        private readonly ServiceToBook $serviceToBook,
+        private readonly MintBookingLink $mintBookingLink,
+        private readonly WithdrawUnsentLink $withdrawUnsentLink,
     ) {}
 
     /**
@@ -424,12 +432,12 @@ class RunFrontDesk
         if ($answersWaiting && $sentences !== []) {
             $answer = $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode);
             $this->closeAsAnswered($waiting, $answer);
-            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false, heldSentences: $answer === null ? [...$heldSentences, ...$sentences] : $heldSentences);
+            $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: false, heldSentences: $answer === null ? [...$heldSentences, ...$sentences] : $heldSentences, serviceSlug: $run->reply->serviceSlug);
 
             return;
         }
 
-        $draft = $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === [], heldSentences: $heldSentences);
+        $draft = $this->storeDraft($conversation, $words, $verdict, $run->reply->label, $attributes, sendHolding: $sentences === [], heldSentences: $heldSentences, serviceSlug: $run->reply->serviceSlug);
 
         if ($sentences !== [] && $this->sendPartialHolding($conversation, $parts, $sentMeta, $verdict->reasonCode) === null) {
             $this->keepUnsentSentences($draft, $sentences);
@@ -577,14 +585,34 @@ class RunFrontDesk
      * one text. Returns the message that went out, or null when its failure was raised to the owner. Returns the verdict
      * held for `send_refused` when the sender only refused it, so the caller keeps the words as a draft.
      *
+     * A reply labeled scheduling also carries the owner's link line with a freshly minted link, when ServiceToBook allows
+     * one (D-01, D-02). It rides the front desk's existing scheduling send_on_own right through the one outbound path as
+     * a combined text (02.1 D-49), and the model never writes the URL. The link is kept out of codeSentences so a held
+     * draft never carries a minted link (research Pattern 5); an approved draft gets its own at approval (D-45). A link
+     * whose text did not go out is revoked, and the links it superseded are put back (WithdrawUnsentLink).
+     *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
      * @param  array{meta: array<string, mixed>}  $sentMeta
      */
     private function sendPassingReply(AgentRun $run, Conversation $conversation, Collection $burst, Verdict $verdict, string $composed, ReplyParts $parts, array $attributes, array $sentMeta): Message|Verdict|null
     {
+        $link = null;
+        $supersededIds = [];
+
         try {
-            if ($parts->codeSentences === [] && $parts->line === null) {
+            if ($parts->hasModelWords() && ($slug = $this->serviceToBook->handle($conversation, $run->reply->label, $run->reply->serviceSlug)) !== null) {
+                $settings = BookingSettings::fromConfig($this->activeConfig);
+
+                if ($settings !== null && $this->linkFits($conversation, $parts, $settings)) {
+                    $supersededIds = $this->withdrawUnsentLink->idsAMintWouldSupersede($conversation);
+                    [$link, $token] = $this->mintBookingLink->handle($conversation, $slug, now()->toImmutable());
+                    $parts = $this->withBookingLine($parts, $settings->renderLink(route('booking.show', $token)));
+                    $sentMeta = ['meta' => [...$sentMeta['meta'], 'booking_link_id' => $link->id]];
+                }
+            }
+
+            if ($link === null && $parts->codeSentences === [] && $parts->line === null) {
                 return $this->outboundSender->send(
                     $conversation,
                     $composed,
@@ -594,13 +622,80 @@ class RunFrontDesk
                 );
             }
 
-            return $this->sendCombinedReply->handle($conversation, $parts, $this->reading(), [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
+            $sent = $this->sendCombinedReply->handle($conversation, $parts, $this->reading(), [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
+
+            if ($link !== null) {
+                $this->mintBookingLink->attachMessage($link, $sent);
+            }
+
+            return $sent;
         } catch (DomainException $exception) {
+            $this->withdrawLink($link, $supersededIds);
+
             if ($this->alertAboutFailedSend($exception, $conversation, $burst)) {
                 return null;
             }
 
             return $verdict->heldFor('send_refused');
+        } catch (Throwable $exception) {
+            $this->withdrawLink($link, $supersededIds);
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Whether the text still fits the 1,600-character limit with the owner's link line in it. The link is measured with
+     * a 64-character placeholder token, the length of every real one, before anything is minted, so a link dropped at the
+     * limit mints nothing and supersedes nothing (D-12).
+     */
+    private function linkFits(Conversation $conversation, ReplyParts $parts, BookingSettings $settings): bool
+    {
+        $measured = $this->withBookingLine($parts, $settings->renderLink(route('booking.show', str_repeat('0', 64))));
+
+        return $this->sendCombinedReply->composedLength($conversation, $measured) <= SendOwnerReply::MAX_LENGTH;
+    }
+
+    /**
+     * The service a draft that carries over a waiting draft's label is about: the waiting draft's own when it has a
+     * label (the label and the service belong together), otherwise the run's (D-45).
+     */
+    private function carriedServiceSlug(?Message $waiting, ?string $runServiceSlug): ?string
+    {
+        return $waiting?->label !== null ? ($waiting->meta['service_slug'] ?? null) : $runServiceSlug;
+    }
+
+    /**
+     * A copy of the parts with the owner's link line added last.
+     */
+    private function withBookingLine(ReplyParts $parts, string $bookingLine): ReplyParts
+    {
+        return new ReplyParts(
+            complaintLine: $parts->complaintLine,
+            codeSentences: $parts->codeSentences,
+            modelWords: $parts->modelWords,
+            lineKind: $parts->lineKind,
+            line: $parts->line,
+            bookingLine: $bookingLine,
+        );
+    }
+
+    /**
+     * Take back a minted link whose text did not go out, and put back the links it superseded. A withdraw that itself
+     * fails is reported and never hides the error that caused it (D-12).
+     *
+     * @param  list<int>  $supersededIds
+     */
+    private function withdrawLink(?BookingLink $link, array $supersededIds): void
+    {
+        if ($link === null) {
+            return;
+        }
+
+        try {
+            $this->withdrawUnsentLink->handle($link, $supersededIds);
+        } catch (Throwable $failure) {
+            report($failure);
         }
     }
 
@@ -687,6 +782,7 @@ class RunFrontDesk
         $keepsWaitingBody = $parts->modelWords === '' || $checkIn;
         $draftWords = $keepsWaitingBody ? $waiting->body : (string) $parts->modelWords;
         $draftLabel = $keepsWaitingBody ? $waiting->label ?? $run->reply->label : $run->reply->label;
+        $draftServiceSlug = $keepsWaitingBody ? $this->carriedServiceSlug($waiting, $run->reply->serviceSlug) : $run->reply->serviceSlug;
         $alertReason = null;
 
         if (! $keepsWaitingBody && $run->reply->touchesWaiting === false && ! $verdict->lifeSafety) {
@@ -696,7 +792,7 @@ class RunFrontDesk
                 return;
             }
 
-            ['words' => $draftWords, 'label' => $draftLabel, 'verdict' => $verdict, 'alertReason' => $alertReason] = $covered;
+            ['words' => $draftWords, 'label' => $draftLabel, 'serviceSlug' => $draftServiceSlug, 'verdict' => $verdict, 'alertReason' => $alertReason] = $covered;
             $attributes['meta'] = [...$attributes['meta'], 'first_reply' => ['reply' => (string) $parts->modelWords, 'gate_reason' => $covered['firstReason']]];
 
             if ($covered['stops'] !== null && $parts->codeSentences !== []) {
@@ -715,7 +811,7 @@ class RunFrontDesk
             $attributes['meta'] = [...$attributes['meta'], 'check_in_reply_gate' => $verdict->details];
         }
 
-        $draft = $this->storeDraft($conversation, $draftWords, $storedVerdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences);
+        $draft = $this->storeDraft($conversation, $draftWords, $storedVerdict, $draftLabel, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $heldSentences, serviceSlug: $draftServiceSlug);
 
         if ($verdict->lifeSafety || $conversation->refresh()->isPaused()) {
             return;
@@ -788,7 +884,7 @@ class RunFrontDesk
      * The alert reason is a complaint when either reply was held as one, so a complaint still leads (D-34).
      *
      * @param  Collection<int, Message>  $burst
-     * @return ?array{words: string, label: ReplyLabel, verdict: Verdict, alertReason: AlertReason, firstReason: ?string, stops: ?string} Null when the customer was handed to the owner and the run is over. `stops` is `danger` or the complaint reason code when only the second reply found one, so the owner's sentences must be held.
+     * @return ?array{words: string, label: ReplyLabel, serviceSlug: ?string, verdict: Verdict, alertReason: AlertReason, firstReason: ?string, stops: ?string} Null when the customer was handed to the owner and the run is over. `stops` is `danger` or the complaint reason code when only the second reply found one, so the owner's sentences must be held.
      */
     private function coverBothDraft(AgentFile $agent, AgentRun $run, Conversation $conversation, Collection $burst, Message $waiting, Verdict $firstVerdict, ReplyParts $parts): ?array
     {
@@ -798,6 +894,7 @@ class RunFrontDesk
         $joined = [
             'words' => trim($waiting->body) === '' ? trim($firstWords) : trim($waiting->body)."\n\n".trim($firstWords),
             'label' => $waiting->label ?? $run->reply->label,
+            'serviceSlug' => $this->carriedServiceSlug($waiting, $run->reply->serviceSlug),
             'verdict' => $firstVerdict,
             'alertReason' => $firstIsComplaint ? AlertReason::Complaint : AlertReason::DraftWaiting,
             'firstReason' => $firstVerdict->reasonCode,
@@ -817,6 +914,7 @@ class RunFrontDesk
         return [
             'words' => $asked['second']->reply->reply,
             'label' => $asked['second']->reply->label,
+            'serviceSlug' => $asked['second']->reply->serviceSlug,
             'verdict' => $asked['stored'],
             'alertReason' => $firstIsComplaint || $asked['secondIsComplaint'] ? AlertReason::Complaint : AlertReason::DraftWaiting,
             'firstReason' => $firstVerdict->reasonCode,
@@ -865,7 +963,7 @@ class RunFrontDesk
         if ($stops !== null) {
             $stored = $stops === 'danger' ? $asked['stored'] : $asked['stored']->heldFor($stops);
 
-            $this->storeDraft($conversation, $asked['second']->reply->reply, $stored, $asked['second']->reply->label, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $parts->codeSentences);
+            $this->storeDraft($conversation, $asked['second']->reply->reply, $stored, $asked['second']->reply->label, $attributes, sendHolding: false, alertReason: $alertReason, heldSentences: $parts->codeSentences, serviceSlug: $asked['second']->reply->serviceSlug);
 
             if ($stops === 'danger' || $conversation->refresh()->isPaused()) {
                 return;
@@ -893,6 +991,7 @@ class RunFrontDesk
             sendHolding: false,
             alertReason: $alertReason,
             heldSentences: $sent === null ? $parts->codeSentences : [],
+            serviceSlug: $asked['second']->reply->serviceSlug,
         );
     }
 
@@ -1284,7 +1383,7 @@ class RunFrontDesk
             $this->storeDraft($conversation, (string) $waiting?->body, $verdict, $waiting?->label ?? $run->reply->label, [
                 'kind' => MessageKind::AgentReply,
                 'meta' => ['in_reply_to' => $inReplyTo, 'price_pending' => [], ...$lookups],
-            ], heldSentences: $sentences);
+            ], heldSentences: $sentences, serviceSlug: $this->carriedServiceSlug($waiting, $run->reply->serviceSlug));
 
             return null;
         }
@@ -1617,10 +1716,15 @@ class RunFrontDesk
      * Returns the stored draft, so a caller whose own text beside it could not go out can add what that text carried
      * (keepUnsentSentences()).
      *
+     * A draft labeled scheduling records the service its reply was about in meta.service_slug, whichever caller stores
+     * it, and no other draft gains that key. It records what the reply was about and never a link: the conditions for a
+     * booking link are checked at approval, when the owner sends it (D-45).
+     *
      * @param  array<string, mixed>  $attributes
      * @param  list<string>  $heldSentences
+     * @param  ?string  $serviceSlug  The service the draft's reply named, or the waiting draft's when its label is carried over.
      */
-    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null, array $heldSentences = []): Message
+    private function storeDraft(Conversation $conversation, string $words, Verdict $verdict, ReplyLabel $label, array $attributes, bool $sendHolding = true, ?AlertReason $alertReason = null, array $heldSentences = [], ?string $serviceSlug = null): Message
     {
         $plainReason = $verdict->plainReason ?? Verdict::plainReasonFor((string) $verdict->reasonCode);
         $alertReason ??= $this->alertReasonFor($verdict);
@@ -1628,6 +1732,10 @@ class RunFrontDesk
 
         if ($heldSentences !== []) {
             $attributes['meta'] = [...($attributes['meta'] ?? []), 'held_sentences' => $heldSentences];
+        }
+
+        if ($label === ReplyLabel::Scheduling && $serviceSlug !== null && $serviceSlug !== '') {
+            $attributes['meta'] = [...($attributes['meta'] ?? []), 'service_slug' => $serviceSlug];
         }
 
         [$draft, $replacedChain] = DB::transaction(function () use ($conversation, $body, $verdict, $label, $attributes, $plainReason): array {
