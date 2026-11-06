@@ -82,6 +82,9 @@ class ServiceToBook
     /**
      * The reply's own service when it names one, else the conversation's intake service when exactly one service has
      * intake answers (D-02).
+     *
+     * reorder() drops the relation's orderBy('id'): Postgres refuses SELECT DISTINCT ordered by a column it does not
+     * select (42P10), and the order of distinct slugs does not matter here.
      */
     private function resolve(Conversation $conversation, ?string $serviceSlug): ?string
     {
@@ -89,7 +92,7 @@ class ServiceToBook
             return $serviceSlug;
         }
 
-        $slugs = $conversation->intakeAnswers()->distinct()->pluck('service_slug');
+        $slugs = $conversation->intakeAnswers()->reorder()->distinct()->pluck('service_slug');
 
         return $slugs->count() === 1 ? (string) $slugs->first() : null;
     }
