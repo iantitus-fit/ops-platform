@@ -230,6 +230,19 @@ class ConversationThread extends Component
     }
 
     /**
+     * The line above the reply box for a customer who has not texted the business or agreed to texts, or null (D-20,
+     * U-26). It only informs: the owner can still send, because the switch governs automatic sends and never the owner's
+     * own reply.
+     */
+    #[Computed]
+    public function notAgreedToTextsLine(): ?string
+    {
+        return $this->conversation->contact->mayGetAutomaticTexts()
+            ? null
+            : 'This customer has not texted the business or agreed to texts.';
+    }
+
+    /**
      * The banner above a paused thread, or null while the assistant is active (D-25).
      */
     #[Computed]

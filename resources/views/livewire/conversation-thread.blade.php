@@ -96,8 +96,11 @@
         </div>
     @else
         <form wire:submit="sendReply" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            @if ($this->notAgreedToTextsLine !== null)
+                <p id="reply-not-agreed-to-texts">{{ $this->notAgreedToTextsLine }}</p>
+            @endif
             <x-filament::input.wrapper>
-                <textarea wire:model="body" rows="3" placeholder="Type a reply" aria-label="Reply to the customer" class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
+                <textarea wire:model="body" rows="3" placeholder="Type a reply" aria-label="Reply to the customer" @if ($this->notAgreedToTextsLine !== null) aria-describedby="reply-not-agreed-to-texts" @endif class="fi-input" style="width: 100%; padding: 0.5rem 0.75rem;"></textarea>
             </x-filament::input.wrapper>
             @error('body')
                 <p style="color: #dc2626; font-size: 0.875rem;">{{ $message }}</p>

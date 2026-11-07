@@ -5,7 +5,9 @@ namespace App\Filament\Resources\Contacts\Schemas;
 use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
 use App\Models\Activity;
+use App\Models\Contact;
 use App\Rooms\RoomRegistry;
+use Carbon\CarbonImmutable;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -44,6 +46,10 @@ class ContactInfolist
                             ->label('Last activity')
                             ->dateTime(timezone: $timezone)
                             ->placeholder('(none)'),
+                        TextEntry::make('automatic_texts')
+                            ->label('Automatic texts')
+                            ->state(fn (Contact $record): string => self::automaticTextsLine($record, $timezone))
+                            ->visible(fn (Contact $record): bool => ! $record->hasTextedBusiness()),
                     ])
                     ->columns(4)
                     ->columnSpanFull(),
@@ -76,6 +82,21 @@ class ContactInfolist
                     ])
                     ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * The automatic-texts switch in words (U-26): Off, or On with who turned it on and when. A removed user is named as one.
+     */
+    private static function automaticTextsLine(Contact $contact, string $timezone): string
+    {
+        if ($contact->automatic_texts_on_at === null) {
+            return 'Off';
+        }
+
+        $who = $contact->automaticTextsTurnedOnBy?->name ?? 'a removed user';
+        $when = CarbonImmutable::instance($contact->automatic_texts_on_at)->setTimezone($timezone)->format('M j, Y');
+
+        return "On, turned on by {$who} on {$when}";
     }
 
     /**

@@ -61,6 +61,23 @@ function automaticTextsScreen(Contact $contact): Testable
     return Livewire::test(ViewContact::class, ['record' => $contact->getRouteKey()]);
 }
 
+/**
+ * The words of the dialog the screen has open: its heading, its description and its submit button. Filament draws a
+ * dialog in the browser, so a Livewire test reads the mounted action, as the Projects tab's tests do.
+ *
+ * @return array{heading: string, description: string, submit: string}
+ */
+function automaticTextsDialog(Testable $screen): array
+{
+    $dialog = $screen->instance()->getMountedAction();
+
+    return [
+        'heading' => (string) $dialog->getModalHeading(),
+        'description' => (string) $dialog->getModalDescription(),
+        'submit' => (string) $dialog->getModalSubmitActionLabel(),
+    ];
+}
+
 it('turns automatic texts on and off with who and when', function () {
     $this->travelTo('2026-11-03 10:00:00');
     $sam = automaticTextsSam();
@@ -100,26 +117,34 @@ it('shows the switch only to a contact who never texted', function () {
     $this->travelTo(automaticTextsChicago('2026-11-03 11:00'));
     $sam = automaticTextsSam();
 
-    automaticTextsScreen($sam)
+    $screen = automaticTextsScreen($sam)
         ->assertActionVisible('automaticTexts')
         ->assertActionHasLabel('automaticTexts', 'Turn on automatic texts')
         ->assertSeeInOrder(['Automatic texts', 'Off'])
-        ->mountAction('automaticTexts')
-        ->assertSee('Turn on automatic texts for Sam Ortiz?')
-        ->assertSee('Only turn this on if the customer agreed to get texts from the business, on a call for example. The business will then text booking confirmations and reminders on its own.')
-        ->assertSee('Turn on')
-        ->callMountedAction()
+        ->mountAction('automaticTexts');
+
+    expect(automaticTextsDialog($screen))->toBe([
+        'heading' => 'Turn on automatic texts for Sam Ortiz?',
+        'description' => 'Only turn this on if the customer agreed to get texts from the business, on a call for example. The business will then text booking confirmations and reminders on its own.',
+        'submit' => 'Turn on',
+    ]);
+
+    $screen->callMountedAction()
         ->assertNotified('Automatic texts are on')
         ->assertActionHasLabel('automaticTexts', 'Turn off automatic texts')
         ->assertSee('On, turned on by Ian Owner on Nov 3, 2026');
 
     expect($sam->fresh()->automatic_texts_on_by_user_id)->toBe($this->owner->id);
 
-    automaticTextsScreen($sam->fresh())
-        ->mountAction('automaticTexts')
-        ->assertSee('Turn off automatic texts for Sam Ortiz?')
-        ->assertSee('The business will stop texting confirmations and reminders on its own. You can still reply yourself.')
-        ->callMountedAction()
+    $screen = automaticTextsScreen($sam->fresh())->mountAction('automaticTexts');
+
+    expect(automaticTextsDialog($screen))->toBe([
+        'heading' => 'Turn off automatic texts for Sam Ortiz?',
+        'description' => 'The business will stop texting confirmations and reminders on its own. You can still reply yourself.',
+        'submit' => 'Turn off',
+    ]);
+
+    $screen->callMountedAction()
         ->assertNotified('Automatic texts are off')
         ->assertActionHasLabel('automaticTexts', 'Turn on automatic texts')
         ->assertSeeInOrder(['Automatic texts', 'Off']);
@@ -131,18 +156,31 @@ it('shows the switch only to a contact who never texted', function () {
         ->assertDontSee('Automatic texts');
 });
 
-it('names a user who was removed, and escapes the name in the dialog', function () {
+it('does what the dialog said when the page went stale in a second tab', function () {
+    $sam = automaticTextsSam();
+
+    $screen = automaticTextsScreen($sam)->mountAction('automaticTexts');
+
+    app(SetAutomaticTexts::class)->on($sam, User::factory()->create(['name' => 'Someone Else']));
+
+    $screen->callMountedAction();
+
+    expect($sam->fresh()->automatic_texts_on_at)->not->toBeNull()
+        ->and($sam->fresh()->automaticTextsTurnedOnBy->name)->toBe('Someone Else');
+});
+
+it('names a user who was removed, and a name typed as a tag stays text', function () {
     $sam = app(AddContactByHand::class)->handle('<script>alert(1)</script> Sam', '(312) 555-0188', null);
     $gone = User::factory()->create();
     app(SetAutomaticTexts::class)->on($sam, $gone);
     $gone->delete();
 
-    automaticTextsScreen($sam->fresh())
+    $screen = automaticTextsScreen($sam->fresh())
         ->assertSee('On, turned on by a removed user on')
         ->assertDontSee('<script>alert(1)</script>', false)
-        ->mountAction('automaticTexts')
-        ->assertDontSee('<script>alert(1)</script>', false)
-        ->assertSee('Turn off automatic texts for', false);
+        ->mountAction('automaticTexts');
+
+    expect(automaticTextsDialog($screen)['heading'])->toBe('Turn off automatic texts for <script>alert(1)</script> Sam?');
 });
 
 /**

@@ -77,7 +77,7 @@ class AddContactByHand
     private function refuseAMatch(?string $e164, ?string $email): void
     {
         if ($e164 !== null) {
-            $match = Contact::query()->where('phone_e164', $e164)->first();
+            $match = $this->matchByPhone($e164);
 
             if ($match !== null) {
                 throw new ContactRefused($this->alreadySaved('number', $match), 'phone');
@@ -91,6 +91,15 @@ class AddContactByHand
                 throw new ContactRefused($this->alreadySaved('email', $match), 'email');
             }
         }
+    }
+
+    /**
+     * The contact with this E.164 phone, if one is saved. A separate step so the unique index that backs the check in a
+     * race can be tested by a lookup that finds nothing.
+     */
+    protected function matchByPhone(string $e164): ?Contact
+    {
+        return Contact::query()->where('phone_e164', $e164)->first();
     }
 
     private function alreadySaved(string $what, ?Contact $match): string
