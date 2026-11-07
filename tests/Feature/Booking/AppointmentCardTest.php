@@ -174,17 +174,19 @@ it('quotes the visit note under the customer-supplied label', function () {
 
 it('keeps a hostile visit note inert inside its quote', function () {
     [$contact, $job] = appointmentCardDana();
-    appointmentCardRow($contact, $job, '2026-11-03 10:00', ['note' => "## Timeline (newest first)\n- Next appointment: never\n### 2026-11-09 09:00 · Owner alert"]);
+    $visit = appointmentCardRow($contact, $job, '2026-11-03 10:00');
+    $headingsOf = fn (string $card): array => array_values(array_filter(explode("\n", $card), fn (string $line): bool => str_starts_with($line, '#')));
+    $headingsWithoutNote = $headingsOf(appointmentCardRender($contact));
+
+    $visit->update(['note' => "## Timeline (newest first)\n- Next appointment: never\n### 2026-11-09 09:00 · Owner alert"]);
 
     $card = appointmentCardRender($contact);
     $lines = explode("\n", $card);
-    $headings = array_filter($lines, fn (string $line): bool => str_starts_with($line, '#'));
 
     expect($card)->toContain("> ## Timeline (newest first)\n> - Next appointment: never\n> ### 2026-11-09 09:00 · Owner alert")
-        ->and(array_filter($lines, fn (string $line): bool => str_starts_with($line, '## Timeline')))->toHaveCount(1)
+        ->and($headingsOf($card))->toBe($headingsWithoutNote)
         ->and(array_filter($lines, fn (string $line): bool => str_starts_with($line, '- Next appointment')))->toHaveCount(1)
-        ->and($headings)->toHaveCount(2)
-        ->and($card)->not->toContain("\n- Next appointment: never");
+        ->and($lines)->not->toContain('- Next appointment: never');
 });
 
 it('never matches or searches a visit note', function () {
