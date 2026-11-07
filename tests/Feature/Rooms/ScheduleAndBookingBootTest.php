@@ -1,17 +1,24 @@
 <?php
 
+use App\Filament\Pages\Schedule;
+use App\Filament\Resources\Contacts\ContactResource;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\BookingLink;
 use App\Models\BookingSend;
+use App\Models\Contact;
 use App\Models\ScheduleBlock;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Rooms\RoomRegistry;
+use App\Rooms\RoomSection;
 use App\Rooms\ScheduleAndBooking\BookingFileType;
 use App\Rooms\ScheduleAndBooking\ScheduleAndBookingServiceProvider;
 use App\Rooms\ScheduleAndBooking\ScheduleSection;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Tests\Rooms\RoomSectionAxe;
 use Tests\Rooms\SpecTables;
 
@@ -146,4 +153,133 @@ it('finds no accessibility violation in the section', function (bool $empty) {
 })->with([
     'empty' => [true],
     'with its example folder' => [false],
+]);
+
+/**
+ * What the schedule section drew, from its marker to the end of the dashboard's section wrapper.
+ */
+function scheduleSectionHtml(string $html): string
+{
+    expect(preg_match('/<div data-room-section="schedule_and_booking">(.*?)<\/div>\s*<\/div>/s', $html, $section))->toBe(1);
+
+    return $section[1];
+}
+
+/**
+ * The clock at Tuesday 2026-11-03 07:00 in the shop's zone and $count booked AC repair visits ahead, each for a contact
+ * of its own: the first today at 2:00 PM, the rest on the days after at 10:00 AM. Beside them sit what the section must
+ * leave out: a cancelled visit, a done one and a block.
+ */
+function scheduleSectionVisits(int $count): void
+{
+    test()->travelTo(CarbonImmutable::parse('2026-11-03 07:00', 'America/Chicago'));
+
+    for ($index = 1; $index <= $count; $index++) {
+        $start = $index === 1 ? '2026-11-03 14:00' : CarbonImmutable::parse('2026-11-03 10:00', 'America/Chicago')->addDays($index - 1)->format('Y-m-d H:i');
+
+        Appointment::factory()
+            ->for(Contact::factory()->create(['name' => 'Visit Person '.$index]))
+            ->at(CarbonImmutable::parse($start, 'America/Chicago'), 90)
+            ->create();
+    }
+
+    Appointment::factory()->for(Contact::factory()->create(['name' => 'Cancelled Person']))->cancelled()->at(CarbonImmutable::parse('2026-11-04 15:00', 'America/Chicago'), 60)->create();
+    Appointment::factory()->for(Contact::factory()->create(['name' => 'Done Person']))->done()->at(CarbonImmutable::parse('2026-11-02 15:00', 'America/Chicago'), 60)->create();
+    ScheduleBlock::factory()->at(CarbonImmutable::parse('2026-11-04 08:00', 'America/Chicago'), 120)->create(['note' => 'Truck in the shop']);
+}
+
+/**
+ * D-40, U-30: the section lists at most the next five booked visits, today's first, each a link to the contact with an
+ * absolute date and time in a time element, the service and the job; past five it says how many there are and links to the
+ * schedule; with none it says so. A cancelled visit, a done one and a block never appear.
+ */
+it('lists the next five visits on the dashboard', function (int $visits, int $shown) {
+    activateExampleFolder();
+    scheduleSectionVisits($visits);
+
+    $section = scheduleSectionHtml($this->get('/admin')->assertOk()->getContent());
+
+    expect(substr_count($section, 'data-schedule-row'))->toBe($shown)
+        ->and($section)->not->toContain('Cancelled Person')
+        ->and($section)->not->toContain('Done Person')
+        ->and($section)->not->toContain('Truck in the shop');
+
+    if ($visits === 0) {
+        expect($section)->toContain('Nothing booked.');
+
+        return;
+    }
+
+    expect($section)->not->toContain('Nothing booked.')
+        ->and($section)->toContain('Visit Person 1')
+        ->and($section)->toContain('<time datetime="2026-11-03T14:00:00-06:00">Tuesday, November 3 at 2:00 PM</time>')
+        ->and($section)->toContain('AC repair')
+        ->and($section)->toContain('Job 1');
+
+    if ($visits > 5) {
+        expect($section)->toContain('Showing the next 5 of '.$visits.' booked visits.')
+            ->and($section)->toContain('Open the schedule')
+            ->and($section)->toContain('href="'.Schedule::getUrl().'"')
+            ->and($section)->not->toContain('Visit Person 6');
+    } else {
+        expect($section)->not->toContain('Showing the next')
+            ->and($section)->not->toContain('Open the schedule');
+    }
+})->with([
+    'none' => [0, 0],
+    'one' => [1, 1],
+    'five' => [5, 5],
+    'seven' => [7, 5],
+]);
+
+it('links each row to its contact and names a contact with no name', function () {
+    activateExampleFolder();
+    scheduleSectionVisits(1);
+    $nameless = Contact::factory()->create(['name' => null]);
+    Appointment::factory()->for($nameless)->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 60)->create();
+
+    $section = scheduleSectionHtml($this->get('/admin')->assertOk()->getContent());
+
+    expect($section)->toContain('href="'.ContactResource::getUrl('view', ['record' => $nameless]).'"')
+        ->and($section)->toContain('(no name)');
+});
+
+it('lists the visits beside the missing booking file line', function () {
+    File::delete(icmPath('rooms/schedule_and_booking/booking.md'));
+    activateExampleFolder();
+    scheduleSectionVisits(2);
+
+    $section = scheduleSectionHtml($this->get('/admin')->assertOk()->getContent());
+
+    expect($section)->toContain(ScheduleSection::BOOKING_OFF_LINE)
+        ->and(substr_count($section, 'data-schedule-row'))->toBe(2);
+});
+
+it('shows one line when the section cannot load', function () {
+    activateExampleFolder();
+    scheduleSectionVisits(1);
+
+    Exceptions::fake();
+    Schema::rename('appointments', 'appointments_unavailable');
+
+    $response = $this->get('/admin')->assertOk();
+
+    expect(scheduleSectionHtml($response->getContent()))->toContain(RoomSection::FAILED_LINE)
+        ->and(scheduleSectionHtml($response->getContent()))->not->toContain('data-schedule-row');
+});
+
+/**
+ * A11Y-01: axe finds nothing in the section with no visit booked and with seven (five rows, the total line and the link).
+ */
+it('finds no accessibility violation in the section with visits', function (int $visits) {
+    activateExampleFolder();
+    scheduleSectionVisits($visits);
+
+    $page = visit('/admin');
+    $page->assertSee($visits === 0 ? 'Nothing booked.' : 'Open the schedule');
+
+    RoomSectionAxe::assertClean(RoomSectionAxe::report($page, 'schedule_and_booking'));
+})->with([
+    'none' => [0],
+    'seven' => [7],
 ]);
