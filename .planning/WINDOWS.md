@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 41
+open_count: 43
 waived_count: 1
 fixed_count: 29
-total_count: 71
-last_updated: 2026-11-07T16:29:09.095Z
+total_count: 73
+last_updated: 2026-11-07T21:01:46.663Z
 ---
 
 # Broken Windows Ledger
@@ -86,6 +86,8 @@ last_updated: 2026-11-07T16:29:09.095Z
 | 69 | 08 | todo | tests/Feature/Booking/BookingLinkTokenTest.php |  | 08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14 | open |  | 2026-11-07T14:25:58.568Z |  |
 | 70 | 08 | unrun-verify | tests/Feature/Filament/ContactByHandTest.php |  | 08-15: after Ian pushes the phase branch, the CI pgsql leg is green for ContactByHandTest's matching (phone then email, letter case) and the unique-phone race | open |  | 2026-11-07T16:29:09.000Z |  |
 | 71 | 08 | unrun-verify | tests/Feature/Filament/ContactScreenKeyboardTest.php |  | 08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43) | open |  | 2026-11-07T16:29:09.095Z |  |
+| 72 | 08 | unrun-verify | .planning/phases/08-schedule-and-booking/08-16-PLAN.md |  | 08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only) | open |  | 2026-11-07T21:01:46.558Z |  |
+| 73 | 08 | unrun-verify | app/Records/CustomerCard.php |  | 08-16 Phase 8 UAT, Dev chat: a booked customer asks "what time are you coming?" and the reply is checked; it states the booked time or is held by the promise label (D-39) | open |  | 2026-11-07T21:01:46.663Z |  |
 
 ````json
 [
@@ -1009,6 +1011,32 @@ last_updated: 2026-11-07T16:29:09.095Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-07T16:29:09.095Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 72,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": ".planning/phases/08-schedule-and-booking/08-16-PLAN.md",
+    "line": null,
+    "description": "08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T21:01:46.558Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 73,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Records/CustomerCard.php",
+    "line": null,
+    "description": "08-16 Phase 8 UAT, Dev chat: a booked customer asks \"what time are you coming?\" and the reply is checked; it states the booked time or is held by the promise label (D-39)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T21:01:46.663Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

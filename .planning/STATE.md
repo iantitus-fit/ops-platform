@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
-status: executing
-stopped_at: Completed 08-15-PLAN.md
-last_updated: "2026-11-07T20:49:18.217Z"
+status: verifying
+stopped_at: Completed 08-16-PLAN.md
+last_updated: "2026-11-07T21:04:16.828Z"
 last_activity: 2026-11-07
 last_activity_desc: Phase 08 execution started
-state_head: 351a97e420f380bafe2a21d537255fbec6cf4d72
+state_head: a3eb12be3e53983115904b2e5c304ac3c12e11c4
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 49
+  completed_plans: 50
   percent: 44
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 
 Phase: 08 (Schedule and Booking) — EXECUTING
 Plan: 16 of 16
-Status: Executing Phase 08
+Status: Phase complete — ready for verification
 Last activity: 2026-11-07 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
@@ -189,6 +189,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P13 | 25 min | 3 tasks | 15 files |
 | Phase 08 P14 | 23 min | 3 tasks | 17 files |
 | Phase 08 P15 | 13 min | 3 tasks | 16 files |
+| Phase 08 P16 | 40 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -284,6 +285,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-14: the Show filter is a native select above the schedule table that applies at once
 - [Phase 08]: 08-15: a hand-added email is stored trimmed and lower-cased as RecordInbound stores it, matched phone then email, with the unique phone index backing a race; RecordInbound untouched
 - [Phase 08]: 08-15: the automaticTexts header action is one stable action with a Hidden direction field filled when the dialog opens, so a stale tab does what the dialog said; the reply-box line informs and never disables the box
+- [Phase 08]: 08-16: the card's Next appointment line is the one place it reads the clock (earliest booked visit after now); the job label uses the card's own numbering, so no project eager load
+- [Phase 08]: 08-16: a visit's note is printed only as a quote under the customer-supplied label, never in a sub-line (D-18)
 
 ### Pending Todos
 
@@ -347,8 +350,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T16:35:02.587Z
-Stopped at: Completed 08-15-PLAN.md
+Last session: 2026-11-07T21:04:16.762Z
+Stopped at: Completed 08-16-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
