@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Contacts;
 
+use App\Filament\Resources\Contacts\Pages\CreateContact;
 use App\Filament\Resources\Contacts\Pages\ListContacts;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
 use App\Filament\Resources\Contacts\RelationManagers\AppointmentsRelationManager;
@@ -26,11 +27,12 @@ class ContactResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     /**
-     * Contacts are created by customers texting or filling in the form, never by hand.
+     * The owner may add a customer who called rather than texted (D-19, Ian 2026-11-02). This reverses Phase 1's "never
+     * by hand"; the Create page hands the form to AddContactByHand, which matches like an inbound.
      */
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -67,6 +69,7 @@ class ContactResource extends Resource
     {
         return [
             'index' => ListContacts::route('/'),
+            'create' => CreateContact::route('/create'),
             'view' => ViewContact::route('/{record}'),
         ];
     }

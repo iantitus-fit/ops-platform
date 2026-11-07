@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 /**
@@ -27,7 +28,7 @@ beforeEach(function () {
  *
  * @param  array<string, mixed>  $data
  */
-function contactByHandAdd(array $data): Livewire\Features\SupportTesting\Testable
+function contactByHandAdd(array $data): Testable
 {
     return Livewire::test(CreateContact::class)
         ->fillForm(['name' => '', 'phone' => '', 'email' => '', ...$data])
