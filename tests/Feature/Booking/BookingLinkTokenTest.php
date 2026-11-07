@@ -124,7 +124,7 @@ function linkTokenBlock(string $from, string $to): ScheduleBlock
 it('resolves each state a link can be in', function (string $case, string $stateName) {
     $state = BookingPageState::{$stateName};
     $token = str_repeat('a', 64);
-    $now = CarbonImmutable::now();
+    $now = null;
 
     switch ($case) {
         case 'unknown':
@@ -185,6 +185,9 @@ it('resolves each state a link can be in', function (string $case, string $state
 
             break;
     }
+
+    // Read the clock only after linkTokenSetUp() has travelled it, or the case runs on today's real date.
+    $now ??= CarbonImmutable::now();
 
     $lookup = app(ResolveBookingLink::class)->handle($token, $now);
 
