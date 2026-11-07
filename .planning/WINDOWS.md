@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 36
+open_count: 39
 waived_count: 1
 fixed_count: 29
-total_count: 66
-last_updated: 2026-11-07T00:21:14.726Z
+total_count: 69
+last_updated: 2026-11-07T14:25:58.568Z
 ---
 
 # Broken Windows Ledger
@@ -81,6 +81,9 @@ last_updated: 2026-11-07T00:21:14.726Z
 | 64 | 08 | unrun-verify | tests/Feature/Booking/AppointmentActionsTest.php |  | 08-13: after Ian pushes the phase branch, the CI pgsql leg is green for AppointmentActionsTest and ProjectActionsTest's D-25 cases | open |  | 2026-11-07T00:21:02.661Z |  |
 | 65 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-13: Phase 11 owner-screen pass (A11Y-03): the VoiceOver listen of the Appointments tab and its dialogs (Cancel visit, Mark done, Edit note, the Close dialog with Back only) (D-43) | open |  | 2026-11-07T00:21:02.753Z |  |
 | 66 | 08 | lint-warning | app/Filament/Resources/Contacts/ContactResource.php |  | 08-13: axe color-contrast on the contact screen's details list placeholders (.fi-in-placeholder), found while scoping the Appointments tab's axe run; not the tab's own markup, left to the Phase 11 owner-screen pass | open |  | 2026-11-07T00:21:14.726Z |  |
+| 67 | 08 | unrun-verify | tests/Feature/Filament/SchedulePageTest.php |  | Plan 08-14 human-check not run: after Ian pushes the phase branch, the CI pgsql leg is green for SchedulePageTest (the business-zone grouping and filters) and BlockTime's schedule:book lock; local runs are SQLite only | open |  | 2026-11-07T14:22:13.083Z |  |
+| 68 | 08 | unrun-verify | tests/Feature/Filament/ScheduleKeyboardTest.php |  | Plan 08-14 human-check not run: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the Schedule page and the room's dashboard section (D-43) | open |  | 2026-11-07T14:22:13.187Z |  |
+| 69 | 08 | todo | tests/Feature/Booking/BookingLinkTokenTest.php |  | 08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14 | open |  | 2026-11-07T14:25:58.568Z |  |
 
 ````json
 [
@@ -939,6 +942,45 @@ last_updated: 2026-11-07T00:21:14.726Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-07T00:21:14.726Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 67,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/SchedulePageTest.php",
+    "line": null,
+    "description": "Plan 08-14 human-check not run: after Ian pushes the phase branch, the CI pgsql leg is green for SchedulePageTest (the business-zone grouping and filters) and BlockTime's schedule:book lock; local runs are SQLite only",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:22:13.083Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 68,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ScheduleKeyboardTest.php",
+    "line": null,
+    "description": "Plan 08-14 human-check not run: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the Schedule page and the room's dashboard section (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:22:13.187Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 69,
+    "kind": "todo",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkTokenTest.php",
+    "line": null,
+    "description": "08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:25:58.568Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

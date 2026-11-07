@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-13-PLAN.md
-last_updated: "2026-11-07T00:26:53.677Z"
-last_activity: 2026-11-06
+stopped_at: Completed 08-14-PLAN.md
+last_updated: "2026-11-07T14:27:22.496Z"
+last_activity: 2026-11-07
 last_activity_desc: Phase 08 execution started
-state_head: 0d49c7e07cc8eca1baf17003178cd674fcee8590
+state_head: bb0fc671ef5cce4047b494201d9168cf92b65d26
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 47
+  completed_plans: 48
   percent: 44
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 Phase: 08 (Schedule and Booking) — EXECUTING
 Plan: 2 of 16
 Status: Ready to execute
-Last activity: 2026-11-06 — Phase 08 execution started
+Last activity: 2026-11-07 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 
@@ -187,6 +187,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P11 | 11 min | 3 tasks | 6 files |
 | Phase 08 P12 | 15 min | 3 tasks | 10 files |
 | Phase 08 P13 | 25 min | 3 tasks | 15 files |
+| Phase 08 P14 | 23 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -277,6 +278,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-12: a booking text's send window is judged to the minute with both ends inside, every moment the sender writes or compares is UTC, an unread customer text gives the claim back and never times out into a send, and the copy that ends a row writes its note
 - [Phase 08]: 08-13: CloseProject::blockedBy() owns the D-25 sentence; handle() throws it inside its lock and the Close dialog reads it when it opens, so the screen and the guard cannot disagree
 - [Phase 08]: 08-13: after Cancel visit or Mark done, keyboard focus goes to Book by hand through a dispatched browser event the button listens for; the tab's axe run is scoped to the tab and open dialog and the contact details list contrast is deferred to Phase 11
+- [Phase 08]: 08-14: the Schedule page lists both row kinds through the appointment query without its kind scope; each row action is visible only for its own kind and re-reads through its own kind's scoped model
+- [Phase 08]: 08-14: BlockTime checks overlap under the schedule:book lock and refuses a block over a booked visit; blocks write no timeline entry
+- [Phase 08]: 08-14: the Show filter is a native select above the schedule table that applies at once
 
 ### Pending Todos
 
@@ -340,8 +344,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T00:26:53.607Z
-Stopped at: Completed 08-13-PLAN.md
+Last session: 2026-11-07T14:27:22.426Z
+Stopped at: Completed 08-14-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
