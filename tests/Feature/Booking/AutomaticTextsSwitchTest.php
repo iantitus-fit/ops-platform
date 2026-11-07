@@ -113,6 +113,64 @@ it('refuses the switch for a customer who has texted', function () {
     expect($dana->fresh()->automatic_texts_on_at)->toBeNull();
 });
 
+/**
+ * The automatic-texts entries on a contact's timeline, oldest first.
+ *
+ * @return list<array{summary: string, occurred_at: string}>
+ */
+function automaticTextsEntries(Contact $contact): array
+{
+    return Activity::query()
+        ->where('contact_id', $contact->id)
+        ->where('type', ActivityType::RoomEntry->value)
+        ->where('room', 'schedule_and_booking')
+        ->where('entry', 'automatic_texts_changed')
+        ->orderBy('id')
+        ->get()
+        ->map(fn (Activity $entry): array => [
+            'summary' => $entry->summary,
+            'occurred_at' => $entry->occurred_at->toDateTimeString(),
+        ])
+        ->all();
+}
+
+it('keeps every change of the switch on the timeline, so turning it off keeps the agreement', function () {
+    activateExampleFolder();
+    $jo = User::factory()->create(['name' => 'Jo Partner']);
+    $this->travelTo('2026-11-03 10:00:00');
+    $sam = automaticTextsSam();
+
+    app(SetAutomaticTexts::class)->on($sam, $this->owner);
+
+    $this->travelTo('2026-11-03 11:00:00');
+    app(SetAutomaticTexts::class)->on($sam, $jo);
+
+    $this->travelTo('2026-11-04 09:30:00');
+    app(SetAutomaticTexts::class)->off($sam, $jo);
+
+    $this->travelTo('2026-11-05 16:15:00');
+    app(SetAutomaticTexts::class)->on($sam, $this->owner);
+
+    expect(automaticTextsEntries($sam))->toBe([
+        ['summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-03 10:00:00'],
+        ['summary' => 'Jo Partner turned automatic texts off.', 'occurred_at' => '2026-11-04 09:30:00'],
+        ['summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-05 16:15:00'],
+    ]);
+
+    $sam->refresh();
+    expect($sam->automatic_texts_on_at->toDateTimeString())->toBe('2026-11-05 16:15:00')
+        ->and($sam->automatic_texts_on_by_user_id)->toBe($this->owner->id);
+});
+
+it('writes no entry when the switch is refused', function () {
+    activateExampleFolder();
+    $dana = automaticTextsDana();
+
+    expect(fn () => app(SetAutomaticTexts::class)->on($dana, $this->owner))->toThrow(DomainException::class)
+        ->and(fn () => app(SetAutomaticTexts::class)->off($dana, $this->owner))->toThrow(DomainException::class)
+        ->and(automaticTextsEntries($dana))->toBe([]);
+});
+
 it('shows the switch only to a contact who never texted', function () {
     $this->travelTo(automaticTextsChicago('2026-11-03 11:00'));
     $sam = automaticTextsSam();
