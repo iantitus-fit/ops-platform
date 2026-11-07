@@ -3,13 +3,16 @@
 namespace App\Filament\Pages;
 
 use App\Actions\BlockTime;
+use App\Actions\RemoveBlock;
 use App\Enums\AppointmentKind;
 use App\Enums\AppointmentState;
 use App\Filament\Resources\Contacts\ContactResource;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
+use App\Models\ScheduleBlock;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
+use App\Rooms\ScheduleAndBooking\VisitActions;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
@@ -46,6 +49,12 @@ class Schedule extends Page implements HasActions, HasTable
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     protected string $view = 'filament.pages.schedule';
+
+    /**
+     * The browser event that moves keyboard focus to the Block time button (D-43). Remove block, Cancel visit and Mark
+     * done each make their own button leave the row, so focus would fall to the page body.
+     */
+    private const string FOCUS_EVENT = 'schedule-focus-block-time';
 
     /**
      * The page is for a business that has the room: without it the page is not in the navigation and its address is
@@ -128,6 +137,12 @@ class Schedule extends Page implements HasActions, HasTable
                     ->default('upcoming')
                     ->query(fn (Builder $query, array $data): Builder => $this->showRows($query, (string) ($data['value'] ?? 'upcoming'), $zone)),
             ])
+            ->recordActions([
+                VisitActions::markDone(self::FOCUS_EVENT),
+                VisitActions::cancelVisit(self::FOCUS_EVENT),
+                VisitActions::editNote(),
+                $this->removeBlockAction($zone),
+            ])
             ->paginationPageOptions([25])
             ->defaultPaginationPageOption(25)
             ->emptyStateHeading(fn (): string => $this->showing() === 'upcoming' ? 'Nothing scheduled' : 'No visits in this view')
@@ -193,6 +208,48 @@ class Schedule extends Page implements HasActions, HasTable
                     ->title(e('Blocked '.BookingSettings::dayText($block->starts_at, $zone).', '.BookingSettings::spanText($block->starts_at, $block->ends_at, $zone).'.'))
                     ->success()
                     ->send();
+            });
+    }
+
+    /**
+     * Remove block (D-16, U-34): shown on a block that still holds time and on no appointment's row, asks first, and says
+     * the time can be booked again. The button's name carries the span (U-33) and is escaped. The closure reads its row
+     * again through the scoped ScheduleBlock model and does nothing when it finds none: an appointment's id, or a row that
+     * is gone (A3, T-08-59).
+     */
+    private function removeBlockAction(string $zone): Action
+    {
+        $span = fn (Appointment $record): string => BookingSettings::dayText($record->starts_at, $zone).', '.BookingSettings::spanText($record->starts_at, $record->ends_at, $zone);
+
+        return Action::make('removeBlock')
+            ->label('Remove block')
+            ->color('gray')
+            ->visible(fn (Appointment $record): bool => $this->isBlock($record) && $record->isBooked())
+            ->extraAttributes(fn (Action $action, Appointment $record): array => ['aria-label' => e($action->getLabel().': '.$span($record))])
+            ->requiresConfirmation()
+            ->modalHeading(fn (Appointment $record): string => 'Remove the block on '.$span($record).'?')
+            ->modalDescription('Customers can book that time again.')
+            ->modalSubmitActionLabel('Remove block')
+            ->action(function (Appointment $record): void {
+                $block = ScheduleBlock::find($record->id);
+
+                if ($block === null) {
+                    Notification::make()->title(VisitActions::ROW_GONE)->danger()->send();
+
+                    return;
+                }
+
+                try {
+                    app(RemoveBlock::class)->handle($block, auth()->user());
+                } catch (BookingRefused $refusal) {
+                    Notification::make()->title(e($refusal->getMessage()))->danger()->send();
+
+                    return;
+                }
+
+                Notification::make()->title('Block removed')->success()->send();
+
+                $this->dispatch(self::FOCUS_EVENT);
             });
     }
 

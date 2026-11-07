@@ -297,7 +297,9 @@ it('marks a started visit done and edits a visit note from the schedule', functi
 
     schedulePage()
         ->mountTableAction('editNote', $other->id)
-        ->assertTableActionDataSet(['note' => null])
+        ->assertTableActionDataSet(['note' => null]);
+
+    schedulePage()
         ->callTableAction('editNote', $other->id, data: ['note' => 'Gate code 4412'])
         ->assertNotified('Visit note saved');
 
