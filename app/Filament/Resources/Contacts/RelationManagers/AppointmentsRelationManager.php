@@ -39,6 +39,11 @@ class AppointmentsRelationManager extends RelationManager
     protected static string $relationship = 'appointments';
 
     /**
+     * The browser event that moves keyboard focus to the Book by hand button (D-43).
+     */
+    private const string FOCUS_EVENT = 'appointments-tab-focus-book-by-hand';
+
+    /**
      * Draw the tab with the page. A lazy tab has nothing focusable until it scrolls into view, so a keyboard user
      * tabbed past it (WCAG 2.1.1, the ProjectsRelationManager precedent).
      */
@@ -109,6 +114,12 @@ class AppointmentsRelationManager extends RelationManager
     {
         return Action::make('bookByHand')
             ->label('Book by hand')
+            /*
+             * The deliberate focus target after Cancel visit or Mark done (D-43, WCAG 2.4.3). Those buttons leave the row
+             * once they succeed, so Filament has no trigger to give focus back to and it falls to the page body. The
+             * relation manager dispatches this browser event after either one and this button takes focus.
+             */
+            ->extraAttributes(['x-on:'.self::FOCUS_EVENT.'.window' => '$nextTick(() => $el.focus())'])
             ->modalHeading(fn (): string => 'Book a visit for '.$this->contactName())
             ->modalSubmitActionLabel('Book visit')
             ->visible(fn (): bool => app(ActiveConfig::class)->hasRoom('schedule_and_booking'))
@@ -205,6 +216,8 @@ class AppointmentsRelationManager extends RelationManager
                 }
 
                 Notification::make()->title('Marked done')->success()->send();
+
+                $this->dispatch(self::FOCUS_EVENT);
             });
     }
 
@@ -288,6 +301,8 @@ class AppointmentsRelationManager extends RelationManager
                 }
 
                 Notification::make()->title('Cancelled')->success()->send();
+
+                $this->dispatch(self::FOCUS_EVENT);
             });
     }
 
