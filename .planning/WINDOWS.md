@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 33
+open_count: 36
 waived_count: 1
 fixed_count: 29
-total_count: 63
-last_updated: 2026-11-06T23:17:17.534Z
+total_count: 66
+last_updated: 2026-11-07T00:21:14.726Z
 ---
 
 # Broken Windows Ledger
@@ -78,6 +78,9 @@ last_updated: 2026-11-06T23:17:17.534Z
 | 61 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-10: Phase 8 UAT on the booking page: a keyboard-only and VoiceOver walk, 200 percent zoom, and tap targets on a real phone (criterion 6, D-43); Phase 11 re-checks at 375 and 390 | open |  | 2026-11-06T16:10:17.364Z |  |
 | 62 | 08 | unrun-verify | tests/Feature/Booking/BookingSendRowsTest.php |  | 08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT) | open |  | 2026-11-06T21:09:25.495Z |  |
 | 63 | 08 | unrun-verify | tests/Feature/Booking/BookingSendTest.php |  | 08-12: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookingSendTest's claim race, the lease boundary and the conversation savepoint | open |  | 2026-11-06T23:17:17.534Z |  |
+| 64 | 08 | unrun-verify | tests/Feature/Booking/AppointmentActionsTest.php |  | 08-13: after Ian pushes the phase branch, the CI pgsql leg is green for AppointmentActionsTest and ProjectActionsTest's D-25 cases | open |  | 2026-11-07T00:21:02.661Z |  |
+| 65 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-13: Phase 11 owner-screen pass (A11Y-03): the VoiceOver listen of the Appointments tab and its dialogs (Cancel visit, Mark done, Edit note, the Close dialog with Back only) (D-43) | open |  | 2026-11-07T00:21:02.753Z |  |
+| 66 | 08 | lint-warning | app/Filament/Resources/Contacts/ContactResource.php |  | 08-13: axe color-contrast on the contact screen's details list placeholders (.fi-in-placeholder), found while scoping the Appointments tab's axe run; not the tab's own markup, left to the Phase 11 owner-screen pass | open |  | 2026-11-07T00:21:14.726Z |  |
 
 ````json
 [
@@ -897,6 +900,45 @@ last_updated: 2026-11-06T23:17:17.534Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-06T23:17:17.534Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 64,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AppointmentActionsTest.php",
+    "line": null,
+    "description": "08-13: after Ian pushes the phase branch, the CI pgsql leg is green for AppointmentActionsTest and ProjectActionsTest's D-25 cases",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:02.661Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 65,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php",
+    "line": null,
+    "description": "08-13: Phase 11 owner-screen pass (A11Y-03): the VoiceOver listen of the Appointments tab and its dialogs (Cancel visit, Mark done, Edit note, the Close dialog with Back only) (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:02.753Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 66,
+    "kind": "lint-warning",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/ContactResource.php",
+    "line": null,
+    "description": "08-13: axe color-contrast on the contact screen's details list placeholders (.fi-in-placeholder), found while scoping the Appointments tab's axe run; not the tab's own markup, left to the Phase 11 owner-screen pass",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:14.726Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
