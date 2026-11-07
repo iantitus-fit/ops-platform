@@ -5,6 +5,7 @@ use App\Actions\BookAppointment;
 use App\Actions\SetAutomaticTexts;
 use App\Enums\ActivityType;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
+use App\Icm\ActiveConfig;
 use App\Livewire\ConversationThread;
 use App\Models\Activity;
 use App\Models\Contact;
@@ -12,7 +13,9 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\Records\CustomerCard;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\File;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -114,28 +117,39 @@ it('refuses the switch for a customer who has texted', function () {
 });
 
 /**
- * The automatic-texts entries on a contact's timeline, oldest first.
+ * The automatic-texts entries on a contact's timeline, oldest first. They are platform entries, like an opt-out, so they
+ * are kept whatever rooms are live (D-46).
  *
- * @return list<array{summary: string, occurred_at: string}>
+ * @return list<array{type: ActivityType, summary: string, occurred_at: string}>
  */
 function automaticTextsEntries(Contact $contact): array
 {
     return Activity::query()
         ->where('contact_id', $contact->id)
-        ->where('type', ActivityType::RoomEntry->value)
-        ->where('room', 'schedule_and_booking')
-        ->where('entry', 'automatic_texts_changed')
+        ->whereIn('type', [ActivityType::AutomaticTextsTurnedOn->value, ActivityType::AutomaticTextsTurnedOff->value])
         ->orderBy('id')
         ->get()
         ->map(fn (Activity $entry): array => [
+            'type' => $entry->type,
             'summary' => $entry->summary,
             'occurred_at' => $entry->occurred_at->toDateTimeString(),
         ])
         ->all();
 }
 
-it('keeps every change of the switch on the timeline, so turning it off keeps the agreement', function () {
+/**
+ * The live example folder without the schedule and booking room, as an owner who removed it has it.
+ */
+function automaticTextsWithoutTheScheduleRoom(): void
+{
+    File::deleteDirectory(icmPath('rooms/schedule_and_booking'));
     activateExampleFolder();
+
+    expect(app(ActiveConfig::class)->hasRoom('schedule_and_booking'))->toBeFalse();
+}
+
+it('keeps every change of the switch on the timeline with the schedule room off, so turning it off keeps the agreement', function () {
+    automaticTextsWithoutTheScheduleRoom();
     $jo = User::factory()->create(['name' => 'Jo Partner']);
     $this->travelTo('2026-11-03 10:00:00');
     $sam = automaticTextsSam();
@@ -152,10 +166,11 @@ it('keeps every change of the switch on the timeline, so turning it off keeps th
     app(SetAutomaticTexts::class)->on($sam, $this->owner);
 
     expect(automaticTextsEntries($sam))->toBe([
-        ['summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-03 10:00:00'],
-        ['summary' => 'Jo Partner turned automatic texts off.', 'occurred_at' => '2026-11-04 09:30:00'],
-        ['summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-05 16:15:00'],
-    ]);
+        ['type' => ActivityType::AutomaticTextsTurnedOn, 'summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-03 10:00:00'],
+        ['type' => ActivityType::AutomaticTextsTurnedOff, 'summary' => 'Jo Partner turned automatic texts off.', 'occurred_at' => '2026-11-04 09:30:00'],
+        ['type' => ActivityType::AutomaticTextsTurnedOn, 'summary' => 'Ian Owner turned automatic texts on.', 'occurred_at' => '2026-11-05 16:15:00'],
+    ])
+        ->and(Activity::query()->where('type', ActivityType::RoomEntry->value)->count())->toBe(0);
 
     $sam->refresh();
     expect($sam->automatic_texts_on_at->toDateTimeString())->toBe('2026-11-05 16:15:00')
@@ -163,12 +178,31 @@ it('keeps every change of the switch on the timeline, so turning it off keeps th
 });
 
 it('writes no entry when the switch is refused', function () {
-    activateExampleFolder();
+    automaticTextsWithoutTheScheduleRoom();
     $dana = automaticTextsDana();
 
     expect(fn () => app(SetAutomaticTexts::class)->on($dana, $this->owner))->toThrow(DomainException::class)
         ->and(fn () => app(SetAutomaticTexts::class)->off($dana, $this->owner))->toThrow(DomainException::class)
         ->and(automaticTextsEntries($dana))->toBe([]);
+});
+
+it('shows the switch entries on the customer card and the contact timeline as it shows an opt-out', function () {
+    automaticTextsWithoutTheScheduleRoom();
+    $this->travelTo(automaticTextsChicago('2026-11-03 10:00'));
+    $sam = automaticTextsSam();
+    app(SetAutomaticTexts::class)->on($sam, $this->owner);
+    $this->travelTo(automaticTextsChicago('2026-11-04 09:30'));
+    app(SetAutomaticTexts::class)->off($sam, $this->owner);
+
+    $card = app(CustomerCard::class)->render($sam->fresh());
+
+    expect($card)->toContain("· Automatic texts turned on\n\nSystem note:\n\n> Ian Owner turned automatic texts on.")
+        ->and($card)->toContain("· Automatic texts turned off\n\nSystem note:\n\n> Ian Owner turned automatic texts off.");
+
+    automaticTextsScreen($sam->fresh())
+        ->assertSee('automatic_texts_turned_on')
+        ->assertSee('automatic_texts_turned_off')
+        ->assertSee('Ian Owner turned automatic texts off.');
 });
 
 it('shows the switch only to a contact who never texted', function () {
