@@ -10,11 +10,13 @@ use App\Enums\ProjectWord;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Activity;
+use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
 use App\Models\Project;
 use App\Rooms\RoomRegistry;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
 use App\Rooms\TimelineEntryType;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -23,8 +25,9 @@ use Illuminate\Support\Str;
 /**
  * One customer's card: a readable copy of everything that happened, rendered from the database.
  *
- * Nothing here reads a file or the clock, so rendering the same database state twice gives the
- * same bytes. Whatever a customer wrote is quoted under a label, never written as card content.
+ * Nothing here reads a file, and the clock is read in one place only: the Next appointment line, which names the
+ * earliest booked visit still ahead. Rendering the same database state at the same moment twice gives the same bytes.
+ * Whatever a customer wrote is quoted under a label, never written as card content.
  */
 class CustomerCard
 {
@@ -67,6 +70,7 @@ class CustomerCard
         $word = $this->activeConfig->projectWord();
         $projects = $contact->projects()->orderBy('id')->get();
         $projectNumbers = $this->projectNumbers($projects);
+        $appointments = $contact->appointments()->orderBy('starts_at')->orderBy('id')->get();
 
         $lines = [
             '# '.$this->heading($contact),
@@ -79,9 +83,10 @@ class CustomerCard
             '- Lead source: '.$this->leadSource($contact),
             '- First contact: '.$this->time($contact->created_at, $timezone),
             '- Last activity: '.$this->time($contact->last_activity_at, $timezone),
+            ...$this->nextAppointmentLines($appointments, $word, $timezone, $projectNumbers),
             '',
             ...$this->intakeAnswerLines($contact),
-            ...$this->projectLines($projects, $word, $timezone),
+            ...$this->projectLines($projects, $word, $timezone, $appointments),
             '## Timeline (newest first)',
             '',
         ];
@@ -183,16 +188,21 @@ class CustomerCard
      * project's name, so it is quoted under the customer-supplied label like customer text and is never put in the
      * bullet, a heading or a timeline summary; a heading or a fake owner note inside it stays a quote (D-13).
      *
+     * Each project's visits are listed under its bullet in start order (D-38), one sub-line each with its state, so a
+     * cancelled or done visit stays on the card as the job's history (D-25).
+     *
      * @param  Collection<int, Project>  $projects  the contact's projects, oldest first
+     * @param  Collection<int, Appointment>  $appointments  the contact's appointments, in start then id order
      * @return list<string>
      */
-    private function projectLines(Collection $projects, ProjectWord $word, string $timezone): array
+    private function projectLines(Collection $projects, ProjectWord $word, string $timezone, Collection $appointments): array
     {
         if ($projects->isEmpty()) {
             return [];
         }
 
         $lines = ['## '.$word->plural(), ''];
+        $visitsByProject = $appointments->groupBy('project_id');
 
         foreach ($projects->values() as $position => $project) {
             $number = $position + 1;
@@ -205,8 +215,10 @@ class CustomerCard
 
             $bullet = "- {$word->singular()} {$number}: {$state}, opened {$this->time($project->opened_at, $timezone)} {$by}";
 
+            $visits = $this->visitLines($visitsByProject->get($project->id, new Collection), $timezone);
+
             if (trim((string) $project->name) === '') {
-                $lines[] = $bullet;
+                array_push($lines, $bullet, ...$visits);
 
                 continue;
             }
@@ -219,6 +231,7 @@ class CustomerCard
                 '',
                 $this->markdown->quote($project->name),
                 '',
+                ...$visits,
             );
         }
 
@@ -227,6 +240,55 @@ class CustomerCard
         }
 
         return $lines;
+    }
+
+    /**
+     * The facts line for the earliest booked visit that starts after now, or no line when none is booked ahead (D-38).
+     * It names the business zone as the booking page does (U-11) and the job by its number. A cancelled or done visit is
+     * never the next one, and a visit that has started is not either.
+     *
+     * @param  Collection<int, Appointment>  $appointments  the contact's appointments, in start then id order
+     * @param  array<int, int>  $projectNumbers
+     * @return list<string>
+     */
+    private function nextAppointmentLines(Collection $appointments, ProjectWord $word, string $timezone, array $projectNumbers): array
+    {
+        $next = $appointments->first(fn (Appointment $appointment): bool => $appointment->isBooked() && $appointment->starts_at->isFuture());
+
+        if ($next === null) {
+            return [];
+        }
+
+        $number = $projectNumbers[(int) $next->project_id] ?? null;
+        $job = $number === null ? $word->singular() : "{$word->singular()} {$number}";
+
+        return [
+            '- Next appointment: '.$this->visitTime($next, $timezone).' ('.BookingSettings::zoneName($timezone).'), '
+                .$this->markdown->inline($next->service_name).', '.$job,
+        ];
+    }
+
+    /**
+     * One job's visits, one sub-line each in the order given: the state, the day, the time and the service. The service
+     * name was copied from the owner's folder at booking, so it is escaped like any other file text.
+     *
+     * @param  Collection<int, Appointment>  $visits  one job's appointments, in start then id order
+     * @return list<string>
+     */
+    private function visitLines(Collection $visits, string $timezone): array
+    {
+        return $visits
+            ->map(fn (Appointment $visit): string => '  - '.ucfirst($visit->state->value).': '.$this->visitTime($visit, $timezone).', '.$this->markdown->inline($visit->service_name))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * A visit's start as the owner reads it in the business zone: "Tuesday, November 3, 2026 at 10:00 AM".
+     */
+    private function visitTime(Appointment $visit, string $timezone): string
+    {
+        return $visit->starts_at->clone()->setTimezone($timezone)->format('l, F j, Y \a\t g:i A');
     }
 
     /**

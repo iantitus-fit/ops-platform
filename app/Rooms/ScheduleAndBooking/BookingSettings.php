@@ -5,6 +5,7 @@ namespace App\Rooms\ScheduleAndBooking;
 use App\Icm\ActiveConfig;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use IntlDateFormatter;
 
 /**
  * The live booking file, read back typed (D-03). Every booking setting is here except booking_lead_minutes, which stays in
@@ -111,6 +112,18 @@ final readonly class BookingSettings
         }
 
         return self::timeText($from, $zone).' to '.self::dayText($to, $zone).', '.self::timeText($to, $zone);
+    }
+
+    /**
+     * The business zone as a customer says it: ICU's generic long name ("Central Time"), the IANA id when ICU gives none
+     * (U-11). It does not change with daylight time and is never read from the visitor's phone (D-11).
+     */
+    public static function zoneName(string $zone): string
+    {
+        $name = (new IntlDateFormatter('en_US', IntlDateFormatter::NONE, IntlDateFormatter::NONE, $zone, IntlDateFormatter::GREGORIAN, 'vvvv'))
+            ->format(CarbonImmutable::now());
+
+        return is_string($name) && $name !== '' ? $name : $zone;
     }
 
     private function renderVisitLine(string $line, string $service, CarbonInterface $startsAt, string $zone): string

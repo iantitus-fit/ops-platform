@@ -16,7 +16,6 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
-use IntlDateFormatter;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -162,7 +161,7 @@ class BookingPage extends Component
             'rateLimited' => $this->rateLimited,
             'phone' => $phone,
             'phoneText' => $phoneText,
-            'zoneLine' => 'All times are in '.$this->zoneName($zone).'.',
+            'zoneLine' => 'All times are in '.BookingSettings::zoneName($zone).'.',
             'days' => $state === BookingPageState::Picker ? $this->daysFrom($lookup, $zone) : [],
             'chosenTime' => $checking ? $this->visitFrom(CarbonImmutable::parse((string) $this->chosen), $zone) : null,
             'visit' => $lookup->appointment !== null ? $this->visitFrom($lookup->appointment->starts_at, $zone) : null,
@@ -262,18 +261,6 @@ class BookingPage extends Component
     private function timeLabel(CarbonInterface $at, string $zone): string
     {
         return str_replace(' ', "\u{00A0}", BookingSettings::timeText($at, $zone));
-    }
-
-    /**
-     * The business zone as a customer says it: ICU's generic long name ("Central Time"), the IANA id when ICU gives none
-     * (U-11). It does not change with daylight time and is never read from the visitor's phone (D-11).
-     */
-    private function zoneName(string $zone): string
-    {
-        $name = (new IntlDateFormatter('en_US', IntlDateFormatter::NONE, IntlDateFormatter::NONE, $zone, IntlDateFormatter::GREGORIAN, 'vvvv'))
-            ->format(CarbonImmutable::now());
-
-        return is_string($name) && $name !== '' ? $name : $zone;
     }
 
     /**
