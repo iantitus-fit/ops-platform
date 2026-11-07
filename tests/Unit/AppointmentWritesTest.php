@@ -85,7 +85,10 @@ function appointmentWritersUnderApp(): array
 it('only the named actions write the appointments table', function () {
     // Each action plan adds its own file here: 08-06 BookAppointment; 08-13 CancelAppointment, MarkAppointmentDone,
     // EditVisitNote; 08-14 BlockTime, RemoveBlock.
-    expect(appointmentWritersUnderApp())->toBe(['app/Actions/BookAppointment.php']);
+    expect(appointmentWritersUnderApp())->toBe([
+        'app/Actions/BookAppointment.php',
+        'app/Actions/CancelAppointment.php',
+    ]);
 });
 
 it('flags every kind of write, so the scan is not vacuous', function (string $path, string $snippet) {
@@ -127,4 +130,4 @@ it('passes a Filament form and an event name that only look like writes', functi
 // Each later action (cancel, mark done, edit the note, block, remove a block) joins this list when its plan adds it.
 arch('no agent code books, cancels or marks a visit done')
     ->expect(['App\Ai', 'App\SendRule'])
-    ->not->toUse(['App\Actions\BookAppointment']);
+    ->not->toUse(['App\Actions\BookAppointment', 'App\Actions\CancelAppointment']);

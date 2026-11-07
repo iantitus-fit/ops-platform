@@ -319,3 +319,70 @@ it('has no Filament create, edit or delete action', function () {
         ->assertTableActionDoesNotExist('edit')
         ->assertTableActionDoesNotExist('delete');
 });
+
+/**
+ * Dana's AC repair, booked for Thursday 2026-11-05 at 10:00 on her job.
+ */
+function appointmentsTabVisit(Contact $contact, Project $job, array $attributes = []): Appointment
+{
+    return Appointment::factory()
+        ->for($contact)
+        ->for($job)
+        ->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)
+        ->create($attributes);
+}
+
+it('cancels from the tab after the dialog', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = appointmentsTabVisit($contact, $job);
+
+    $tab = appointmentsTab($contact)->mountTableAction('cancelVisit', $visit);
+
+    $dialog = $tab->instance()->getMountedAction();
+
+    expect($dialog->getName())->toBe('cancelVisit')
+        ->and((string) $dialog->getModalHeading())->toBe('Cancel AC repair, Thursday, November 5 at 10:00 AM?')
+        ->and((string) $dialog->getModalDescription())->toContain('Dana Whitfield is not texted about this, so tell them yourself.')
+        ->and((string) $dialog->getModalDescription())->toContain('A cancelled visit cannot be restored. To fix it, book a new time.')
+        ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Cancel appointment')
+        ->and((string) $dialog->getModalCancelActionLabel())->toBe('Keep appointment')
+        ->and($visit->refresh()->isBooked())->toBeTrue();
+
+    $tab->callMountedTableAction()
+        ->assertNotified('Cancelled')
+        ->assertSee('Cancelled');
+
+    expect($visit->refresh()->state->value)->toBe('cancelled');
+});
+
+it('names a contact with no name in the cancel dialog', function () {
+    [, $job] = appointmentsTabSetUp();
+    $nameless = Contact::factory()->create(['name' => null]);
+    $project = app(OpenProject::class)->byHand($nameless, $this->owner);
+    $visit = appointmentsTabVisit($nameless, $project);
+
+    $tab = appointmentsTab($nameless)->mountTableAction('cancelVisit', $visit);
+
+    expect((string) $tab->instance()->getMountedAction()->getModalDescription())->toContain('(no name) is not texted about this');
+});
+
+it('hides Cancel visit on a visit that is not booked and names the visit on its button', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $booked = appointmentsTabVisit($contact, $job);
+    $cancelled = Appointment::factory()->for($contact)->for($job)->cancelled()
+        ->at(CarbonImmutable::parse('2026-11-06 10:00', 'America/Chicago'), 90)->create();
+
+    appointmentsTab($contact)
+        ->assertTableActionVisible('cancelVisit', $booked)
+        ->assertTableActionHidden('cancelVisit', $cancelled)
+        ->assertSeeHtml('aria-label="Cancel visit: AC repair, Thursday, November 5 at 10:00 AM"');
+});
+
+it('escapes the service in the button name', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    appointmentsTabVisit($contact, $job, ['service_name' => '"><script>alert(1)</script>']);
+
+    appointmentsTab($contact)
+        ->assertDontSee('"><script>alert(1)</script>', false)
+        ->assertSeeHtml('aria-label="Cancel visit: &quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;, Thursday, November 5 at 10:00 AM"');
+});
