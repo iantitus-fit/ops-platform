@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\CancelAppointment;
 use App\Actions\CloseProject;
 use App\Actions\OpenProject;
 use App\Filament\Resources\Contacts\ContactResource;
@@ -385,4 +386,171 @@ it('escapes the service in the button name', function () {
     appointmentsTab($contact)
         ->assertDontSee('"><script>alert(1)</script>', false)
         ->assertSeeHtml('aria-label="Cancel visit: &quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;, Thursday, November 5 at 10:00 AM"');
+});
+
+it('shows Mark done at the start minute and not a minute before', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = appointmentsTabVisit($contact, $job);
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 09:59', 'America/Chicago'));
+    appointmentsTab($contact)->assertTableActionHidden('markDone', $visit);
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'));
+    appointmentsTab($contact)
+        ->assertTableActionVisible('markDone', $visit)
+        ->assertSeeHtml('aria-label="Mark done: AC repair, Thursday, November 5 at 10:00 AM"');
+});
+
+it('hides Mark done and Edit note on a visit that is not booked', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $this->travelTo(CarbonImmutable::parse('2026-11-06 12:00', 'America/Chicago'));
+    $cancelled = Appointment::factory()->for($contact)->for($job)->cancelled()->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)->create();
+    $done = Appointment::factory()->for($contact)->for($job)->done()->at(CarbonImmutable::parse('2026-11-05 14:00', 'America/Chicago'), 90)->create();
+
+    appointmentsTab($contact)
+        ->assertTableActionHidden('markDone', $cancelled)
+        ->assertTableActionHidden('editNote', $cancelled)
+        ->assertTableActionHidden('markDone', $done)
+        ->assertTableActionHidden('editNote', $done)
+        ->assertTableActionHidden('cancelVisit', $done)
+        ->assertSee('Cancelled')
+        ->assertSee('Done');
+});
+
+it('marks done from the tab after a dialog, and leaves the job open when the box is not ticked', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = appointmentsTabVisit($contact, $job);
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'));
+
+    $tab = appointmentsTab($contact)->mountTableAction('markDone', $visit);
+    $dialog = $tab->instance()->getMountedAction();
+
+    expect((string) $dialog->getModalHeading())->toBe('Mark AC repair, Thursday, November 5 at 10:00 AM as done?')
+        ->and((string) $dialog->getModalDescription())->toBe('This cannot be undone.')
+        ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Mark done');
+
+    $tab->assertTableActionDataSet(['alsoClose' => false])
+        ->callMountedTableAction()
+        ->assertNotified('Marked done')
+        ->assertSee('Done');
+
+    expect($visit->refresh()->state->value)->toBe('done')
+        ->and($job->refresh()->isOpen())->toBeTrue();
+});
+
+it('offers Also close only on the last booked visit, and closes the job when it is ticked', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $first = appointmentsTabVisit($contact, $job);
+    $second = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-12 10:00', 'America/Chicago'), 90)->create();
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'));
+
+    $html = fn (Appointment $visit): string => (function (Testable $tab) {
+        $livewire = $tab->instance();
+
+        return $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
+    })(appointmentsTab($contact)->mountTableAction('markDone', $visit));
+
+    expect($html($first))->not->toContain('Also close')
+        ->and($html($second))->toContain('Also close Job 1')->toContain('Leave this off if more visits are still to come.');
+
+    appointmentsTab($contact)->callTableAction('markDone', $first, ['alsoClose' => true]);
+
+    expect($job->refresh()->isOpen())->toBeTrue();
+
+    app(CancelAppointment::class)->handle($second, $this->owner);
+    $third = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-05 09:00', 'America/Chicago'), 30)->create();
+
+    appointmentsTab($contact)->callTableAction('markDone', $third, ['alsoClose' => true]);
+
+    expect($job->refresh()->isOpen())->toBeFalse();
+});
+
+it('keeps a visit note from the tab and refuses 201 characters beside the field', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = appointmentsTabVisit($contact, $job);
+
+    $tab = appointmentsTab($contact)
+        ->callTableAction('editNote', $visit, ['note' => str_repeat('a', 201)])
+        ->assertHasTableActionErrors(['note']);
+
+    expect(appointmentsTabFieldErrors($tab, 'note'))->toBe(['A note can be at most 200 characters.'])
+        ->and($visit->refresh()->note)->toBeNull();
+
+    appointmentsTab($contact)
+        ->callTableAction('editNote', $visit, ['note' => 'Gate code 4412'])
+        ->assertHasNoTableActionErrors()
+        ->assertNotified('Visit note saved')
+        ->assertSee('Gate code 4412');
+
+    expect($visit->refresh()->note)->toBe('Gate code 4412');
+});
+
+it('fills the note dialog with the current note and names the visit on the button', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    $visit = appointmentsTabVisit($contact, $job, ['note' => 'Dog in the yard']);
+
+    appointmentsTab($contact)
+        ->mountTableAction('editNote', $visit)
+        ->assertTableActionDataSet(['note' => 'Dog in the yard']);
+
+    appointmentsTab($contact)->assertSeeHtml('aria-label="Edit note: AC repair, Thursday, November 5 at 10:00 AM"');
+});
+
+it('shows two visits on one job, each with its own buttons', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    appointmentsTabVisit($contact, $job);
+    Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-06 10:00', 'America/Chicago'), 90)->create(['service_name' => 'Furnace repair']);
+
+    appointmentsTab($contact)
+        ->assertSeeHtml('aria-label="Cancel visit: AC repair, Thursday, November 5 at 10:00 AM"')
+        ->assertSeeHtml('aria-label="Cancel visit: Furnace repair, Friday, November 6 at 10:00 AM"')
+        ->assertSeeHtml('aria-label="Edit note: Furnace repair, Friday, November 6 at 10:00 AM"');
+});
+
+/**
+ * The contact screen's Projects tab, mounted the way the contact page mounts it.
+ */
+function appointmentsTabProjects(Contact $contact): Testable
+{
+    return Livewire::test(ProjectsRelationManager::class, [
+        'ownerRecord' => $contact,
+        'pageClass' => ViewContact::class,
+    ]);
+}
+
+it('names the visit in the Close dialog and offers only Back', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    appointmentsTabVisit($contact, $job);
+
+    $dialog = appointmentsTabProjects($contact)->mountTableAction('toggle', $job)->instance()->getMountedAction();
+
+    expect((string) $dialog->getModalHeading())->toBe('Close Job 1?')
+        ->and((string) $dialog->getModalDescription())->toBe('Job 1 has a booked visit on Thursday, November 5 at 10:00 AM. Cancel that visit first, then close.')
+        ->and($dialog->getModalSubmitAction())->toBeNull()
+        ->and($dialog->getModalCancelActionLabel())->toBe('Back');
+});
+
+it('keeps the Close dialog as it was for a job with no visit ahead', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+    Appointment::factory()->for($contact)->for($job)->cancelled()->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)->create();
+
+    $dialog = appointmentsTabProjects($contact)->mountTableAction('toggle', $job)->instance()->getMountedAction();
+
+    expect((string) $dialog->getModalHeading())->toBe('Close Job 1?')
+        ->and((string) $dialog->getModalDescription())->toBe('Job 1 will be marked closed. You can reopen it at any time.')
+        ->and($dialog->getModalSubmitAction())->not->toBeNull()
+        ->and((string) $dialog->getModalSubmitActionLabel())->toBe('Close');
+});
+
+it('refuses the close from a stale page and says why', function () {
+    [$contact, $job] = appointmentsTabSetUp();
+
+    $projects = appointmentsTabProjects($contact)->mountTableAction('toggle', $job);
+
+    appointmentsTabVisit($contact, $job);
+
+    $projects->callMountedTableAction()
+        ->assertNotified('Job 1 has a booked visit on Thursday, November 5 at 10:00 AM. Cancel that visit first, then close.');
+
+    expect($job->refresh()->isOpen())->toBeTrue();
 });

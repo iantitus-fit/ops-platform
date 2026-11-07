@@ -10,6 +10,7 @@ use App\Enums\MessageDirection;
 use App\Enums\ProjectActor;
 use App\Enums\ProjectWord;
 use App\Models\Activity;
+use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\Message;
 use App\Models\OwnerAlert;
@@ -254,4 +255,72 @@ it('asks, flags and alerts no one', function () {
 
     expect(OwnerAlert::query()->count())->toBe(0)
         ->and(Message::query()->where('direction', MessageDirection::Out)->count())->toBe(0);
+});
+
+/**
+ * Dana's job with the clock at Tuesday 2026-11-03 11:00 in the shop's zone and a booked AC repair $startsAt (Chicago).
+ * $state is a factory state name or null for a plain booked visit.
+ *
+ * @return array{0: Project, 1: User, 2: Appointment}
+ */
+function projectActionsJobWithVisit(string $startsAt, ?string $state = null): array
+{
+    activateExampleFolder();
+    test()->travelTo(Carbon::parse('2026-11-03 11:00', 'America/Chicago'));
+
+    $user = User::factory()->create();
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield']);
+    $project = app(OpenProject::class)->byHand($contact, $user);
+
+    $factory = Appointment::factory()->for($contact)->for($project)->at(Carbon::parse($startsAt, 'America/Chicago'), 90);
+
+    return [$project, $user, ($state === null ? $factory : $factory->{$state}())->create()];
+}
+
+it('refuses to close a job with a visit booked ahead', function () {
+    [$project, $user] = projectActionsJobWithVisit('2026-11-05 10:00');
+
+    expect(fn () => app(CloseProject::class)->handle($project, $user))
+        ->toThrow(DomainException::class, 'Job 1 has a booked visit on Thursday, November 5 at 10:00 AM. Cancel that visit first, then close.');
+
+    expect($project->fresh()->isOpen())->toBeTrue()
+        ->and(Activity::query()->where('type', ActivityType::ProjectClosed)->count())->toBe(0);
+});
+
+it('names the job by its own name when it has one', function () {
+    [$project, $user] = projectActionsJobWithVisit('2026-11-05 10:00');
+    app(RenameProject::class)->handle($project, $user, 'Johnny');
+
+    expect(fn () => app(CloseProject::class)->handle($project, $user))
+        ->toThrow(DomainException::class, 'Johnny has a booked visit on Thursday, November 5 at 10:00 AM.');
+});
+
+it('closes a job whose visit was cancelled or is done', function (string $state) {
+    [$project, $user] = projectActionsJobWithVisit('2026-11-05 10:00', $state);
+
+    app(CloseProject::class)->handle($project, $user);
+
+    expect($project->fresh()->isOpen())->toBeFalse();
+})->with(['cancelled', 'done']);
+
+it('blocks a close for a visit a minute ahead and not for one that started a minute ago', function () {
+    [$project, $user] = projectActionsJobWithVisit('2026-11-03 11:01');
+
+    expect(fn () => app(CloseProject::class)->handle($project, $user))->toThrow(DomainException::class);
+
+    $this->travelTo(Carbon::parse('2026-11-03 11:02', 'America/Chicago'));
+
+    app(CloseProject::class)->handle($project, $user);
+
+    expect($project->fresh()->isOpen())->toBeFalse();
+});
+
+it('does not refuse closing a job that is already closed', function () {
+    [$project, $user] = projectActionsJobWithVisit('2026-11-05 10:00', 'cancelled');
+    app(CloseProject::class)->handle($project, $user);
+    Appointment::factory()->for($project->contact)->for($project)->at(Carbon::parse('2026-11-06 10:00', 'America/Chicago'), 90)->create();
+
+    app(CloseProject::class)->handle($project, $user);
+
+    expect(Activity::query()->where('type', ActivityType::ProjectClosed)->count())->toBe(1);
 });
