@@ -26,6 +26,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
@@ -143,6 +144,8 @@ class Schedule extends Page implements HasActions, HasTable
                 VisitActions::editNote(),
                 $this->removeBlockAction($zone),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->deferFilters(false)
             ->paginationPageOptions([25])
             ->defaultPaginationPageOption(25)
             ->emptyStateHeading(fn (): string => $this->showing() === 'upcoming' ? 'Nothing scheduled' : 'No visits in this view')
@@ -164,6 +167,12 @@ class Schedule extends Page implements HasActions, HasTable
     {
         return Action::make('blockTime')
             ->label('Block time')
+            /*
+             * The deliberate focus target after Remove block, Cancel visit or Mark done (D-43, WCAG 2.4.3). Each makes its own
+             * row button leave the page, so focus would fall to the page body; the page dispatches this event and this
+             * button takes it.
+             */
+            ->extraAttributes(VisitActions::focusTarget(self::FOCUS_EVENT))
             ->modalHeading('Block time')
             ->modalSubmitActionLabel('Block time')
             ->schema(fn (): array => [
