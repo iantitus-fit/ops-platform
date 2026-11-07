@@ -2,10 +2,10 @@
 
 namespace App\Actions;
 
+use App\Enums\ActivityType;
 use App\Events\CustomerRecordChanged;
 use App\Models\Contact;
 use App\Models\User;
-use App\Rooms\RecordRoomEntry;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
@@ -18,16 +18,15 @@ use Illuminate\Support\Facades\DB;
  * A customer's own text turns automatic texts on by itself, derived and never stored (Contact::hasTextedBusiness()), so
  * the switch is refused for a customer who has texted. A STOP never turns it on.
  *
- * Every change also writes one automatic_texts_changed entry on the contact's timeline naming who changed it and to which
- * state, at the time it changed (Ian, 2026-11-07, adds to D-20). The contact's columns hold only the current agreement, so
- * the timeline is what keeps the record that a customer had agreed after the switch is turned off. The entry goes through
- * RecordRoomEntry as the schedule and booking room's, the way EditVisitNote's does, so a room that is off writes none.
+ * Every change also writes one platform entry on the contact's timeline, automatic texts turned on or turned off, naming
+ * who changed it, at the time it changed (D-46). The contact's columns hold only the current agreement, so the timeline is
+ * what keeps the record that a customer had agreed after the switch is turned off. Agreeing to texts belongs to the
+ * contact, like an opt-out, and the switch governs automatic sends whatever rooms are live, so the entry is a platform
+ * type like OptedOut and OptedIn, never a room's entry, and no room being off hides it.
  */
 class SetAutomaticTexts
 {
     private const string ALREADY_ALLOWED = 'This customer has texted the business, so automatic texts are already allowed.';
-
-    public function __construct(private readonly RecordRoomEntry $recordRoomEntry) {}
 
     /**
      * Turn automatic texts on. A switch that is already on keeps its first time and its first user.
@@ -36,7 +35,7 @@ class SetAutomaticTexts
      */
     public function on(Contact $contact, User $user): void
     {
-        $this->change($contact, $user, 'on', function (Contact $locked) use ($user): bool {
+        $this->change($contact, $user, ActivityType::AutomaticTextsTurnedOn, function (Contact $locked) use ($user): bool {
             if ($locked->automatic_texts_on_at !== null) {
                 return false;
             }
@@ -57,7 +56,7 @@ class SetAutomaticTexts
      */
     public function off(Contact $contact, User $user): void
     {
-        $this->change($contact, $user, 'off', function (Contact $locked): bool {
+        $this->change($contact, $user, ActivityType::AutomaticTextsTurnedOff, function (Contact $locked): bool {
             if ($locked->automatic_texts_on_at === null) {
                 return false;
             }
@@ -76,12 +75,13 @@ class SetAutomaticTexts
      * change and its timeline entry together, and redraw the card when the switch changed. A switch already in that state
      * writes nothing.
      *
-     * @param  'on'|'off'  $state  The state the switch is turned to, as the entry names it.
+     * @param  ActivityType::AutomaticTextsTurnedOn|ActivityType::AutomaticTextsTurnedOff  $entry  The timeline entry for the
+     *                                                                                             state the switch is turned to.
      * @param  callable(Contact): bool  $write  Writes the change and says whether it changed anything.
      */
-    private function change(Contact $contact, User $user, string $state, callable $write): void
+    private function change(Contact $contact, User $user, ActivityType $entry, callable $write): void
     {
-        $changed = DB::transaction(function () use ($contact, $user, $state, $write): bool {
+        $changed = DB::transaction(function () use ($contact, $user, $entry, $write): bool {
             $locked = Contact::query()->lockForUpdate()->findOrFail($contact->id);
 
             if ($locked->hasTextedBusiness()) {
@@ -92,12 +92,13 @@ class SetAutomaticTexts
                 return false;
             }
 
-            $this->recordRoomEntry->handle(
-                $locked,
-                'schedule_and_booking',
-                'automatic_texts_changed',
-                $user->name.' turned automatic texts '.$state.'.',
-            );
+            $state = $entry === ActivityType::AutomaticTextsTurnedOn ? 'on' : 'off';
+
+            $locked->activities()->create([
+                'type' => $entry,
+                'summary' => $user->name.' turned automatic texts '.$state.'.',
+                'occurred_at' => now(),
+            ]);
 
             return true;
         });

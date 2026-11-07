@@ -40,7 +40,6 @@ class ScheduleAndBookingServiceProvider extends RoomServiceProvider
                 new TimelineEntryType('visit_done', 'Visit done', trusted: true),
                 new TimelineEntryType('visit_note_changed', 'Visit note changed', trusted: true),
                 new TimelineEntryType('booking_text_not_sent', 'Booking text not sent', trusted: true),
-                new TimelineEntryType('automatic_texts_changed', 'Automatic texts changed', trusted: true),
             ],
             morphMap: [
                 'appointment' => Appointment::class,

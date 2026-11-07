@@ -253,6 +253,8 @@ class CustomerCard
             ActivityType::AgentResumed => ['Assistant resumed', 'System note:', $activity->summary],
             ActivityType::OptedOut => ['Opted out of texts', 'System note:', $activity->summary],
             ActivityType::OptedIn => ['Opted back in to texts', 'System note:', $activity->summary],
+            ActivityType::AutomaticTextsTurnedOn => ['Automatic texts turned on', 'System note:', $activity->summary],
+            ActivityType::AutomaticTextsTurnedOff => ['Automatic texts turned off', 'System note:', $activity->summary],
             ActivityType::RoomEntry => $this->roomEntryParts($activity),
             ActivityType::ProjectOpened => $this->projectParts($activity, 'opened', $word, $projectNumbers),
             ActivityType::ProjectClosed => $this->projectParts($activity, 'closed', $word, $projectNumbers),

@@ -59,7 +59,7 @@ it('boots the schedule and booking room', function (bool $empty) {
         ->and($room->neverLeftOutBecause)->toBeNull();
 
     expect(array_map(fn ($entry) => $entry->key, $room->timelineEntries))
-        ->toBe(['visit_booked', 'visit_cancelled', 'visit_done', 'visit_note_changed', 'booking_text_not_sent', 'automatic_texts_changed'])
+        ->toBe(['visit_booked', 'visit_cancelled', 'visit_done', 'visit_note_changed', 'booking_text_not_sent'])
         ->and(array_map(fn ($entry) => $entry->trusted, $room->timelineEntries))
         ->each->toBeTrue();
 
