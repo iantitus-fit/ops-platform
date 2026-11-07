@@ -2,17 +2,21 @@
 
 use App\Actions\AddContactByHand;
 use App\Actions\ContactRefused;
+use App\Actions\OpenProject;
 use App\Enums\ContactStatus;
 use App\Filament\Resources\Contacts\ContactResource;
 use App\Filament\Resources\Contacts\Pages\CreateContact;
 use App\Filament\Resources\Contacts\Pages\ListContacts;
+use App\Filament\Resources\Contacts\Pages\ViewContact;
 use App\Filament\Widgets\NewLeads;
+use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\Project;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -182,4 +186,38 @@ it('turns a race on the unique phone into the same field error', function () {
         ->toThrow(ContactRefused::class, 'This number is already saved as Dana Whitfield.');
 
     expect(Contact::query()->count())->toBe(1);
+});
+
+it('shows the next appointment on the contact screen (D-38)', function () {
+    activateExampleFolder();
+    $this->travelTo(CarbonImmutable::parse('2026-11-02 09:00', 'America/Chicago'));
+
+    $dana = Contact::factory()->create(['name' => 'Dana Whitfield']);
+    app(OpenProject::class)->byHand($dana, $this->owner);
+    $second = app(OpenProject::class)->byHand($dana, $this->owner);
+
+    Appointment::factory()->for($dana)->for($second)->cancelled()->at(CarbonImmutable::parse('2026-11-02 14:00', 'America/Chicago'), 60)->create(['service_name' => 'Duct cleaning']);
+    Appointment::factory()->for($dana)->for($second)->at(CarbonImmutable::parse('2026-11-03 10:00', 'America/Chicago'), 90)->create();
+
+    Livewire::test(ViewContact::class, ['record' => $dana->getRouteKey()])
+        ->assertSee('Next appointment')
+        ->assertSee('Tuesday, November 3, 2026 at 10:00 AM, AC repair, Job 2')
+        ->assertDontSee('Duct cleaning');
+});
+
+it('shows no Next appointment line when none is booked ahead', function () {
+    activateExampleFolder();
+    $this->travelTo(CarbonImmutable::parse('2026-11-02 09:00', 'America/Chicago'));
+
+    $dana = Contact::factory()->create(['name' => 'Dana Whitfield']);
+    $job = app(OpenProject::class)->byHand($dana, $this->owner);
+    Message::factory()->for(Conversation::factory()->for($dana)->create())->create();
+
+    Appointment::factory()->for($dana)->for($job)->cancelled()->at(CarbonImmutable::parse('2026-11-03 10:00', 'America/Chicago'), 90)->create();
+    Appointment::factory()->for($dana)->for($job)->at(CarbonImmutable::parse('2026-11-01 10:00', 'America/Chicago'), 90)->create();
+
+    Livewire::test(ViewContact::class, ['record' => $dana->getRouteKey()])
+        ->assertDontSee('Next appointment')
+        ->assertSee('Dana Whitfield')
+        ->assertDontSee('Automatic texts');
 });
