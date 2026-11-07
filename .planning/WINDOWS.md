@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 39
+open_count: 41
 waived_count: 1
 fixed_count: 29
-total_count: 69
-last_updated: 2026-11-07T14:25:58.568Z
+total_count: 71
+last_updated: 2026-11-07T16:29:09.095Z
 ---
 
 # Broken Windows Ledger
@@ -84,6 +84,8 @@ last_updated: 2026-11-07T14:25:58.568Z
 | 67 | 08 | unrun-verify | tests/Feature/Filament/SchedulePageTest.php |  | Plan 08-14 human-check not run: after Ian pushes the phase branch, the CI pgsql leg is green for SchedulePageTest (the business-zone grouping and filters) and BlockTime's schedule:book lock; local runs are SQLite only | open |  | 2026-11-07T14:22:13.083Z |  |
 | 68 | 08 | unrun-verify | tests/Feature/Filament/ScheduleKeyboardTest.php |  | Plan 08-14 human-check not run: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the Schedule page and the room's dashboard section (D-43) | open |  | 2026-11-07T14:22:13.187Z |  |
 | 69 | 08 | todo | tests/Feature/Booking/BookingLinkTokenTest.php |  | 08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14 | open |  | 2026-11-07T14:25:58.568Z |  |
+| 70 | 08 | unrun-verify | tests/Feature/Filament/ContactByHandTest.php |  | 08-15: after Ian pushes the phase branch, the CI pgsql leg is green for ContactByHandTest's matching (phone then email, letter case) and the unique-phone race | open |  | 2026-11-07T16:29:09.000Z |  |
+| 71 | 08 | unrun-verify | tests/Feature/Filament/ContactScreenKeyboardTest.php |  | 08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43) | open |  | 2026-11-07T16:29:09.095Z |  |
 
 ````json
 [
@@ -981,6 +983,32 @@ last_updated: 2026-11-07T14:25:58.568Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-07T14:25:58.568Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 70,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ContactByHandTest.php",
+    "line": null,
+    "description": "08-15: after Ian pushes the phase branch, the CI pgsql leg is green for ContactByHandTest's matching (phone then email, letter case) and the unique-phone race",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T16:29:09.000Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 71,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ContactScreenKeyboardTest.php",
+    "line": null,
+    "description": "08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T16:29:09.095Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

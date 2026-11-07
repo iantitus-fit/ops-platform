@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-14-PLAN.md
-last_updated: "2026-11-07T14:27:22.496Z"
+stopped_at: Completed 08-15-PLAN.md
+last_updated: "2026-11-07T16:35:02.657Z"
 last_activity: 2026-11-07
 last_activity_desc: Phase 08 execution started
-state_head: bb0fc671ef5cce4047b494201d9168cf92b65d26
+state_head: e66bad3388ce626f1ca3f026d963fa7590cbcc8f
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 50
-  completed_plans: 48
+  completed_plans: 49
   percent: 44
 ---
 
@@ -188,6 +188,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P12 | 15 min | 3 tasks | 10 files |
 | Phase 08 P13 | 25 min | 3 tasks | 15 files |
 | Phase 08 P14 | 23 min | 3 tasks | 17 files |
+| Phase 08 P15 | 13 min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -281,6 +282,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-14: the Schedule page lists both row kinds through the appointment query without its kind scope; each row action is visible only for its own kind and re-reads through its own kind's scoped model
 - [Phase 08]: 08-14: BlockTime checks overlap under the schedule:book lock and refuses a block over a booked visit; blocks write no timeline entry
 - [Phase 08]: 08-14: the Show filter is a native select above the schedule table that applies at once
+- [Phase 08]: 08-15: a hand-added email is stored trimmed and lower-cased as RecordInbound stores it, matched phone then email, with the unique phone index backing a race; RecordInbound untouched
+- [Phase 08]: 08-15: the automaticTexts header action is one stable action with a Hidden direction field filled when the dialog opens, so a stale tab does what the dialog said; the reply-box line informs and never disables the box
 
 ### Pending Todos
 
@@ -344,8 +347,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T14:27:22.426Z
-Stopped at: Completed 08-14-PLAN.md
+Last session: 2026-11-07T16:35:02.587Z
+Stopped at: Completed 08-15-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
