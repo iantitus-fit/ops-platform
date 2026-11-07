@@ -66,6 +66,22 @@ class BookingRefused extends DomainException
     }
 
     /**
+     * The visit has not started, so it cannot be marked done yet (D-14).
+     */
+    public static function notStarted(): self
+    {
+        return new self('A visit can be marked done only once it has started.');
+    }
+
+    /**
+     * The visit is cancelled or done, so its note is no longer the owner's to change (D-18).
+     */
+    public static function notBooked(): self
+    {
+        return new self('Only a booked visit can have its note changed.');
+    }
+
+    /**
      * Another booking holds the booking lock and did not let go in time (D-07).
      */
     public static function busy(): self

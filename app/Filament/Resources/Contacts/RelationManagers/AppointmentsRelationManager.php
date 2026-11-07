@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Contacts\RelationManagers;
 
 use App\Actions\BookAppointment;
 use App\Actions\CancelAppointment;
+use App\Actions\EditVisitNote;
+use App\Actions\MarkAppointmentDone;
 use App\Enums\ProjectWord;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
@@ -11,7 +13,9 @@ use App\Models\Contact;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
 use Carbon\CarbonImmutable;
+use DomainException;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -89,7 +93,9 @@ class AppointmentsRelationManager extends RelationManager
                 $this->bookByHandAction($word),
             ])
             ->recordActions([
+                $this->markDoneAction(),
                 $this->cancelVisitAction(),
+                $this->editNoteAction(),
             ])
             ->emptyStateHeading('No appointments yet')
             ->emptyStateDescription('Use Book by hand to add one.');
@@ -162,6 +168,96 @@ class AppointmentsRelationManager extends RelationManager
                     ->success()
                     ->send();
             });
+    }
+
+    /**
+     * Mark done (D-14, D-24, U-28): shown only once the visit has started, to the minute, and hidden before that rather
+     * than disabled. Done is not undone, and the dialog says so. On the job's last booked visit it offers one unchecked
+     * box to close the job too (D-24), so no job closes unless the owner ticks it (07 D-05). The box is decided when the
+     * dialog opens, from the job's own booked visits.
+     */
+    private function markDoneAction(): Action
+    {
+        $word = app(ActiveConfig::class)->projectWord();
+
+        return Action::make('markDone')
+            ->label('Mark done')
+            ->visible(fn (Appointment $record): bool => $record->isBooked() && $record->starts_at->lessThanOrEqualTo(now()))
+            ->extraAttributes(fn (Action $action, Appointment $record): array => $this->rowButtonName($action, $record))
+            ->requiresConfirmation()
+            ->modalHeading(fn (Appointment $record): string => 'Mark '.$this->visitText($record).' as done?')
+            ->modalDescription('This cannot be undone.')
+            ->modalSubmitActionLabel('Mark done')
+            ->schema(fn (Appointment $record): array => $this->isLastBookedVisit($record) ? [
+                Checkbox::make('alsoClose')
+                    ->label('Also close '.$this->jobLabel($record, $word))
+                    ->helperText('Leave this off if more visits are still to come.')
+                    ->default(false),
+            ] : [])
+            ->action(function (Appointment $record, array $data): void {
+                try {
+                    app(MarkAppointmentDone::class)->handle($record, auth()->user(), (bool) ($data['alsoClose'] ?? false));
+                } catch (DomainException $refusal) {
+                    // Filament renders a title as HTML, and the refusal is plain words about owner text.
+                    Notification::make()->title(e($refusal->getMessage()))->danger()->send();
+
+                    return;
+                }
+
+                Notification::make()->title('Marked done')->success()->send();
+            });
+    }
+
+    /**
+     * Edit note (D-18): visible while the visit is booked, filled with the current note, up to 200 characters, refused
+     * beside the field when longer. Clearing the box clears the note.
+     */
+    private function editNoteAction(): Action
+    {
+        return Action::make('editNote')
+            ->label('Edit note')
+            ->color('gray')
+            ->visible(fn (Appointment $record): bool => $record->isBooked())
+            ->extraAttributes(fn (Action $action, Appointment $record): array => $this->rowButtonName($action, $record))
+            ->modalHeading(fn (Appointment $record): string => 'Visit note: '.$this->visitText($record))
+            ->modalSubmitActionLabel('Save note')
+            ->schema([
+                Textarea::make('note')
+                    ->label('Visit note')
+                    ->rows(3)
+                    ->maxLength(BookAppointment::NOTE_MAX_LENGTH)
+                    ->validationMessages(['max' => 'A note can be at most '.BookAppointment::NOTE_MAX_LENGTH.' characters.']),
+            ])
+            ->fillForm(fn (Appointment $record): array => ['note' => $record->note])
+            ->action(function (Appointment $record, array $data): void {
+                try {
+                    app(EditVisitNote::class)->handle($record, auth()->user(), $data['note'] ?? null);
+                } catch (DomainException $refusal) {
+                    Notification::make()->title(e($refusal->getMessage()))->danger()->send();
+
+                    return;
+                }
+
+                Notification::make()->title('Visit note saved')->success()->send();
+            });
+    }
+
+    /**
+     * Whether no other appointment on this visit's job is still booked, so this is the job's last booked visit (D-24):
+     * ahead or not, any other booked visit means more may be still to come.
+     */
+    private function isLastBookedVisit(Appointment $record): bool
+    {
+        return $record->project !== null
+            && ! $record->project->appointments()->booked()->whereKeyNot($record->id)->exists();
+    }
+
+    /**
+     * The visit's job as the screen names it: its own name, else the business's word and the job's number.
+     */
+    private function jobLabel(Appointment $record, ProjectWord $word): string
+    {
+        return $record->project === null ? $word->singular() : $record->project->label($word, (int) $record->project->number);
     }
 
     /**

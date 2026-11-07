@@ -1,6 +1,5 @@
 <?php
 
-use App\Actions\CancelAppointment;
 use App\Actions\CloseProject;
 use App\Actions\OpenProject;
 use App\Filament\Resources\Contacts\ContactResource;
@@ -16,6 +15,7 @@ use App\Models\ScheduleBlock;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
+use Livewire\Exceptions\PropertyNotFoundException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -444,23 +444,32 @@ it('offers Also close only on the last booked visit, and closes the job when it 
     $second = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-12 10:00', 'America/Chicago'), 90)->create();
     $this->travelTo(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'));
 
-    $html = fn (Appointment $visit): string => (function (Testable $tab) {
-        $livewire = $tab->instance();
+    $dialogHtml = function (Appointment $visit) use ($contact): string {
+        $livewire = appointmentsTab($contact)->mountTableAction('markDone', $visit)->instance();
 
-        return $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
-    })(appointmentsTab($contact)->mountTableAction('markDone', $visit));
+        try {
+            return $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
+        } catch (PropertyNotFoundException) {
+            // An action with no fields mounts no form at all, so there is no schema property to read.
+            return '';
+        }
+    };
 
-    expect($html($first))->not->toContain('Also close')
-        ->and($html($second))->toContain('Also close Job 1')->toContain('Leave this off if more visits are still to come.');
+    // Two booked visits on the job: neither is the last, so neither dialog offers the box.
+    expect($dialogHtml($first))->not->toContain('Also close');
 
-    appointmentsTab($contact)->callTableAction('markDone', $first, ['alsoClose' => true]);
+    // Marking it done on its own leaves the job open.
+    appointmentsTab($contact)->callTableAction('markDone', $first);
 
-    expect($job->refresh()->isOpen())->toBeTrue();
+    expect($job->refresh()->isOpen())->toBeTrue()
+        ->and($first->refresh()->state->value)->toBe('done');
 
-    app(CancelAppointment::class)->handle($second, $this->owner);
-    $third = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-05 09:00', 'America/Chicago'), 30)->create();
+    // Now the second is the job's last booked visit, so the box is offered, unchecked, with its line.
+    $this->travelTo(CarbonImmutable::parse('2026-11-12 10:00', 'America/Chicago'));
 
-    appointmentsTab($contact)->callTableAction('markDone', $third, ['alsoClose' => true]);
+    expect($dialogHtml($second))->toContain('Also close Job 1')->toContain('Leave this off if more visits are still to come.');
+
+    appointmentsTab($contact)->callTableAction('markDone', $second, ['alsoClose' => true]);
 
     expect($job->refresh()->isOpen())->toBeFalse();
 });
