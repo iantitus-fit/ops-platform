@@ -86,6 +86,7 @@ it('only the named actions write the appointments table', function () {
     // Each action plan adds its own file here: 08-06 BookAppointment; 08-13 CancelAppointment, MarkAppointmentDone,
     // EditVisitNote; 08-14 BlockTime, RemoveBlock.
     expect(appointmentWritersUnderApp())->toBe([
+        'app/Actions/BlockTime.php',
         'app/Actions/BookAppointment.php',
         'app/Actions/CancelAppointment.php',
         'app/Actions/EditVisitNote.php',
