@@ -91,6 +91,7 @@ it('only the named actions write the appointments table', function () {
         'app/Actions/CancelAppointment.php',
         'app/Actions/EditVisitNote.php',
         'app/Actions/MarkAppointmentDone.php',
+        'app/Actions/RemoveBlock.php',
     ]);
 });
 
@@ -130,7 +131,7 @@ it('passes a Filament form and an event name that only look like writes', functi
     expect(appointmentWritesIn($path, '$action->fillForm(fn () => []); $this->created(fn () => null);'))->toBe([]);
 });
 
-// Each later action (remove a block) joins this list when its plan adds it.
+// All six named actions are listed: a later action joins this list when its plan adds it.
 arch('no agent code books, cancels or marks a visit done')
     ->expect(['App\Ai', 'App\SendRule'])
     ->not->toUse([
@@ -139,4 +140,5 @@ arch('no agent code books, cancels or marks a visit done')
         'App\Actions\MarkAppointmentDone',
         'App\Actions\EditVisitNote',
         'App\Actions\BlockTime',
+        'App\Actions\RemoveBlock',
     ]);
