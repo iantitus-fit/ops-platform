@@ -82,6 +82,31 @@ class BookingRefused extends DomainException
     }
 
     /**
+     * A block's end is not after its start (D-16).
+     */
+    public static function endBeforeStart(): self
+    {
+        return new self('The end must be after the start.', 'ends_at');
+    }
+
+    /**
+     * A block's note is longer than the 100 characters a block note may hold (D-16).
+     */
+    public static function blockNoteTooLong(): self
+    {
+        return new self('A block note can be at most 100 characters.', 'note');
+    }
+
+    /**
+     * The block would sit over a booked visit, so the visit has to be cancelled first (decided gap 1). The sentence
+     * names the booking so the owner knows which one to cancel.
+     */
+    public static function blockOverBooking(string $name, string $day, string $time): self
+    {
+        return new self("{$name} is booked on {$day} at {$time}. Cancel that visit first, or pick another time.", 'starts_at');
+    }
+
+    /**
      * Another booking holds the booking lock and did not let go in time (D-07).
      */
     public static function busy(): self

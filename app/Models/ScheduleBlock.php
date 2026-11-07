@@ -91,4 +91,12 @@ class ScheduleBlock extends Model
     {
         $query->where('appointments.state', AppointmentState::Booked->value);
     }
+
+    /**
+     * Whether the block still holds time.
+     */
+    public function isBooked(): bool
+    {
+        return $this->state === AppointmentState::Booked;
+    }
 }

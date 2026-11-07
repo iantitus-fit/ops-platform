@@ -99,6 +99,20 @@ final readonly class BookingSettings
         return CarbonImmutable::instance($at)->setTimezone($zone)->format('g:i A');
     }
 
+    /**
+     * A span as the owner reads it after its start day, in the given zone: "8:00 AM to 12:00 PM" on one day, and with
+     * the end's day named when the span crosses midnight: "8:00 AM to Tuesday, November 3, 12:00 PM". A caller puts the
+     * start's dayText() and a comma in front.
+     */
+    public static function spanText(CarbonInterface $from, CarbonInterface $to, string $zone): string
+    {
+        if (self::dayText($from, $zone) === self::dayText($to, $zone)) {
+            return self::timeText($from, $zone).' to '.self::timeText($to, $zone);
+        }
+
+        return self::timeText($from, $zone).' to '.self::dayText($to, $zone).', '.self::timeText($to, $zone);
+    }
+
     private function renderVisitLine(string $line, string $service, CarbonInterface $startsAt, string $zone): string
     {
         return strtr($line, [
