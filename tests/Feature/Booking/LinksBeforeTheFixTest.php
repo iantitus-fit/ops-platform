@@ -2,6 +2,7 @@
 
 use App\Actions\BookAppointment;
 use App\Actions\MintBookingLink;
+use App\Enums\ActivityType;
 use App\Events\CustomerRecordChanged;
 use App\Models\BookingLink;
 use App\Models\Contact;
@@ -98,6 +99,14 @@ function linksBeforeFixSetUp(): array
 
     $openText = Message::factory()->for($conversationA)->outbound()->create(['body' => $openBody]);
     $expiredText = Message::factory()->for($conversationF)->create(['body' => $expiredBody]);
+
+    $contactA->activities()->create([
+        'type' => ActivityType::ReplySent,
+        'summary' => 'Reply sent by front desk',
+        'subject_type' => $openText->getMorphClass(),
+        'subject_id' => $openText->id,
+        'occurred_at' => $now,
+    ]);
 
     $filename = app(CustomerCard::class)->filename(...);
     File::ensureDirectoryExists(icmPath('records/customers'));
