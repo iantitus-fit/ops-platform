@@ -674,6 +674,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
   - A ZDR route for every provider before a real client (Phase 2 D-37).
 - **The attorney list, before a real client:**
   - the client agreement's safety and liability terms ([STATE](../.planning/STATE.md));
+  - the text provider's own log of every sent text (Twilio keeps each body, booking links included, and the platform cannot hide it there) ([Phase 8 verification](../.planning/phases/08-schedule-and-booking/08-VERIFICATION.md) gap D-12; Ian, 2026-11-07);
   - where the AI notice sits, if message shape (B) is adopted;
   - timed updates and overnight texts (recommendation, [2.2 input §2](phase-2.2-owner-input.md#2-complaints-a-follow-up-for-a-person-not-a-held-draft));
   - an accessibility statement, with a way for a customer to report a barrier;
@@ -692,6 +693,7 @@ Dispatch, crews, job notes and completion: not yet decided. A $5M+ contractor's 
 - Jev tuning.
 - Message shape (B) (notice placement).
 - IN-11 (outage alerts with no owner phone), decided before the first client goes live ([Phase 6 context](../.planning/phases/06-front-desk-and-team-rooms/06-CONTEXT.md) D-17). Affects: team, knowledge, safety and compliance.
+- The host's request log keeps each page address, so a visit to a booking page leaves its token there; before the first deploy, check what the host keeps and for how long, and drop or mask /book/ paths if it can (gap D-12, found while planning the fix). Affects: safety and compliance.
 - Hidden characters inside file values (Ian, 2026-10-25, [Phase 5 context](../.planning/phases/05-standard-rooms/05-CONTEXT.md) deferred): the line breaks, text-direction overrides and zero-width characters Phase 5 refuses in file and folder names pass the sync today inside values (a service name, for example) and can reach agent prompts. Whether the sync refuses them in every value is its own decision. Affects: safety and compliance, knowledge.
 - The Pest browser plugin's rmdir warning (Phase 5 close): the full suite reports one warning, from the browser plugin failing to remove `tests/Browser/Traces`. A quick task. Affects: safety and compliance.
 - VoiceOver says "clickable" on plain text in every dashboard section, Marketing included, because of click listeners at page level (Ian, 2026-11-01, [Phase 7 UAT](../.planning/phases/07-the-spine-and-leads/07-UAT.md)). Check it in the Phase 11 owner-screen pass (A11Y-03; [Phase 11](../.planning/ROADMAP.md#phase-11-phone-design-pass)). Recorded only. Affects: all ten areas (every room's dashboard section), led by safety and compliance.

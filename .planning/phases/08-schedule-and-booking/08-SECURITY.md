@@ -3,7 +3,7 @@ phase: "8"
 slug: "schedule-and-booking"
 status: open
 # threats_open = count of OPEN threats at or above workflow.security_block_on severity (the blocking gate)
-threats_open: 2
+threats_open: 0
 asvs_level: 1
 created: "2026-11-07"
 ---
@@ -54,7 +54,7 @@ The register is the 16 plans' threat models (authored at plan time). T-08-SC app
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation | Status | Evidence |
 |-----------|----------|-----------|----------|-------------|------------|--------|----------|
-| T-08-01 | Information disclosure | booking_links.token_hash | high | mitigate | Hash only, 64 chars unique, hidden from arrays, plain token never reaches the database | open | Hash+hidden+unique present (app/Models/BookingLink.php:29, app/Actions/MintBookingLink.php:55, migration 000001 token_hash unique, AppointmentTableTest 'keeps the token hash out of arrays'), BUT the clause "plain token never reaches the database" is false: the sent text carries the plain URL and OutboundSender stores it as messages.body (app/Actions/OutboundSender.php:257, sent via $message->body at :316); same root cause as T-08-27 |
+| T-08-01 | Information disclosure | booking_links.token_hash | high | mitigate | Hash only, 64 characters, unique, hidden from arrays; the plain token is never stored: every stored or printed copy of a sent text writes the booking address as /book/[link] (plan 08-17) and links sent before that were revoked (plan 08-18) | closed | app/Support/BookingLinkTokens.php (hide()); OutboundSender deliver() stores BookingLinkTokens::hide($body) (app/Actions/OutboundSender.php:269) and deliverExisting() the same (:302), while the channel gets the working link; a failed send's message is hidden too (:336); RecordInbound stores a pasted link hidden (app/Actions/RecordInbound.php:148); every records/ file goes through one write funnel that hides (app/Records/RecordsWriter.php:185); the fake carrier's log line is hidden (app/Channels/FakeTextChannel.php:64); the session's previous URL is hidden (app/Http/Middleware/StartSessionHidingBookingTokens.php:32); the front desk's own words never carry a booking address (app/SendRule/DecideSendOrDraft.php:72) and OutboundSender refuses a text holding /book/[link] (:606). Tests: tests/Feature/Booking/BookingLinkLeakTest.php 'gives the customer a working link and stores the scheduling reply with it hidden (D-12)', 'stores an approved scheduling draft with its link hidden (D-12, D-45)', 'lists every table and finds a planted token, so the search is not vacuous', 'leaves no token in the log or in any job payload during a send (D-12)', 'keeps the token out of a failed send\'s record at the chokepoint (D-12)', 'writes every records file with the token hidden, even from a row written before the fix (D-12)', 'keeps the token out of the session\'s previous URL (D-12)'. Links sent before the fix: database/migrations/2026_11_07_000001_revoke_booking_links_sent_before_tokens_were_hidden.php revokes every link that had not booked and queues the card redraws; tests/Feature/Booking/LinksBeforeTheFixTest.php 'revokes every link sent before the fix that has not booked (D-12)', 'leaves a booked link and an earlier revocation as they were (D-12, U-14)', 'rewrites no stored text (D-12)', 'redraws the folder so no file holds a token from before the fix (D-12)'. Full suite green (3051 tests). Hash, hidden and unique as before: app/Models/BookingLink.php:29, app/Actions/MintBookingLink.php:55, migration 000001 token_hash unique, AppointmentTableTest 'keeps the token hash out of arrays' |
 | T-08-02 | Tampering | appointments rows written outside the actions | medium | mitigate | AppointmentWritesTest scans app/ for every write shape | closed | tests/Unit/AppointmentWritesTest.php ('only the named actions write the appointments table' lists 6 actions; 'flags every kind of write' datasets) |
 | T-08-03 | Tampering | malformed appointments row | medium | mitigate | CHECK on Postgres, triggers on SQLite, scoped models | closed | database/migrations/2026_11_02_000003_add_kind_shape_check_to_appointments_table.php; AppointmentTableTest 'refuses a row of the wrong shape' (10 cases); global scopes app/Models/Appointment.php:55 and ScheduleBlock.php |
 | T-08-04 | Repudiation | who booked, cancelled, marked done | low | mitigate | actor and user id columns on every row | closed | migration 000002 booked_by/cancelled_by/*_user_id; set in BookAppointment.php:189,245, CancelAppointment.php:64, MarkAppointmentDone.php:66, BlockTime.php:108, RemoveBlock.php:47 |
@@ -80,7 +80,7 @@ The register is the 16 plans' threat models (authored at plan time). T-08-SC app
 | T-08-24 | Elevation of privilege | agent code booking a visit | medium | mitigate | arch rule; writes scan allows only the actions | closed | tests/Unit/AppointmentWritesTest.php arch('no agent code books, cancels or marks a visit done'); grep app/Ai app/SendRule finds no use |
 | T-08-25 | Tampering | typed time stored in wrong zone | medium | mitigate | picker reads business zone; change-day tests | closed | AppointmentsRelationManager.php:131 ->timezone(displayTimezone()), :150 parse; AppointmentsRelationManagerTest 'reads the owner's time in the business zone on both change days' |
 | T-08-26 | Spoofing | guessing a booking link | high | mitigate | 256-bit token; hash lookup; unknown and revoked same state | closed | MintBookingLink.php:41 bin2hex(random_bytes(32)); ResolveBookingLink.php:32-35,62 (DoesNotWork for both); BookingPageTest 'renders an unknown token and a revoked one the same' |
-| T-08-27 | Information disclosure | a database copy yielding working links | high | mitigate | only the hash is stored; token never logged or put in an exception | open | booking_links stores the hash only and no log/exception carries the token (MintBookingLink.php:55; BookAppointment.php:336 names link id), BUT the plain token is stored in messages.body (OutboundSender.php:257) and rendered into the customer card (app/Records/CustomerCard.php:417 `$message?->body`, written to records/ in the business folder and read by the front desk). Unexpired unbooked links in a DB copy still work. PageBookingTest 'stores only the hash' scans booking_links only |
+| T-08-27 | Information disclosure | a database copy yielding working links | high | mitigate | only the hash is stored; token never logged or put in an exception; every stored copy of a sent text hides the address (08-17) and links from before that are revoked (08-18) | closed | Evidence as T-08-01: no table, file, log line or queued job holds a working token after a send (BookingLinkLeakTest, which searches every table the database lists, the business folder, the log and the queue), and a copy or backup made before the fix holds only revoked links (LinksBeforeTheFixTest). The text provider's own log of every sent text cannot be redacted by the platform and is on the attorney list (STATE.md blockers, Phase 02.1; docs/BLUEPRINT.md section 10) |
 | T-08-28 | Tampering | replaying a link to book twice | medium | mitigate | state check under the lock plus unique booking_link_id | closed | BookAppointment.php:220 closedState under lock, :248 UniqueConstraintViolationException; migration 000002 booking_link_id unique; BookingLinkTokenTest 'books at most once, ever' and 'keeps the unique index as the backstop' |
 | T-08-29 | Tampering | booking a time not offered or service turned off | medium | mitigate | offers() and service re-check inside the lock | closed | BookAppointment.php:220-226; ResolveBookingLink.php closedState book_online check; BookingLinkTokenTest 're-checks the service at the tap' and 're-checks the time at the tap' |
 | T-08-30 | Repudiation | page booking with no record of how it came | low | mitigate | booking_link_id and booked_by customer; alert subject is carrying message | closed | BookAppointment.php:243-245; alertOwner :324 |
@@ -131,17 +131,21 @@ The register is the 16 plans' threat models (authored at plan time). T-08-SC app
 
 ---
 
-## Open Threats: T-08-27 and T-08-01 (one cause)
+## Closed: T-08-27 and T-08-01 (one cause; gap plans 08-17 and 08-18)
 
 `booking_links` stores only the sha256 hash, but the plain token also travels in the link the customer is sent. `RunFrontDesk.php:609-610` (and the owner path through `SendOwnerReply`, D-45) puts `route('booking.show', $token)` into the reply text; `OutboundSender.php:257` stores that text as `messages.body`; `CustomerCard.php:417` prints sent reply bodies into the customer card in `records/`. A copy of the database or of the business folder therefore holds working links until each expires (1 to 30 days), books, or is superseded. D-12 says a copy of the database holds no working link, so the implementation falls short of it.
 
 **Ian's ruling (2026-11-07):** fix it in a gap plan and keep D-12 as written. The gap plan must:
 
 - Cover every place the full booking link lands, not only the two found: `messages.body`, the customer card in `records/`, timeline and activity summaries, queued job payloads and `failed_jobs`, and application logs.
+  - Met by 08-17: the sent text (`messages.body`), a failed send's record, the fake carrier's log line, a customer's pasted link, every file under `records/` (the card, `customers/INDEX.md` and `open-leads.md` included, through RecordsWriter's one write funnel), timeline and alert quotes (they read the hidden row), the session's remembered page address and the queued job payloads all hold `/book/[link]` or no address. Met by 08-18 for what was written before: every link that had not booked was revoked, and the cards were redrawn.
 - Store and print the sent text with the token replaced (for example `…/book/[link]`), while the customer still receives the real link.
+  - Met by 08-17: `OutboundSender` sends the working link through the channel and stores `BookingLinkTokens::hide()` of it; the test 'gives the customer a working link and stores the scheduling reply with it hidden (D-12)' checks both.
 - Add a test that sends a link, then searches the database and the records folder and finds no working token anywhere.
+  - Met by 08-17: `BookingLinkLeakTest` sends a link on the agent path and on an owner-approved draft, then searches every table the database lists, the business folder, the log and the queued jobs. Plan 08-18's `LinksBeforeTheFixTest` runs the migration on rows and a card file written the old way and searches the folder again.
 
 **Outside the platform's control (for the attorney list):** the text provider (Twilio) keeps its own log of every sent message body, booking links included. The platform cannot redact it; it belongs on the list of items an attorney reviews before a real client goes live (STATE.md blockers, Phase 02.1).
+  - Met: the provider's log is on the attorney list in STATE.md blockers and in docs/BLUEPRINT.md section 10 (plan 08-18). The links in texts sent before 08-17 are revoked, but a text sent after it still reaches the provider's log with its working link until that link books, is replaced or expires. The host's request log, which records each page address and so each token, is a BLUEPRINT open item for the first deploy.
 
 ---
 
@@ -159,6 +163,7 @@ The register is the 16 plans' threat models (authored at plan time). T-08-SC app
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-11-07 | 70 | 68 | 2 | gsd-security-auditor (ASVS L1), at phase close |
+| 2026-11-08 | 70 | 70 | 0 | gap plans 08-17 and 08-18; re-audit pending (/gsd-secure-phase 8) |
 
 ---
 
@@ -166,10 +171,10 @@ The register is the 16 plans' threat models (authored at plan time). T-08-SC app
 
 - [x] All threats have a disposition (mitigate / accept / transfer)
 - [x] Accepted risks documented in Accepted Risks Log
-- [ ] `threats_open: 0` confirmed (2 open: T-08-27 and T-08-01, gap plan per Ian's ruling above)
+- [x] `threats_open: 0` confirmed (T-08-27 and T-08-01 closed by gap plans 08-17 and 08-18; BookingLinkLeakTest, LinksBeforeTheFixTest and the full suite pass)
 - [ ] `status: verified` set in frontmatter
 
-**Approval:** pending, blocked on the T-08-27 gap plan
+**Approval:** pending the security re-audit (/gsd-secure-phase 8), which also adds the gap plans' threats from T-08-70 on and sets status
 
 ## Security Audit 2026-11-07
 
