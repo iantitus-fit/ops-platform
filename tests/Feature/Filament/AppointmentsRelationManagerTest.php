@@ -301,6 +301,16 @@ it('says whether a confirmation text will go out', function (string $case, strin
     'no booking file' => ['no booking file', 'No confirmation text will go out. Customer texts for booking are off until rooms/schedule_and_booking/booking.md is added.'],
 ]);
 
+it('says no confirmation goes out to a customer with no phone (IN-03)', function () {
+    appointmentsTabSetUp();
+
+    $contact = Contact::factory()->withoutPhone()->agreedToAutomaticTexts()->create(['email' => 'no-phone@example.test']);
+    $html = appointmentsTabDialogHtml(appointmentsTab($contact));
+
+    expect($html)->toContain('No confirmation text will go out. This customer has no phone number on file.')
+        ->and($html)->not->toContain('A confirmation text will go out.');
+});
+
 it('never shows a block on the tab', function () {
     [$contact, $job] = appointmentsTabSetUp();
     $visit = Appointment::factory()->for($contact)->for($job)->at(CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), 90)->create();
