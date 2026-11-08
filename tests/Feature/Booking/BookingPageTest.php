@@ -13,6 +13,7 @@ use App\Models\ScheduleBlock;
 use App\Models\User;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use Carbon\CarbonImmutable;
+use Dom\HTMLDocument;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -378,3 +379,28 @@ it('stores one appointment when Book is called twice and shows the booked view',
 it('answers 404 when no folder version is live', function () {
     $this->get(route('booking.show', str_repeat('d', 64)))->assertNotFound();
 });
+
+it('states only what the page does in its privacy notice (WR-05)', function (string $state) {
+    [, $conversation] = bookingPageSetUp();
+    $token = str_repeat('a', 64);
+
+    if ($state === 'picker') {
+        [, $token] = bookingPageMint($conversation);
+    }
+
+    $response = $this->get(route('booking.show', $token));
+
+    $response->assertOk();
+
+    $html = $response->getContent();
+    $notice = HTMLDocument::createFromString($html, LIBXML_NOERROR)->querySelector('footer details');
+
+    expect($notice)->not->toBeNull()
+        ->and(trim($notice->querySelector('p')->textContent))->toBe('This page uses your link to book one visit. It does not ask you to type anything. Like every website, it receives the internet address of your device, and it uses that address to limit repeated tries.')
+        ->and(bookingPageText($html))
+        ->not->toContain('placeholder')
+        ->not->toContain('phone number or address');
+})->with([
+    'the picker page' => ['picker'],
+    'the does-not-work page' => ['does not work'],
+]);
