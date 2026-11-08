@@ -1,13 +1,17 @@
 <?php
 
+use App\Actions\BookAppointment;
 use App\Actions\ComposeAutomatedText;
 use App\Actions\MintBookingLink;
 use App\Actions\OutboundSender;
 use App\Actions\SendCombinedReply;
 use App\Ai\AgentFile;
 use App\Ai\FrontDeskPrompt;
+use App\Channels\FakeTextChannel;
+use App\Enums\AlertReason;
 use App\Enums\AppointmentState;
 use App\Enums\MessageStatus;
+use App\Events\CustomerRecordChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\BookingLink;
@@ -15,12 +19,15 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\IntakeAnswer;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use App\Models\User;
 use App\SendRule\CustomerReading;
 use App\SendRule\ReplyParts;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -147,6 +154,21 @@ function bookingLinkSendFailsWith(Throwable $exception): void
         public function handle(Conversation $conversation, ReplyParts $parts, CustomerReading $reading, array $attributes = []): Message
         {
             throw $this->failure;
+        }
+    });
+}
+
+/**
+ * A MintBookingLink whose recording of the carrying message fails, so the link went out in a text the platform could not
+ * tie back to the link (WR-03).
+ */
+function bookingLinkAttachFails(): void
+{
+    app()->bind(MintBookingLink::class, fn () => new class(app(ActiveConfig::class)) extends MintBookingLink
+    {
+        public function attachMessage(BookingLink $link, Message $message): void
+        {
+            throw new RuntimeException('could not record the carrying message');
         }
     });
 }
@@ -319,6 +341,67 @@ it('revokes the link when anything else fails, and gives back the earlier one (D
         ->and($minted)->toHaveCount(1)
         ->and($minted->first()->revoked_at)->not->toBeNull()
         ->and($earlier->fresh()->superseded_at)->toBeNull();
+});
+
+it('keeps a delivered link live when recording its message fails (WR-03)', function () {
+    $earlier = null;
+    Exceptions::fake();
+
+    bookingLinkRunsScheduling(beforeRun: function (Contact $contact, Conversation $conversation) use (&$earlier): void {
+        $earlier = bookingLinkEarlier($conversation);
+        bookingLinkAttachFails();
+    });
+
+    $text = bookingLinkTextsContaining('We can get a tech out this week.');
+    $token = bookingLinkTokenIn($text[0] ?? '');
+    $link = BookingLink::query()->where('id', '!=', $earlier->id)->sole();
+    $carrying = Message::query()->where('meta->booking_link_id', $link->id)->sole();
+
+    expect($text)->toHaveCount(1)
+        ->and($token)->not->toBeNull()
+        ->and($link->token_hash)->toBe(hash('sha256', $token))
+        ->and($link->fresh()->revoked_at)->toBeNull()
+        ->and($earlier->fresh()->superseded_at)->not->toBeNull()
+        ->and($carrying->status)->toBe(MessageStatus::Sent)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(0)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'could not record the carrying message');
+
+    app(BookAppointment::class)->fromLink($link->fresh(), CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago'), CarbonImmutable::now());
+
+    $alert = OwnerAlert::query()->where('reason', AlertReason::AppointmentBooked->value)->sole();
+
+    expect(Appointment::query()->count())->toBe(1)
+        ->and($alert->message_id)->toBe($carrying->id);
+});
+
+it('keeps the link when the card redraw after the send fails (WR-03)', function () {
+    Exceptions::fake();
+    $failed = false;
+
+    bookingLinkRunsScheduling(beforeRun: function () use (&$failed): void {
+        Event::listen(CustomerRecordChanged::class, function () use (&$failed): void {
+            $toDana = array_filter(app(FakeTextChannel::class)->sent(), fn (array $text): bool => $text['to'] === '+12025550123');
+
+            if (! $failed && $toDana !== []) {
+                $failed = true;
+
+                throw new RuntimeException('queue down');
+            }
+        });
+    });
+
+    $link = BookingLink::sole();
+    $carrying = Message::query()->where('meta->booking_link_id', $link->id)->sole();
+
+    expect($failed)->toBeTrue()
+        ->and(bookingLinkTokenIn(bookingLinkTextsContaining('We can get a tech out this week.')[0] ?? ''))->not->toBeNull()
+        ->and($link->revoked_at)->toBeNull()
+        ->and($carrying->status)->toBe(MessageStatus::Sent)
+        ->and($link->message_id)->toBe($carrying->id);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'queue down');
 });
 
 it('supersedes the first link with the second, each with its own text (D-12)', function () {

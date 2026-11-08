@@ -22,6 +22,7 @@ use App\Models\User;
 use App\SendRule\CustomerReading;
 use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -155,6 +156,21 @@ function approvedDraftLinkRoomOn(): void
 function approvedDraftLinkEarlier(): BookingLink
 {
     return app(MintBookingLink::class)->handle(Conversation::sole(), 'ac-repair', CarbonImmutable::now())[0];
+}
+
+/**
+ * A MintBookingLink whose recording of the carrying message fails, so the link went out in a text the platform could not
+ * tie back to the link (WR-03).
+ */
+function approvedDraftLinkAttachFails(): void
+{
+    app()->bind(MintBookingLink::class, fn () => new class(app(ActiveConfig::class)) extends MintBookingLink
+    {
+        public function attachMessage(BookingLink $link, Message $message): void
+        {
+            throw new RuntimeException('could not record the carrying message');
+        }
+    });
 }
 
 it('adds the booking link when the owner approves a held scheduling draft (D-45)', function () {
@@ -377,6 +393,31 @@ it('revokes the link and gives back the earlier one when the text channel fails 
         ->and($draft->fresh()->meta['booking_link_id'])->toBe($minted->id)
         ->and($minted->revoked_at)->not->toBeNull()
         ->and($earlier->fresh()->superseded_at)->toBeNull();
+});
+
+it('keeps a delivered link live and says Draft sent when recording its message fails (WR-03)', function () {
+    $draft = approvedDraftLinkHeld();
+    $earlier = approvedDraftLinkEarlier();
+    Exceptions::fake();
+    approvedDraftLinkAttachFails();
+
+    approvedDraftLinkThread()
+        ->call('approveDraft')
+        ->assertHasNoErrors()
+        ->assertNotified(Notification::make()->title('Draft sent')->success());
+
+    $text = approvedDraftLinkTextsToDana()[1];
+    $token = approvedDraftLinkTokenIn($text);
+    $link = BookingLink::query()->where('id', '!=', $earlier->id)->sole();
+
+    expect($token)->not->toBeNull()
+        ->and($link->token_hash)->toBe(hash('sha256', $token))
+        ->and($link->revoked_at)->toBeNull()
+        ->and($earlier->fresh()->superseded_at)->not->toBeNull()
+        ->and($draft->fresh()->status)->toBe(MessageStatus::Sent)
+        ->and($draft->fresh()->meta['booking_link_id'])->toBe($link->id);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'could not record the carrying message');
 });
 
 it('mints nothing when a newer draft replaced the one on screen (D-28, D-45)', function () {
