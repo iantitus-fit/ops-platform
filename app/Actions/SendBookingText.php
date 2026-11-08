@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\AppointmentState;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
@@ -42,6 +43,15 @@ class SendBookingText
      * The most of an error message kept on a row.
      */
     private const int FAILURE_LENGTH = 200;
+
+    /**
+     * How many minutes after the send window closes a row that came due inside the window still goes out. The sweep runs
+     * every minute as a queued job, so it can reach a row a minute or more after it came due, and a row due inside the
+     * window must not be pushed to the next day by that lateness. Five minutes covers several missed runs and keeps any
+     * such text within minutes of the close. It never lets through a row that came due after the close, and the hours a
+     * reminder may go out stay on the attorney list (D-44).
+     */
+    public const int LATE_GRACE_MINUTES = 5;
 
     /**
      * What OutboundSender says when a front-desk reply to this customer is still being sent: a reason to wait, not to refuse.
@@ -133,7 +143,7 @@ class SendBookingText
         $zone = $this->config->timezone();
 
         if (! $send->ignores_window) {
-            $opening = $this->nextOpening($settings, $zone);
+            $opening = $this->nextOpening($settings, $zone, $send);
 
             if ($opening !== null) {
                 $this->moveTo($send, $claimedAt, $opening);
@@ -253,16 +263,25 @@ class SendBookingText
     /**
      * The next moment the send window opens when now is outside it, or null when now is inside it (D-29). Both ends of the
      * window count as inside, judged to the minute, so a row due exactly when the window closes goes out even when the
-     * sweep reaches it a few seconds late. Days are calendar days on the business wall clock (D-11), so a daylight-saving
-     * change cannot move the wall time by an hour.
+     * sweep reaches it a few seconds late. The grace adds to that: a row that came due at or before today's close, and
+     * is reached no more than LATE_GRACE_MINUTES after it, still goes out, because the sweep's own lateness must not
+     * drop a row that was due inside the window. A row that came due after the close is never let through by the grace.
+     * Days are calendar days on the business wall clock (D-11), so a daylight-saving change cannot move the wall time by
+     * an hour.
      */
-    private function nextOpening(BookingSettings $settings, string $zone): ?Carbon
+    private function nextOpening(BookingSettings $settings, string $zone, BookingSend $send): ?Carbon
     {
         $local = now()->setTimezone($zone)->startOfMinute();
         $opens = $local->copy()->setTimeFromTimeString($settings->sendWindowStart);
         $closes = $local->copy()->setTimeFromTimeString($settings->sendWindowEnd);
 
         if ($local->greaterThanOrEqualTo($opens) && $local->lessThanOrEqualTo($closes)) {
+            return null;
+        }
+
+        $dueInsideTheWindow = $send->due_at->copy()->setTimezone($zone)->startOfMinute()->lessThanOrEqualTo($closes);
+
+        if ($dueInsideTheWindow && $local->greaterThan($closes) && $local->lessThanOrEqualTo($closes->copy()->addMinutes(self::LATE_GRACE_MINUTES))) {
             return null;
         }
 
@@ -328,19 +347,23 @@ class SendBookingText
     }
 
     /**
-     * End a row whose visit is no longer booked or no longer ahead: the text would never be right to send. It ends with
-     * no note, unless the text had been waiting on a customer's unread text, when the customer's thread would otherwise
-     * show a reminder that never came and no reason (D-26, D-27).
+     * End a row whose visit is no longer booked or no longer ahead: the text would never be right to send. The note is
+     * written for a text that had been waiting on a customer's unread text, and for a visit not cancelled whose start has
+     * passed ("the visit started first"). A row reaches here with its visit still on only when it was held past the
+     * start, moved by the window or delayed; the owner reads that on the card, with no alert (D-26, D-27). A cancelled
+     * visit ends with no note (D-16).
      */
     private function drop(BookingSend $send): void
     {
-        $why = 'an earlier text from the customer was still waiting to be read';
+        $visit = $send->appointment()->first();
 
-        $this->skip(
-            $send,
-            'The visit is no longer booked or no longer ahead.',
-            $send->waited_on_unread_at !== null ? $why : null,
-        );
+        $noteReason = match (true) {
+            $send->waited_on_unread_at !== null => 'an earlier text from the customer was still waiting to be read',
+            $visit !== null && $visit->state !== AppointmentState::Cancelled && $visit->starts_at->lte(now()) => 'the visit started first',
+            default => null,
+        };
+
+        $this->skip($send, 'The visit is no longer booked or no longer ahead.', $noteReason);
     }
 
     /**
