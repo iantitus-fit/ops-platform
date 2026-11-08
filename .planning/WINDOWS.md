@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 43
+open_count: 45
 waived_count: 1
 fixed_count: 29
-total_count: 73
-last_updated: 2026-11-07T21:01:46.663Z
+total_count: 75
+last_updated: 2026-11-08T15:40:01.106Z
 ---
 
 # Broken Windows Ledger
@@ -88,6 +88,8 @@ last_updated: 2026-11-07T21:01:46.663Z
 | 71 | 08 | unrun-verify | tests/Feature/Filament/ContactScreenKeyboardTest.php |  | 08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43) | open |  | 2026-11-07T16:29:09.095Z |  |
 | 72 | 08 | unrun-verify | .planning/phases/08-schedule-and-booking/08-16-PLAN.md |  | 08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only) | open |  | 2026-11-07T21:01:46.558Z |  |
 | 73 | 08 | unrun-verify | app/Records/CustomerCard.php |  | 08-16 Phase 8 UAT, Dev chat: a booked customer asks "what time are you coming?" and the reply is checked; it states the booked time or is held by the promise label (D-39) | open |  | 2026-11-07T21:01:46.663Z |  |
+| 74 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkLeakTest.php |  | 08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read | open |  | 2026-11-08T15:40:01.019Z |  |
+| 75 | 08 | unrun-verify | app/Support/BookingLinkTokens.php |  | 08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route("booking.show", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3) | open |  | 2026-11-08T15:40:01.106Z |  |
 
 ````json
 [
@@ -1037,6 +1039,32 @@ last_updated: 2026-11-07T21:01:46.663Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-07T21:01:46.663Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 74,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkLeakTest.php",
+    "line": null,
+    "description": "08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-08T15:40:01.019Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 75,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Support/BookingLinkTokens.php",
+    "line": null,
+    "description": "08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route(\"booking.show\", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-08T15:40:01.106Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
