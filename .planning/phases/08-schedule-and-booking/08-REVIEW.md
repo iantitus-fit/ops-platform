@@ -1,225 +1,183 @@
 ---
 phase: 08-schedule-and-booking
-reviewed: 2026-11-07T00:00:00Z
+reviewed: 2026-11-08T00:00:00Z
 depth: standard
-files_reviewed: 88
+files_reviewed: 37
 files_reviewed_list:
-  - .github/workflows/tests.yml
-  - app/Actions/AddContactByHand.php
-  - app/Actions/BlockTime.php
-  - app/Actions/BookAppointment.php
-  - app/Actions/CancelAppointment.php
-  - app/Actions/CloseProject.php
-  - app/Actions/ContactRefused.php
-  - app/Actions/EditVisitNote.php
-  - app/Actions/MarkAppointmentDone.php
-  - app/Actions/MintBookingLink.php
-  - app/Actions/OpenConversationForText.php
-  - app/Actions/OpenProject.php
   - app/Actions/OutboundSender.php
-  - app/Actions/OwnerAlertText.php
-  - app/Actions/RemoveBlock.php
-  - app/Actions/ResolveDraft.php
+  - app/Actions/RecordInbound.php
   - app/Actions/RunFrontDesk.php
   - app/Actions/SendBookingText.php
   - app/Actions/SendOwnerReply.php
-  - app/Actions/SetAutomaticTexts.php
-  - app/Enums/AlertReason.php
-  - app/Enums/AppointmentActor.php
-  - app/Enums/AppointmentKind.php
-  - app/Enums/AppointmentState.php
-  - app/Enums/BookingPageState.php
-  - app/Enums/MessageKind.php
-  - app/Enums/ProjectActor.php
+  - app/Channels/FakeTextChannel.php
+  - app/Enums/BookingRefusal.php
   - app/Filament/Pages/Schedule.php
-  - app/Filament/Resources/Contacts/ContactResource.php
-  - app/Filament/Resources/Contacts/Pages/CreateContact.php
-  - app/Filament/Resources/Contacts/Pages/ListContacts.php
-  - app/Filament/Resources/Contacts/Pages/ViewContact.php
   - app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php
-  - app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php
-  - app/Filament/Resources/Contacts/Schemas/ContactInfolist.php
-  - app/Http/Middleware/KeepBookingLinkPrivate.php
-  - app/Icm/BusinessClock.php
-  - app/Icm/ConnectorChecks.php
-  - app/Icm/FolderSync.php
-  - app/Icm/RoomDropChecks.php
-  - app/Jobs/SendDueBookingTexts.php
+  - app/Http/Middleware/StartSessionHidingBookingTokens.php
   - app/Livewire/BookingPage.php
-  - app/Livewire/ConversationThread.php
-  - app/Models/Appointment.php
-  - app/Models/BookingLink.php
-  - app/Models/BookingSend.php
-  - app/Models/Contact.php
-  - app/Models/Project.php
-  - app/Models/ScheduleBlock.php
-  - app/Providers/AppServiceProvider.php
-  - app/Records/CustomerCard.php
-  - app/Rooms/Leads/LeadsSection.php
+  - app/Records/RecordsWriter.php
   - app/Rooms/ScheduleAndBooking/Availability.php
-  - app/Rooms/ScheduleAndBooking/BookingFileType.php
-  - app/Rooms/ScheduleAndBooking/BookingLinkLookup.php
   - app/Rooms/ScheduleAndBooking/BookingRefused.php
-  - app/Rooms/ScheduleAndBooking/BookingSettings.php
-  - app/Rooms/ScheduleAndBooking/ReminderSchedule.php
-  - app/Rooms/ScheduleAndBooking/ResolveBookingLink.php
-  - app/Rooms/ScheduleAndBooking/ScheduleAndBookingServiceProvider.php
-  - app/Rooms/ScheduleAndBooking/ScheduleSection.php
-  - app/Rooms/ScheduleAndBooking/ServiceToBook.php
-  - app/Rooms/ScheduleAndBooking/VisitActions.php
-  - app/Rooms/ScheduleAndBooking/WithdrawUnsentLink.php
-  - app/SendRule/ReplyParts.php
-  - app/Support/PhoneNumber.php
-  - bootstrap/providers.php
-  - database/migrations/2026_11_02_000001_create_booking_links_table.php
-  - database/migrations/2026_11_02_000002_create_appointments_table.php
-  - database/migrations/2026_11_02_000003_add_kind_shape_check_to_appointments_table.php
-  - database/migrations/2026_11_02_000004_create_booking_sends_table.php
-  - database/migrations/2026_11_02_000005_add_automatic_texts_to_contacts_table.php
-  - resources/css/app.css
-  - resources/views/booking/rate-limited.blade.php
-  - resources/views/components/booking/button.blade.php
-  - resources/views/components/booking/day.blade.php
-  - resources/views/components/booking/error.blade.php
+  - app/SendRule/DecideSendOrDraft.php
+  - app/SendRule/Verdict.php
+  - app/Support/BookingLinkTokens.php
+  - bootstrap/app.php
+  - database/migrations/2026_11_07_000001_revoke_booking_links_sent_before_tokens_were_hidden.php
+  - docs/BLUEPRINT.md
+  - docs/sprints/sprint-1.1.md
   - resources/views/components/booking/footer.blade.php
   - resources/views/components/booking/notice.blade.php
-  - resources/views/components/booking/sms.blade.php
-  - resources/views/components/booking/time.blade.php
-  - resources/views/filament/pages/schedule.blade.php
-  - resources/views/filament/rooms/schedule-section.blade.php
-  - resources/views/layouts/customer.blade.php
   - resources/views/livewire/booking-page.blade.php
-  - resources/views/livewire/conversation-thread.blade.php
-  - routes/console.php
-  - routes/web.php
+  - tests/Feature/Booking/ApprovedDraftBookingLinkTest.php
+  - tests/Feature/Booking/BookingLinkLeakTest.php
+  - tests/Feature/Booking/BookingLinkTest.php
+  - tests/Feature/Booking/BookingPageBrowserTest.php
+  - tests/Feature/Booking/BookingPageContractTest.php
+  - tests/Feature/Booking/BookingPageTest.php
+  - tests/Feature/Booking/BookingPageThrottleTest.php
+  - tests/Feature/Booking/BookingSendOnceTest.php
+  - tests/Feature/Booking/LinksBeforeTheFixTest.php
+  - tests/Feature/Booking/RefusalSentencesTest.php
+  - tests/Feature/Filament/AppointmentsRelationManagerTest.php
+  - tests/Feature/Filament/SchedulePageTest.php
+  - tests/Unit/BookingTextKindTest.php
 findings:
   critical: 0
-  warning: 5
-  info: 6
-  total: 11
+  warning: 3
+  info: 3
+  total: 6
 status: issues_found
 ---
 
-# Phase 8: Code Review Report
+# Phase 8: Code Review Report (re-review after gap plans 08-17 to 08-23)
 
-**Reviewed:** 2026-11-07
+**Reviewed:** 2026-11-08
 **Depth:** standard
-**Files Reviewed:** 88 source, view, migration, route and config files. The other 62 paths in scope (tests, factories, docs, examples, icon components) were skimmed for reliability only and are not listed.
+**Files Reviewed:** 37 (the changed source, view, migration and doc files since dc77bb8, plus the tests that pin them)
 **Status:** issues_found
 
 ## Summary
 
-The booking core is carefully built. I found no BLOCKER. The things I tried to break all held:
+This is an incremental re-review of the code changed since the 2026-11-07 review. I read each changed file in full and traced what it calls: `OutboundSender`, `SendBookingText`, `SendDueBookingTexts`, `MintBookingLink`, `RunFrontDesk::sendPassingReply`, `SendOwnerReply::sendDraftAskingForLink`, `DecideSendOrDraft`, `Verdict`, `HeldReasons`, `FrontDeskPrompt::history`, `DevChat`, and Laravel's `StartSession`.
 
-- **Booking link and page security.** The token is 256 random bits and only its hash is stored. Livewire state is `#[Locked]`. The tapped time is re-validated by `Availability::offers()` under the lock. A refused or closed link reads the same as an unknown one.
-- **Concurrency and send claims.** Overlap checks happen inside the cache lock plus the transaction. The unique `booking_link_id` index is a backstop. `booking_sends` claims use the same conditional-update pattern as owner alerts.
-- **Views.** There are no `{!! !!}` outputs in the booking views.
-- **Timezone handling.** Carbon 3 elapsed-time arithmetic matches what `Availability` assumes.
+I found no BLOCKER. These held up when I tried to break them:
 
-The remaining defects are in the failure and edge paths. The first three below touch the "text goes out exactly once and means what it says" guarantee. The T-08-27 plain-token issue is already recorded in 08-SECURITY.md and is not repeated here.
+- **Hide and send split (D-12).** `OutboundSender` stores `hide($body)` and hands the raw text to the channel (`OutboundSender.php:317`, `:350`, `:378`). Both `deliver()` and `deliverExisting()` do this, and the length check runs on the raw text. A channel failure's message is hidden before it reaches the row, the activity note or the exception (`:384-391`).
+- **Session replacement.** The `StartSession` override matches the vendor signature (`storeCurrentUrl(Request $request, $session)`). It runs before `saveSession`, is idempotent on non-GET requests, and `web(replace:)` swaps the class in place in the group.
+- **Send-once.** The lookup by `meta->booking_send_id` happens before every other check. `markSent()` swallows only the outcome write and leaves the claim in place, so the next sweep ends the row on the existing message.
+- **Show filters.** `showRows()` now splits booked rows by `ends_at`, so a span over midnight is in exactly one filter. The `orWhere` is wrapped in its own group, so it cannot escape the query's other constraints.
+- **Rate limit retry.** `tryAgain()` goes through `RateLimiter::attempt()`, which counts nothing while the minute is not up, so it cannot be used to tap past the limit.
 
-No finding reopens a locked decision. IN-02 notes where a locked decision (D-26) leaves a soft spot.
+The remaining defects are in the corners the fixes left. Three are worth fixing:
+
+- A queued booking message left by a dead sender ends its row as failed with no trace the owner can read.
+- The front-desk model is never told what `/book/[link]` in its own history means, so the new hold will fire on ordinary follow-ups.
+- WR-03 is only mostly fixed: a failure after the text went out, other than the recording step, still withdraws a live link.
+
+No finding reopens a locked decision.
+
+## Previous Review Findings (2026-11-07)
+
+| Id | Status | Evidence |
+|----|--------|----------|
+| WR-01 (booking text sent twice when the outcome write fails or the process dies) | Fixed, with one soft spot (see WR-06) | `SendBookingText.php:103-109` looks for a message carrying `meta.booking_send_id` before anything else. `:202-232` ends the row on a sent or delivered message, on a failed one with its own error, and on a still-queued one without resending. `:239-251` reports the failed outcome write and logs a critical record naming the row and message but never the text. Pinned by `tests/Feature/Booking/BookingSendOnceTest.php` (the DB hook that throws on the `set "sent_at"` update, then the 3-minute re-sweep). |
+| WR-02 (reminder at the window boundary falls out on a late sweep; a dropped reminder leaves no trace) | Fixed, with one soft spot (see IN-07) | `SendBookingText.php:54` (`LATE_GRACE_MINUTES = 5`) and `:262-279` (`nextOpening()` grace). `:347-358` (`drop()`) writes "Reminder/Confirmation text not sent: the visit started first." for a non-cancelled visit whose start has passed. Pinned by the datasets and the overtaken-visit tests in `BookingSendOnceTest.php`. |
+| WR-03 (link revoked when a step after the send throws) | Partly fixed (see WR-08) | `RunFrontDesk.php:617-645` and `:652-659`, and `SendOwnerReply.php:195-219`, run `attachMessage()` after the guarded block and only report its failure. A failure after the channel accepted the text that is not the recording step still reaches the `catch (Throwable)` branches that withdraw the link (`RunFrontDesk.php:634-638`, `SendOwnerReply.php:203-211`). |
+| WR-04 (refusal handling matches on copied message text) | Fixed | Every sentence a caller reads is a public constant on `OutboundSender.php:60-148`, and `SendBookingText.php:309-338` compares only with those. `BookingRefused.php:16` carries a `BookingRefusal` reason and `BookingPage.php:209-216` matches on it. `RefusalSentencesTest.php` pins both (including a source scan that `SendBookingText` keeps no copy of a sentence). |
+| WR-05 (placeholder privacy wording on the customer page) | Fixed | `resources/views/components/booking/footer.blade.php:9` now says only what the page does: it asks for nothing typed, and it receives the device's address and uses it to limit repeated tries. The session-cookie and session-row facts are recorded for the attorney in `docs/BLUEPRINT.md` section 10, so I do not raise them again. |
+| IN-01 (doc comment contradicts the code on the drive buffer) | Fixed | `Availability.php:89` and `:108` now say hand bookings pass the file's drive buffer, or 0 with no booking file. |
+| IN-02 (booking-text chokepoint trusts caller-declared parts) | Fixed as Ian ruled (architecture test) | `tests/Unit/BookingTextKindTest.php:46-52` pins the three files under `app/` that may name the kind, and the snippet datasets prove the scan matches. The scan is lexical, so `MessageKind::from($variable)` would pass it; that is the accepted shape of the ruling, not a new defect. |
+| IN-03 (hand-booking dialog forecasts a text for a contact with no phone) | Fixed | `AppointmentsRelationManager.php:240` returns "No confirmation text will go out. This customer has no phone number on file." The optional "next opening" variant is declined in the docblock at `:224-230`, which is reasonable. |
+| IN-04 (Upcoming and Past overlap for a span over midnight) | Fixed | `Schedule.php:277-296`: Past is booked rows with `ends_at` before today plus done visits that started before today, and Upcoming is booked rows with `ends_at` from today on. |
+| IN-05 (rate-limited notice cannot be retried without a reload) | Fixed | `BookingPage.php:153-156` (`tryAgain()`) and `booking-page.blade.php:2-9` (Try again button, notice focus, heading focus after a retry). |
+| IN-06 (customer card's Next appointment line goes stale) | Deferred by Ian to Phase 9 (the nightly rebuild); not re-reviewed | Unchanged in `app/Records/CustomerCard.php`. |
 
 ## Warnings
 
-### WR-01: A booking text can be sent twice when the outcome write fails or the process dies after the send
+### WR-06: A booking row whose sender died after queuing the message ends as failed with no note anywhere the owner reads
 
-**File:** `app/Actions/SendBookingText.php:122-149` and `:393-413`
-**Issue:** `send()` calls `OutboundSender::send()`. Only after that does it write `sent_at` through `end()`. `end()` swallows a database error and returns false. A process kill between the two steps, or a transient DB error, leaves the row claimed with no outcome. After `SendOwnerAlert::CLAIM_WAIT_MINUTES` the sweep re-claims it and sends the confirmation or reminder again. The message already carries `meta.booking_send_id`, but nothing looks for it before sending. The class docblock promises "a text is sent at most once". That promise only holds when the post-send write succeeds. The same lease pattern in `SendOwnerAlert` has the same hole, but a customer getting two reminders, or a repeat confirmation, is customer-visible.
-**Fix:** Make the send idempotent on the message that already exists. Check for it before sending, and in `answerRefusal` and `end` paths:
+**File:** `app/Actions/SendBookingText.php:222-231` and `:83-89`
+**Issue:** The new send-once lookup (`:103-109`) finds a leftover message in the `queued` state. It ends the row failed with "The send stopped partway, so it was not sent again." and a `Log::critical` record, but writes no timeline note. The customer card does not draw `booking_sends` rows. The only record the owner can read is the critical log line.
+
+A `queued` leftover is not always a text that reached the customer. `OutboundSender::deliver()` creates the row as `queued` (`OutboundSender.php:312-320`) before the channel is called (`:378`). A sender that dies between those two lines leaves a queued message and no text on any phone. The confirmation or reminder then silently never goes out. This is the same "silently never goes out" shape the previous WR-02 raised, and D-27 says the owner reads a note on the card. The `Failed` branch is fine because `OutboundSender::recordFailure()` already wrote its own note.
+
+A smaller related gap sits in `handle()` at `:83-89`. Its `catch (Throwable)` ends the row failed without asking whether a message already exists. If a non-`DomainException` escapes `OutboundSender::send()` after the channel accepted the text (see WR-08), the row says "failed" while the customer has the text. The send-once lookup never runs again because the row has ended.
+**Fix:** Give the queued branch a timeline note, using the same room entry `skip()` writes. Say it plainly: "Reminder text may not have reached the customer: the send stopped partway." Run the existing-message lookup inside the `catch` in `handle()` too:
 ```php
-$existing = Message::query()
-    ->where('conversation_id', $conversation->id)
-    ->where('meta->booking_send_id', $send->id)
-    ->first();
+} catch (Throwable $exception) {
+    report($exception);
 
-if ($existing !== null) {
-    $this->end($send, ['sent_at' => $this->now(), 'message_id' => $existing->id]);
+    $existing = Message::query()->where('meta->booking_send_id', $send->id)->latest('id')->first();
 
-    return;
+    if ($existing !== null) {
+        $this->endOnExisting($send, $existing);
+
+        return;
+    }
+
+    $this->end($send, ['failed_at' => $this->now(), 'failure' => $this->reasonFrom($exception->getMessage())]);
 }
 ```
-Also make the `sent_at` write retry once, or log loudly when `end()` returns false after a successful send.
 
-### WR-02: A reminder due at the send-window boundary falls out of the window on a one-minute delay, and a reminder dropped at visit time leaves no trace
+### WR-07: The front-desk model is never told what `/book/[link]` in its own history means, so the new hold fires on ordinary follow-ups
 
-**File:** `app/Rooms/ScheduleAndBooking/ReminderSchedule.php:96-110`, `app/Actions/SendBookingText.php:187-199` and `:263-272`
-**Issue:** `ReminderSchedule::reminderDue()` deliberately moves an out-of-window reminder to exactly the window's end (for example 20:00). `SendBookingText::nextOpening()` then judges "inside the window" to the minute, so that row is inside only during the 20:00 minute. The sweep is a queued job that runs every minute (`Schedule::job(new SendDueBookingTexts)`), so queue latency over 59 seconds is realistic. A row reached at 20:01 gets `moveTo()` the next opening instead. For a visit early the next morning, that opening may be after the visit has started. `drop()` then ends the row. `drop()` only writes a timeline note when `waited_on_unread_at` is set, so the owner sees nothing: the reminder silently never goes out. The comment says "a few seconds late" is tolerated, but the schedule is built to sit on the edge, which makes this the common case rather than the rare one.
-**Fix:** Schedule the moved reminder a margin before the close (for example `sendWindowEnd` minus 5 minutes, floored at the window start), or have `nextOpening()` treat a row whose due time was inside the window as still sendable for a short grace period. Separately, write a "Reminder text not sent: the visit started first" note when a row ends in `drop()` while its `due_at` was moved.
+**File:** `app/SendRule/DecideSendOrDraft.php:72-74`, `app/Ai/FrontDeskPrompt.php:39-47` and `:140-175`
+**Issue:** After 08-17 every sent booking link is stored as `https://host/book/[link]`. `FrontDeskPrompt::history()` feeds those stored bodies back to the model as `assistant` turns. Nothing in the prompt's rules mentions links, URLs or that text: `grep -n -i "link\|url\|http\|book"` on the file finds only the price rule and the "never say a visit is set" rule. A model that sees its own earlier turn ending in `/book/[link]` has a strong pull to repeat or paraphrase it ("you can use /book/[link] to pick a time"). `namesBookingAddress()` then holds the reply as a draft with "Held: writes its own booking link, which would not open".
 
-### WR-03: A booking link that reached the customer is revoked when a step after the send throws
+The hold is correct as a backstop, but as the only defence it turns every such follow-up into owner work, on the exact scheduling path that was meant to send on its own. It also teaches the model nothing. The plan's own UAT note expects this ("asking Dev chat for the link again must give a fresh link line or a held draft"), so it is a known cost. It is still the one place where a single prompt sentence would cut the hold rate.
+**Fix:** Add one rule to `FrontDeskPrompt::RULES`, near the scheduling label: "A booking link in an earlier text of yours shows as /book/[link]. That is a placeholder for a working link the system added. Never write a booking address yourself. If the customer needs a link again, reply with the scheduling label and no address, and the system adds a fresh one." Add a prompt-content test beside the existing rule tests.
 
-**File:** `app/Actions/RunFrontDesk.php:625-643` and `app/Actions/SendOwnerReply.php:190-212`
-**Issue:** In both places the link is minted, the text is sent, and then `attachMessage()` runs inside the same `try`. If `attachMessage()` (a single `save()`) throws, the `catch (Throwable)` branch calls `withdrawLink()` or `withdrawUnsentLink->handle()`. That revokes a link that is already in the customer's text and restores the older links, which were superseded on purpose. The customer taps "This link does not work". The owner is told nothing. In `SendOwnerReply` the exception is also rethrown to the owner as if the send failed, although the text went out. The failure window is small, but the cost is a dead link in a delivered text.
-**Fix:** Withdraw only when the send itself threw. Run `attachMessage()` after the guarded block and treat its failure as report-only, since `BookAppointment::alertOwner()` already recovers the carrying message through `meta.booking_link_id`:
+### WR-08: A failure after the text went out, other than recording the carrying message, still withdraws a live link
+
+**File:** `app/Actions/OutboundSender.php:182-186`, `app/Actions/RunFrontDesk.php:634-638`, `app/Actions/SendOwnerReply.php:203-211`
+**Issue:** 08-20 moved `attachMessage()` out of the guarded block, but the guard still withdraws on any `Throwable` from the send. `OutboundSender::send()` and `sendExisting()` end with `try { return $this->deliver(...); } finally { $lock->release(); }`. The docblock at `:162-170` says a failure after the channel accepted the text is "never raised". That holds for everything inside `transmit()`, but not for `$lock->release()`. With the database cache store (`.env.example`: `CACHE_STORE=database`), `release()` is a `DELETE` query. If it throws, the exception replaces the return value even though the customer already has the text. The caller then withdraws the live link:
+
+- In `RunFrontDesk` the `catch (Throwable)` at `:634` calls `withdrawLink()` and rethrows.
+- In `SendOwnerReply` the `catch (Throwable)` at `:203` calls `withdrawUnsentLink->handle()`, and the owner is told the send failed.
+
+The result is the customer-visible dead link the previous WR-03 described. It needs a database fault at one specific moment, so it is rare, but the docblocks (`OutboundSender.php:168-170`, `RunFrontDesk.php:592-594`) now claim it cannot happen.
+**Fix:** Make the release unable to hide a completed send:
 ```php
 try {
-    $sent = $this->sendCombinedReply->handle(...);
-} catch (DomainException $e) { $this->withdrawLink($link, $supersededIds); ... }
-
-if ($link !== null) {
-    try { $this->mintBookingLink->attachMessage($link, $sent); } catch (Throwable $e) { report($e); }
+    $message = $this->deliver($conversation, trim($body), $author, $origin, $attributes);
+} finally {
+    try {
+        $lock->release();
+    } catch (Throwable $failure) {
+        report($failure);
+    }
 }
+
+return $message;
 ```
-
-### WR-04: Refusal handling matches on exception message text copied from other classes
-
-**File:** `app/Actions/SendBookingText.php:46`, `:56`, `:229-258` and `app/Livewire/BookingPage.php:189-203`
-**Issue:** `SendBookingText::answerRefusal()` decides what to do by comparing the `DomainException` message to string literals. Several of them are copied from elsewhere:
-- `'Another reply to this customer is being sent.'` from `OutboundSender::takeLock()`.
-- `'The assistant is paused in this conversation.'` from `OutboundSender::whyBlocked()`.
-- `'Texts are limited to 1,600 characters.'` from `OutboundSender::whyBodyIsRefused()`.
-- Prefixes such as `'Opted out by texting STOP'`.
-
-Note also that `takeLock()` has a second, different "being sent" sentence for the owner origin. A reworded sentence in `OutboundSender` silently turns a "wait and retry" into `report()` plus a permanently failed row (the final `else`). `BookingPage::refuse()` does the same thing by comparing `BookingRefused::taken()->getMessage()`, which builds a new exception only to read its text. Tests would catch a reword today, but the coupling is invisible at the edit site.
-**Fix:** Put these on `OutboundSender` as constants or a small `Refusal` enum carried on the exception, the way `NOT_AGREED`, `UNREAD_CUSTOMER_TEXT` and `APPOINTMENT_NOT_AHEAD` already are, and compare against those. For `BookingRefused`, give it a `reason` property (the way it already has `field`) and switch on it.
-
-### WR-05: Customer-facing page ships "placeholder wording for the example business" as its privacy notice
-
-**File:** `resources/views/components/booking/footer.blade.php:9`
-**Issue:** The footer of every booking page, for every business, says "This is placeholder wording for the example business." It also makes a factual claim about data handling ("does not ask for your name, phone number or address") that the code does not own, because the page and its rate limiter record the visitor's IP address. Real customers will read this on a live link. If the Phase 11 wording pass slips, it ships as is.
-**Fix:** Either make the notice owner-supplied (a field or file read through `ActiveConfig`), or block going live until it is rewritten (for example a validator warning while the example text is in use). At minimum, drop the "placeholder" sentence and state only what is true.
+Apply the same shape to `sendExisting()`. If `deliver()` itself threw, the original exception still propagates because `finally` runs first and the inner `try` swallows only the release failure.
 
 ## Info
 
-### IN-01: Doc comment contradicts the code on drive buffer for hand bookings
+### IN-07: The late-send grace does not check that the row came due today or after the window opened
 
-**File:** `app/Rooms/ScheduleAndBooking/Availability.php:108`
-**Issue:** `isFree()` says "Booking by hand passes a buffer of 0." `BookAppointment::store()` (`app/Actions/BookAppointment.php:171-174`) passes `driveBufferMinutes` from the booking file, which matches D-08 ("every appointment's span ... the new one included"). The code is right and the comment is wrong. The docblock on `offers()` repeats the "Booking by hand does not call this; it asks isFree()" framing.
-**Fix:** Change the sentence to "Booking by hand passes the file's drive buffer, or 0 with no booking file."
+**File:** `app/Actions/SendBookingText.php:272-276`
+**Issue:** `$dueInsideTheWindow` is `due_at <= today's close` only. A row due on an earlier day, or earlier than today's opening, also passes it. Take a sweep that was down for a day and comes back at 20:03: a row due yesterday 20:00, or today 03:00, sends at 20:03 instead of waiting for tomorrow's opening. The text still goes out inside the 5-minute grace after the close, so the harm is small, but the docblock says "came due inside the window". The window's hours stay on the attorney list (D-44), which is a reason to keep the grace tight.
+**Fix:** Require the due time to be on today's local date and at or after today's opening:
+```php
+$due = $send->due_at->copy()->setTimezone($zone)->startOfMinute();
+$dueInsideTheWindow = $due->isSameDay($local) && $due->greaterThanOrEqualTo($opens) && $due->lessThanOrEqualTo($closes);
+```
 
-### IN-02: The booking-text chokepoint trusts a caller-declared `meta.parts`
+### IN-08: The fake channel's docblock names the dev chat as a reader of `sent()`, and the dev chat does not read it
 
-**File:** `app/Actions/OutboundSender.php:375-407`
-**Issue:** `refuseBookingText()` requires `meta.appointment_id` and a `meta.parts` list without `model_words`, but it never checks that the body was built from the owner's booking line. Any caller that sets `kind: BookingText` with a parts list of its own skips the safety reading entirely. Today only `SendBookingText` does that, and `tests/Unit/AppointmentWritesTest.php` keeps the AI namespaces away. D-26 (Ian's amendment) is what allows no reading, so this is not a reopened decision, only a note that the guard is declarative. The pre-existing `code_sentences` part has the same shape. CLAUDE.md asks the chokepoint to refuse "without the checks its kind needs".
-**Fix:** Have the chokepoint recompute the line itself: accept the `BookingSend` id and re-render the owner's line from `BookingSettings`, then compare it to the body. Or add an architecture test that only `SendBookingText` may pass `MessageKind::BookingText`.
+**File:** `app/Channels/FakeTextChannel.php:44-47` and `:96-100`
+**Issue:** The docblocks say `sent()` and `refused()` are "the fake carrier's own memory for tests and the dev chat". `DevChat::thread()` (`app/Livewire/DevChat.php:88-96`) reads the `messages` table, so after D-12 it shows `/book/[link]`, never the working link. `FakeTextChannel::$sent` is also per instance, so it could never carry a link from one request to the next. Nothing breaks. The plan records that booking-page walks take a working link from the terminal, and a reader of this class would still expect the dev chat to be able to open the link.
+**Fix:** Drop "and the dev chat" from the two docblocks and say that the dev chat shows the stored copy.
 
-### IN-03: The hand-booking dialog forecasts a confirmation text that may not be sent
+### IN-09: The revoke migration cannot tell a link sent before the fix from one sent after it
 
-**File:** `app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php:229-238`
-**Issue:** `confirmationStatus()` returns "A confirmation text will go out." for any contact who is not opted out and may get automatic texts. It does not check that the contact has a phone number. An email-only contact added by hand is a normal case (`AddContactByHand` allows it). `SendBookingText` then skips the row with a "no phone number" note. The forecast also says nothing when the booking is made outside the send window and the text waits until the next opening.
-**Fix:** Add `blank($contact->phone_e164) => 'No confirmation text will go out. This customer has no phone number on file.'` before the default, and optionally a "will go out at the next opening" variant.
-
-### IN-04: The Upcoming and Past filters overlap for a span that crosses midnight, and Past can hold a live visit
-
-**File:** `app/Filament/Pages/Schedule.php:277-290`
-**Issue:** Upcoming is `ends_at >= start of today` and Past is `starts_at < start of today`, both over booked rows. A booked block or visit that started yesterday and ends today or later appears in both. This is minor, but a block that spans days (for example "truck in the shop, Mon to Wed") shows under both filters and under two day headings.
-**Fix:** Make Past `ends_at < start of today` for booked rows, or document that overlap is intended.
-
-### IN-05: The booking page's rate-limited notice has no way to retry without a reload
-
-**File:** `app/Livewire/BookingPage.php:111-129`, `resources/views/livewire/booking-page.blade.php:2-3`
-**Issue:** Once `rateLimited` is true, the view renders only the notice. There is no button or poll that calls the component again. The notice says "Wait a minute, then try again", but the `#[Locked]` flag stays true until the customer reloads the page. The 20-per-minute limit is generous, so this is rare.
-**Fix:** Clear the flag in `render()` when `RateLimiter::availableIn($key) === 0`, or add a "Try again" button that calls `back()`.
-
-### IN-06: The customer card's "Next appointment" line depends on the clock, so a rendered card goes stale
-
-**File:** `app/Records/CustomerCard.php:259-268`
-**Issue:** The card is re-rendered only on `CustomerRecordChanged`. Its "Next appointment" line is filtered by `starts_at->isFuture()` at render time. Once the visit starts and nothing else changes, any stored card still names a visit that is already in the past as "Next". The class docblock was updated to admit the clock is read here, so this is known. It is worth a note because the same card is what an owner or the front desk reads.
-**Fix:** Re-render affected cards on a schedule shortly after each booked visit's start (a small sweep keyed on `booked ahead` rows), or label the line with the time it was true.
+**File:** `database/migrations/2026_11_07_000001_revoke_booking_links_sent_before_tokens_were_hidden.php:23-33`
+**Issue:** The query revokes every link with no `revoked_at` and no appointment. That is right on a database that moves from the old code to the new in one deploy. It is wrong on any database that ran 08-17's code first and migrates later, such as a staging or tour database whose `migrate` step was skipped or deferred. Every link minted since the fix is then revoked, and the customers who hold them get "This link does not work". The migration has no cutoff, and `down()` is a no-op by design, so the recovery is the log line's id list by hand.
+**Fix:** Bound the revoke to links created before the fix shipped, for example `->where('created_at', '<', '2026-11-08 00:00:00')` with the cutoff written as a constant and explained in the docblock. Leave later links alone.
 
 ---
 
-_Reviewed: 2026-11-07_
+_Reviewed: 2026-11-08_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
