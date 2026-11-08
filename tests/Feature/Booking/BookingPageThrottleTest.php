@@ -2,10 +2,13 @@
 
 require_once __DIR__.'/BookingPageHelpers.php';
 
+use App\Actions\BookAppointment;
+use App\Enums\AppointmentState;
 use App\Livewire\BookingPage;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
@@ -158,4 +161,64 @@ it('keeps the 429 page as it was', function () {
     expect(bookingPageText($html))->not->toContain('Try again')
         ->and($xpath->query('//button')->length)->toBe(0)
         ->and($xpath->query('//h1')->item(0)->hasAttribute('tabindex'))->toBeFalse();
+});
+
+it('puts focus on the heading of what changed while the page waited (IN-05)', function (string $change, string $heading) {
+    [, $conversation] = bookingPageSetUp();
+    [$link, $token] = bookingPageMint($conversation);
+
+    $tapped = bookingPageChicago('2026-11-03 10:00')->toIso8601String();
+    $page = Livewire::test(BookingPage::class, ['token' => $token]);
+
+    foreach (range(1, 21) as $tap) {
+        $page->call('choose', $tapped);
+    }
+
+    expect(bookingPageText($page->html()))->toContain('Please wait a moment');
+
+    if ($change === 'expired') {
+        $this->travelTo($link->expires_at->toImmutable()->addMinute());
+        app()->forgetScopedInstances();
+    } else {
+        $appointment = app(BookAppointment::class)->fromLink($link, bookingPageChicago('2026-11-03 10:00'), CarbonImmutable::now());
+
+        match ($change) {
+            'cancelled' => $appointment->forceFill(['state' => AppointmentState::Cancelled])->save(),
+            'done' => $appointment->forceFill(['state' => AppointmentState::Done])->save(),
+            default => null,
+        };
+
+        $this->travel(61)->seconds();
+    }
+
+    $page->call('tryAgain');
+
+    expect($page->get('rateLimited'))->toBeFalse()
+        ->and(bookingPageText($page->html()))->toContain($heading)
+        ->and(bookingPageTakesFocus($page->html(), '//h1[contains(normalize-space(), "'.$heading.'")]'))->toBeTrue();
+})->with([
+    'booked' => ['booked', 'You are booked'],
+    'cancelled' => ['cancelled', 'This visit was cancelled'],
+    'done' => ['done', 'This visit is done'],
+    'expired' => ['expired', 'This link has expired'],
+]);
+
+it('returns to the check step when a time was being checked', function () {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    $tapped = bookingPageChicago('2026-11-03 10:00')->toIso8601String();
+    $page = Livewire::test(BookingPage::class, ['token' => $token]);
+
+    foreach (range(1, 21) as $tap) {
+        $page->call('choose', $tapped);
+    }
+
+    $this->travel(61)->seconds();
+
+    $page->call('tryAgain');
+
+    expect(bookingPageText($page->html()))->toContain('Check your time')->not->toContain('Please wait a moment')
+        ->and(bookingPageTakesFocus($page->html(), '//h2[normalize-space()="Check your time"]'))->toBeTrue()
+        ->and(bookingPageTakesFocus($page->html(), '//h1[normalize-space()="Book AC repair"]'))->toBeFalse();
 });
