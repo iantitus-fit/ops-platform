@@ -327,9 +327,14 @@ class OutboundSender
 
             throw new DomainException(self::CARRIER_OPTED_OUT, previous: $exception);
         } catch (Throwable $exception) {
-            $this->recordFailure($contact, $message, $exception);
+            $hidden = BookingLinkTokens::hide($exception->getMessage());
 
-            throw new DomainException(self::NOT_SENT.$exception->getMessage(), previous: $exception);
+            $this->recordFailure($contact, $message, $hidden);
+
+            // A gateway's error can repeat the whole text. The raw exception is kept as the previous one only when it
+            // held no booking address, because a previous exception carries its own message into every log line and
+            // failed_jobs row that prints it.
+            throw new DomainException(self::NOT_SENT.$hidden, previous: $hidden === $exception->getMessage() ? $exception : null);
         }
 
         $sentAt = now();
@@ -610,19 +615,20 @@ class OutboundSender
     }
 
     /**
-     * Keep the failed attempt on the record: the message as failed with the error, and a note.
+     * Keep the failed attempt on the record: the message as failed with the error, and a note. The error is the
+     * channel's own words with any booking address already written /book/[link] (D-12).
      */
-    private function recordFailure(Contact $contact, Message $message, Throwable $exception): void
+    private function recordFailure(Contact $contact, Message $message, string $error): void
     {
-        DB::transaction(function () use ($contact, $message, $exception): void {
+        DB::transaction(function () use ($contact, $message, $error): void {
             $message->update([
                 'status' => MessageStatus::Failed,
-                'meta' => [...($message->meta ?? []), 'error' => $exception->getMessage()],
+                'meta' => [...($message->meta ?? []), 'error' => $error],
             ]);
 
             $contact->activities()->create([
                 'type' => ActivityType::Note,
-                'summary' => "Reply not sent: {$exception->getMessage()}",
+                'summary' => "Reply not sent: {$error}",
                 'subject_type' => $message->getMorphClass(),
                 'subject_id' => $message->id,
                 'occurred_at' => now(),

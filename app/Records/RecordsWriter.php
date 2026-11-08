@@ -10,6 +10,7 @@ use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Models\Message;
+use App\Support\BookingLinkTokens;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -18,9 +19,10 @@ use Illuminate\Support\Facades\File;
 /**
  * Writes the records/ folder of the business folder.
  *
- * Every write goes through File::replace, which writes a temporary file and renames it into
+ * Every write goes through write(), which uses File::replace to write a temporary file and rename it into
  * place, so a reader never sees half a file. The class never reads a card back: the database is
- * the source of truth and the files follow it.
+ * the source of truth and the files follow it. Files follow the database, and write() also hides booking addresses,
+ * so a row that still holds a token (one written before 08-17) is never printed into the business folder (D-12).
  */
 class RecordsWriter
 {
@@ -56,7 +58,7 @@ class RecordsWriter
         $filename = $this->customerCard->filename($contact);
 
         File::ensureDirectoryExists($directory);
-        File::replace("{$directory}/{$filename}", $this->customerCard->render($contact));
+        $this->write("{$directory}/{$filename}", $this->customerCard->render($contact));
 
         $this->deleteCardFiles($contact->id, keep: $filename);
 
@@ -87,8 +89,8 @@ class RecordsWriter
         Cache::lock('records:summaries', 30)->block(10, function (): void {
             File::ensureDirectoryExists($this->customersDirectory());
 
-            File::replace($this->customersDirectory().'/INDEX.md', $this->indexMarkdown());
-            File::replace($this->root().'/open-leads.md', $this->openLeadsMarkdown());
+            $this->write($this->customersDirectory().'/INDEX.md', $this->indexMarkdown());
+            $this->write($this->root().'/open-leads.md', $this->openLeadsMarkdown());
         });
     }
 
@@ -102,7 +104,7 @@ class RecordsWriter
         $this->ensureBusinessFolderExists();
 
         File::ensureDirectoryExists($this->root());
-        File::replace($this->root().'/CLAUDE.md', $this->routerMarkdown());
+        $this->write($this->root().'/CLAUDE.md', $this->routerMarkdown());
     }
 
     /**
@@ -173,6 +175,14 @@ class RecordsWriter
         if (! File::isDirectory($root)) {
             throw new IcmFolderMissing($root);
         }
+    }
+
+    /**
+     * The one place a file is written: the contents with every booking address written /book/[link], put in place whole.
+     */
+    private function write(string $path, string $contents): void
+    {
+        File::replace($path, BookingLinkTokens::hide($contents));
     }
 
     private function customersDirectory(): string
