@@ -260,6 +260,7 @@ it('finds no accessibility violation on the tab or in its open dialogs (D-43)', 
 
         $browser->getByRole('button', ['name' => $name, 'exact' => true])->press('Enter');
         appointmentsKeyboardAwaitDialog($browser);
+        waitForOpenDialogIdle($browser);
     }
 
     RoomSectionAxe::assertClean(appointmentsKeyboardAxe($browser));

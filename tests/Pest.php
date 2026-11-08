@@ -557,6 +557,25 @@ function expectFocusOn(Page $browser, string $name): void
 }
 
 /**
+ * The footer buttons of the open Filament dialog that are still busy: Livewire's wire:loading puts fi-disabled and
+ * aria-disabled on every action button while a request is in flight, and a submit button bound to its form adds
+ * fi-processing and disabled while its action runs. Filament draws a busy button at 70% opacity.
+ */
+const OPEN_DIALOG_BUSY_BUTTON = '.fi-modal-open .fi-modal-footer-actions .fi-btn:is(.fi-disabled, .fi-processing, [aria-disabled="true"], [disabled])';
+
+/**
+ * Wait, through Playwright's own locator waiting, until no footer button of the open Filament dialog is busy (see
+ * OPEN_DIALOG_BUSY_BUTTON). The dialog opens from its mount request's own response, so focus can land inside it while
+ * Livewire still has that request's loading state on the buttons, and axe reads a button at 70% opacity as a contrast
+ * fault (CI run 42499058795, Postgres leg). Run this after the dialog has focus and before axe. The first busy button
+ * gone means none is left. Never a fixed sleep.
+ */
+function waitForOpenDialogIdle(Page $browser): void
+{
+    $browser->locator(OPEN_DIALOG_BUSY_BUTTON)->first()->waitFor(['state' => 'detached']);
+}
+
+/**
  * Run axe on the whole document of the page now open, the way RoomSectionAxe runs it on one room section: the WCAG 2.2
  * Level AA tags (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa) with the target-size rule switched on. axe is the copy the
  * Pest browser plugin puts on every page. Hand the result to RoomSectionAxe::assertClean(). Shared here so the owner

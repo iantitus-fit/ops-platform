@@ -253,6 +253,7 @@ it('finds no accessibility violation on the new contact page, the contact screen
     if ($state === 'dialog open') {
         $browser->getByRole('button', ['name' => 'Turn on automatic texts', 'exact' => true])->press('Enter');
         contactScreenKeyboardAwaitDialog($browser);
+        waitForOpenDialogIdle($browser);
     }
 
     $browser->evaluate('async () => { await Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => null))); }');

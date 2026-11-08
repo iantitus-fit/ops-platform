@@ -267,6 +267,7 @@ it('finds no accessibility violation on the page or in the Block time dialog (D-
     if ($dialogOpen) {
         $browser->getByRole('button', ['name' => 'Block time', 'exact' => true])->press('Enter');
         scheduleKeyboardAwaitDialog($browser);
+        waitForOpenDialogIdle($browser);
         $browser->evaluate('async () => { await Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => null))); }');
     }
 
