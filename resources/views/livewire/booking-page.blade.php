@@ -1,9 +1,14 @@
 <div x-data="{ lastTime: null }">
     @if ($rateLimited)
-        <x-booking.notice heading="Please wait a moment">There have been too many tries. Wait a minute, then try again.</x-booking.notice>
+        <x-booking.notice wire:key="rate-limited" heading="Please wait a moment" :focus="true">
+            There have been too many tries. Wait a minute, then try again.
+            <x-slot:action>
+                <x-booking.button variant="secondary" wire:click="tryAgain" class="w-full sm:w-auto">Try again</x-booking.button>
+            </x-slot:action>
+        </x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::Picker)
-        <div class="space-y-6">
-            <h1 class="break-words text-display font-semibold">Book {{ $serviceName }}</h1>
+        <div wire:key="picker" class="space-y-6">
+            <h1 @if ($retried && ! $checking) tabindex="-1" x-init="$el.focus()" @endif class="break-words text-display font-semibold">Book {{ $serviceName }}</h1>
 
             <div id="booking-picker" wire:key="booking-picker-{{ $pickerVersion }}" @if ($checking) hidden @endif class="space-y-6">
                 <p>Pick a time that works for you. {{ $zoneLine }}</p>

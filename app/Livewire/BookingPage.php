@@ -56,6 +56,10 @@ class BookingPage extends Component
     #[Locked]
     public bool $rateLimited = false;
 
+    /** True after Try again brought the page back, so the heading of what it shows takes focus once. */
+    #[Locked]
+    public bool $retried = false;
+
     public function mount(string $token): void
     {
         $this->token = $token;
@@ -67,6 +71,8 @@ class BookingPage extends Component
      */
     public function choose(string $startIso): void
     {
+        $this->retried = false;
+
         if (! $this->withinLimit()) {
             return;
         }
@@ -97,6 +103,7 @@ class BookingPage extends Component
      */
     public function back(): void
     {
+        $this->retried = false;
         $this->chosen = null;
         $this->error = null;
     }
@@ -107,6 +114,8 @@ class BookingPage extends Component
      */
     public function book(BookAppointment $bookAppointment): void
     {
+        $this->retried = false;
+
         if (! $this->withinLimit() || $this->chosen === null) {
             return;
         }
@@ -135,6 +144,17 @@ class BookingPage extends Component
         }
     }
 
+    /**
+     * "Try again" on the rate-limited notice. It asks the same limiter as a tap: RateLimiter::attempt() counts nothing
+     * while the minute is not up, so a limited address cannot use this to tap more (T-08-89), and once the minute is up
+     * the press counts as one attempt and the notice clears. Whatever the page shows then takes focus once, through
+     * retried (WCAG 2.4.3).
+     */
+    public function tryAgain(): void
+    {
+        $this->retried = $this->withinLimit();
+    }
+
     public function render(): View
     {
         $config = app(ActiveConfig::class);
@@ -160,6 +180,7 @@ class BookingPage extends Component
             'businessName' => $businessName,
             'serviceName' => $serviceName,
             'rateLimited' => $this->rateLimited,
+            'retried' => $this->retried,
             'phone' => $phone,
             'phoneText' => $phoneText,
             'zoneLine' => 'All times are in '.BookingSettings::zoneName($zone).'.',
