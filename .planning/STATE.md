@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-22-PLAN.md
-last_updated: "2026-11-08T21:57:41.403Z"
+stopped_at: Completed 08-23-PLAN.md
+last_updated: "2026-11-08T22:40:27.546Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 08 execution started
-state_head: 31b2c5597fa8ab147bf7ae9657d8d302b2c0c9b3
+state_head: 216faf600fc5f7d974ae8954863ddddb792d10c1
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 57
-  completed_plans: 56
+  completed_plans: 57
   percent: 44
 ---
 
@@ -196,6 +196,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P20 | 15 min | 3 tasks | 13 files |
 | Phase 08 P21 | 17 min | 2 tasks | 6 files |
 | Phase 08 P22 | 17 min | 2 tasks | 9 files |
+| Phase 08 P23 | 22 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -303,6 +304,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-21: the booking privacy notice states only what the page does (link books one visit, nothing typed, device address received and used to limit repeated tries); final wording stays on the attorney list with the facts (WR-05)
 - [Phase 08]: 08-21: footer disclosure hover border lives on the details element that carries border-2; a contract check forbids hover:border-accent without border-2 on every customer state (UI-FOOTER-HOVER)
 - [Phase 08]: 08-22: tryAgain() goes through withinLimit(), so a limited address cannot get around the limit; every booking-page state branch carries a wire:key so a retry's new heading takes focus
+- [Phase 08]: 08-23: Book by hand and Block time dialogs both name the zone through BookingSettings::zoneName(); IN-03 next-opening variant not added (the line is drawn before a time is picked; default stays true per D-28); Past splits booked rows by ends_at, done visits keep starts_at (D-40)
 
 ### Pending Todos
 
@@ -369,8 +371,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T21:57:41.326Z
-Stopped at: Completed 08-22-PLAN.md
+Last session: 2026-11-08T22:40:22.587Z
+Stopped at: Completed 08-23-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
