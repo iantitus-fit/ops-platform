@@ -68,8 +68,8 @@
             @endif
         </div>
     @elseif ($state === \App\Enums\BookingPageState::Booked)
-        <div class="space-y-6">
-            <h1 @if ($justBooked) tabindex="-1" x-init="$el.focus()" @endif class="flex items-center gap-2 break-words text-display font-semibold">
+        <div wire:key="booked" class="space-y-6">
+            <h1 @if ($justBooked || $retried) tabindex="-1" x-init="$el.focus()" @endif class="flex items-center gap-2 break-words text-display font-semibold">
                 <x-booking.icon.check class="size-8 shrink-0" />
                 <span>You are booked</span>
             </h1>
@@ -94,18 +94,18 @@
             <p class="break-words">Need to change this visit? Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" />.</p>
         </div>
     @elseif ($state === \App\Enums\BookingPageState::Cancelled)
-        <x-booking.notice heading="This visit was cancelled">To book another time, text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" />.</x-booking.notice>
+        <x-booking.notice wire:key="cancelled" heading="This visit was cancelled" :focus="$retried">To book another time, text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" />.</x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::Done)
-        <x-booking.notice heading="This visit is done">Thank you for choosing {{ $businessName }}.</x-booking.notice>
+        <x-booking.notice wire:key="done" heading="This visit is done" :focus="$retried">Thank you for choosing {{ $businessName }}.</x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::NoTimes)
-        <x-booking.notice heading="No times are open">We have no open times right now. Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help you book.</x-booking.notice>
+        <x-booking.notice wire:key="no-times" heading="No times are open" :focus="$retried">We have no open times right now. Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help you book.</x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::ServiceUnavailable)
-        <x-booking.notice heading="We cannot book this online">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help.</x-booking.notice>
+        <x-booking.notice wire:key="unavailable" heading="We cannot book this online" :focus="$retried">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help.</x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::Expired)
-        <x-booking.notice heading="This link has expired">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> to get a new one.</x-booking.notice>
+        <x-booking.notice wire:key="expired" heading="This link has expired" :focus="$retried">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> to get a new one.</x-booking.notice>
     @elseif ($state === \App\Enums\BookingPageState::Replaced)
-        <x-booking.notice heading="This link was replaced">A newer link was sent to you. Open the latest text from {{ $businessName }}, or text us at <x-booking.sms :phone="$phone" :text="$phoneText" />.</x-booking.notice>
+        <x-booking.notice wire:key="replaced" heading="This link was replaced" :focus="$retried">A newer link was sent to you. Open the latest text from {{ $businessName }}, or text us at <x-booking.sms :phone="$phone" :text="$phoneText" />.</x-booking.notice>
     @else
-        <x-booking.notice heading="This link does not work">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help.</x-booking.notice>
+        <x-booking.notice wire:key="does-not-work" heading="This link does not work" :focus="$retried">Text {{ $businessName }} at <x-booking.sms :phone="$phone" :text="$phoneText" /> and we will help.</x-booking.notice>
     @endif
 </div>

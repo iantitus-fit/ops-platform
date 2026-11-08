@@ -66,7 +66,7 @@ Every decision in this file that is not already locked in `08-CONTEXT.md`. IDs a
 | U-16 | The booking page sends `noindex` and a no-referrer policy, so the token in the URL is not indexed or passed on. | NEW |
 | U-17 | A `noscript` line tells a visitor without JavaScript to text the business. | NEW |
 | U-18 | The booking page's three icons (chevron, check, exclamation circle) are inline SVGs in Blade partials, decorative ones `aria-hidden="true"`, drawn with `currentColor`. No direct use of `blade-heroicons`. They are swapped for the platform's own icon package when it exists (BLUEPRINT Ideas inbox). | NEW, amended by Ian (inline SVGs) |
-| U-19 | The booking page shows a plain rate-limit page ("Please wait a moment") instead of the framework's 429 page. | NEW |
+| U-19 | The booking page shows a plain rate-limit page ("Please wait a moment") instead of the framework's 429 page. The in-page notice (after a tap) also carries a "Try again" button, which brings the page back once the minute is up and counts against the same limit; its heading takes focus when the notice appears (IN-05, gap plan 08-22). The 429 page has no button. | NEW |
 | U-20 | While "Book this time" is in flight the button shows "Booking your time" and ignores further taps (`aria-disabled`, not `disabled`, so focus is not dropped). | NEW |
 | U-21 | On the contact screen the appointment actions live in a second relation manager, "Appointments", beside the Projects tab. Drawn with the page (not lazy), as 07-09 required for Projects. | NEW (reading of D-16); PRECEDENT 07 |
 | U-22 | The schedule screen is one Filament `Page` holding one table grouped by day, earliest first, grouping controls hidden so the day headings cannot be turned off. A "Show" filter has Upcoming (default), Past, Cancelled, Done. | CONTEXT D-40; NEW (grouping lock, filter shape) |
@@ -179,7 +179,7 @@ One Livewire component; the state is a single value. Same shell in every state.
 | Expired | Link past its expiry and either has no booking, or its visit's end time (start plus service length) has passed, whatever the visit's state (U-14) | h1 "This link has expired", one line. |
 | Replaced | A newer link exists for this conversation | h1 "This link was replaced", one line. |
 | Does not work | Revoked or unknown token | h1 "This link does not work", one line. |
-| Rate limited | `throttle:booking` trips | h1 "Please wait a moment", one line (U-19). |
+| Rate limited | `throttle:booking` trips, or the page's own limit trips after a tap | h1 "Please wait a moment", one line (U-19). After a tap, a secondary "Try again" button under the line. |
 | Taken | A tap or Book finds the time taken (D-07) | Picker again with fresh times and an error line above them. |
 | Failed | Anything unexpected on Book | Picker or Check kept; error line above the buttons. |
 
@@ -252,6 +252,9 @@ The page has no text field. The controls that can fail are the time buttons and 
 | Time just taken | The error line | "That time was just taken. These times are open now." |
 | Book fails for another reason | The error line | "Your time was not booked. Try again, or text ..." |
 | Link problem | n/a (the page loads in that state) | Title, then the h1 |
+| Too many taps (in-page notice) | The "Please wait a moment" h1; Tab reaches "Try again" next (IN-05, gap plan 08-22) | "Please wait a moment, heading level 1", then "Try again, button" on Tab |
+| Try again, still limited | Stays on "Try again" | Nothing new; the notice stays |
+| Try again, after the minute | The heading of what the page now shows ("Book AC repair" on the picker, "Check your time" when a time was being checked, or the heading of a booked, cancelled, done or closed-link state) | That heading, by level |
 
 Mechanism (the planner's): `x-init="$el.focus()"` on the element that appears, or a Livewire browser event; the behavior above is the contract.
 
@@ -408,7 +411,7 @@ All customer strings: no exclamation points and no em dashes (02.1 D-41); plain,
 | Expired | h1 "This link has expired". Line: "Text {business} at {number} to get a new one." |
 | Replaced | h1 "This link was replaced". Line: "A newer link was sent to you. Open the latest text from {business}, or text us at {number}." |
 | Does not work | h1 "This link does not work". Line: "Text {business} at {number} and we will help." |
-| Rate limited | h1 "Please wait a moment". Line: "There have been too many tries. Wait a minute, then try again." |
+| Rate limited | h1 "Please wait a moment". Line: "There have been too many tries. Wait a minute, then try again." Button: "Try again" (in-page notice only; the 429 page has none). |
 | No JavaScript | "This page needs JavaScript to show times. Text {business} at {number} to book." |
 | Destructive confirmation | none on this page: it has no destructive action. Booking is confirmed by the check step (U-07); there is no customer cancel in Phase 8 (D-32). |
 | Footer, privacy (interim wording until the attorney list, D-44) | Summary "Privacy notice". Body: "This page uses your link to book one visit. It does not ask you to type anything. Like every website, it receives the internet address of your device, and it uses that address to limit repeated tries." |
@@ -668,3 +671,5 @@ Also open, outside the probe's taxonomy: dark mode on the booking page. The page
 **Approval:** approved by Ian, 2026-11-02, with the amendments recorded in the Decision Register.
 
 Amended 2026-11-07 by gap plan 08-21 (WR-05, Ian).
+
+Amended 2026-11-08 by gap plan 08-22 (IN-05, Ian): the in-page rate-limited notice carries a "Try again" button, and the focus map gains the notice heading on appearance, "Try again" next by Tab, and the heading of what the page shows after a successful retry.
