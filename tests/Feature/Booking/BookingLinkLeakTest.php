@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\MintBookingLink;
 use App\Actions\OutboundSender;
 use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
@@ -695,4 +696,19 @@ it('refuses a text holding /book/[link] from every sender before any row is writ
     app(OutboundSender::class)->send(Conversation::sole(), 'Pick a time here: '.route('booking.show', str_repeat('c', 64)), MessageAuthor::Owner, SendOrigin::Owner);
 
     expect(textsSentToCustomers()[0]['body'])->toContain(str_repeat('c', 64));
+});
+
+it('keeps the token out of the session\'s previous URL (D-12)', function () {
+    frontDeskCustomerTexts('Can someone come look at my AC this week?');
+
+    [, $token] = app(MintBookingLink::class)->handle(Conversation::sole(), 'ac-repair', CarbonImmutable::now());
+
+    $this->get(route('booking.show', $token))->assertOk();
+
+    expect(session()->previousUrl())->toEndWith('/book/[link]')
+        ->and(session()->previousUrl())->not->toContain($token);
+
+    $this->get('/')->assertOk();
+
+    expect(session()->previousUrl())->toBe(url('/'));
 });
