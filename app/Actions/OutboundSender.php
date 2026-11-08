@@ -102,6 +102,52 @@ class OutboundSender
     public const string HIDDEN_BOOKING_LINK = 'This text has /book/[link] in it, a booking link that does not open. Take it out and send again.';
 
     /**
+     * How the sentence begins when the customer opted out by texting STOP; the date and a full stop follow. The owner
+     * reads it in the reply box, and a booking text that meets it is dropped with a note (D-40).
+     */
+    public const string OPTED_OUT = 'Opted out by texting STOP on ';
+
+    /**
+     * The sentence for a closed conversation, as every sender but the owner reads it. A booking text that meets it is
+     * dropped with a note.
+     */
+    public const string CLOSED = 'This conversation is closed.';
+
+    /**
+     * The sentence for a closed conversation when the owner is the sender: the reply box shows it in place of the form.
+     */
+    public const string CLOSED_FOR_OWNER = 'This conversation is closed. Reopen it to reply.';
+
+    /**
+     * The sentence for a conversation where the assistant is paused (D-24). A booking text that meets it is dropped with
+     * a note.
+     */
+    public const string PAUSED = 'The assistant is paused in this conversation.';
+
+    /**
+     * The sentence for a customer with no phone number on file, as every sender but the owner reads it. A booking text
+     * that meets it is dropped with a note.
+     */
+    public const string NO_PHONE = 'There is no phone number on file for this customer.';
+
+    /**
+     * The sentence for an automated text that waited for the reply lock and did not get it: a front-desk reply to this
+     * customer is still being sent. A booking text that meets it gives its claim back and tries again at the next sweep.
+     */
+    public const string REPLY_IN_FLIGHT = 'Another reply to this customer is being sent.';
+
+    /**
+     * The sentence for the owner's send when another reply holds the lock: the owner reads it at once and checks the
+     * thread before sending again.
+     */
+    public const string OWNER_REPLY_IN_FLIGHT = 'Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.';
+
+    /**
+     * The sentence for a text longer than a text may be. A booking text that meets it is dropped with a note.
+     */
+    public const string TOO_LONG = 'Texts are limited to 1,600 characters.';
+
+    /**
      * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
      */
     private const string NO_READING_WHY = "A text was stopped because the safety check had not read the customer's message";
@@ -191,15 +237,15 @@ class OutboundSender
         if ($contact->isOptedOut()) {
             $date = $contact->sms_opted_out_at->clone()->setTimezone($this->activeConfig->displayTimezone())->format('M j');
 
-            return "Opted out by texting STOP on {$date}.";
+            return self::OPTED_OUT."{$date}.";
         }
 
         if ($conversation->status === ConversationStatus::Closed) {
-            return $ownerIsSending ? 'This conversation is closed. Reopen it to reply.' : 'This conversation is closed.';
+            return $ownerIsSending ? self::CLOSED_FOR_OWNER : self::CLOSED;
         }
 
         if ($origin === SendOrigin::Automated && $conversation->isPaused()) {
-            return 'The assistant is paused in this conversation.';
+            return self::PAUSED;
         }
 
         if ($origin === SendOrigin::Automated && ! $contact->mayGetAutomaticTexts()) {
@@ -208,7 +254,7 @@ class OutboundSender
 
         if (blank($contact->phone_e164)) {
             if (! $ownerIsSending) {
-                return 'There is no phone number on file for this customer.';
+                return self::NO_PHONE;
             }
 
             return filled($contact->email)
@@ -226,7 +272,7 @@ class OutboundSender
     {
         if ($origin === SendOrigin::Owner) {
             if (! $lock->get()) {
-                throw new DomainException('Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.');
+                throw new DomainException(self::OWNER_REPLY_IN_FLIGHT);
             }
 
             return;
@@ -235,7 +281,7 @@ class OutboundSender
         try {
             $lock->block(config('gate.agent.lock_wait_seconds'));
         } catch (LockTimeoutException) {
-            throw new DomainException('Another reply to this customer is being sent.');
+            throw new DomainException(self::REPLY_IN_FLIGHT);
         }
     }
 
@@ -606,7 +652,7 @@ class OutboundSender
         }
 
         if (mb_strlen($body) > SendOwnerReply::MAX_LENGTH) {
-            return 'Texts are limited to 1,600 characters.';
+            return self::TOO_LONG;
         }
 
         if (BookingLinkTokens::holdsHiddenAddress($body)) {

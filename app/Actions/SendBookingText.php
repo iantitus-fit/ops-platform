@@ -53,16 +53,6 @@ class SendBookingText
      */
     public const int LATE_GRACE_MINUTES = 5;
 
-    /**
-     * What OutboundSender says when a front-desk reply to this customer is still being sent: a reason to wait, not to refuse.
-     */
-    private const string REPLY_IN_FLIGHT = 'Another reply to this customer is being sent.';
-
-    /**
-     * What OutboundSender says when the text is longer than a text may be.
-     */
-    private const string TOO_LONG = 'Texts are limited to 1,600 characters.';
-
     public function __construct(
         private readonly OutboundSender $outboundSender,
         private readonly ComposeAutomatedText $composeAutomatedText,
@@ -309,29 +299,30 @@ class SendBookingText
     }
 
     /**
-     * What to do with a refused send (D-26, D-27). A text held for an unread customer text, or while a front-desk reply is
-     * in flight, waits: the claim is given back and the next sweep tries again. A visit that is no longer booked or
-     * ahead ends the row. A refusal to text this customer ends it with one note. A channel failure ends it as failed with
-     * no further note, because OutboundSender already wrote its own. Anything else is a fault in our own code: reported,
-     * and the row fails.
+     * What to do with a refused send (D-26, D-27). The sender owns its sentences as public constants and this class only
+     * compares with them, so a reworded sentence changes the constant and never what this class decides (WR-04). A text
+     * held for an unread customer text, or while a front-desk reply is in flight, waits: the claim is given back and the
+     * next sweep tries again. A visit that is no longer booked or ahead ends the row. A refusal to text this customer
+     * ends it with one note. A channel failure ends it as failed with no further note, because OutboundSender already
+     * wrote its own. Anything else is a fault in our own code: reported, and the row fails.
      */
     private function answerRefusal(BookingSend $send, Carbon $claimedAt, Conversation $conversation, DomainException $refusal): void
     {
         $sentence = $refusal->getMessage();
 
         $why = match (true) {
-            str_starts_with($sentence, 'Opted out by texting STOP') => 'the customer has opted out',
+            str_starts_with($sentence, OutboundSender::OPTED_OUT) => 'the customer has opted out',
             $sentence === OutboundSender::NOT_AGREED => 'the customer has not agreed to automatic texts',
-            str_starts_with($sentence, 'This conversation is closed') => 'the conversation is closed',
-            $sentence === 'The assistant is paused in this conversation.' => 'the conversation is paused',
-            str_starts_with($sentence, 'There is no phone number on file') => 'the customer has no phone number on file',
-            $sentence === self::TOO_LONG => 'the text is longer than '.number_format(SendOwnerReply::MAX_LENGTH).' characters',
+            $sentence === OutboundSender::CLOSED => 'the conversation is closed',
+            $sentence === OutboundSender::PAUSED => 'the conversation is paused',
+            $sentence === OutboundSender::NO_PHONE => 'the customer has no phone number on file',
+            $sentence === OutboundSender::TOO_LONG => 'the text is longer than '.number_format(SendOwnerReply::MAX_LENGTH).' characters',
             default => null,
         };
 
         if ($sentence === OutboundSender::UNREAD_CUSTOMER_TEXT) {
             $this->giveBack($send, $claimedAt, markWaited: true);
-        } elseif ($sentence === self::REPLY_IN_FLIGHT) {
+        } elseif ($sentence === OutboundSender::REPLY_IN_FLIGHT) {
             $this->giveBack($send, $claimedAt, markWaited: false);
         } elseif ($sentence === OutboundSender::APPOINTMENT_NOT_AHEAD) {
             $this->drop($send);
