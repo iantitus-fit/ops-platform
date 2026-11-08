@@ -9,6 +9,7 @@ use App\Models\Appointment;
 use App\Models\ScheduleBlock;
 use App\Models\User;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\RateLimiter;
 use Pest\Browser\Playwright\Page;
 use PHPUnit\Framework\ExpectationFailedException;
 use Tests\Rooms\RoomSectionAxe;
@@ -400,4 +401,36 @@ it('turns a footer disclosure\'s border to the accent on hover (UI review)', fun
         ->and($hovered[0])->not->toBe($before[0])
         ->and($hovered[1])->toBe($before[1])
         ->and($day)->toBe($hovered[0]);
+});
+
+it('moves focus to the notice, then to Try again, then to the times (IN-05)', function () {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    $key = 'booking:'.hash('sha256', $token).':127.0.0.1';
+
+    foreach (range(1, 20) as $hit) {
+        RateLimiter::hit($key, 60);
+    }
+
+    $page = visit(route('booking.show', $token, absolute: false));
+    $page->assertSee('Pick a time that works for you.');
+    $browser = $page->page();
+
+    bookingBrowserTabTo($browser, '10:00 AM, Tuesday, November 3');
+    pressKey($browser, 'Enter');
+    expectFocusOn($browser, 'Please wait a moment');
+
+    pressKey($browser, 'Tab');
+    expectFocusOn($browser, 'Try again');
+
+    pressKey($browser, 'Enter');
+    expectFocusOn($browser, 'Try again');
+    expect($browser->evaluate('() => document.querySelector("h1").textContent.trim()'))->toBe('Please wait a moment');
+
+    RateLimiter::clear($key);
+
+    pressKey($browser, 'Enter');
+    expectFocusOn($browser, 'Book AC repair');
+    expect($browser->evaluate('() => document.body.textContent.includes("Please wait a moment")'))->toBeFalse();
 });

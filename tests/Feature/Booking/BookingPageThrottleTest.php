@@ -6,6 +6,8 @@ use App\Livewire\BookingPage;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 it('limits the page GET (D-11)', function () {
@@ -62,4 +64,98 @@ it('limits the taps inside the page (research Pitfall 1)', function () {
     $fresh = Livewire::test(BookingPage::class, ['token' => $otherToken])->call('choose', $tapped);
 
     expect(bookingPageText($fresh->html()))->not->toContain('Please wait a moment');
+});
+
+/**
+ * The limiter key BookingPage keeps for a token and an address (127.0.0.1 in a test).
+ */
+function bookingPageThrottleKey(string $token): string
+{
+    return 'booking:'.hash('sha256', $token).':127.0.0.1';
+}
+
+/**
+ * Whether the element the query finds carries what puts keyboard focus on it when it appears.
+ */
+function bookingPageTakesFocus(string $html, string $query): bool
+{
+    $node = bookingPageXpath($html)->query($query)->item(0);
+
+    return $node !== null
+        && $node->getAttribute('tabindex') === '-1'
+        && $node->getAttribute('x-init') === '$el.focus()';
+}
+
+it('offers Try again while limited and brings the times back after the minute (IN-05)', function () {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    $tapped = bookingPageChicago('2026-11-03 10:00')->toIso8601String();
+    $key = bookingPageThrottleKey($token);
+    $page = Livewire::test(BookingPage::class, ['token' => $token]);
+
+    foreach (range(1, 20) as $tap) {
+        $page->call('choose', $tapped);
+    }
+
+    $page->call('back')->call('choose', $tapped);
+
+    $xpath = bookingPageXpath($page->html());
+
+    expect(bookingPageText($page->html()))->toContain('Please wait a moment')
+        ->and($xpath->query('//button[normalize-space()="Try again"]')->length)->toBe(1)
+        ->and(bookingPageTakesFocus($page->html(), '//h1[normalize-space()="Please wait a moment"]'))->toBeTrue();
+
+    $attempts = RateLimiter::attempts($key);
+
+    $page->call('tryAgain');
+
+    expect(bookingPageText($page->html()))->toContain('Please wait a moment')
+        ->and(RateLimiter::attempts($key))->toBe($attempts);
+
+    $this->travel(61)->seconds();
+
+    $page->call('tryAgain');
+
+    expect(bookingPageText($page->html()))
+        ->toContain('Pick a time that works for you.')
+        ->not->toContain('Please wait a moment')
+        ->and($page->get('rateLimited'))->toBeFalse()
+        ->and(RateLimiter::attempts($key))->toBe(1)
+        ->and(bookingPageTakesFocus($page->html(), '//h1[normalize-space()="Book AC repair"]'))->toBeTrue();
+});
+
+it('keeps Try again from letting a limited address tap (T-08-89)', function () {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    $page = Livewire::test(BookingPage::class, ['token' => $token]);
+
+    foreach (range(1, 21) as $tap) {
+        $page->call('choose', bookingPageChicago('2026-11-03 10:00')->toIso8601String());
+    }
+
+    foreach (range(1, 5) as $press) {
+        $page->call('tryAgain');
+    }
+
+    expect($page->get('rateLimited'))->toBeTrue()
+        ->and(RateLimiter::attempts(bookingPageThrottleKey($token)))->toBe(20)
+        ->and(fn () => $page->set('retried', true))->toThrow(CannotUpdateLockedPropertyException::class);
+});
+
+it('keeps the 429 page as it was', function () {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    foreach (range(1, 30) as $try) {
+        $this->get(route('booking.show', $token))->assertOk();
+    }
+
+    $html = $this->get(route('booking.show', $token))->assertStatus(429)->getContent();
+    $xpath = bookingPageXpath($html);
+
+    expect(bookingPageText($html))->not->toContain('Try again')
+        ->and($xpath->query('//button')->length)->toBe(0)
+        ->and($xpath->query('//h1')->item(0)->hasAttribute('tabindex'))->toBeFalse();
 });
