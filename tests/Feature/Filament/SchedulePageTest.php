@@ -216,6 +216,38 @@ it('filters by Show', function (string $show, array $listed) {
     'done: done visits only' => ['done', ['done']],
 ]);
 
+it('keeps a span over midnight out of Past until it has ended (IN-04)', function () {
+    [$contact, $job] = schedulePageSetUp();
+
+    $spans = [
+        schedulePageBlock('2026-11-02 22:00', 48 * 60)->id,
+        schedulePageVisit($contact, $job, '2026-11-02 23:30')->id,
+        schedulePageVisit($contact, $job, '2026-11-02 22:30')->id,
+    ];
+
+    // Tuesday 07:00: each span reaches into today, so each is Upcoming and none is Past.
+    schedulePage()
+        ->assertCanSeeTableRecords($spans)
+        ->assertCountTableRecords(3);
+
+    schedulePage()
+        ->filterTable('show', 'past')
+        ->assertCanNotSeeTableRecords($spans)
+        ->assertCountTableRecords(0);
+
+    // Thursday 07:00: every span has ended, so each is Past and none is Upcoming.
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 07:00', 'America/Chicago'));
+
+    schedulePage()
+        ->assertCanNotSeeTableRecords($spans)
+        ->assertCountTableRecords(0);
+
+    schedulePage()
+        ->filterTable('show', 'past')
+        ->assertCanSeeTableRecords($spans)
+        ->assertCountTableRecords(3);
+});
+
 it('says so when a view is empty', function (?string $show, string $heading, string $description) {
     schedulePageSetUp();
 
