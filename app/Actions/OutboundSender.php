@@ -119,7 +119,9 @@ class OutboundSender
      * Any other send waits a few seconds for the lock first, because the owner's send is brief and the agent can
      * simply wait its turn. When the channel fails, the message stays on the record as failed and the failure is
      * raised. Once the channel has accepted the text, a failure while recording it is reported to the log and
-     * never raised: the customer has the text, and an error would invite a second send.
+     * never raised: the customer has the text, and an error would invite a second send. That includes the card redraw
+     * that follows the send, so a caller that withdraws a booking link when a send throws never withdraws one whose text
+     * went out (WR-03).
      *
      * @param  array<string, mixed>  $attributes  Further message columns, such as kind, label, the verdict and meta.
      *
@@ -370,7 +372,11 @@ class OutboundSender
             $this->markSentAfterRecordingFailed($message, $providerMessageId, $sentAt);
         }
 
-        CustomerRecordChanged::dispatch($contact->id);
+        try {
+            CustomerRecordChanged::dispatch($contact->id);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return $message;
     }

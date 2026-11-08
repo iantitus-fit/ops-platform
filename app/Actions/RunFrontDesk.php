@@ -589,7 +589,9 @@ class RunFrontDesk
      * one (D-01, D-02). It rides the front desk's existing scheduling send_on_own right through the one outbound path as
      * a combined text (02.1 D-49), and the model never writes the URL. The link is kept out of codeSentences so a held
      * draft never carries a minted link (research Pattern 5); an approved draft gets its own at approval (D-45). A link
-     * whose text did not go out is revoked, and the links it superseded are put back (WithdrawUnsentLink).
+     * is taken back only when the send itself threw: it is revoked, and the links it superseded are put back
+     * (WithdrawUnsentLink). Once the text is out the link stays live, and a failure to record which message carried it is
+     * reported, because BookAppointment::alertOwner() finds that message by meta.booking_link_id (D-33).
      *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
@@ -612,23 +614,15 @@ class RunFrontDesk
                 }
             }
 
-            if ($link === null && $parts->codeSentences === [] && $parts->line === null) {
-                return $this->outboundSender->send(
+            $sent = $link === null && $parts->codeSentences === [] && $parts->line === null
+                ? $this->outboundSender->send(
                     $conversation,
                     $composed,
                     MessageAuthor::Agent,
                     SendOrigin::Automated,
                     [...$attributes, ...$verdict->toAttributes($run->reply->label)],
-                );
-            }
-
-            $sent = $this->sendCombinedReply->handle($conversation, $parts, $this->reading(), [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
-
-            if ($link !== null) {
-                $this->mintBookingLink->attachMessage($link, $sent);
-            }
-
-            return $sent;
+                )
+                : $this->sendCombinedReply->handle($conversation, $parts, $this->reading(), [...$sentMeta, ...$verdict->toAttributes($run->reply->label)]);
         } catch (DomainException $exception) {
             $this->withdrawLink($link, $supersededIds);
 
@@ -641,6 +635,26 @@ class RunFrontDesk
             $this->withdrawLink($link, $supersededIds);
 
             throw $exception;
+        }
+
+        if ($link !== null) {
+            $this->recordCarryingMessage($link, $sent);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * Record which text carried a link that reached the customer. The text is out, so a failure here is reported and
+     * never withdraws the link or the send: BookAppointment::alertOwner() finds the carrying message by
+     * meta.booking_link_id when message_id was not recorded (D-33).
+     */
+    private function recordCarryingMessage(BookingLink $link, Message $sent): void
+    {
+        try {
+            $this->mintBookingLink->attachMessage($link, $sent);
+        } catch (Throwable $failure) {
+            report($failure);
         }
     }
 

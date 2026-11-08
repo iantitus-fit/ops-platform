@@ -159,8 +159,10 @@ class SendOwnerReply
      * Send an approved scheduling draft the owner asked to add a link to. A condition that no longer holds sends the
      * draft as it is and records the plain reason. Otherwise the length with the link is measured with a 64-character
      * placeholder token before anything is minted, so a refusal mints nothing; the link is then minted, the line added
-     * after the owner's words, and the link attached to the sent row. A link whose text did not go out is revoked, and
-     * the links its mint superseded are put back (WithdrawUnsentLink).
+     * after the owner's words, and the link attached to the sent row. A link is taken back only when the send itself
+     * threw: it is revoked, and the links its mint superseded are put back (WithdrawUnsentLink). Once the text is out the
+     * link stays live and the owner sees the draft sent, even when recording which row carried the link fails; that
+     * failure is reported, because BookAppointment::alertOwner() finds the row by meta.booking_link_id (D-33).
      *
      * @param  array<string, mixed>  $attributes
      *
@@ -198,10 +200,6 @@ class SendOwnerReply
                 ...$attributes,
                 'meta' => [...($fresh->meta ?? []), 'booking_link_id' => $link->id],
             ]);
-
-            $this->mintBookingLink->attachMessage($link, $sent);
-
-            return $sent;
         } catch (Throwable $exception) {
             try {
                 $this->withdrawUnsentLink->handle($link, $supersededIds);
@@ -211,6 +209,14 @@ class SendOwnerReply
 
             throw $exception;
         }
+
+        try {
+            $this->mintBookingLink->attachMessage($link, $sent);
+        } catch (Throwable $failure) {
+            report($failure);
+        }
+
+        return $sent;
     }
 
     /**
