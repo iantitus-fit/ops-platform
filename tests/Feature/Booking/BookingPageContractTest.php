@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\ScheduleBlock;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Dom\HTMLDocument;
 use Livewire\Livewire;
 
 /**
@@ -110,6 +111,27 @@ function bookingContractReadable(string $html): string
     $html = preg_replace('#<(script|style)\b.*?</\1>#is', ' ', $html) ?? $html;
 
     return html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+/**
+ * Every element in a page's HTML whose classes hold hover:border-accent but not border-2: a hover border on an element
+ * that has no border changes nothing on hover (08-UI-REVIEW priority fix 1), as the footer's summaries once did.
+ *
+ * @return list<string> The tag name of each such element.
+ */
+function bookingContractHoverBorderWithoutBorder(string $html): array
+{
+    $broken = [];
+
+    foreach (HTMLDocument::createFromString($html, LIBXML_NOERROR)->querySelectorAll('[class]') as $element) {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class'))) ?: [];
+
+        if (in_array('hover:border-accent', $classes, true) && ! in_array('border-2', $classes, true)) {
+            $broken[] = strtolower($element->tagName);
+        }
+    }
+
+    return $broken;
 }
 
 /**
@@ -267,3 +289,20 @@ it('is checked against bad snippets, so no rule is vacuous', function (string $r
     'a national phone number' => ['phone', '<p>Text us at (312) 555-0147</p>'],
     'an international phone number' => ['phone', '<a href="sms:+13125550147">Text</a>'],
 ]);
+
+it('puts every hover border on an element that has a border (UI review)', function () {
+    $withHover = 0;
+
+    foreach (bookingContractEveryState() as $state => $html) {
+        $withHover += substr_count($html, 'hover:border-accent');
+
+        expect(bookingContractHoverBorderWithoutBorder($html))->toBe([], "The {$state} page has a hover border on an element with no border");
+    }
+
+    expect($withHover)->toBeGreaterThan(0);
+});
+
+it('catches a hover border with no border', function () {
+    expect(bookingContractHoverBorderWithoutBorder('<summary class="hover:border-accent">Privacy notice</summary>'))->toBe(['summary'])
+        ->and(bookingContractHoverBorderWithoutBorder('<details class="border-2 border-line hover:border-accent"><summary>Privacy notice</summary></details>'))->toBe([]);
+});

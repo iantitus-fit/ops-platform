@@ -378,3 +378,26 @@ it('finds no accessibility violation', function (string $state) {
 
     RoomSectionAxe::assertClean(pageAxeReport($browser));
 })->with(['picker', 'check step', 'booked', 'expired', 'no times']);
+
+it('turns a footer disclosure\'s border to the accent on hover (UI review)', function () {
+    $page = visit(bookingBrowserUrl());
+    $page->assertSee('Pick a time that works for you.');
+    $browser = $page->page();
+
+    $footerBorders = fn (): array => $browser->evaluate('() => Array.from(document.querySelectorAll("footer details")).map((element) => getComputedStyle(element).borderTopColor)');
+
+    $before = $footerBorders();
+
+    $browser->locator('footer summary:has-text("Privacy notice")')->hover();
+
+    $hovered = $footerBorders();
+
+    $browser->locator('#booking-picker details > summary')->first()->hover();
+
+    $day = $browser->evaluate('() => getComputedStyle(document.querySelector("#booking-picker details > summary")).borderTopColor');
+
+    expect($before)->toHaveCount(2)
+        ->and($hovered[0])->not->toBe($before[0])
+        ->and($hovered[1])->toBe($before[1])
+        ->and($day)->toBe($hovered[0]);
+});
