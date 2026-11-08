@@ -401,11 +401,11 @@ Plans:
 
 **Planning notes** (settle these in discuss-phase):
 - Hosting (Laravel Cloud or Forge) is chosen in this phase (PROJECT.md, Open decisions).
-- Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, error tracking, backups (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
+- Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, recovery from disaster (backups, error tracking and a rollback plan, which took in the earlier error-tracking and backup items) (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
 - How a visitor tries the front desk on staging (`/dev/chat` is local-only today), and whether the text a visitor types is kept.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
 - Deploy notes carry in from PROJECT.md: restart the worker after any `.env` or key change.
-- The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list. DEPL-01 is unchanged.
+- The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list, continuous deployment with its smoke check, recovery from disaster and performance budgets in CI (Ian, 2026-11-08). DEPL-01 is unchanged.
 
 ## Progress
 
