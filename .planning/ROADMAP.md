@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 16/16 plans executed
+**Plans**: 16/23 plans executed (08-17 to 08-23 close the verification gaps)
 
 Plans:
 **Wave 1**
@@ -292,6 +292,27 @@ Plans:
 
 **Wave 16** *(blocked on Wave 15 completion)*
 - [x] 08-16-PLAN.md — Appointments on the customer card and timeline (D-38, D-39), no booking changes a status (D-41), and the phase's audit of every changed test line
+
+**Wave 17** *(gap closure; blocked on Wave 16 completion)*
+- [ ] 08-17-PLAN.md — Gap D-12 going forward: the chokepoint stores every sent text with the booking address as /book/[link] while the customer gets the working link; a failed send, the log, a customer's paste, records/ and the session hide it too; a leak test searches every table on both databases, the folder, the log and the job payloads
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [ ] 08-18-PLAN.md — Gap D-12 backward: links sent before the fix that have not booked are revoked and their cards redrawn (no text rewritten); 08-SECURITY.md closes T-08-01 and T-08-27; the provider's log joins the attorney list
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [ ] 08-19-PLAN.md — Review WR-01, WR-02, IN-02: a booking text is sent once after a failed record or a dead sender; a reminder due at the window's close survives a late sweep, and one the visit overtook leaves a note; only SendBookingText names the booking text kind
+
+**Wave 20** *(blocked on Wave 19 completion)*
+- [ ] 08-20-PLAN.md — Review WR-03, WR-04: a failure after the send never withdraws a delivered link; refusals are read by the sender's constants and a BookingRefusal reason, never by message text
+
+**Wave 21** *(blocked on Wave 20 completion)*
+- [ ] 08-21-PLAN.md — Review WR-05 and the UI review's footer hover: the privacy notice states only what the page does, and the footer disclosures show the accent border on hover
+
+**Wave 22** *(blocked on Wave 21 completion)*
+- [ ] 08-22-PLAN.md — Review IN-05: the rate-limited notice has a Try again button that brings the times back after the minute, with focus kept
+
+**Wave 23** *(blocked on Wave 22 completion)*
+- [ ] 08-23-PLAN.md — The UI review's zone name and review IN-03, IN-04, IN-01: owner dialogs say "Times are in Central Time.", no confirmation is forecast to a customer with no phone, Past lists only what has ended, and Availability's docblocks match the code
 
 **UI hint**: yes
 
