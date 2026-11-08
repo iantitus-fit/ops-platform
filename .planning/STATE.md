@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-18-PLAN.md
-last_updated: "2026-11-08T17:32:31.359Z"
+stopped_at: Completed 08-19-PLAN.md
+last_updated: "2026-11-08T18:33:55.384Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 08 execution started
-state_head: 5686951a3e785e0bce365c1b14aaaf8e86aad536
+state_head: 6d1c1cfebe5f15b39a08ffacea1731605e6a3ccc
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 57
-  completed_plans: 52
+  completed_plans: 53
   percent: 44
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 19 of 23
+Plan: 2 of 23
 Status: Ready to execute
 Last activity: 2026-11-08 — Phase 08 execution started
 
@@ -192,6 +192,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P16 | 40 min | 3 tasks | 8 files |
 | Phase 08 P17 | 25 min | 4 tasks | 13 files |
 | Phase 08 P18 | 8 min | 2 tasks | 7 files |
+| Phase 08 P19 | 10 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -292,6 +293,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: Decision coverage override (Ian, 2026-11-07, gap planning): D-46 is cited by no PLAN.md. It was decided after planning and built during 08-16 (commits 17caa72, 9660cd3, 351a97e; 08-16-SUMMARY.md). Planning proceeded; re-verification should check the built code against D-46.
 - [Phase 08]: 08-17: hide() keeps the matched /book/ in its own letter case and replaces only the token; a failed send's DomainException keeps the raw gateway exception as previous only when the hidden message equals the raw one; the front desk hold stores '/book/' alone as the finding's match, never the address
 - [Phase 08]: 08-18: the migration revokes every unbooked link from before 08-17 (superseded and expired ones too) and redraws their cards; stored texts are not rewritten (rewriting is one-way); rated reversible, un-revoke is one update for the logged ids
+- [Phase 08]: 08-19: booking text late grace is 5 minutes (SendBookingText::LATE_GRACE_MINUTES); D-29 and ReminderSchedule unchanged; a message found still queued ends the row failed without a resend
+- [Phase 08]: 08-19: only OutboundSender, SendBookingText and MessageKind may name the booking text kind (BookingTextKindTest, IN-02)
 
 ### Pending Todos
 
@@ -355,8 +358,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T17:32:31.272Z
-Stopped at: Completed 08-18-PLAN.md
+Last session: 2026-11-08T18:33:55.314Z
+Stopped at: Completed 08-19-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
