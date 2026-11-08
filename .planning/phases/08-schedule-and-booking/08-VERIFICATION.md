@@ -26,6 +26,120 @@ gaps:
       - "Add a test that sends a link, then searches the database (every table) and the records folder and finds no working token anywhere."
       - "Correct 08-SECURITY.md: T-08-01's clause 'plain token never reaches the database' is false today; set threats_open to 0 only after the fix is verified."
       - "Add the text provider's own message log (Twilio keeps every sent body) to the attorney list in STATE.md blockers (Phase 02.1); the platform cannot redact it."
+  - truth: "WR-01 (08-REVIEW.md): a booking text is sent once, even when the outcome write fails or the process dies after the send"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Actions/SendBookingText.php"
+        issue: "sent_at is written after OutboundSender::send() (:122-149, :393-413); end() swallows a database error, so the row stays claimed and the sweep re-sends once the lease expires"
+    missing:
+      - "Before sending, look for a message already carrying meta.booking_send_id and end the row on it instead of sending again."
+      - "Log loudly when the sent_at write fails after a send."
+      - "A test that fails the outcome write after a send and shows the next sweep sends nothing."
+  - truth: "WR-02 (08-REVIEW.md): a reminder due at the send window's end still goes out when the sweep reaches it a little late, and a dropped reminder leaves a trace"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding. D-29 stays as written."
+    artifacts:
+      - path: "app/Rooms/ScheduleAndBooking/ReminderSchedule.php"
+        issue: "reminders due outside the window are scheduled at exactly the window's end (:96-110)"
+      - path: "app/Actions/SendBookingText.php"
+        issue: "the window is checked to the minute (:187-199); drop() writes no timeline note unless the row waited on an unread text (:263-272)"
+    missing:
+      - "Give nextOpening() a short grace so a row whose due time was inside the window still sends when the sweep reaches it a little late (D-29 kept as written)."
+      - "When a moved row is dropped, write the timeline note \"Reminder text not sent: the visit started first\"."
+      - "Tests for a sweep a little past the window's end, and for the dropped row's note."
+  - truth: "WR-03 (08-REVIEW.md): a booking link that reached the customer is never withdrawn by a failure after the send"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Actions/RunFrontDesk.php"
+        issue: "attachMessage() runs after the send inside the same guarded block (:625-643), so its failure revokes a delivered link and restores older ones"
+      - path: "app/Actions/SendOwnerReply.php"
+        issue: "the same shape (:190-212), and it rethrows to the owner as if the send had failed"
+    missing:
+      - "Withdraw the link only when the send itself threw."
+      - "Run attachMessage() after the send, outside the guarded block, and only report its failure."
+      - "Tests on both paths: attachMessage() throwing leaves the sent link live and the owner sees a sent reply."
+  - truth: "WR-04 (08-REVIEW.md): refusal handling does not depend on exception message text"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Actions/SendBookingText.php"
+        issue: "answerRefusal() compares DomainException messages to string literals copied from OutboundSender (:46, :56, :229-258)"
+      - path: "app/Livewire/BookingPage.php"
+        issue: "refuse() compares BookingRefused::taken()->getMessage() (:189-203)"
+      - path: "app/Actions/OutboundSender.php"
+        issue: "takeLock() has two differently worded 'being sent' sentences"
+    missing:
+      - "Refusal reasons as constants on OutboundSender or a small reason enum carried on the exception, as the review suggests (the way NOT_AGREED, UNREAD_CUSTOMER_TEXT and APPOINTMENT_NOT_AHEAD already are), compared by value."
+      - "BookingRefused gets a reason property (beside field) and BookingPage switches on it."
+  - truth: "WR-05 (08-REVIEW.md): the booking page footer states nothing the code does not own"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "resources/views/components/booking/footer.blade.php"
+        issue: "line 9 says \"This is placeholder wording for the example business.\" and claims no personal data is asked for, while the page and its rate limiter see the visitor's IP address"
+    missing:
+      - "Remove the \"placeholder wording\" sentence now."
+      - "Remove any claim the code does not own; the page and its rate limiter see the visitor's IP address."
+      - "The final privacy wording stays on the attorney list (STATE.md blockers)."
+  - truth: "IN-01 (08-REVIEW.md): Availability's docblock matches the code on the drive buffer for hand bookings"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Rooms/ScheduleAndBooking/Availability.php"
+        issue: "isFree() says booking by hand passes a buffer of 0 (:108); BookAppointment passes the file's drive buffer (D-08)"
+    missing:
+      - "Change the sentence to \"Booking by hand passes the file's drive buffer, or 0 with no booking file.\", and fix the same framing on offers()."
+  - truth: "IN-02 (08-REVIEW.md): only SendBookingText can send a booking text"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Actions/OutboundSender.php"
+        issue: "refuseBookingText() trusts the caller's meta.parts (:375-407)"
+    missing:
+      - "An architecture test that only SendBookingText may pass MessageKind::BookingText (Ian's choice of the review's two options)."
+  - truth: "IN-03 (08-REVIEW.md): the hand-booking dialog never forecasts a confirmation text that will not be sent"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php"
+        issue: "confirmationStatus() says a text will go out for an email-only contact (:229-238)"
+    missing:
+      - "Add blank($contact->phone_e164) => \"No confirmation text will go out. This customer has no phone number on file.\" before the default, as the review suggests; optionally a \"will go out at the next opening\" variant."
+      - "Add the new line(s) to 08-UI-SPEC.md's U-25 copy row."
+  - truth: "IN-04 (08-REVIEW.md): the Schedule page's Upcoming and Past filters do not overlap"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Filament/Pages/Schedule.php"
+        issue: "Upcoming is ends_at >= start of today and Past is starts_at < start of today (:277-290), so a span crossing midnight shows in both"
+    missing:
+      - "Make Past ends_at < start of today for booked rows, as the review suggests, with a test for a block spanning days."
+  - truth: "IN-05 (08-REVIEW.md): the booking page's rate-limited notice can be retried without a reload"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (code review triage): fix in the gap plan beside the D-12 gap. 08-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Livewire/BookingPage.php"
+        issue: "the #[Locked] rateLimited flag stays true until a reload (:111-129); the view renders only the notice"
+    missing:
+      - "As the review suggests: clear the flag in render() when RateLimiter::availableIn($key) === 0, or add a \"Try again\" button that calls back(); any new string goes into 08-UI-SPEC.md."
+  - truth: "UI review (08-UI-REVIEW.md): the Schedule dialog's helper names the business zone in plain words"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (UI review triage): fix in the gap plan beside the D-12 gap. 08-UI-REVIEW.md has the full finding."
+    artifacts:
+      - path: "app/Filament/Pages/Schedule.php"
+        issue: "the helper \"Times are in {zone}.\" is filled from displayTimezone(), which can print a raw id such as America/Chicago"
+    missing:
+      - "Print the zone's plain name, for example \"Central Time\", not \"America/Chicago\" (the booking page already has BookingSettings::zoneName()), with a test."
+  - truth: "UI review (08-UI-REVIEW.md): the booking page footer's disclosures show the accent border on hover"
+    status: partial
+    reason: "Ian ruled on 2026-11-07 (UI review triage): fix in the gap plan beside the D-12 gap. 08-UI-REVIEW.md has the full finding."
+    artifacts:
+      - path: "resources/views/components/booking/footer.blade.php"
+        issue: "hover:border-accent sits on the <summary> (:5, :13), which has no border, so nothing changes; day.blade.php does it right"
+    missing:
+      - "Give the footer disclosures their hover border as the contract says (hover on the <details>, group-hover, or the border moved onto the summary)."
 human_verification:
   - test: "Keyboard-only walk of the booking page at desktop width and at 375 px"
     expected: "A customer opens a booking link, reaches every time, books by keyboard alone, and focus lands on the confirmation heading"
@@ -153,7 +267,7 @@ No TBD, FIXME or XXX marker appears in the phase's changed app, routes, resource
 ### Other Notes
 
 - `08-VALIDATION.md` frontmatter says `nyquist_compliant: false` while its sign-off checklist says it was set to `true` and the approval line says validated with 0 gaps. The frontmatter and the checklist disagree; fix the frontmatter when closing the phase.
-- 08-16's audit lists one changed existing-test range no numbered plan named: `tests/Feature/FrontDesk/FrontDeskInvariantTest.php:188-198` (commit 4fe1d33, a Postgres speed fix; I confirmed the diff is 11 insertions and 1 deletion in that one file). Awaiting Ian's confirmation. Not a goal gap by itself.
+- 08-16's audit lists one changed existing-test range no numbered plan named: `tests/Feature/FrontDesk/FrontDeskInvariantTest.php:188-198` (commit 4fe1d33, a Postgres speed fix; I confirmed the diff is 11 insertions and 1 deletion in that one file). Approved by Ian on 2026-11-04 as a test-only Postgres speed fix (recorded 2026-11-07). Not a goal gap.
 - I did not re-run the full suite or `npm run build`; I re-ran the 502 tests above, including the real-browser tests.
 
 ### Gaps Summary
@@ -161,6 +275,8 @@ No TBD, FIXME or XXX marker appears in the phase's changed app, routes, resource
 One gap blocks closing the phase. D-12 says a copy of the database holds no working booking link. Today the booking token is stored in plain text in `messages.body` and printed into the customer card in `records/`, so a copy of the database or the business folder holds working links until each expires, books or is superseded. Ian ruled on 2026-11-07 to fix this in a gap plan and keep D-12 as written. `/gsd-plan-phase 8 --gaps` should pick up the scope in the `gaps:` block above: every place the full link lands (messages.body, the card in records/, timeline and activity summaries, queued job payloads and failed_jobs, application logs), store and print the sent text with the token replaced while the customer still receives the real link, and a test that sends a link and then finds no working token in any table or in the records folder. The provider's own log is outside the platform's control and goes on the attorney list.
 
 Everything else in the roadmap's six success criteria is present, wired and exercised by passing tests. The human walks and the CI Postgres leg remain for UAT, and the five open review warnings are for Ian's triage.
+
+**Added after Ian's triage (2026-11-07).** Ian ruled on the code review and UI review findings and asked for every fix to sit beside the D-12 gap, so the frontmatter `gaps:` now holds 13 items: D-12; WR-01 to WR-05 and IN-01 to IN-05 from 08-REVIEW.md (IN-02 through an architecture test; WR-02 keeps D-29 as written); and two from 08-UI-REVIEW.md (the Schedule helper's plain zone name, and the footer disclosures' hover border). IN-06 is deferred to Phase 9 (08-REVIEW-DISPOSITION.md). These are review fixes, not goal failures, so the score above is unchanged. The three owner strings the UI review flagged (the fourth hand-booking status line, "New job" in lower case, "Pick a job.") are approved and now in 08-UI-SPEC.md.
 
 ---
 

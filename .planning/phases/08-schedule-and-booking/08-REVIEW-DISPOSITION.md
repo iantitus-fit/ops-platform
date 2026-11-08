@@ -45,9 +45,9 @@ findings:
     title: "The booking page's rate-limited notice has no way to retry without a reload"
   - id: IN-06
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 11
+open: 10
 total: 11
 recorded: 2026-11-07T23:45:44.400Z
 ---
@@ -56,17 +56,17 @@ recorded: 2026-11-07T23:45:44.400Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
-| WR-05 | warning | open | - |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
-| IN-06 | info | open | - |
+| WR-01 | warning | open | Ian, 2026-11-07: fix in the gap plan (08-VERIFICATION.md gap WR-01): before sending, look for a message already carrying meta.booking_send_id and end the row on it; log loudly when the sent_at write fails after a send |
+| WR-02 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-02), D-29 kept as written: nextOpening() gets a short grace so a row due inside the window still sends when the sweep reaches it a little late; a moved row that is dropped writes "Reminder text not sent: the visit started first" |
+| WR-03 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-03): withdraw the link only when the send itself threw; attachMessage() runs after and only reports its failure |
+| WR-04 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-04): refusal reasons as constants or a reason on the exception, as the review suggests |
+| WR-05 | warning | open | Ian, 2026-11-07: fix now, in the gap plan (gap WR-05): remove the placeholder sentence and any claim the code does not own (the page and its rate limiter see the visitor's IP address); final wording stays on the attorney list |
+| IN-01 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-01) |
+| IN-02 | info | open | Ian, 2026-11-07: fix in the gap plan (gap IN-02) with an architecture test that only SendBookingText may pass MessageKind::BookingText |
+| IN-03 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-03) |
+| IN-04 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-04) |
+| IN-05 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-05) |
+| IN-06 | info | deferred | Phase 9, where the nightly rebuild lives; the rebuild re-renders the card so the Next appointment line follows the clock (Ian, 2026-11-07) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
