@@ -2,16 +2,18 @@
 
 namespace App\Rooms\ScheduleAndBooking;
 
+use App\Enums\BookingRefusal;
 use DomainException;
 
 /**
  * A booking the platform will not make, in plain words the owner reads. When the refusal is about one thing the owner
  * typed, `field` names it (the form field's name) so the screen can show the sentence beside that field; a refusal about
- * the whole booking has no field and the screen shows it as a notice.
+ * the whole booking has no field and the screen shows it as a notice. `reason` says why it was refused, set by each named
+ * constructor, so a caller decides by the reason and never by reading the sentence (WR-04).
  */
 class BookingRefused extends DomainException
 {
-    public function __construct(string $message, public readonly ?string $field = null)
+    public function __construct(public readonly BookingRefusal $reason, string $message, public readonly ?string $field = null)
     {
         parent::__construct($message);
     }
@@ -21,7 +23,7 @@ class BookingRefused extends DomainException
      */
     public static function roomOff(): self
     {
-        return new self('The schedule and booking room is off.');
+        return new self(BookingRefusal::RoomOff, 'The schedule and booking room is off.');
     }
 
     /**
@@ -29,7 +31,7 @@ class BookingRefused extends DomainException
      */
     public static function noSuchService(): self
     {
-        return new self('That service is no longer in the business folder.', 'service');
+        return new self(BookingRefusal::NoSuchService, 'That service is no longer in the business folder.', 'service');
     }
 
     /**
@@ -37,7 +39,7 @@ class BookingRefused extends DomainException
      */
     public static function pastStart(): self
     {
-        return new self('Pick a time that has not passed.', 'starts_at');
+        return new self(BookingRefusal::PastStart, 'Pick a time that has not passed.', 'starts_at');
     }
 
     /**
@@ -46,7 +48,7 @@ class BookingRefused extends DomainException
      */
     public static function taken(): self
     {
-        return new self('That time is taken by another booking or blocked time. Pick another time.', 'starts_at');
+        return new self(BookingRefusal::Taken, 'That time is taken by another booking or blocked time. Pick another time.', 'starts_at');
     }
 
     /**
@@ -54,7 +56,7 @@ class BookingRefused extends DomainException
      */
     public static function projectNotOpen(): self
     {
-        return new self('That job is closed. Pick an open job or a new one.', 'project');
+        return new self(BookingRefusal::ProjectNotOpen, 'That job is closed. Pick an open job or a new one.', 'project');
     }
 
     /**
@@ -62,7 +64,7 @@ class BookingRefused extends DomainException
      */
     public static function noteTooLong(): self
     {
-        return new self('A note can be at most 200 characters.', 'note');
+        return new self(BookingRefusal::NoteTooLong, 'A note can be at most 200 characters.', 'note');
     }
 
     /**
@@ -70,7 +72,7 @@ class BookingRefused extends DomainException
      */
     public static function notStarted(): self
     {
-        return new self('A visit can be marked done only once it has started.');
+        return new self(BookingRefusal::NotStarted, 'A visit can be marked done only once it has started.');
     }
 
     /**
@@ -78,7 +80,7 @@ class BookingRefused extends DomainException
      */
     public static function notBooked(): self
     {
-        return new self('Only a booked visit can have its note changed.');
+        return new self(BookingRefusal::NotBooked, 'Only a booked visit can have its note changed.');
     }
 
     /**
@@ -86,7 +88,7 @@ class BookingRefused extends DomainException
      */
     public static function endBeforeStart(): self
     {
-        return new self('The end must be after the start.', 'ends_at');
+        return new self(BookingRefusal::EndBeforeStart, 'The end must be after the start.', 'ends_at');
     }
 
     /**
@@ -94,7 +96,7 @@ class BookingRefused extends DomainException
      */
     public static function blockNoteTooLong(): self
     {
-        return new self('A block note can be at most 100 characters.', 'note');
+        return new self(BookingRefusal::BlockNoteTooLong, 'A block note can be at most 100 characters.', 'note');
     }
 
     /**
@@ -103,7 +105,7 @@ class BookingRefused extends DomainException
      */
     public static function blockOverBooking(string $name, string $day, string $time): self
     {
-        return new self("{$name} is booked on {$day} at {$time}. Cancel that visit first, or pick another time.", 'starts_at');
+        return new self(BookingRefusal::BlockOverBooking, "{$name} is booked on {$day} at {$time}. Cancel that visit first, or pick another time.", 'starts_at');
     }
 
     /**
@@ -111,7 +113,7 @@ class BookingRefused extends DomainException
      */
     public static function busy(): self
     {
-        return new self('Another booking is being made. Try again.');
+        return new self(BookingRefusal::Busy, 'Another booking is being made. Try again.');
     }
 
     /**
@@ -120,6 +122,6 @@ class BookingRefused extends DomainException
      */
     public static function linkClosed(): self
     {
-        return new self('This link cannot book a time now.');
+        return new self(BookingRefusal::LinkClosed, 'This link cannot book a time now.');
     }
 }

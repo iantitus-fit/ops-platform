@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Actions\BookAppointment;
 use App\Enums\BookingPageState;
+use App\Enums\BookingRefusal;
 use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Rooms\ScheduleAndBooking\Availability;
@@ -181,26 +182,16 @@ class BookingPage extends Component
     }
 
     /**
-     * A refusal from the booking action: a taken time gives fresh times, a closed link just draws its new state, and
-     * anything else keeps the check step with the failed line.
+     * A refusal from the booking action, decided by its reason and never by its words (WR-04): a taken time gives fresh
+     * times, a closed link just draws its new state, and any other reason keeps the check step with the failed line.
      */
     private function refuse(BookingRefused $refused): void
     {
-        $message = $refused->getMessage();
-
-        if ($message === BookingRefused::taken()->getMessage()) {
-            $this->showFreshTimes();
-
-            return;
-        }
-
-        if ($message === BookingRefused::linkClosed()->getMessage()) {
-            $this->chosen = null;
-
-            return;
-        }
-
-        $this->error = 'failed';
+        match ($refused->reason) {
+            BookingRefusal::Taken => $this->showFreshTimes(),
+            BookingRefusal::LinkClosed => $this->chosen = null,
+            default => $this->error = 'failed',
+        };
     }
 
     /**
