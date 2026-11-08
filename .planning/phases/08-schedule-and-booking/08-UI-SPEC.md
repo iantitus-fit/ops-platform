@@ -265,6 +265,8 @@ Mechanism (the planner's): `x-init="$el.focus()"` on the element that appears, o
 
 Two native `<details>` disclosures in the footer, each summary a 48 px button-like row: "Privacy notice" and "Accessibility statement". Body text is placeholder wording kept in one Blade partial, replaced when the attorney list lands (D-44).
 
+The privacy notice states only what the code does: the link books one visit, nothing is typed, and the device's internet address is received and used to limit repeated tries (WR-05, gap plan 08-21).
+
 ---
 
 ## Spacing Scale
@@ -409,7 +411,7 @@ All customer strings: no exclamation points and no em dashes (02.1 D-41); plain,
 | Rate limited | h1 "Please wait a moment". Line: "There have been too many tries. Wait a minute, then try again." |
 | No JavaScript | "This page needs JavaScript to show times. Text {business} at {number} to book." |
 | Destructive confirmation | none on this page: it has no destructive action. Booking is confirmed by the check step (U-07); there is no customer cancel in Phase 8 (D-32). |
-| Footer, privacy (placeholder) | Summary "Privacy notice". Body: "This is placeholder wording for the example business. This page uses your link to book one visit. It does not ask for your name, phone number or address." |
+| Footer, privacy (interim wording until the attorney list, D-44) | Summary "Privacy notice". Body: "This page uses your link to book one visit. It does not ask you to type anything. Like every website, it receives the internet address of your device, and it uses that address to limit repeated tries." |
 | Footer, accessibility (placeholder) | Summary "Accessibility statement". Body: "This page is built to WCAG 2.2 Level AA. If something does not work for you, text {business} at {number} and we will help." |
 
 Dead-end pages are one heading and one line, per D-13 ("one plain line").
@@ -664,3 +666,5 @@ Also open, outside the probe's taxonomy: dark mode on the booking page. The page
 - [x] Dimension 7 Inventory Provenance: PASS
 
 **Approval:** approved by Ian, 2026-11-02, with the amendments recorded in the Decision Register.
+
+Amended 2026-11-07 by gap plan 08-21 (WR-05, Ian).

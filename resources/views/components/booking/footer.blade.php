@@ -6,7 +6,7 @@
                 <span>Privacy notice</span>
                 <x-booking.icon.chevron class="size-6 shrink-0 group-open:rotate-180 motion-safe:transition-transform" />
             </summary>
-            <p class="break-words px-4 pb-4 pt-2 text-ink-muted">This is placeholder wording for the example business. This page uses your link to book one visit. It does not ask for your name, phone number or address.</p>
+            <p class="break-words px-4 pb-4 pt-2 text-ink-muted">This page uses your link to book one visit. It does not ask you to type anything. Like every website, it receives the internet address of your device, and it uses that address to limit repeated tries.</p>
         </details>
 
         <details class="group border-2 border-line bg-page">
