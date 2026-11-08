@@ -4,15 +4,18 @@ namespace App\Actions;
 
 use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
+use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Icm\ActiveConfig;
 use App\Models\BookingSend;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Rooms\RecordRoomEntry;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
 use DomainException;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -87,12 +90,24 @@ class SendBookingText
     }
 
     /**
-     * Check everything again, then compose the owner's line and send it.
+     * Look for a text already sent for this row, then check everything again, compose the owner's line and send it.
+     *
+     * The lookup comes first, before the visit is looked at: a text that went out must be recorded even when the visit has
+     * changed since. It is the sweep's way back from a crash between the send and its record (D-31's once), so a row
+     * whose sender died, or whose sent-write failed, ends on the message that exists and never sends a second text.
      *
      * @throws Throwable only for what no case below expects; handle() reports it and fails the row
      */
     private function send(BookingSend $send, Carbon $claimedAt): void
     {
+        $existing = Message::query()->where('meta->booking_send_id', $send->id)->latest('id')->first();
+
+        if ($existing !== null) {
+            $this->endOnExisting($send, $existing);
+
+            return;
+        }
+
         $visit = $send->appointment;
 
         if ($visit === null) {
@@ -175,7 +190,64 @@ class SendBookingText
             return;
         }
 
-        $this->end($send, ['sent_at' => $this->now(), 'message_id' => $message->id]);
+        $this->markSent($send, $message);
+    }
+
+    /**
+     * End the row on a message that already carries its id, without composing or sending anything (WR-01, D-31). A text
+     * on the customer's phone ends it sent. A failed one ends it failed with that message's own error. A message still
+     * queued means the sender stopped between handing the text to the channel and recording it: it may have reached the
+     * customer, so it is not sent again, and the row ends failed with a plain reason and a critical log record.
+     */
+    private function endOnExisting(BookingSend $send, Message $existing): void
+    {
+        if (in_array($existing->status, MessageStatus::onTheCustomersPhone(), true)) {
+            $this->end($send, ['sent_at' => $this->now(), 'message_id' => $existing->id]);
+
+            return;
+        }
+
+        if ($existing->status === MessageStatus::Failed) {
+            $error = $existing->meta['error'] ?? null;
+
+            $this->end($send, [
+                'failed_at' => $this->now(),
+                'message_id' => $existing->id,
+                'failure' => $this->reasonFrom(is_string($error) ? $error : ''),
+            ]);
+
+            return;
+        }
+
+        Log::critical('A booking text was found that never finished sending, so it was not sent again.', [
+            'booking_send_id' => $send->id,
+            'message_id' => $existing->id,
+        ]);
+
+        $this->end($send, [
+            'failed_at' => $this->now(),
+            'message_id' => $existing->id,
+            'failure' => 'The send stopped partway, so it was not sent again.',
+        ]);
+    }
+
+    /**
+     * Record that the text went out. When the write fails, the exception is reported and a critical log record names the
+     * row and the message, never the text. The row stays claimed, so the next sweep after the lease finds the message by
+     * its booking_send_id and ends the row on it without a second text (WR-01, D-31).
+     */
+    private function markSent(BookingSend $send, Message $message): void
+    {
+        try {
+            $this->endOrThrow($send, ['sent_at' => $this->now(), 'message_id' => $message->id]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            Log::critical('A booking text went out but its row could not be marked sent. The next sweep will end the row on the message.', [
+                'booking_send_id' => $send->id,
+                'message_id' => $message->id,
+            ]);
+        }
     }
 
     /**
@@ -393,17 +465,30 @@ class SendBookingText
     private function end(BookingSend $send, array $columns): bool
     {
         try {
-            $ended = BookingSend::query()
-                ->whereKey($send->id)
-                ->whereNull('sent_at')
-                ->whereNull('skipped_at')
-                ->whereNull('failed_at')
-                ->update($columns);
+            return $this->endOrThrow($send, $columns);
         } catch (Throwable $exception) {
             report($exception);
 
             return false;
         }
+    }
+
+    /**
+     * The conditional update behind end(), letting a database error out so a caller can tell it from a row another writer
+     * already ended. Returns whether this call ended the row.
+     *
+     * @param  array<string, mixed>  $columns
+     *
+     * @throws Throwable when the update fails
+     */
+    private function endOrThrow(BookingSend $send, array $columns): bool
+    {
+        $ended = BookingSend::query()
+            ->whereKey($send->id)
+            ->whereNull('sent_at')
+            ->whereNull('skipped_at')
+            ->whereNull('failed_at')
+            ->update($columns);
 
         if ($ended !== 1) {
             return false;
