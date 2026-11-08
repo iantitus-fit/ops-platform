@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 20/23 plans executed (08-17 to 08-23 close the verification gaps)
+**Plans**: 21/23 plans executed (08-17 to 08-23 close the verification gaps)
 
 Plans:
 **Wave 1**
@@ -306,7 +306,7 @@ Plans:
 - [x] 08-20-PLAN.md — Review WR-03, WR-04: a failure after the send never withdraws a delivered link; refusals are read by the sender's constants and a BookingRefusal reason, never by message text
 
 **Wave 21** *(blocked on Wave 20 completion)*
-- [ ] 08-21-PLAN.md — Review WR-05 and the UI review's footer hover: the privacy notice states only what the page does, and the footer disclosures show the accent border on hover
+- [x] 08-21-PLAN.md — Review WR-05 and the UI review's footer hover: the privacy notice states only what the page does, and the footer disclosures show the accent border on hover
 
 **Wave 22** *(blocked on Wave 21 completion)*
 - [ ] 08-22-PLAN.md — Review IN-05: the rate-limited notice has a Try again button that brings the times back after the minute, with focus kept
@@ -418,7 +418,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 20/23 | In Progress | - |
+| 8. Schedule and Booking | 21/23 | In Progress | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
