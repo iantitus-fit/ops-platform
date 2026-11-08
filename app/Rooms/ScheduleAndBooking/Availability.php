@@ -86,7 +86,7 @@ class Availability
     /**
      * Whether a start is one the server offers at the moment passed in (T-08-18). The list is recomputed here, never trusted from the
      * browser, and the exact instant is compared, so a start a minute off, one that has passed, one on a closure and one
-     * that was taken after the page was drawn are all refused. Booking by hand does not call this; it asks isFree().
+     * that was taken after the page was drawn are all refused. Booking by hand does not call this; it asks isFree() with the file's drive buffer, or 0 with no booking file.
      *
      * @param  array<string, mixed>  $service
      */
@@ -105,7 +105,7 @@ class Availability
 
     /**
      * Whether a span has free time for one more job: fewer booked appointments and blocks overlap it than CAPACITY
-     * allows (D-07). Booking by hand passes a buffer of 0.
+     * allows (D-07). Booking by hand passes the file's drive buffer, or 0 with no booking file.
      */
     public function isFree(CarbonImmutable $start, CarbonImmutable $end, int $bufferMinutes): bool
     {

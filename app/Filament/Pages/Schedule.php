@@ -264,9 +264,11 @@ class Schedule extends Page implements HasActions, HasTable
 
     /**
      * The rows one Show choice lists (D-40). Upcoming is every booked visit and block that has not ended before today
-     * began, in the business's zone; Past is what started before today and is booked or done (a removed block holds no
-     * time and shows nowhere); Cancelled and Done are visits only, because a removed block is not a cancelled visit and a
-     * block is never done.
+     * began, in the business's zone; Past is the booked rows that ended before today began, plus the done visits that
+     * started before today (a removed block holds no time and shows nowhere). Upcoming and Past split booked rows by
+     * their end, so a visit or block that runs past midnight is in exactly one of them; a done visit keeps its start
+     * (D-40). Cancelled and Done are visits only, because a removed block is not a cancelled visit and a block is never
+     * done.
      *
      * @param  Builder<Appointment>  $query
      * @return Builder<Appointment>
@@ -276,9 +278,13 @@ class Schedule extends Page implements HasActions, HasTable
         $today = CarbonImmutable::now($zone)->startOfDay()->utc();
 
         return match ($show) {
-            'past' => $query
-                ->whereIn('appointments.state', [AppointmentState::Booked->value, AppointmentState::Done->value])
-                ->where('appointments.starts_at', '<', $today),
+            'past' => $query->where(fn (Builder $past): Builder => $past
+                ->where(fn (Builder $booked): Builder => $booked
+                    ->where('appointments.state', AppointmentState::Booked->value)
+                    ->where('appointments.ends_at', '<', $today))
+                ->orWhere(fn (Builder $done): Builder => $done
+                    ->where('appointments.state', AppointmentState::Done->value)
+                    ->where('appointments.starts_at', '<', $today))),
             'cancelled' => $query
                 ->where('appointments.kind', AppointmentKind::Appointment->value)
                 ->where('appointments.state', AppointmentState::Cancelled->value),
