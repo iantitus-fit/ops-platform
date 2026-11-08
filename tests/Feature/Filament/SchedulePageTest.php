@@ -136,6 +136,16 @@ it('blocks time, shows the block under its day and writes no timeline entry', fu
         ->and(min($offered))->toBeGreaterThanOrEqual('12:00');
 });
 
+it('names the zone in plain words in the Block time dialog (UI review)', function () {
+    schedulePageSetUp();
+
+    $livewire = schedulePage()->mountAction('blockTime')->instance();
+    $html = $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
+
+    expect($html)->toContain('Times are in Central Time.')
+        ->and($html)->not->toContain('America/Chicago');
+});
+
 /**
  * A booked block on the given moment for the given minutes, in the shop's zone.
  *

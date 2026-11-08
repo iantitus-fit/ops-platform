@@ -274,6 +274,15 @@ function appointmentsTabDialogHtml(Testable $tab): string
     return $livewire->{$livewire->getMountedActionSchemaName()}->toHtml();
 }
 
+it('names the zone in plain words in the Book by hand dialog (UI review)', function () {
+    [$contact] = appointmentsTabSetUp();
+
+    $html = appointmentsTabDialogHtml(appointmentsTab($contact));
+
+    expect($html)->toContain('Times are in Central Time.')
+        ->and($html)->not->toContain('America/Chicago');
+});
+
 it('says whether a confirmation text will go out', function (string $case, string $sentence) {
     $folder = $case === 'no booking file' ? fn () => File::delete(icmPath('rooms/schedule_and_booking/booking.md')) : null;
     [$texted] = appointmentsTabSetUp($folder);
