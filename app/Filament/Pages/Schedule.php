@@ -181,7 +181,7 @@ class Schedule extends Page implements HasActions, HasTable
                     ->native()
                     ->seconds(false)
                     ->timezone(app(ActiveConfig::class)->displayTimezone())
-                    ->helperText('Times are in '.app(ActiveConfig::class)->displayTimezone().'.')
+                    ->helperText('Times are in '.BookingSettings::zoneName(app(ActiveConfig::class)->displayTimezone()).'.')
                     ->required(),
                 DateTimePicker::make('ends_at')
                     ->label('Ends')
