@@ -3,6 +3,7 @@
 use App\Actions\OutboundSender;
 use App\Actions\SendBookingText;
 use App\Enums\ActivityType;
+use App\Enums\BookingRefusal;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
@@ -14,6 +15,7 @@ use App\Models\BookingSend;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Rooms\ScheduleAndBooking\BookingRefused;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 
@@ -154,4 +156,42 @@ it('keeps no copy of a sender sentence in SendBookingText (WR-04)', function () 
     }
 
     expect($source)->not->toContain('->getMessage() ===');
+});
+
+it('names each booking refusal by its reason (WR-04)', function (string $constructor, array $arguments, string $reasonName, string $message, ?string $field) {
+    $refused = BookingRefused::$constructor(...$arguments);
+
+    expect($refused->reason)->toBe(constant(BookingRefusal::class.'::'.$reasonName))
+        ->and($refused->getMessage())->toBe($message)
+        ->and($refused->field)->toBe($field);
+})->with([
+    'roomOff' => ['roomOff', [], 'RoomOff', 'The schedule and booking room is off.', null],
+    'noSuchService' => ['noSuchService', [], 'NoSuchService', 'That service is no longer in the business folder.', 'service'],
+    'pastStart' => ['pastStart', [], 'PastStart', 'Pick a time that has not passed.', 'starts_at'],
+    'taken' => ['taken', [], 'Taken', 'That time is taken by another booking or blocked time. Pick another time.', 'starts_at'],
+    'projectNotOpen' => ['projectNotOpen', [], 'ProjectNotOpen', 'That job is closed. Pick an open job or a new one.', 'project'],
+    'noteTooLong' => ['noteTooLong', [], 'NoteTooLong', 'A note can be at most 200 characters.', 'note'],
+    'notStarted' => ['notStarted', [], 'NotStarted', 'A visit can be marked done only once it has started.', null],
+    'notBooked' => ['notBooked', [], 'NotBooked', 'Only a booked visit can have its note changed.', null],
+    'endBeforeStart' => ['endBeforeStart', [], 'EndBeforeStart', 'The end must be after the start.', 'ends_at'],
+    'blockNoteTooLong' => ['blockNoteTooLong', [], 'BlockNoteTooLong', 'A block note can be at most 100 characters.', 'note'],
+    'blockOverBooking' => ['blockOverBooking', ['Dana', 'Thursday, November 5', '10:00 AM'], 'BlockOverBooking', 'Dana is booked on Thursday, November 5 at 10:00 AM. Cancel that visit first, or pick another time.', 'starts_at'],
+    'busy' => ['busy', [], 'Busy', 'Another booking is being made. Try again.', null],
+    'linkClosed' => ['linkClosed', [], 'LinkClosed', 'This link cannot book a time now.', null],
+]);
+
+it('gives the 13 booking refusals 13 distinct reasons (WR-04)', function () {
+    $constructors = collect((new ReflectionClass(BookingRefused::class))->getMethods(ReflectionMethod::IS_STATIC | ReflectionMethod::IS_PUBLIC))
+        ->filter(fn (ReflectionMethod $method): bool => $method->isStatic() && $method->class === BookingRefused::class)
+        ->map(fn (ReflectionMethod $method): BookingRefusal => $method->getName() === 'blockOverBooking'
+            ? BookingRefused::blockOverBooking('Dana', 'Thursday', '10:00 AM')->reason
+            : BookingRefused::{$method->getName()}()->reason);
+
+    expect($constructors)->toHaveCount(13)
+        ->and($constructors->unique()->count())->toBe(13)
+        ->and(BookingRefusal::cases())->toHaveCount(13);
+});
+
+it('compares no exception message on the booking page', function () {
+    expect(file_get_contents(app_path('Livewire/BookingPage.php')))->not->toContain('->getMessage()');
 });

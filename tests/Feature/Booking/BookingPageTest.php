@@ -6,10 +6,12 @@ use App\Actions\BookAppointment;
 use App\Actions\MintBookingLink;
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Enums\BookingRefusal;
 use App\Livewire\BookingPage;
 use App\Models\Appointment;
 use App\Models\ScheduleBlock;
 use App\Models\User;
+use App\Rooms\ScheduleAndBooking\BookingRefused;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
@@ -243,6 +245,32 @@ it('keeps the check step when booking fails another way (T-08-37)', function () 
 
     Exceptions::assertReported(RuntimeException::class);
 });
+
+it('tells a booking refusal apart by its reason, not its words (WR-04)', function (string $reasonName, string $words, bool $keepsCheckStep, ?string $error, int $pickerBump) {
+    [, $conversation] = bookingPageSetUp();
+    [, $token] = bookingPageMint($conversation);
+
+    $this->mock(BookAppointment::class, fn ($mock) => $mock->shouldReceive('fromLink')->andThrow(new BookingRefused(constant(BookingRefusal::class.'::'.$reasonName), $words, 'starts_at')));
+
+    $page = Livewire::test(BookingPage::class, ['token' => $token])
+        ->call('choose', bookingPageChicago('2026-11-03 10:00')->toIso8601String());
+
+    $before = $page->get('pickerVersion');
+
+    $page->call('book')
+        ->assertSet('error', $error)
+        ->assertSet('pickerVersion', $before + $pickerBump);
+
+    expect($page->get('chosen') !== null)->toBe($keepsCheckStep);
+
+    if ($error === 'taken') {
+        expect(bookingPageText($page->html()))->toContain('That time was just taken. These times are open now.');
+    }
+})->with([
+    'a taken time in other words' => ['Taken', 'Other words.', false, 'taken', 1],
+    'a closed link in other words' => ['LinkClosed', 'Other words.', false, null, 0],
+    'the taken words with another reason' => ['NoteTooLong', 'That time was just taken. These times are open now.', true, 'failed', 0],
+]);
 
 it('refuses a time the server did not offer (T-08-32)', function (string $tapped) {
     [, $conversation] = bookingPageSetUp();
