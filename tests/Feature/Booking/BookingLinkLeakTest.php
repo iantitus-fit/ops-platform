@@ -6,6 +6,7 @@ use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\SendOrigin;
 use App\Jobs\ProcessInbound;
@@ -478,4 +479,220 @@ it('writes every records file with the token hidden, even from a row written bef
     expect(bookingLeakFilesHolding($token))->toBe([])
         ->and($openLeads)->toContain('/book/')
         ->and($card)->toContain('/book/');
+});
+
+/**
+ * Dana texts again a minute later and the front desk answers with the scripted reply.
+ *
+ * @param  array<string, mixed>  $reply
+ */
+function bookingLeakCustomerTextsAgain(string $body, array $reply): void
+{
+    static $count = 0;
+    $count++;
+
+    test()->travel(1)->minutes();
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_pad((string) $count, 32, 'd', STR_PAD_LEFT), 'Body' => $body]))->assertOk();
+    scriptFrontDeskReplies($reply);
+    runQueuedFrontDeskJobs();
+}
+
+/**
+ * The booking address as the thread stores it: the match of ~\S+/book/\[link\]~ in the body of the message that carried
+ * the first link. With route() in tests it reads like 'http://localhost:8000/book/[link]'.
+ */
+function bookingLeakCopiedAddress(): string
+{
+    $stored = Message::query()->where('meta->booking_link_id', BookingLink::query()->orderBy('id')->firstOrFail()->id)->firstOrFail();
+
+    expect(preg_match('~\S+/book/\[link\]~', $stored->body, $match))->toBe(1);
+
+    return $match[0];
+}
+
+/**
+ * The texts that reached Dana's phone, leaving out alerts to the owner.
+ *
+ * @return list<string>
+ */
+function bookingLeakTextsToDana(): array
+{
+    return array_values(array_map(
+        fn (array $text): string => $text['body'],
+        array_filter(textsSentToCustomers(), fn (array $text): bool => $text['to'] === BOOKING_LEAK_CUSTOMER_PHONE),
+    ));
+}
+
+/**
+ * Every text the fake channel sent whose words hold the hidden form, the owner's alerts included.
+ *
+ * @return list<string>
+ */
+function bookingLeakTextsHoldingHiddenForm(): array
+{
+    return array_values(array_filter(
+        array_column(textsSentToCustomers(), 'body'),
+        fn (string $body): bool => BookingLinkTokens::holdsHiddenAddress($body),
+    ));
+}
+
+/**
+ * What each address rule says about each text, named for the dataset. Built when a case runs, because route() needs the
+ * booted app.
+ *
+ * @return array<string, array{0: string, 1: string, 2: bool}> the rule's method, the text and the answer
+ */
+function bookingLeakAddressCases(): array
+{
+    $token = str_repeat('ab12', 16);
+
+    return [
+        'names: the hidden form in a full address' => ['namesBookingAddress', 'http://localhost/book/[link]', true],
+        'names: the hidden form alone' => ['namesBookingAddress', '/book/[link]', true],
+        'names: an address with a token' => ['namesBookingAddress', route('booking.show', $token), true],
+        'names: an upper case path' => ['namesBookingAddress', '/BOOK/'.str_repeat('A', 64), true],
+        'names: a mixed case path without a scheme' => ['namesBookingAddress', 'see x.test/Book/abc', true],
+        'names: an empty string' => ['namesBookingAddress', '', false],
+        'names: the word Book' => ['namesBookingAddress', 'Book a visit with us', false],
+        'names: facebook' => ['namesBookingAddress', 'facebook/', false],
+        'names: books' => ['namesBookingAddress', '/books/', false],
+        'names: booking' => ['namesBookingAddress', '/booking/', false],
+        'holds: the hidden form alone' => ['holdsHiddenAddress', '/book/[link]', true],
+        'holds: the hidden form in upper case' => ['holdsHiddenAddress', 'HTTP://LOCALHOST/BOOK/[LINK]', true],
+        'holds: an address with a token' => ['holdsHiddenAddress', route('booking.show', $token), false],
+        'holds: a bare path' => ['holdsHiddenAddress', '/book/', false],
+        'holds: a bare placeholder' => ['holdsHiddenAddress', '[link]', false],
+        'holds: an empty string' => ['holdsHiddenAddress', '', false],
+    ];
+}
+
+it('tells a booking address, and the hidden form, in any letter case (D-12)', function (string $case) {
+    [$method, $text, $answer] = bookingLeakAddressCases()[$case];
+
+    expect(BookingLinkTokens::$method($text))->toBe($answer);
+})->with([
+    'names: the hidden form in a full address',
+    'names: the hidden form alone',
+    'names: an address with a token',
+    'names: an upper case path',
+    'names: a mixed case path without a scheme',
+    'names: an empty string',
+    'names: the word Book',
+    'names: facebook',
+    'names: books',
+    'names: booking',
+    'holds: the hidden form alone',
+    'holds: the hidden form in upper case',
+    'holds: an address with a token',
+    'holds: a bare path',
+    'holds: a bare placeholder',
+    'holds: an empty string',
+]);
+
+it('holds a reply that copies /book/[link] from the thread, and none of it reaches the customer (D-12)', function () {
+    $token = bookingLeakSchedulingReplySent();
+    $copied = bookingLeakCopiedAddress();
+    $before = count(bookingLeakTextsToDana());
+
+    bookingLeakCustomerTextsAgain('The link did not come through. Can you send it again?', [
+        'reply' => 'Here it is again: '.$copied,
+        'label' => 'scheduling',
+        'service_slug' => 'ac-repair',
+    ]);
+
+    expect(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(1);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+    $holding = Message::query()->where('kind', MessageKind::HoldingReply->value)->sole();
+    $texts = bookingLeakTextsToDana();
+
+    expect(count($texts))->toBe($before + 1)
+        ->and($texts[$before])->toBe($holding->body)
+        ->and($texts[$before])->not->toContain('/book/')
+        ->and($texts[$before])->not->toContain('Here it is again')
+        ->and($draft->body)->toBe('Here it is again: '.$copied)
+        ->and($draft->gate_reason)->toBe('code:booking_link')
+        ->and($draft->gate['reason']['plain'])->toBe('Held: writes its own booking link, which would not open')
+        ->and($draft->gate['checks']['code']['findings'][0])->toBe(['rule' => 'booking_link', 'match' => '/book/'])
+        ->and(BookingLink::query()->count())->toBe(1)
+        ->and(Message::query()->where('kind', MessageKind::AgentReply->value)->where('status', MessageStatus::Sent->value)->count())->toBe(1)
+        ->and(bookingLeakTextsHoldingHiddenForm())->toBe([]);
+
+    $this->get(route('booking.show', $token))->assertOk();
+});
+
+it('refuses an owner\'s unedited approval of a draft holding /book/[link], and sends it with a working link once the line is out (D-12, D-45)', function () {
+    bookingLeakSchedulingReplySent();
+
+    $copied = bookingLeakCopiedAddress();
+
+    $this->actingAs(User::query()->where('phone', BOOKING_LEAK_OWNER_PHONE)->sole());
+
+    bookingLeakCustomerTextsAgain('Can you come Thursday instead?', [
+        'reply' => 'We guarantee 9 am Thursday. Book here: '.$copied,
+        'label' => 'scheduling',
+        'service_slug' => 'ac-repair',
+    ]);
+
+    $draft = Message::query()->where('status', MessageStatus::Draft->value)->sole();
+    $before = count(bookingLeakTextsToDana());
+
+    $thread = Livewire::test(ConversationThread::class, ['conversation' => Conversation::sole()])
+        ->assertSet('addBookingLink', true)
+        ->call('approveDraft');
+
+    $links = BookingLink::query()->orderBy('id')->get();
+
+    expect(count(bookingLeakTextsToDana()))->toBe($before)
+        ->and($draft->fresh()->status)->toBe(MessageStatus::Draft)
+        ->and($draft->fresh()->body)->toBe($draft->body)
+        ->and($links)->toHaveCount(2)
+        ->and($links[1]->revoked_at)->not->toBeNull()
+        ->and($links[0]->superseded_at)->toBeNull()
+        ->and($links[0]->revoked_at)->toBeNull();
+
+    $thread->assertNotified(Notification::make()->title(e(OutboundSender::HIDDEN_BOOKING_LINK))->danger());
+
+    $thread->set('draftBody', 'We guarantee 9 am Thursday.')
+        ->call('approveDraft')
+        ->assertNotified(Notification::make()->title('Draft sent')->success());
+
+    $newest = bookingLeakTextsToDana()[$before];
+    $token = bookingLeakTokenIn($newest);
+
+    expect($token)->not->toBeNull()
+        ->and(hash('sha256', $token))->toBe(BookingLink::query()->orderByDesc('id')->firstOrFail()->token_hash)
+        ->and(bookingLeakTextsHoldingHiddenForm())->toBe([]);
+
+    $this->get(route('booking.show', $token))->assertOk();
+});
+
+it('refuses a text holding /book/[link] from every sender before any row is written (D-12)', function () {
+    frontDeskCustomerTexts('Can someone come look at my AC this week?');
+
+    $hidden = 'Pick a time here: '.BookingLinkTokens::hide(route('booking.show', str_repeat('c', 64)));
+
+    foreach ([
+        [MessageAuthor::Owner, SendOrigin::Owner],
+        [MessageAuthor::Agent, SendOrigin::Automated],
+        [MessageAuthor::Agent, SendOrigin::LifeSafety],
+    ] as [$author, $origin]) {
+        $caught = null;
+
+        try {
+            app(OutboundSender::class)->send(Conversation::sole(), $hidden, $author, $origin);
+        } catch (DomainException $exception) {
+            $caught = $exception;
+        }
+
+        expect($caught)->not->toBeNull()
+            ->and($caught->getMessage())->toBe(OutboundSender::HIDDEN_BOOKING_LINK);
+    }
+
+    expect(Message::query()->where('direction', MessageDirection::Out->value)->count())->toBe(0)
+        ->and(textsSentToCustomers())->toBe([]);
+
+    app(OutboundSender::class)->send(Conversation::sole(), 'Pick a time here: '.route('booking.show', str_repeat('c', 64)), MessageAuthor::Owner, SendOrigin::Owner);
+
+    expect(textsSentToCustomers()[0]['body'])->toContain(str_repeat('c', 64));
 });
