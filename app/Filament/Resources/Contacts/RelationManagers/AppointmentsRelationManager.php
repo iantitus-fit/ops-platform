@@ -224,7 +224,10 @@ class AppointmentsRelationManager extends RelationManager
     /**
      * The one line under the form saying whether a confirmation text will go out (U-25). It is a forecast the owner
      * reads, not a send: plans 08-11 and 08-12 send the text, and only to a customer who may get automatic texts. An
-     * opted-out customer is named first, then one who has not agreed, then a business with no booking file.
+     * opted-out customer is named first, then one who has not agreed, then a business with no booking file, then a customer
+     * with no phone number (SendBookingText skips such a row). A "will go out at the next opening" variant is not drawn:
+     * the line is drawn when the dialog opens, before a time is picked, and the default stays true then, because the
+     * text does go out at the send window's next opening (D-28).
      */
     private function confirmationStatus(): string
     {
@@ -234,6 +237,7 @@ class AppointmentsRelationManager extends RelationManager
             $contact->isOptedOut() => 'No confirmation text will go out. This customer has opted out.',
             ! $contact->mayGetAutomaticTexts() => 'No confirmation text will go out. This customer has not agreed to automatic texts.',
             BookingSettings::fromConfig(app(ActiveConfig::class)) === null => 'No confirmation text will go out. Customer texts for booking are off until rooms/schedule_and_booking/booking.md is added.',
+            blank($contact->phone_e164) => 'No confirmation text will go out. This customer has no phone number on file.',
             default => 'A confirmation text will go out.',
         };
     }
