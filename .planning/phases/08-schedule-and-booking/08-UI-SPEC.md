@@ -357,7 +357,7 @@ Customer page (U-02, PROJECT.md open item 2).
 | Error | `danger` | red-800 (`#9f0712`) | Error line text and its icon, nothing else |
 | Focus | `focus` | stone-900 | Focus outline only |
 
-Accent reserved for: (1) the "Book this time" button fill; (2) inline text links ("Text us at ..." number, footer links) and their underline; (3) the hover border of day summaries and time buttons. Never the h1, never body text, never the day summaries' text, never icons, never a background panel.
+Accent reserved for: (1) the "Book this time" button fill; (2) inline text links ("Text us at ..." number, footer links) and their underline; (3) the hover border of day summaries and time buttons, and of the footer disclosures, on the details element that carries their border (gap plan 08-21, 08-UI-REVIEW priority fix 1). Never the h1, never body text, never the day summaries' text, never icons, never a background panel.
 
 Contrast, computed from Tailwind 4.3.3's oklch palette (`node_modules/tailwindcss/theme.css`) on 2026-11-02; axe re-checks in CI:
 
