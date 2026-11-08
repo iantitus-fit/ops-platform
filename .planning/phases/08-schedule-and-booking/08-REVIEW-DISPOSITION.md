@@ -3,6 +3,30 @@ phase: 08
 review: 08-REVIEW.md
 titles: json
 findings:
+  - id: WR-06
+    severity: warning
+    disposition: open
+    title: "A booking row whose sender died after queuing the message ends as failed with no note anywhere the owner reads"
+  - id: WR-07
+    severity: warning
+    disposition: open
+    title: "The front-desk model is never told what `/book/[link]` in its own history means, so the new hold fires on ordinary follow-ups"
+  - id: WR-08
+    severity: warning
+    disposition: open
+    title: "A failure after the text went out, other than recording the carrying message, still withdraws a live link"
+  - id: IN-07
+    severity: info
+    disposition: open
+    title: "The late-send grace does not check that the row came due today or after the window opened"
+  - id: IN-08
+    severity: info
+    disposition: open
+    title: "The fake channel's docblock names the dev chat as a reader of `sent()`, and the dev chat does not read it"
+  - id: IN-09
+    severity: info
+    disposition: open
+    title: "The revoke migration cannot tell a link sent before the fix from one sent after it"
   - id: WR-01
     severity: warning
     disposition: open
@@ -47,26 +71,32 @@ findings:
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 10
-total: 11
-recorded: 2026-11-07T23:45:44.400Z
+open: 16
+total: 17
+recorded: 2026-11-08T23:06:29.815Z
 ---
 
 # Phase 08: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | Ian, 2026-11-07: fix in the gap plan (08-VERIFICATION.md gap WR-01): before sending, look for a message already carrying meta.booking_send_id and end the row on it; log loudly when the sent_at write fails after a send |
-| WR-02 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-02), D-29 kept as written: nextOpening() gets a short grace so a row due inside the window still sends when the sweep reaches it a little late; a moved row that is dropped writes "Reminder text not sent: the visit started first" |
-| WR-03 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-03): withdraw the link only when the send itself threw; attachMessage() runs after and only reports its failure |
-| WR-04 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-04): refusal reasons as constants or a reason on the exception, as the review suggests |
-| WR-05 | warning | open | Ian, 2026-11-07: fix now, in the gap plan (gap WR-05): remove the placeholder sentence and any claim the code does not own (the page and its rate limiter see the visitor's IP address); final wording stays on the attorney list |
-| IN-01 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-01) |
-| IN-02 | info | open | Ian, 2026-11-07: fix in the gap plan (gap IN-02) with an architecture test that only SendBookingText may pass MessageKind::BookingText |
-| IN-03 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-03) |
-| IN-04 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-04) |
-| IN-05 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-05) |
-| IN-06 | info | deferred | Phase 9, where the nightly rebuild lives; the rebuild re-renders the card so the Next appointment line follows the clock (Ian, 2026-11-07) |
+| WR-06 | warning | open | - |
+| WR-07 | warning | open | - |
+| WR-08 | warning | open | - |
+| IN-07 | info | open | - |
+| IN-08 | info | open | - |
+| IN-09 | info | open | - |
+| WR-01 | warning | open | Ian, 2026-11-07: fix in the gap plan (08-VERIFICATION.md gap WR-01): before sending, look for a message already carrying meta.booking_send_id and end the row on it; log loudly when the sent_at write fails after a send (not in the current review) |
+| WR-02 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-02), D-29 kept as written: nextOpening() gets a short grace so a row due inside the window still sends when the sweep reaches it a little late; a moved row that is dropped writes "Reminder text not sent: the visit started first" (not in the current review) |
+| WR-03 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-03): withdraw the link only when the send itself threw; attachMessage() runs after and only reports its failure (not in the current review) |
+| WR-04 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-04): refusal reasons as constants or a reason on the exception, as the review suggests (not in the current review) |
+| WR-05 | warning | open | Ian, 2026-11-07: fix now, in the gap plan (gap WR-05): remove the placeholder sentence and any claim the code does not own (the page and its rate limiter see the visitor's IP address); final wording stays on the attorney list (not in the current review) |
+| IN-01 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-01) (not in the current review) |
+| IN-02 | info | open | Ian, 2026-11-07: fix in the gap plan (gap IN-02) with an architecture test that only SendBookingText may pass MessageKind::BookingText (not in the current review) |
+| IN-03 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-03) (not in the current review) |
+| IN-04 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-04) (not in the current review) |
+| IN-05 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-05) (not in the current review) |
+| IN-06 | info | deferred | Phase 9, where the nightly rebuild lives; the rebuild re-renders the card so the Next appointment line follows the clock (Ian, 2026-11-07) (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
