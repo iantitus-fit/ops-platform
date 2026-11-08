@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-19-PLAN.md
-last_updated: "2026-11-08T18:33:55.384Z"
+stopped_at: Completed 08-20-PLAN.md
+last_updated: "2026-11-08T19:35:28.396Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 08 execution started
-state_head: 6d1c1cfebe5f15b39a08ffacea1731605e6a3ccc
+state_head: 33daf231461e3d9396c798382128cc8bcdd99479
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 57
-  completed_plans: 53
+  completed_plans: 54
   percent: 44
 ---
 
@@ -193,6 +193,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P17 | 25 min | 4 tasks | 13 files |
 | Phase 08 P18 | 8 min | 2 tasks | 7 files |
 | Phase 08 P19 | 10 min | 3 tasks | 6 files |
+| Phase 08 P20 | 15 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -295,6 +296,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-18: the migration revokes every unbooked link from before 08-17 (superseded and expired ones too) and redraws their cards; stored texts are not rewritten (rewriting is one-way); rated reversible, un-revoke is one update for the logged ids
 - [Phase 08]: 08-19: booking text late grace is 5 minutes (SendBookingText::LATE_GRACE_MINUTES); D-29 and ReminderSchedule unchanged; a message found still queued ends the row failed without a resend
 - [Phase 08]: 08-19: only OutboundSender, SendBookingText and MessageKind may name the booking text kind (BookingTextKindTest, IN-02)
+- [Phase 08]: 08-20: WR-04 for OutboundSender uses public sentence constants (house pattern); BookingRefused carries a BookingRefusal reason enum that BookingPage switches on
+- [Phase 08]: 08-20: WR-03 a booking link is withdrawn only when the send itself threw; attachMessage and the card redraw after a send only report
 
 ### Pending Todos
 
@@ -361,8 +364,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T18:33:55.314Z
-Stopped at: Completed 08-19-PLAN.md
+Last session: 2026-11-08T19:35:28.326Z
+Stopped at: Completed 08-20-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
