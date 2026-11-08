@@ -51,7 +51,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 
 - [ ] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
-- [ ] **BOOK-02**: The agent texts a booking link for services with `book_online: true`; the customer opens a Livewire page, taps one of the offered times, and gets a confirmed appointment without typing.
+- [x] **BOOK-02**: The agent texts a booking link for services with `book_online: true`; the customer opens a Livewire page, taps one of the offered times, and gets a confirmed appointment without typing.
 - [ ] **BOOK-03**: Appointments are stored as records and appear on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen (DEC-08: inbox, schedule, money).
 - [x] **BOOK-04**: The customer receives reminders before the appointment, sent by the scheduler. *(derived: SPEC says "reminders"; timing, send window, which conversation and exactly-once settled in `.planning/phases/08-schedule-and-booking/08-CONTEXT.md` D-26 and D-29 to D-31)*
 - [ ] **BOOK-05**: The owner is alerted (per `owner_alert` in `rules/sending.md`) when an appointment is booked and when a conversation needs a human.
@@ -87,7 +87,7 @@ The layout is Ian's call at the pass, checked at 375 and 390 wide. Inputs: the p
 Every page the platform serves meets WCAG 2.2 Level AA, fixed in the markup, never by an overlay widget. Automated checks catch only part of WCAG, so customer pages and owner screens also get a keyboard-only and screen reader walk at UAT (PROJECT.md Frontend; Ian, 2026-10-22).
 
 - [x] **A11Y-01**: The room standard includes an automated accessibility check (axe rules, WCAG 2.2 Level AA) on each room's dashboard section, including the D-21 empty line, run with the room's boot test in CI; the pretend room proves it. For the front desk and team rooms the check starts in Phase 11, because 02.1 D-48 holds styling until the phone walk.
-- [ ] **A11Y-02**: The customer booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
+- [x] **A11Y-02**: The customer booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 - [ ] **A11Y-03**: Every owner-facing screen passes the automated check and a keyboard-only and VoiceOver walk at 375 and 390 wide. PROJECT.md Frontend open item 5 is settled here.
 
 ### Tour Deploy
@@ -214,7 +214,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
 | BOOK-01 | Phase 8 | Gaps Found |
-| BOOK-02 | Phase 8 | Gaps Found |
+| BOOK-02 | Phase 8 | Complete |
 | BOOK-03 | Phase 8 | Gaps Found |
 | BOOK-04 | Phase 8 | Complete |
 | BOOK-05 | Phase 8 | Gaps Found |
@@ -232,7 +232,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | DSGN-04 | Phase 11 | Pending |
 | DSGN-05 | Phase 11 | Pending |
 | A11Y-01 | Phase 4 | Complete |
-| A11Y-02 | Phase 8 | Gaps Found |
+| A11Y-02 | Phase 8 | Complete |
 | A11Y-03 | Phase 11 | Pending |
 | DEPL-02 | Phase 12 | Pending |
 | DEPL-03 | Phase 12 | Pending |
