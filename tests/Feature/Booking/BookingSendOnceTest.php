@@ -11,6 +11,7 @@ use App\Models\BookingSend;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\OwnerAlert;
 use Carbon\CarbonImmutable;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
@@ -231,4 +232,130 @@ it('finds the message in another conversation of the contact (WR-01, D-30)', fun
     expect(textsSentToCustomers())->toBeEmpty()
         ->and($row->sent_at)->not->toBeNull()
         ->and($row->message_id)->toBe($left->id);
+});
+
+/**
+ * The row due at one wall time, with the clock at another, both on Wednesday 2026-11-04 in the shop's zone.
+ */
+function bookingOnceDueAtReachedAt(BookingSend $row, string $dueTime, string $reachedTime): void
+{
+    BookingSend::query()->whereKey($row->id)->update(['due_at' => bookingOnceChicago('2026-11-04 '.$dueTime)->utc()]);
+    test()->travelTo(bookingOnceChicago('2026-11-04 '.$reachedTime)->utc());
+}
+
+it('sends a row due at the close when the sweep is a few minutes late (WR-02)', function (string $dueTime, string $reachedTime, bool $sends) {
+    [, , , $reminder] = bookingOnceSetUp();
+    bookingOnceDueAtReachedAt($reminder, $dueTime, $reachedTime);
+
+    bookingOnceSweep();
+
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toHaveCount($sends ? 1 : 0)
+        ->and($row->sent_at !== null)->toBe($sends)
+        ->and($row->send_claimed_at !== null)->toBe($sends);
+
+    if (! $sends) {
+        expect($row->due_at->format('Y-m-d H:i'))->toBe('2026-11-05 14:00');
+    }
+})->with([
+    'due at the close, reached on time' => ['20:00', '20:00', true],
+    'due at the close, reached 3 minutes late' => ['20:00', '20:03', true],
+    'due at the close, reached 5 minutes late' => ['20:00', '20:05', true],
+    'due at the close, reached 6 minutes late' => ['20:00', '20:06', false],
+    'due just before the close, reached 6 minutes after it' => ['19:58', '20:04', true],
+    'due after the close, reached inside the grace' => ['20:02', '20:04', false],
+]);
+
+it('still moves a row that came due after the close (D-29)', function () {
+    [, , , $reminder] = bookingOnceSetUp();
+    bookingOnceDueAtReachedAt($reminder, '21:00', '21:00');
+
+    bookingOnceSweep();
+
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->sent_at)->toBeNull()
+        ->and($row->send_claimed_at)->toBeNull()
+        ->and($row->due_at->format('Y-m-d H:i'))->toBe('2026-11-05 14:00');
+});
+
+/**
+ * Dana's visit moved to Thursday 2026-11-05 at 07:00 in the shop's zone, with the row due Wednesday 20:00 and reached at
+ * 20:30: the sweep holds it for the window's next opening, Thursday 08:00, an hour after the visit began.
+ */
+function bookingOnceOvertakenVisit(BookingSend $row, Appointment $appointment, int $leadMinutes = 1440): void
+{
+    $starts = bookingOnceChicago('2026-11-05 07:00')->utc();
+
+    Appointment::query()->whereKey($appointment->id)->update(['starts_at' => $starts, 'ends_at' => $starts->addMinutes(90)]);
+    BookingSend::query()->whereKey($row->id)->update(['lead_minutes' => $leadMinutes]);
+    bookingOnceDueAtReachedAt($row, '20:00', '20:30');
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->fresh()->due_at->format('Y-m-d H:i'))->toBe('2026-11-05 14:00');
+
+    test()->travelTo(bookingOnceChicago('2026-11-05 08:00')->utc());
+}
+
+it('notes a reminder the visit overtook (WR-02, D-27)', function () {
+    [, , $appointment, $reminder] = bookingOnceSetUp();
+    bookingOnceOvertakenVisit($reminder, $appointment);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($reminder->fresh()->skipped_at)->not->toBeNull()
+        ->and(bookingOnceNotes())->toBe(['Reminder text not sent: the visit started first.'])
+        ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+it('notes a confirmation the visit overtook (WR-02)', function () {
+    [, , $appointment, $confirmation] = bookingOnceSetUp();
+    bookingOnceOvertakenVisit($confirmation, $appointment, 0);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($confirmation->fresh()->skipped_at)->not->toBeNull()
+        ->and(bookingOnceNotes())->toBe(['Confirmation text not sent: the visit started first.'])
+        ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+it('notes a visit marked done before its moved reminder came (WR-02)', function () {
+    [, , $appointment, $reminder] = bookingOnceSetUp();
+    bookingOnceOvertakenVisit($reminder, $appointment);
+    Appointment::query()->whereKey($appointment->id)->update(['state' => 'done']);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and(bookingOnceNotes())->toBe(['Reminder text not sent: the visit started first.']);
+});
+
+it('writes no note for a cancelled visit, even one that would have started (WR-02, D-16)', function () {
+    [, , $appointment, $reminder] = bookingOnceSetUp();
+    bookingOnceOvertakenVisit($reminder, $appointment);
+    Appointment::query()->whereKey($appointment->id)->update(['state' => 'cancelled']);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($reminder->fresh()->skipped_at)->not->toBeNull()
+        ->and(bookingOnceNotes())->toBeEmpty()
+        ->and(OwnerAlert::query()->count())->toBe(0);
+});
+
+it('keeps the unread reason for a row that waited on an unread customer text (WR-02, D-26)', function () {
+    [, , $appointment, $reminder] = bookingOnceSetUp();
+    bookingOnceOvertakenVisit($reminder, $appointment);
+    BookingSend::query()->whereKey($reminder->id)->update(['waited_on_unread_at' => now()->utc()->subHour()]);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and(bookingOnceNotes())->toBe(['Reminder text not sent: an earlier text from the customer was still waiting to be read.']);
 });
