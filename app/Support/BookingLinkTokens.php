@@ -26,4 +26,27 @@ final class BookingLinkTokens
     {
         return preg_replace('~(/book/)[0-9a-f]{64,}~i', '$1'.self::HIDDEN, $text) ?? $text;
     }
+
+    /**
+     * Whether the text names a booking address at all: '/book/' in any letter case, so the hidden form, an address with
+     * a token and a full URL all count.
+     *
+     * This is the front desk's rule (D-12, Ian 2026-11-07). Stored texts and the card write a sent link as
+     * /book/[link], the model reads them, and an address the model writes would reach the customer broken, so any
+     * '/book/' in the model's words holds the reply. It errs toward holding, and it is never run on the owner's lines or
+     * on the link line code appends.
+     */
+    public static function namesBookingAddress(string $text): bool
+    {
+        return stripos($text, '/book/') !== false;
+    }
+
+    /**
+     * Whether the text holds the hidden form, '/book/[link]' in any letter case. The hidden form never opens for a
+     * customer, so the chokepoint refuses to send it; an address with a real token is not this form.
+     */
+    public static function holdsHiddenAddress(string $text): bool
+    {
+        return stripos($text, '/book/'.self::HIDDEN) !== false;
+    }
 }

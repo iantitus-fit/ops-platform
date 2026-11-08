@@ -96,6 +96,12 @@ class OutboundSender
     public const string UNREAD_CUSTOMER_TEXT = 'Not sent yet: an earlier text from the customer is still waiting to be read.';
 
     /**
+     * The sentence for a text holding /book/[link], a booking link that does not open. The owner reads it after an
+     * approval or a reply, and every other sender is refused the same way (D-12).
+     */
+    public const string HIDDEN_BOOKING_LINK = 'This text has /book/[link] in it, a booking link that does not open. Take it out and send again.';
+
+    /**
      * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
      */
     private const string NO_READING_WHY = "A text was stopped because the safety check had not read the customer's message";
@@ -581,7 +587,11 @@ class OutboundSender
 
     /**
      * The last guard against a text the channel should never be handed: an empty one, or one past the limit that
-     * the send rule holds as a draft rather than cutting.
+     * the send rule holds as a draft rather than cutting, or one holding /book/[link].
+     *
+     * After 08-17 every stored copy of a sent text holds /book/[link], so a held draft, a stored body or anything copied
+     * from them can hold it. It never opens, so no sender may hand it to the channel (D-12). The front desk's own words
+     * are held earlier by the send rule; this is the backstop for an owner's unedited approval and every other path.
      */
     private function whyBodyIsRefused(string $body): ?string
     {
@@ -591,6 +601,10 @@ class OutboundSender
 
         if (mb_strlen($body) > SendOwnerReply::MAX_LENGTH) {
             return 'Texts are limited to 1,600 characters.';
+        }
+
+        if (BookingLinkTokens::holdsHiddenAddress($body)) {
+            return self::HIDDEN_BOOKING_LINK;
         }
 
         return null;

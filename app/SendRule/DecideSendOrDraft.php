@@ -6,6 +6,7 @@ use App\Actions\SendOwnerReply;
 use App\Ai\AgentRun;
 use App\Enums\ReplyLabel;
 use App\Icm\ActiveConfig;
+use App\Support\BookingLinkTokens;
 use Throwable;
 
 /**
@@ -15,7 +16,9 @@ use Throwable;
  *  1. Its own label: the label is in the owner's send_on_own list, and is never price, promise, discount or
  *     complaint, a floor kept in code that no stored rule can lower.
  *  2. The code checks: the final text, disclosure and sign-off included, fits one text message and breaks none of
- *     CodeChecks' rules.
+ *     CodeChecks' rules. They also hold model words that name a booking address (D-12): the model reads stored texts
+ *     that carry /book/[link], and an address it writes would reach the customer broken. Only the model's words are read
+ *     for it, never the disclosure, the sign-off or the link line code appends after this verdict.
  *  3. Jev's reading of the owner's triage questions, read against the thresholds in config/gate.php.
  *
  * Jev is asked once per set of words (the words check), vetoed or not, because Jev is fast and cheap and its reading
@@ -65,6 +68,10 @@ class DecideSendOrDraft
         $lengthPassed = $characters <= SendOwnerReply::MAX_LENGTH;
 
         $findings = CodeChecks::findings($composedText, $this->activeConfig->voice()['never_say'] ?? []);
+
+        if (BookingLinkTokens::namesBookingAddress($reply->reply)) {
+            $findings = [['rule' => 'booking_link', 'match' => '/book/'], ...$findings];
+        }
 
         $details = [
             'version' => 1,
