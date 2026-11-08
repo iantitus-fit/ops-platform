@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-16-PLAN.md
-last_updated: "2026-11-08T01:23:43.189Z"
-last_activity: 2026-11-07
+stopped_at: Completed 08-17-PLAN.md
+last_updated: "2026-11-08T15:46:30.356Z"
+last_activity: 2026-11-08
 last_activity_desc: Phase 08 execution started
-state_head: 56b62232becd770c27ada62724d83c26c4be0f58
+state_head: eabdff420057901c61a921f063a1180e312100cb
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 57
-  completed_plans: 50
+  completed_plans: 51
   percent: 44
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 
 ## Current Position
 
-Phase: 08 (Schedule and Booking) — READY TO EXECUTE
-Plan: 16 of 16
+Phase: 08 (Schedule and Booking) — EXECUTING
+Plan: 2 of 23
 Status: Ready to execute
-Last activity: 2026-11-07 — Phase 08 execution started
+Last activity: 2026-11-08 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 
@@ -190,6 +190,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P14 | 23 min | 3 tasks | 17 files |
 | Phase 08 P15 | 13 min | 3 tasks | 16 files |
 | Phase 08 P16 | 40 min | 3 tasks | 8 files |
+| Phase 08 P17 | 25 min | 4 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -288,6 +289,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-16: the card's Next appointment line is the one place it reads the clock (earliest booked visit after now); the job label uses the card's own numbering, so no project eager load
 - [Phase 08]: 08-16: a visit's note is printed only as a quote under the customer-supplied label, never in a sub-line (D-18)
 - [Phase 08]: Decision coverage override (Ian, 2026-11-07, gap planning): D-46 is cited by no PLAN.md. It was decided after planning and built during 08-16 (commits 17caa72, 9660cd3, 351a97e; 08-16-SUMMARY.md). Planning proceeded; re-verification should check the built code against D-46.
+- [Phase 08]: 08-17: hide() keeps the matched /book/ in its own letter case and replaces only the token; a failed send's DomainException keeps the raw gateway exception as previous only when the hidden message equals the raw one; the front desk hold stores '/book/' alone as the finding's match, never the address
 
 ### Pending Todos
 
@@ -351,8 +353,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T21:04:16.762Z
-Stopped at: Completed 08-16-PLAN.md
+Last session: 2026-11-08T15:46:30.281Z
+Stopped at: Completed 08-17-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

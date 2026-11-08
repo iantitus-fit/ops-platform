@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 16/23 plans executed (08-17 to 08-23 close the verification gaps)
+**Plans**: 17/23 plans executed (08-17 to 08-23 close the verification gaps)
 
 Plans:
 **Wave 1**
@@ -294,7 +294,7 @@ Plans:
 - [x] 08-16-PLAN.md — Appointments on the customer card and timeline (D-38, D-39), no booking changes a status (D-41), and the phase's audit of every changed test line
 
 **Wave 17** *(gap closure; blocked on Wave 16 completion)*
-- [ ] 08-17-PLAN.md — Gap D-12 going forward: the chokepoint stores every sent text with the booking address as /book/[link] while the customer gets the working link; a failed send, the log, a customer's paste, records/ and the session hide it too; a leak test searches every table on both databases, the folder, the log and the job payloads
+- [x] 08-17-PLAN.md — Gap D-12 going forward: the chokepoint stores every sent text with the booking address as /book/[link] while the customer gets the working link; a failed send, the log, a customer's paste, records/ and the session hide it too; a leak test searches every table on both databases, the folder, the log and the job payloads
 
 **Wave 18** *(blocked on Wave 17 completion)*
 - [ ] 08-18-PLAN.md — Gap D-12 backward: links sent before the fix that have not booked are revoked and their cards redrawn (no text rewritten); 08-SECURITY.md closes T-08-01 and T-08-27; the provider's log joins the attorney list
@@ -418,7 +418,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 16/16 | In Progress | - |
+| 8. Schedule and Booking | 17/23 | In Progress | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
