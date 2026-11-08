@@ -160,10 +160,10 @@ function bookingLeakHideCases(): array
     $other = str_repeat('f0', 32);
 
     return [
-        'a booking address' => [route('booking.show', $token), 'http://localhost/book/[link]'],
-        'a booking address with the token in upper case' => [route('booking.show', strtoupper($token)), 'http://localhost/book/[link]'],
+        'a booking address' => [route('booking.show', $token), str_replace($token, '[link]', route('booking.show', $token))],
+        'a booking address with the token in upper case' => [route('booking.show', strtoupper($token)), str_replace(strtoupper($token), '[link]', route('booking.show', strtoupper($token)))],
         'a run of 70 hex characters' => ['/book/'.str_repeat('a', 70), '/book/[link]'],
-        'two addresses in one sentence' => ['Try '.route('booking.show', $token).' or '.route('booking.show', $other).' please', 'Try http://localhost/book/[link] or http://localhost/book/[link] please'],
+        'two addresses in one sentence' => ['Try '.route('booking.show', $token).' or '.route('booking.show', $other).' please', 'Try '.str_replace($token, '[link]', route('booking.show', $token)).' or '.str_replace($other, '[link]', route('booking.show', $other)).' please'],
         'a path in upper case' => ['/BOOK/'.str_repeat('A', 64), '/BOOK/[link]'],
         '63 hex characters' => ['/book/'.str_repeat('a', 63), '/book/'.str_repeat('a', 63)],
         'a bare 64-hex string' => [$token, $token],

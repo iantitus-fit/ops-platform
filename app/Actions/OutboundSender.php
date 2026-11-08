@@ -20,6 +20,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\SendRule\CustomerReading;
+use App\Support\BookingLinkTokens;
 use Carbon\CarbonInterface;
 use DomainException;
 use Illuminate\Contracts\Cache\Lock;
@@ -45,6 +46,11 @@ use Throwable;
  * confirmation or a reminder about a booked appointment, is written by code from an owner line and carries none of the
  * model's words, so it goes out with no reading of a customer text. It does so only while its appointment is booked and
  * still ahead and no customer text in the conversation is waiting unread (refuseBookingText()).
+ *
+ * Every stored copy of a text has its booking addresses written /book/[link] while the customer's phone gets the
+ * working link (D-12). The split happens here because every sender passes this one place: the text handed to deliver()
+ * goes to the channel as it is, and the row keeps BookingLinkTokens::hide() of it, so the card, the timeline, alert
+ * quotes and the history the front desk later reads carry the hidden form with no change of their own.
  */
 class OutboundSender
 {
@@ -254,12 +260,12 @@ class OutboundSender
             'channel' => MessageChannel::Sms,
             'direction' => MessageDirection::Out,
             'author' => $author,
-            'body' => $body,
+            'body' => BookingLinkTokens::hide($body),
             'status' => MessageStatus::Queued,
             'provider' => $this->textChannel->name(),
         ]));
 
-        return $this->transmit($conversation, $message, $origin, $summary);
+        return $this->transmit($conversation, $message, $origin, $summary, $body);
     }
 
     /**
@@ -287,7 +293,7 @@ class OutboundSender
 
             $draft->update([
                 ...$attributes,
-                'body' => $body,
+                'body' => BookingLinkTokens::hide($body),
                 'status' => MessageStatus::Queued,
                 'provider' => $this->textChannel->name(),
             ]);
@@ -301,19 +307,21 @@ class OutboundSender
             throw new DomainException(ResolveDraft::whyGone($message));
         }
 
-        return $this->transmit($conversation, $message, $origin, $summary);
+        return $this->transmit($conversation, $message, $origin, $summary, $body);
     }
 
     /**
      * Hand a queued message to the text channel and record the outcome: sent with the channel's id, or failed with
-     * the error. `$summary` words the timeline entry; null means the usual line for who sent it.
+     * the error. `$summary` words the timeline entry; null means the usual line for who sent it. `$text` is the text as
+     * the customer receives it, working booking link included; the row holds only its hidden copy (D-12), so the channel
+     * is never handed `$message->body`.
      */
-    private function transmit(Conversation $conversation, Message $message, SendOrigin $origin, ?string $summary): Message
+    private function transmit(Conversation $conversation, Message $message, SendOrigin $origin, ?string $summary, string $text): Message
     {
         $contact = $conversation->contact;
 
         try {
-            $providerMessageId = $this->textChannel->send($contact->phone_e164, $message->body);
+            $providerMessageId = $this->textChannel->send($contact->phone_e164, $text);
         } catch (RecipientOptedOut $exception) {
             $this->recordCarrierOptOut($contact, $message);
 
