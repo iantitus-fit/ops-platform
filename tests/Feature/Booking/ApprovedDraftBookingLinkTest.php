@@ -420,6 +420,52 @@ it('keeps a delivered link live and says Draft sent when recording its message f
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'could not record the carrying message');
 });
 
+it('keeps a delivered link live and says Draft sent when releasing the send lock fails after the send (WR-08)', function () {
+    $draft = approvedDraftLinkHeld();
+    Exceptions::fake();
+    replyLockReleaseFails();
+
+    approvedDraftLinkThread()
+        ->call('approveDraft')
+        ->assertHasNoErrors()
+        ->assertNotified(Notification::make()->title('Draft sent')->success());
+
+    $token = approvedDraftLinkTokenIn(approvedDraftLinkTextsToDana()[1] ?? '');
+    $link = BookingLink::sole();
+
+    expect($token)->not->toBeNull()
+        ->and($link->token_hash)->toBe(hash('sha256', $token))
+        ->and($link->revoked_at)->toBeNull()
+        ->and($link->message_id)->toBe($draft->id)
+        ->and($draft->fresh()->status)->toBe(MessageStatus::Sent);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the lock release failed');
+});
+
+it('still tells the owner the channel failed, and revokes the link, when releasing the send lock fails too (WR-08)', function () {
+    $draft = approvedDraftLinkHeld();
+    Exceptions::fake();
+
+    $this->app->bind(TextChannel::class, fn () => new class extends FakeTextChannel
+    {
+        public function send(string $toE164, string $body): string
+        {
+            throw new RuntimeException('Carrier rejected the number');
+        }
+    });
+
+    replyLockReleaseFails();
+
+    approvedDraftLinkThread()
+        ->call('approveDraft')
+        ->assertNotified(Notification::make()->title('The reply was not sent: Carrier rejected the number')->danger());
+
+    expect($draft->fresh()->status)->toBe(MessageStatus::Failed)
+        ->and(BookingLink::sole()->revoked_at)->not->toBeNull();
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the lock release failed');
+});
+
 it('mints nothing when a newer draft replaced the one on screen (D-28, D-45)', function () {
     approvedDraftLinkHeld();
 

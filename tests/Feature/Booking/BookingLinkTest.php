@@ -404,6 +404,24 @@ it('keeps the link when the card redraw after the send fails (WR-03)', function 
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'queue down');
 });
 
+it('keeps a delivered link live when releasing the send lock fails after the send (WR-08)', function () {
+    Exceptions::fake();
+
+    bookingLinkRunsScheduling(beforeRun: fn () => replyLockReleaseFails());
+
+    $link = BookingLink::sole();
+    $carrying = Message::query()->where('meta->booking_link_id', $link->id)->sole();
+
+    expect(bookingLinkTokenIn(bookingLinkTextsContaining('We can get a tech out this week.')[0] ?? ''))->not->toBeNull()
+        ->and($link->revoked_at)->toBeNull()
+        ->and($carrying->status)->toBe(MessageStatus::Sent)
+        ->and($link->message_id)->toBe($carrying->id)
+        ->and(OwnerAlert::query()->where('reason', AlertReason::FrontDeskFailed->value)->count())->toBe(0)
+        ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the lock release failed');
+});
+
 it('supersedes the first link with the second, each with its own text (D-12)', function () {
     bookingLinkRunsScheduling();
     bookingLinkCustomerTextsAgain('Can you come Friday instead?', ['reply' => 'Friday works too.', 'label' => 'scheduling', 'service_slug' => 'ac-repair']);

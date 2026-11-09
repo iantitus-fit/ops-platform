@@ -19,6 +19,7 @@ use App\SendRule\FakeClassifier;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -206,6 +207,29 @@ function frontDeskCustomerTexts(string $body = 'My AC is blowing warm air', arra
 function textsSentToCustomers(): array
 {
     return app(FakeTextChannel::class)->sent();
+}
+
+/**
+ * Make the next release of a conversation's send lock fail, the way the database cache store's DELETE can after the text
+ * channel accepted a text (08-REVIEW WR-08). The cache moves to the database store, so the lock is a row in
+ * cache_locks, and DB::beforeExecuting throws once, on the DELETE that releases a "reply:" lock.
+ */
+function replyLockReleaseFails(string $message = 'the lock release failed'): void
+{
+    config(['cache.default' => 'database']);
+
+    $threw = false;
+
+    DB::beforeExecuting(function (string $query, array $bindings) use (&$threw, $message): void {
+        $sql = strtolower($query);
+        $isReplyLock = array_filter($bindings, fn (mixed $binding): bool => is_string($binding) && str_contains($binding, 'reply:')) !== [];
+
+        if (! $threw && str_starts_with($sql, 'delete') && str_contains($sql, 'cache_locks') && $isReplyLock) {
+            $threw = true;
+
+            throw new RuntimeException($message);
+        }
+    });
 }
 
 /**
