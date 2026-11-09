@@ -160,8 +160,9 @@ class SendOwnerReply
      * draft as it is and records the plain reason. Otherwise the length with the link is measured with a 64-character
      * placeholder token before anything is minted, so a refusal mints nothing; the link is then minted, the line added
      * after the owner's words, and the link attached to the sent row. A link is taken back only when the send itself
-     * threw: it is revoked, and the links its mint superseded are put back (WithdrawUnsentLink). Once the text is out the
-     * link stays live and the owner sees the draft sent, even when recording which row carried the link fails; that
+     * threw, which OutboundSender never does once the channel has accepted the text, even when its lock release fails
+     * (WR-08): it is revoked, and the links its mint superseded are put back (WithdrawUnsentLink). Once the text is out
+     * the link stays live and the owner sees the draft sent, even when recording which row carried the link fails; that
      * failure is reported, because BookAppointment::alertOwner() finds the row by meta.booking_link_id (D-33).
      *
      * @param  array<string, mixed>  $attributes

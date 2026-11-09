@@ -166,8 +166,8 @@ class OutboundSender
      * simply wait its turn. When the channel fails, the message stays on the record as failed and the failure is
      * raised. Once the channel has accepted the text, a failure while recording it is reported to the log and
      * never raised: the customer has the text, and an error would invite a second send. That includes the card redraw
-     * that follows the send, so a caller that withdraws a booking link when a send throws never withdraws one whose text
-     * went out (WR-03).
+     * that follows the send and the release of the lock (release()), so a caller that withdraws a booking link when a
+     * send throws never withdraws one whose text went out (WR-03, WR-08).
      *
      * @param  array<string, mixed>  $attributes  Further message columns, such as kind, label, the verdict and meta.
      *
@@ -180,10 +180,12 @@ class OutboundSender
         $this->takeLock($lock, $origin);
 
         try {
-            return $this->deliver($conversation, trim($body), $author, $origin, $attributes);
+            $sent = $this->deliver($conversation, trim($body), $author, $origin, $attributes);
         } finally {
-            $lock->release();
+            $this->release($lock);
         }
+
+        return $sent;
     }
 
     /**
@@ -207,10 +209,12 @@ class OutboundSender
         $this->takeLock($lock, $origin);
 
         try {
-            return $this->deliverExisting($conversation, $message, trim($body), $origin, $attributes);
+            $sent = $this->deliverExisting($conversation, $message, trim($body), $origin, $attributes);
         } finally {
-            $lock->release();
+            $this->release($lock);
         }
+
+        return $sent;
     }
 
     /**
@@ -263,6 +267,22 @@ class OutboundSender
         }
 
         return null;
+    }
+
+    /**
+     * Give the send lock back. A release that fails is reported and never raised (WR-08): with the database cache store
+     * the release is a DELETE that can fail after the channel accepted the text, and an error then would replace the
+     * sent message and make a caller withdraw a link the customer already has. When the send itself threw, that error
+     * still goes up, because this runs in the finally block and swallows only its own failure. A lock left behind runs
+     * out after its 30 seconds.
+     */
+    private function release(Lock $lock): void
+    {
+        try {
+            $lock->release();
+        } catch (Throwable $failure) {
+            report($failure);
+        }
     }
 
     /**

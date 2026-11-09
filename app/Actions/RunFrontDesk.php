@@ -589,7 +589,8 @@ class RunFrontDesk
      * one (D-01, D-02). It rides the front desk's existing scheduling send_on_own right through the one outbound path as
      * a combined text (02.1 D-49), and the model never writes the URL. The link is kept out of codeSentences so a held
      * draft never carries a minted link (research Pattern 5); an approved draft gets its own at approval (D-45). A link
-     * is taken back only when the send itself threw: it is revoked, and the links it superseded are put back
+     * is taken back only when the send itself threw, which OutboundSender never does once the channel has accepted the
+     * text, even when its lock release fails (WR-08): it is revoked, and the links it superseded are put back
      * (WithdrawUnsentLink). Once the text is out the link stays live, and a failure to record which message carried it is
      * reported, because BookAppointment::alertOwner() finds that message by meta.booking_link_id (D-33).
      *
