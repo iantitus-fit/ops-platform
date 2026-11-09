@@ -4,12 +4,14 @@ use App\Ai\AgentFile;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Ai\FrontDeskPrompt;
 use App\Enums\DraftResolution;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Support\BookingLinkTokens;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -172,6 +174,42 @@ it('leaves drafts, failed sends and texts not yet sent out of the history', func
         ['assistant', '[Tue Oct 13, 10:00 am] A delivered reply'],
     ]);
 });
+
+/**
+ * The texts that went out in a booking-link case, as stored: the hidden form of the address, never a token (D-12).
+ *
+ * @return array{body: string, meta: array<string, mixed>, author?: MessageAuthor}
+ */
+function promptTestStoredLinkText(string $case): array
+{
+    $address = BookingLinkTokens::hide(route('booking.show', str_repeat('ab12', 16)));
+    $signOff = app(ActiveConfig::class)->voice()['sign_off'];
+
+    return match ($case) {
+        'front desk' => ['body' => "We can get a tech out this week. Pick a time that works for you here: {$address}\n{$signOff}", 'meta' => ['booking_link_id' => 1]],
+        'reworded line' => ['body' => "We can get a tech out this week. Book here: {$address}\n{$signOff}", 'meta' => ['booking_link_id' => 1]],
+        'owner paste' => ['body' => "Use this one: {$address} and tap a time.", 'meta' => [], 'author' => MessageAuthor::Owner],
+    };
+}
+
+it('shows an earlier text that carried a booking link as its words and a note, never the address (WR-07)', function (string $case, string $expected) {
+    [, $conversation] = promptTestThread();
+    promptTestFreezeAtTenInTheMorning();
+
+    Message::factory()->for($conversation)->create(['body' => 'Can someone come look at my AC?']);
+    Message::factory()->for($conversation)->outbound()->create(promptTestStoredLinkText($case));
+    $new = Message::factory()->for($conversation)->create(['body' => 'Can you send that again?']);
+
+    $turns = promptTestTurns(app(FrontDeskPrompt::class)->history($conversation, promptTestBurst($new)));
+    $signOff = app(ActiveConfig::class)->voice()['sign_off'];
+
+    expect($turns[1])->toBe(['assistant', '[Tue Oct 13, 10:00 am] '.str_replace('{sign_off}', $signOff, $expected)])
+        ->and(stripos(implode("\n", array_column($turns, 1)), '/book/'))->toBeFalse();
+})->with([
+    'the owner\'s link line on a front-desk reply' => ['front desk', "We can get a tech out this week. (The system added the booking link here.)\n{sign_off}"],
+    'a link line the owner has reworded since' => ['reworded line', "We can get a tech out this week. Book here: (The system added the booking link here.)\n{sign_off}"],
+    'an address the owner pasted into a reply' => ['owner paste', 'Use this one: (A booking link was here.) and tap a time.'],
+]);
 
 it('starts with a user turn when the business texted first', function () {
     [, $conversation] = promptTestThread();

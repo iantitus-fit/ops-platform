@@ -6,6 +6,7 @@ use App\Actions\MintBookingLink;
 use App\Actions\OutboundSender;
 use App\Actions\SendCombinedReply;
 use App\Ai\AgentFile;
+use App\Ai\Agents\FrontDeskAgent;
 use App\Ai\FrontDeskPrompt;
 use App\Channels\FakeTextChannel;
 use App\Enums\AlertReason;
@@ -420,6 +421,28 @@ it('keeps a delivered link live when releasing the send lock fails after the sen
         ->and(Message::query()->where('status', MessageStatus::Draft->value)->count())->toBe(0);
 
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'the lock release failed');
+});
+
+it('gives the model no booking address when an earlier text carried a link (WR-07)', function () {
+    bookingLinkRunsScheduling();
+    bookingLinkCustomerTextsAgain('Thanks. Should I clear a path to the unit?', ['reply' => 'Yes, a clear path helps the tech.', 'label' => 'faq_answer']);
+
+    $history = null;
+
+    FrontDeskAgent::assertPrompted(function ($prompt) use (&$history): bool {
+        if ($prompt->prompt !== 'Thanks. Should I clear a path to the unit?') {
+            return false;
+        }
+
+        $history = implode("\n", array_map(fn ($turn): string => $turn->content, iterator_to_array($prompt->agent->messages())));
+
+        return true;
+    });
+
+    expect(Message::query()->whereNotNull('meta->booking_link_id')->sole()->body)->toContain('/book/[link]')
+        ->and($history)->toContain('We can get a tech out this week. (The system added the booking link here.)')
+        ->and(stripos($history, '/book/'))->toBeFalse()
+        ->and($history)->not->toContain('Pick a time that works for you here');
 });
 
 it('supersedes the first link with the second, each with its own text (D-12)', function () {
