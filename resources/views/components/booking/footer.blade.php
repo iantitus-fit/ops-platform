@@ -1,6 +1,6 @@
 @props(['businessName', 'phone', 'phoneText'])
 <footer class="bg-surface">
-    <div class="mx-auto max-w-xl space-y-2 px-4 py-8">
+    <div class="mx-auto max-w-xl space-y-2 px-4 pb-12 pt-8">
         <details class="group border-2 border-line bg-page hover:border-accent">
             <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 font-semibold text-ink">
                 <span>Privacy notice</span>
