@@ -1,9 +1,15 @@
 <?php
 
+use App\Actions\OutboundSender;
+use App\Actions\RaiseOwnerAlert;
+use App\Channels\TextChannel;
 use App\Enums\ActivityType;
 use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
+use App\Enums\SendOrigin;
+use App\Icm\ActiveConfig;
 use App\Jobs\SendDueBookingTexts;
 use App\Models\Activity;
 use App\Models\Appointment;
@@ -217,6 +223,57 @@ it('does not send again after a sender stopped mid-send (WR-01)', function () {
         ->and($row->failure)->toBe('The send stopped partway, so it was not sent again.')
         ->and($critical)->toHaveCount(1)
         ->and($critical->first()->context['booking_send_id'])->toBe($reminder->id);
+});
+
+it('notes a text whose sender stopped partway, on the timeline the owner reads (WR-06, D-27)', function (int $leadMinutes, string $note) {
+    [, $conversation, , $row] = bookingOnceSetUp();
+    BookingSend::query()->whereKey($row->id)->update(['lead_minutes' => $leadMinutes]);
+    bookingOnceClaimedSecondsAgo($row, 180);
+    bookingOnceLeftBehind($conversation, $row, MessageStatus::Queued);
+
+    bookingOnceSweep();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->fresh()->failed_at)->not->toBeNull()
+        ->and(bookingOnceNotes())->toBe([$note])
+        ->and(OwnerAlert::query()->count())->toBe(0);
+
+    test()->travel(3)->minutes();
+    bookingOnceSweep();
+
+    expect(bookingOnceNotes())->toBe([$note]);
+})->with([
+    'a reminder' => [1440, 'Reminder text may not have reached the customer: the send stopped partway.'],
+    'a confirmation' => [0, 'Confirmation text may not have reached the customer: the send stopped partway.'],
+]);
+
+it('ends the row on the text that went out when the sender throws after the send (WR-06)', function () {
+    [, , , $reminder] = bookingOnceSetUp();
+    Exceptions::fake();
+
+    app()->bind(OutboundSender::class, fn () => new class(app(TextChannel::class), app(ActiveConfig::class), app(RaiseOwnerAlert::class)) extends OutboundSender
+    {
+        public function send(Conversation $conversation, string $body, MessageAuthor $author, SendOrigin $origin, array $attributes = []): Message
+        {
+            parent::send($conversation, $body, $author, $origin, $attributes);
+
+            throw new RuntimeException('a step after the send failed');
+        }
+    });
+
+    bookingOnceSweep();
+
+    $sent = Message::query()->where('kind', MessageKind::BookingText->value)->sole();
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toHaveCount(1)
+        ->and($sent->status)->toBe(MessageStatus::Sent)
+        ->and($row->sent_at)->not->toBeNull()
+        ->and($row->failed_at)->toBeNull()
+        ->and($row->message_id)->toBe($sent->id)
+        ->and(bookingOnceNotes())->toBeEmpty();
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'a step after the send failed');
 });
 
 it('finds the message in another conversation of the contact (WR-01, D-30)', function () {
