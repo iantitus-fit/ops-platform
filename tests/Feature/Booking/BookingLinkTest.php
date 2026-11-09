@@ -445,6 +445,26 @@ it('gives the model no booking address when an earlier text carried a link (WR-0
         ->and($history)->not->toContain('Pick a time that works for you here');
 });
 
+it('gives the model no booking address in the customer card it reads either (WR-07)', function () {
+    bookingLinkRunsScheduling();
+    bookingLinkCustomerTextsAgain('Thanks. Should I clear a path to the unit?', ['reply' => 'Yes, a clear path helps the tech.', 'label' => 'faq_answer']);
+
+    $instructions = null;
+
+    FrontDeskAgent::assertPrompted(function ($prompt) use (&$instructions): bool {
+        if ($prompt->prompt !== 'Thanks. Should I clear a path to the unit?') {
+            return false;
+        }
+
+        $instructions = (string) $prompt->agent->instructions();
+
+        return true;
+    });
+
+    expect($instructions)->toContain('We can get a tech out this week. (The system added the booking link here.)')
+        ->and(stripos($instructions, '/book/'))->toBeFalse();
+});
+
 it('supersedes the first link with the second, each with its own text (D-12)', function () {
     bookingLinkRunsScheduling();
     bookingLinkCustomerTextsAgain('Can you come Friday instead?', ['reply' => 'Friday works too.', 'label' => 'scheduling', 'service_slug' => 'ac-repair']);
