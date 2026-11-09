@@ -63,8 +63,8 @@ class SendBookingText
 
     /**
      * Send the text of one row, unless it has ended or another sender holds it. This never throws: the sweep and the
-     * booking that calls it have other work to do. An unexpected error is reported and ends the row as failed, as
-     * SendOwnerAlert does; it is not retried by itself.
+     * booking that calls it have other work to do. An unexpected error is reported and ends the row, as SendOwnerAlert
+     * does: on the message that carries the row when one exists, otherwise as failed. It is not retried by itself.
      */
     public function handle(BookingSend $send): void
     {
@@ -85,8 +85,40 @@ class SendBookingText
         } catch (Throwable $exception) {
             report($exception);
 
-            $this->end($send, ['failed_at' => $this->now(), 'failure' => $this->reasonFrom($exception->getMessage())]);
+            $this->endAfterFault($send, $exception);
         }
+    }
+
+    /**
+     * End a row whose send threw something no case expects. The text may have gone out before the throw, so the row ends
+     * on a message carrying its id when there is one, exactly as the send-once lookup would (WR-06), and fails with the
+     * error only when there is none. A failed lookup is reported and the row fails.
+     */
+    private function endAfterFault(BookingSend $send, Throwable $exception): void
+    {
+        try {
+            $existing = $this->existingMessage($send);
+        } catch (Throwable $failure) {
+            report($failure);
+
+            $existing = null;
+        }
+
+        if ($existing !== null) {
+            $this->endOnExisting($send, $existing);
+
+            return;
+        }
+
+        $this->end($send, ['failed_at' => $this->now(), 'failure' => $this->reasonFrom($exception->getMessage())]);
+    }
+
+    /**
+     * The newest message that carries this row's id, or null when no text was ever started for it.
+     */
+    private function existingMessage(BookingSend $send): ?Message
+    {
+        return Message::query()->where('meta->booking_send_id', $send->id)->latest('id')->first();
     }
 
     /**
@@ -100,7 +132,7 @@ class SendBookingText
      */
     private function send(BookingSend $send, Carbon $claimedAt): void
     {
-        $existing = Message::query()->where('meta->booking_send_id', $send->id)->latest('id')->first();
+        $existing = $this->existingMessage($send);
 
         if ($existing !== null) {
             $this->endOnExisting($send, $existing);
@@ -195,9 +227,11 @@ class SendBookingText
 
     /**
      * End the row on a message that already carries its id, without composing or sending anything (WR-01, D-31). A text
-     * on the customer's phone ends it sent. A failed one ends it failed with that message's own error. A message still
-     * queued means the sender stopped between handing the text to the channel and recording it: it may have reached the
-     * customer, so it is not sent again, and the row ends failed with a plain reason and a critical log record.
+     * on the customer's phone ends it sent. A failed one ends it failed with that message's own error, and no further note,
+     * because OutboundSender already wrote its own. A message still queued means the sender stopped somewhere between
+     * storing the text and recording the channel's answer: it may or may not have reached the customer, so it is not sent
+     * again, and the row ends failed with a plain reason, a critical log record and one timeline note the owner reads on
+     * the card, "<Confirmation|Reminder> text may not have reached the customer: the send stopped partway." (D-27).
      */
     private function endOnExisting(BookingSend $send, Message $existing): void
     {
@@ -224,11 +258,15 @@ class SendBookingText
             'message_id' => $existing->id,
         ]);
 
-        $this->end($send, [
+        $ended = $this->end($send, [
             'failed_at' => $this->now(),
             'message_id' => $existing->id,
             'failure' => 'The send stopped partway, so it was not sent again.',
         ]);
+
+        if ($ended) {
+            $this->note($send, $this->textWord($send).' text may not have reached the customer: the send stopped partway.');
+        }
     }
 
     /**
@@ -367,6 +405,16 @@ class SendBookingText
             return;
         }
 
+        $this->note($send, $this->textWord($send).' text not sent: '.$noteReason.'.');
+    }
+
+    /**
+     * Write one note on the customer's timeline for a booking text that did not plainly go out, and no owner alert
+     * (D-27). The caller writes it only from the copy that ended the row, so a note is written once. A failure is
+     * reported; the row has already ended.
+     */
+    private function note(BookingSend $send, string $sentence): void
+    {
         try {
             $contact = $send->appointment?->contact;
 
@@ -374,16 +422,18 @@ class SendBookingText
                 return;
             }
 
-            $this->recordRoomEntry->handle(
-                $contact,
-                'schedule_and_booking',
-                'booking_text_not_sent',
-                ($send->lead_minutes === 0 ? 'Confirmation' : 'Reminder').' text not sent: '.$noteReason.'.',
-                $send,
-            );
+            $this->recordRoomEntry->handle($contact, 'schedule_and_booking', 'booking_text_not_sent', $sentence, $send);
         } catch (Throwable $exception) {
             report($exception);
         }
+    }
+
+    /**
+     * Which text a row is, as a note starts: "Confirmation" for the one sent at booking, "Reminder" for one with a lead.
+     */
+    private function textWord(BookingSend $send): string
+    {
+        return $send->lead_minutes === 0 ? 'Confirmation' : 'Reminder';
     }
 
     /**
