@@ -11,6 +11,8 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Records\CustomerCard;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
+use App\Support\BookingLinkTokens;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Messages\Message as AiMessage;
 
@@ -64,6 +66,18 @@ How to fill in the other fields:
 TEXT;
 
     /**
+     * What the model reads where code added a booking link to an earlier text of the business (WR-07). It holds no
+     * address, so the model has nothing to copy; the link line and the link stay the system's.
+     */
+    public const string BOOKING_LINK_NOTE = '(The system added the booking link here.)';
+
+    /**
+     * What the model reads where any other earlier text of the business, such as a reply the owner typed, held a booking
+     * address (WR-07).
+     */
+    public const string BOOKING_ADDRESS_NOTE = '(A booking link was here.)';
+
+    /**
      * The longest stretch of one waiting customer text the instructions quote.
      */
     private const int WAITING_TEXT_LENGTH = 300;
@@ -77,6 +91,9 @@ TEXT;
      * The whole instruction text: the rules, the agent file's body, each loaded file, the customer's card, the
      * question already with the owner when there is one, and last, what time it is now. The changing part goes last
      * so everything above it stays the same from run to run.
+     *
+     * The card quotes each sent text, so it is shown without booking addresses, the same way the history is (WR-07,
+     * replyText()). Only the model's copy changes; the card in records/ is the stored one.
      *
      * With a waiting draft and `$coverBoth`, the question already with the owner is followed by the ask to write one
      * reply that covers it and the new text (D-35).
@@ -101,7 +118,7 @@ TEXT;
             $parts[] = $part."\n\n".$file['body'];
         }
 
-        $parts[] = "## Customer card (generated from the database, read-only)\n\n".$this->customerCard->render($contact);
+        $parts[] = "## Customer card (generated from the database, read-only)\n\n".$this->withoutBookingAddress($this->customerCard->render($contact), self::BOOKING_ADDRESS_NOTE);
 
         if ($waitingDraft !== null) {
             $parts[] = $this->alreadyWithTheOwner($waitingDraft);
@@ -134,6 +151,8 @@ TEXT;
      * placeholder user turn first, and a thread ending on an unanswered customer text gets a
      * placeholder assistant turn last, so the turns always alternate and the new prompt follows a reply.
      *
+     * An earlier text of the business never shows a booking address (WR-07): see replyText().
+     *
      * @param  Collection<int, Message>  $burst
      * @return list<AiMessage>
      */
@@ -163,7 +182,7 @@ TEXT;
             }
 
             $role = $isCustomer ? 'user' : 'assistant';
-            $text = $this->timeOf($message).' '.$this->textOf($message);
+            $text = $this->timeOf($message).' '.($isCustomer ? $this->textOf($message) : $this->replyText($message));
             $last = array_key_last($turns);
 
             if ($last !== null && $turns[$last]['role'] === $role) {
@@ -307,6 +326,56 @@ TEXT;
         $time = $message->happenedAt()->setTimezone($this->activeConfig->displayTimezone());
 
         return '['.$time->format('D M j, g:i a').']';
+    }
+
+    /**
+     * What an earlier text of the business says, as the model reads it. A text that carried a booking link, known by
+     * meta.booking_link_id, which code sets exactly when it adds a link (D-01, D-45), shows the words around the owner's
+     * link line and a note where the line was. Any other text that names a booking address shows a note where the
+     * address was.
+     *
+     * The stored copy writes the link as /book/[link] (D-12), and a model that reads that in its own earlier turn tends
+     * to write it again, which DecideSendOrDraft then holds. So the model is shown no address at all, rather than a rule
+     * about one: the hold stays as the guarantee, and this keeps the model from being drawn to it. The owner's line is
+     * found as the live booking file writes it today; a line worded differently when it was sent keeps its words and
+     * loses only the address.
+     */
+    private function replyText(Message $message): string
+    {
+        $carriedLink = isset($message->meta['booking_link_id']);
+
+        return $this->withoutBookingAddress($this->textOf($message), $carriedLink ? self::BOOKING_LINK_NOTE : self::BOOKING_ADDRESS_NOTE);
+    }
+
+    /**
+     * The text with the owner's link line, as stored, put as BOOKING_LINK_NOTE, and every other booking address put as
+     * $otherNote. Whatever holds '/book/' in any letter case goes, so no booking address of any form is left
+     * (BookingLinkTokens::namesBookingAddress()).
+     */
+    private function withoutBookingAddress(string $text, string $otherNote): string
+    {
+        if (! BookingLinkTokens::namesBookingAddress($text)) {
+            return $text;
+        }
+
+        $line = $this->storedLinkLine();
+
+        if ($line !== null) {
+            $text = str_replace($line, self::BOOKING_LINK_NOTE, $text);
+        }
+
+        return preg_replace('~\S*/book/\S*~i', $otherNote, $text) ?? $otherNote;
+    }
+
+    /**
+     * The owner's link line as a stored text holds it, address hidden, or null when the live folder has no booking file.
+     * The placeholder token is the length of every real one, so hide() writes it exactly as it wrote the sent link.
+     */
+    private function storedLinkLine(): ?string
+    {
+        $settings = BookingSettings::fromConfig($this->activeConfig);
+
+        return $settings === null ? null : BookingLinkTokens::hide($settings->renderLink(route('booking.show', str_repeat('0', 64))));
     }
 
     /**
