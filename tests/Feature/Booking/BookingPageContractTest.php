@@ -302,6 +302,28 @@ it('puts every hover border on an element that has a border (UI review)', functi
     expect($withHover)->toBeGreaterThan(0);
 });
 
+it('ends every full page 48 px below the footer and keeps 32 px above it (UI-SPEC spacing 2xl and xl)', function () {
+    $fragments = ['check', 'failed', 'taken'];
+    $pages = 0;
+
+    foreach (bookingContractEveryState() as $state => $html) {
+        if (in_array($state, $fragments, true)) {
+            continue;
+        }
+
+        $document = HTMLDocument::createFromString($html, LIBXML_NOERROR);
+        $classesOf = fn (string $selector): array => preg_split('/\s+/', trim((string) $document->querySelector($selector)?->getAttribute('class'))) ?: [];
+
+        expect($document->querySelector('body > footer:last-of-type > div'))->not->toBeNull("The {$state} page does not end with the footer")
+            ->and($classesOf('body > footer > div'))->toContain('pb-12', 'pt-8')->not->toContain('py-8')
+            ->and($classesOf('body > main'))->toContain('pb-8');
+
+        $pages++;
+    }
+
+    expect($pages)->toBe(10);
+});
+
 it('catches a hover border with no border', function () {
     expect(bookingContractHoverBorderWithoutBorder('<summary class="hover:border-accent">Privacy notice</summary>'))->toBe(['summary'])
         ->and(bookingContractHoverBorderWithoutBorder('<details class="border-2 border-line hover:border-accent"><summary>Privacy notice</summary></details>'))->toBe([]);
