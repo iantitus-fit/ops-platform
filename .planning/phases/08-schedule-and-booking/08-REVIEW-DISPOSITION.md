@@ -5,15 +5,15 @@ titles: json
 findings:
   - id: WR-06
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A booking row whose sender died after queuing the message ends as failed with no note anywhere the owner reads"
   - id: WR-07
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The front-desk model is never told what `/book/[link]` in its own history means, so the new hold fires on ordinary follow-ups"
   - id: WR-08
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A failure after the text went out, other than recording the carrying message, still withdraws a live link"
   - id: IN-07
     severity: info
@@ -29,49 +29,49 @@ findings:
     title: "The revoke migration cannot tell a link sent before the fix from one sent after it"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A booking text can be sent twice when the outcome write fails or the process dies after the send"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A reminder due at the send-window boundary falls out of the window on a one-minute delay, and a reminder dropped at visit time leaves no trace"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A booking link that reached the customer is revoked when a step after the send throws"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Refusal handling matches on exception message text copied from other classes"
   - id: WR-05
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Customer-facing page ships \"placeholder wording for the example business\" as its privacy notice"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Doc comment contradicts the code on drive buffer for hand bookings"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The booking-text chokepoint trusts a caller-declared `meta.parts`"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The hand-booking dialog forecasts a confirmation text that may not be sent"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The Upcoming and Past filters overlap for a span that crosses midnight, and Past can hold a live visit"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The booking page's rate-limited notice has no way to retry without a reload"
   - id: IN-06
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 16
+open: 3
 total: 17
 recorded: 2026-11-08T23:06:29.815Z
 ---
@@ -80,22 +80,22 @@ recorded: 2026-11-08T23:06:29.815Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-06 | warning | open | - |
-| WR-07 | warning | open | - |
-| WR-08 | warning | open | - |
+| WR-06 | warning | fixed | Ian, 2026-11-09: fixed test first as ruled: the queued-then-died branch writes the D-27 note ("Reminder/Confirmation text may not have reached the customer: the send stopped partway.") and handle()'s catch ends the row on an existing message by meta.booking_send_id (78be6c8, 422621f) |
+| WR-07 | warning | fixed | Ian, 2026-11-09: fixed at the source, no new prompt rule: FrontDeskPrompt shows an earlier text that carried a booking link as its words and "(The system added the booking link here.)", in the history and in the customer card the model reads; the DecideSendOrDraft hold is unchanged (5aec7f7, ec20f2a, e7aba5c) |
+| WR-08 | warning | fixed | Ian, 2026-11-09: fixed test first as ruled: OutboundSender reports a failed lock release and never raises it, so once the channel accepted a text nothing withdraws its link or tells the owner it failed (ad5b653, 2302d1c) |
 | IN-07 | info | open | - |
 | IN-08 | info | open | - |
 | IN-09 | info | open | - |
-| WR-01 | warning | open | Ian, 2026-11-07: fix in the gap plan (08-VERIFICATION.md gap WR-01): before sending, look for a message already carrying meta.booking_send_id and end the row on it; log loudly when the sent_at write fails after a send (not in the current review) |
-| WR-02 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-02), D-29 kept as written: nextOpening() gets a short grace so a row due inside the window still sends when the sweep reaches it a little late; a moved row that is dropped writes "Reminder text not sent: the visit started first" (not in the current review) |
-| WR-03 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-03): withdraw the link only when the send itself threw; attachMessage() runs after and only reports its failure (not in the current review) |
-| WR-04 | warning | open | Ian, 2026-11-07: fix in the gap plan (gap WR-04): refusal reasons as constants or a reason on the exception, as the review suggests (not in the current review) |
-| WR-05 | warning | open | Ian, 2026-11-07: fix now, in the gap plan (gap WR-05): remove the placeholder sentence and any claim the code does not own (the page and its rate limiter see the visitor's IP address); final wording stays on the attorney list (not in the current review) |
-| IN-01 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-01) (not in the current review) |
-| IN-02 | info | open | Ian, 2026-11-07: fix in the gap plan (gap IN-02) with an architecture test that only SendBookingText may pass MessageKind::BookingText (not in the current review) |
-| IN-03 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-03) (not in the current review) |
-| IN-04 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-04) (not in the current review) |
-| IN-05 | info | open | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-05) (not in the current review) |
+| WR-01 | warning | fixed | Ian, 2026-11-07: fix in the gap plan (08-VERIFICATION.md gap WR-01): before sending, look for a message already carrying meta.booking_send_id and end the row on it; log loudly when the sent_at write fails after a send (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| WR-02 | warning | fixed | Ian, 2026-11-07: fix in the gap plan (gap WR-02), D-29 kept as written: nextOpening() gets a short grace so a row due inside the window still sends when the sweep reaches it a little late; a moved row that is dropped writes "Reminder text not sent: the visit started first" (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| WR-03 | warning | fixed | Ian, 2026-11-07: fix in the gap plan (gap WR-03): withdraw the link only when the send itself threw; attachMessage() runs after and only reports its failure (not in the current review); fixed in 08-20, re-review 2026-11-08 found it partly fixed, the remainder tracked and fixed as WR-08 (Ian, 2026-11-09) |
+| WR-04 | warning | fixed | Ian, 2026-11-07: fix in the gap plan (gap WR-04): refusal reasons as constants or a reason on the exception, as the review suggests (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| WR-05 | warning | fixed | Ian, 2026-11-07: fix now, in the gap plan (gap WR-05): remove the placeholder sentence and any claim the code does not own (the page and its rate limiter see the visitor's IP address); final wording stays on the attorney list (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| IN-01 | info | fixed | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-01) (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| IN-02 | info | fixed | Ian, 2026-11-07: fix in the gap plan (gap IN-02) with an architecture test that only SendBookingText may pass MessageKind::BookingText (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| IN-03 | info | fixed | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-03) (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| IN-04 | info | fixed | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-04) (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
+| IN-05 | info | fixed | Ian, 2026-11-07: fix in the gap plan as the review suggests (gap IN-05) (not in the current review); fixed in the gap plans, confirmed by the 2026-11-08 re-review (Ian, 2026-11-09) |
 | IN-06 | info | deferred | Phase 9, where the nightly rebuild lives; the rebuild re-renders the card so the Next appointment line follows the clock (Ian, 2026-11-07) (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
