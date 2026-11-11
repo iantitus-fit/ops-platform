@@ -321,15 +321,20 @@ it('tells the model how to read the times in the thread (G-02-2.2)', function (s
     'no bracketed time in a reply' => 'Never put a bracketed time in your reply.',
 ]);
 
-it('tells the model the thread is not a booking (G-02-2.4)', function (string $sentence) {
+it('tells the model a time the customer proposes is not set, and a visit booked on the card is the business\'s (G-02-2.4, D-39 amended)', function (string $sentence) {
     [$agent, , $contact] = promptTestThread();
 
     expect(FrontDeskPrompt::RULES)->toContain($sentence)
         ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($sentence);
 })->with([
-    'thread and card are what the customer said' => 'The thread and the customer card show what the customer said and did, not what the business has agreed to.',
-    'nothing is set until the owner confirms' => 'Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.',
+    'a time the customer proposes is not set' => 'The thread shows what the customer said and did, not what the business has agreed to: a day or time the customer proposes or mentions is not set, so never say it is.',
+    'a visit booked on the card is the business\'s' => 'A visit the customer card lists as booked was recorded by the business\'s own booking system, so it is the business\'s booking.',
 ]);
+
+it('no longer tells the model the owner confirms a booking (D-39 amended)', function () {
+    expect(FrontDeskPrompt::RULES)->not->toContain('the owner confirms those')
+        ->and(FrontDeskPrompt::RULES)->not->toContain('Never say a visit, a time or a booking is set');
+});
 
 it('keeps a reply that went out after the burst arrived', function () {
     [, $conversation] = promptTestThread();
