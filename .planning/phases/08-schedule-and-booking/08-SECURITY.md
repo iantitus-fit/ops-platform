@@ -6,7 +6,7 @@ status: verified
 threats_open: 0
 asvs_level: 1
 created: "2026-11-07"
-audited: "2026-11-08"
+audited: "2026-11-11"
 ---
 
 # Phase 8 — Security
@@ -166,6 +166,17 @@ The register is the 23 plans' threat models (authored at plan time). T-08-SC app
 | T-08-94 | Denial of service | the front desk copying '/book/[link]' or any '/book/' address into a reply | medium | mitigate | DecideSendOrDraft holds such a reply as code:booking_link before the link line is appended | closed | app/SendRule/DecideSendOrDraft.php:72-74 (namesBookingAddress, stripos on model words), veto :102; Verdict.php:117; every model-word path goes through decide() (RunFrontDesk.php:335, :381, :1058); BookingLinkLeakTest 'holds a reply that copies /book/[link] from the thread, and none of it reaches the customer (D-12)', 'tells a booking address, and the hidden form, in any letter case (D-12)' |
 | T-08-95 | Denial of service | an unedited approval of a draft holding '/book/[link]' (D-45), or any sender handing it on | medium | mitigate | whyBodyIsRefused() refuses HIDDEN_BOOKING_LINK for every origin before any row; SendOwnerReply withdraws the minted link | closed | OutboundSender.php:658-660, called in deliver() :295 and deliverExisting() :332; SendOwnerReply.php:195-211; BookingLinkLeakTest 'refuses a text holding /book/[link] from every sender before any row is written (D-12)' (Owner, Automated, LifeSafety), 'refuses an owner's unedited approval of a draft holding /book/[link]...' (draft stays, new link revoked, earlier un-superseded) |
 | T-08-96 | Information disclosure | a held draft holding a token copied from a row written before 08-17 | low | accept | 08-18 revokes every such link; stored finding's match is '/book/' only | closed | rationale holds: migration revokes every unbooked link (T-08-76), so a copied old token cannot book; DecideSendOrDraft.php:73 match is '/book/', never the address. AR-08-04 |
+| T-08-97 | Information disclosure | VisitAskedAbout::find() naming another customer's visit | high | mitigate | the visit is read only through the texting contact's own appointments() relation, booked and ahead | closed | app/Rooms/ScheduleAndBooking/VisitAskedAbout.php:46, :82 ($contact->appointments()->booked()->ahead()); VisitLineTest tracer names the contact's own visit |
+| T-08-98 | Tampering (integrity) | a visit line going out over a complaint or a failed reading | high | mitigate | OutboundSender's visit_line arm requires CustomerReading::allowsOwnerSentences() | closed | app/Actions/OutboundSender.php:545; VisitLineTest complaint and failed-reading cases |
+| T-08-99 | Repudiation | which visit a sent line named | low | mitigate | meta.parts names visit_line; meta.visit_line_appointment_id records the appointment | closed | app/Actions/RunFrontDesk.php:618; app/Actions/SendOwnerReply.php:249 |
+| T-08-100 | Tampering | an owner's visit_line with a stray placeholder, `!` or em dash reaching customers | medium | mitigate | BookingFileType requires visit_line and runs lineErrors() on it; refusals never quote the line | closed | app/Rooms/ScheduleAndBooking/BookingFileType.php:42, :78; BookingFileCheckTest |
+| T-08-101 | Denial of service | a live version compiled before visit_line existed | medium | mitigate | BookingSettings::visitLine is nullable; no line rides and nothing throws | closed | app/Rooms/ScheduleAndBooking/BookingSettings.php:33, :62; VisitLineTest 'older version' case |
+| T-08-102 | Elevation of privilege | a browser setting addVisitLine on a draft whose line was never drawn | medium | mitigate | the line is a #[Locked] property filled by the server at render; sendDraft() checks the condition again | closed | app/Livewire/ConversationThread.php:62-63; ApprovedDraftVisitLineTest 'adds no visit line the owner was not shown' |
+| T-08-103 | Tampering (integrity) | a visit cancelled or moved between drawing the line and Send | medium | mitigate | whyNoLine() at approval sends the draft without the line and records why; the line is rendered at send time | closed | app/Actions/SendOwnerReply.php:230, :237 (meta.visit_line_left_off); ApprovedDraftVisitLineTest left-off cases |
+| T-08-104 | Repudiation | who added the visit line and for which visit | low | mitigate | the row keeps resolved_by and meta.visit_line_appointment_id or meta.visit_line_left_off | closed | app/Actions/ResolveDraft.php:95; app/Actions/SendOwnerReply.php:237, :249 |
+| T-08-105 | Tampering (prompt injection) | the Booking section carrying customer-typed text | medium | mitigate | the section holds only fixed code sentences and service slugs from the synced folder | closed | app/Ai/FrontDeskPrompt.php:92, :102 (constants), :292-293; BookingSectionTest |
+| T-08-106 | Tampering (integrity) | the section promising a line or a link that code would not add | high | mitigate | built from visitBookedAhead(), onlineServiceSlugs() and whyNoLine(), the send's own conditions; left out per condition | closed | app/Ai/FrontDeskPrompt.php:284-293; BookingSectionTest five left-out cases |
+| T-08-107 | Information disclosure | a booking address or the owner's link line reaching the model | medium | mitigate | the section holds no address and quotes no owner line; booking.md stays out of the loads | closed | app/Ai/FrontDeskPrompt.php:92, :102 (no /book/); BookingSectionTest 'booking.md kept out of the loads' |
 | T-08-SC | Tampering | npm/pip/cargo installs | high | accept | no package installed | closed | `git diff 668d1a2 HEAD -- composer.json composer.lock package.json package-lock.json` (668d1a2 is the merge-base with main) is empty as of 2026-11-08, after plan 08-23 |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
@@ -210,6 +221,7 @@ The register is the 23 plans' threat models (authored at plan time). T-08-SC app
 | 2026-11-07 | 70 | 68 | 2 | gsd-security-auditor (ASVS L1), at phase close |
 | 2026-11-08 | 70 | 70 | 0 | gap plans 08-17 and 08-18; re-audit pending (/gsd-secure-phase 8) |
 | 2026-11-08 | 97 | 97 | 0 | gsd-security-auditor (ASVS L1), re-audit after gap plans 08-17 to 08-23 (24 mitigated, 1 transferred, 2 accepted among the 27 new) |
+| 2026-11-11 | 108 | 108 | 0 | secure-phase L1 grep audit after gap plans 08-24 to 08-26 (11 new, all mitigated; register authored at plan time, short-circuit at ASVS 1; their 8 test files re-run green, 193 tests) |
 
 ---
 
@@ -217,7 +229,7 @@ The register is the 23 plans' threat models (authored at plan time). T-08-SC app
 
 - [x] All threats have a disposition (mitigate / accept / transfer)
 - [x] Accepted risks documented in Accepted Risks Log
-- [x] `threats_open: 0` confirmed (T-08-27 and T-08-01 closed by gap plans 08-17 and 08-18; T-08-70 to T-08-96 verified 2026-11-08)
+- [x] `threats_open: 0` confirmed (T-08-27 and T-08-01 closed by gap plans 08-17 and 08-18; T-08-70 to T-08-96 verified 2026-11-08; T-08-97 to T-08-107 verified 2026-11-11)
 - [x] `status: verified` set in frontmatter
 
 **Approval:** verified 2026-11-08 by the security re-audit (/gsd-secure-phase 08). Hand checks that stay at UAT and do not gate the register: the CI pgsql leg for BookingLinkLeakTest and LinksBeforeTheFixTest, and the live keyboard and screen-reader walk of the booking page's notice and footer (T-08-90; WINDOWS.md entries 74, 75, 76, 78).
@@ -236,4 +248,12 @@ The register is the 23 plans' threat models (authored at plan time). T-08-SC app
 |---|---|
 | Threats found | 97 |
 | Closed | 97 |
+| Open | 0 |
+
+## Security Audit 2026-11-11
+
+| Metric | Count |
+|---|---|
+| Threats found | 108 |
+| Closed | 108 |
 | Open | 0 |
