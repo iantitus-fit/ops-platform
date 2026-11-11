@@ -40,6 +40,12 @@
                             <label for="add-booking-link">A booking link for {{ $bookingLinkService }} will be added</label>
                         </div>
                     @endif
+                    @if ($visitLine !== null)
+                        <div data-visit-line-choice style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="checkbox" id="add-visit-line" wire:model="addVisitLine" style="width: 1.5rem; height: 1.5rem; flex-shrink: 0;">
+                            <label for="add-visit-line">The visit line will be added: {{ $visitLine }}</label>
+                        </div>
+                    @endif
                     <div style="display: flex; gap: 0.5rem;">
                         <x-filament::button type="submit" wire:target="approveDraft" wire:loading.attr="disabled">{{ $this->customerWroteAgain ? 'Send anyway' : 'Send' }}</x-filament::button>
                         <x-filament::button type="button" color="gray" wire:click="discardDraft" wire:target="discardDraft" wire:loading.attr="disabled" wire:confirm="Discard this draft? Nothing will be sent to the customer.">Discard</x-filament::button>

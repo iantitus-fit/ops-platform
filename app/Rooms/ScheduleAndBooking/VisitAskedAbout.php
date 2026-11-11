@@ -19,6 +19,11 @@ use App\Models\Contact;
  */
 class VisitAskedAbout
 {
+    /**
+     * The reason told to the owner when the contact has no booked visit still ahead (D-45 analog).
+     */
+    public const string NO_VISIT_AHEAD = 'no visit is booked ahead';
+
     public function __construct(private readonly ActiveConfig $config) {}
 
     /**
@@ -59,5 +64,25 @@ class VisitAskedAbout
     public function line(Appointment $visit): ?string
     {
         return BookingSettings::fromConfig($this->config)?->renderVisit($visit->service_name, $visit->starts_at, $this->config->displayTimezone());
+    }
+
+    /**
+     * Why a visit line cannot ride now, in words for the owner, or null when it can (D-45 analog). The checks run in
+     * this order and the first failure wins: online booking is off (the room is off, there is no booking file, or the
+     * live version predates visit_line), then the contact has no booked visit ahead. The label and the reading are not a
+     * reason: they are fixed on the draft, and a line is only drawn when they hold. The screen draws its line only when
+     * this is null, and the send asks it again, so the two agree.
+     */
+    public function whyNoLine(Contact $contact): ?string
+    {
+        if (BookingSettings::fromConfig($this->config)?->visitLine === null) {
+            return ServiceToBook::BOOKING_OFF;
+        }
+
+        if (! $contact->appointments()->booked()->ahead()->exists()) {
+            return self::NO_VISIT_AHEAD;
+        }
+
+        return null;
     }
 }

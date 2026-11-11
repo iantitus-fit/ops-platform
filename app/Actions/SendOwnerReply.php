@@ -13,6 +13,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
 use App\Rooms\ScheduleAndBooking\ServiceToBook;
+use App\Rooms\ScheduleAndBooking\VisitAskedAbout;
 use App\Rooms\ScheduleAndBooking\WithdrawUnsentLink;
 use App\SendRule\CustomerReading;
 use DomainException;
@@ -38,6 +39,16 @@ class SendOwnerReply
      */
     public const string SENT_WITHOUT_LINK = 'Draft sent without the booking link: ';
 
+    /**
+     * The refusal when the owner's words plus the visit line would pass the limit (U-37).
+     */
+    public const string TOO_LONG_WITH_VISIT_LINE = 'With the visit line this text is over 1,600 characters. Shorten it, or leave the visit line off.';
+
+    /**
+     * How the notice starts when an approved draft went out without the visit line the owner asked for; the reason follows.
+     */
+    public const string SENT_WITHOUT_VISIT_LINE = 'Draft sent without the visit line: ';
+
     public function __construct(
         private readonly OutboundSender $outboundSender,
         private readonly PauseConversation $pauseConversation,
@@ -46,6 +57,7 @@ class SendOwnerReply
         private readonly MintBookingLink $mintBookingLink,
         private readonly WithdrawUnsentLink $withdrawUnsentLink,
         private readonly ActiveConfig $activeConfig,
+        private readonly VisitAskedAbout $visitAskedAbout,
     ) {}
 
     /**
@@ -101,10 +113,17 @@ class SendOwnerReply
      * sent row is the draft row (D-54), so the link's message_id is that row and a booking raises its alert on that
      * row's key (D-33).
      *
+     * A draft for a contact with a visit booked ahead can carry the owner's visit line instead, added here at send time
+     * and never put in the draft (D-39 amended, settled as D-45). `$addVisitLine` only asks: when the draft is about
+     * scheduling by its label or the stored reading's intent, VisitAskedAbout::whyNoLine() is asked now, at approval, and a
+     * reason sends the draft as it is with the reason recorded in meta.visit_line_left_off. The two lines are never both
+     * drawn, because a visit ahead stops the link (ServiceToBook::VISIT_BOOKED) and the visit line needs one. Nothing is
+     * minted, so a refused or failed send has nothing to take back.
+     *
      * @throws ValidationException when the reply cannot or should not go out
      * @throws DomainException when the draft is gone, the text channel failed, or another reply is being sent
      */
-    public function sendDraft(Message $draft, string $body, User $by, bool $edited, bool $addBookingLink = false): Message
+    public function sendDraft(Message $draft, string $body, User $by, bool $edited, bool $addBookingLink = false, bool $addVisitLine = false): Message
     {
         $conversation = $draft->conversation;
         $conversation->refresh();
@@ -134,6 +153,10 @@ class SendOwnerReply
             return $this->sendDraftAskingForLink($draft, $conversation, $words, $composed, $attributes);
         }
 
+        if ($addVisitLine && VisitAskedAbout::aboutScheduling($this->storedIntent($draft), $draft->label)) {
+            return $this->sendDraftAskingForVisitLine($draft, $conversation, $words, $composed, $attributes);
+        }
+
         return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, $attributes);
     }
 
@@ -152,7 +175,79 @@ class SendOwnerReply
      */
     public function bookingLinkStartsOn(Message $draft): bool
     {
+        return $this->readingAllowsOwnerSentences($draft);
+    }
+
+    /**
+     * The visit line the box would add if this draft were approved now, or null when none could ride (D-39 amended). The
+     * approve step draws its box from this, and sendDraft() asks the same class, so the screen and the send agree.
+     */
+    public function visitLineFor(Message $draft): ?string
+    {
+        $visit = $this->visitAskedAbout->find($draft->conversation->contact, $this->storedIntent($draft), $draft->label);
+
+        return $visit === null ? null : $this->visitAskedAbout->line($visit);
+    }
+
+    /**
+     * Whether the visit line box starts checked on this draft: under the booking link box's rule, only when Jev's reading
+     * of the customer's text allows owner sentences. The owner may still check it (D-39 amended, D-45).
+     */
+    public function visitLineStartsOn(Message $draft): bool
+    {
+        return $this->readingAllowsOwnerSentences($draft);
+    }
+
+    private function readingAllowsOwnerSentences(Message $draft): bool
+    {
         return CustomerReading::fromStoredIfMade($draft->gate['customer_reading'] ?? null)?->allowsOwnerSentences() ?? false;
+    }
+
+    /**
+     * The intent of Jev's stored reading of the customer's text, or null when none was made.
+     */
+    private function storedIntent(Message $draft): ?string
+    {
+        $intent = CustomerReading::fromStoredIfMade($draft->gate['customer_reading'] ?? null)?->answers['intent'] ?? null;
+
+        return is_string($intent) ? $intent : null;
+    }
+
+    /**
+     * Send an approved draft the owner asked to add the visit line to. A condition that no longer holds sends the draft
+     * as it is and records the plain reason. Otherwise the line is rendered now, so it is true when it goes, and the length
+     * with it is measured before anything is sent: over the limit refuses and keeps the draft live (U-37), never drops the
+     * line. The line follows the owner's words, and the sent row records which visit it named.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws ValidationException when the words plus the visit line pass the limit
+     * @throws DomainException when the draft is gone, the text channel failed, or another reply is being sent
+     */
+    private function sendDraftAskingForVisitLine(Message $draft, Conversation $conversation, string $words, string $composed, array $attributes): Message
+    {
+        $contact = $conversation->contact;
+        $reason = $this->visitAskedAbout->whyNoLine($contact);
+        $visit = $reason === null ? $this->visitAskedAbout->find($contact, $this->storedIntent($draft), $draft->label) : null;
+        $line = $visit === null ? null : $this->visitAskedAbout->line($visit);
+
+        if ($visit === null || $line === null) {
+            return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, [
+                ...$attributes,
+                'meta' => [...($draft->meta ?? []), 'visit_line_left_off' => $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : ServiceToBook::BOOKING_OFF)],
+            ]);
+        }
+
+        $withLine = $this->composeAutomatedText->forReply($conversation, $words.' '.$line);
+
+        if (mb_strlen($withLine) > self::MAX_LENGTH) {
+            throw ValidationException::withMessages(['body' => self::TOO_LONG_WITH_VISIT_LINE]);
+        }
+
+        return $this->outboundSender->sendExisting($draft, $withLine, SendOrigin::Owner, [
+            ...$attributes,
+            'meta' => [...($draft->meta ?? []), 'visit_line_appointment_id' => $visit->id],
+        ]);
     }
 
     /**

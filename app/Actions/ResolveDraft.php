@@ -52,11 +52,12 @@ class ResolveDraft
      *
      * `$addBookingLink` only asks (D-45): the approve step that drew the booking link line passes the owner's box. It
      * defaults to false so no other caller asks for a link, and SendOwnerReply decides, checking every condition again.
+     * `$addVisitLine` only asks too, for the visit line the approve step drew (D-39 amended, settled as D-45).
      *
      * @throws DomainException when the draft is gone, another reply is being sent, or the channel failed
      * @throws ValidationException when the text cannot or should not go out
      */
-    public function approve(Message $draft, User $by, ?string $body = null, bool $addBookingLink = false): Message
+    public function approve(Message $draft, User $by, ?string $body = null, bool $addBookingLink = false, bool $addVisitLine = false): Message
     {
         $draft->refresh();
 
@@ -66,7 +67,7 @@ class ResolveDraft
 
         $edited = $body !== null && trim($body) !== trim($draft->body);
 
-        return $this->sendOwnerReply->sendDraft($draft, $body ?? $draft->body, $by, $edited, $addBookingLink);
+        return $this->sendOwnerReply->sendDraft($draft, $body ?? $draft->body, $by, $edited, $addBookingLink, $addVisitLine);
     }
 
     /**
