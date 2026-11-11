@@ -85,21 +85,24 @@ TEXT;
 
     /**
      * What the model reads about a customer with a visit booked ahead (D-39 as amended). Each sentence is true because of
-     * code: RunFrontDesk::sendPassingReply() and SendOwnerReply::sendDraft() add the visit line through VisitAskedAbout,
-     * and no link rides while a visit is booked ahead (ServiceToBook::VISIT_BOOKED). It holds no booking address and
-     * quotes no owner line (WR-07).
+     * code: RunFrontDesk::sendPassingReply() adds the visit line through VisitAskedAbout to a reply sent as it is, a held
+     * reply gets it only when the owner checks the box on the approve step (SendOwnerReply::sendDraft(), IN-12), and no
+     * link rides while a visit is booked ahead (ServiceToBook::VISIT_BOOKED). It holds no booking address and quotes no
+     * owner line (WR-07).
      */
-    public const string BOOKING_VISIT_BOOKED = "This customer has a visit booked ahead, shown on the customer card as the next appointment. When you label a reply scheduling, the system adds a line after your words, in the owner's words, with that visit's service, day and time, so your own words do not give the day or the time. Label a reply about this visit or its time scheduling. No booking link is added while this visit is booked.";
+    public const string BOOKING_VISIT_BOOKED = "This customer has a visit booked ahead, shown on the customer card as the next appointment. When you label a reply scheduling and the reply is sent as it is, the system adds a line after your words, in the owner's words, with that visit's service, day and time, so your own words do not give the day or the time. When the reply is held for the owner, the owner decides whether that line is added. Label a reply about this visit or its time scheduling. No booking link is added while this visit is booked.";
 
     /**
      * What the model reads about a customer with no visit ahead, while a service is booked online (D-39 as amended,
      * G-08-4b). {services} is the book_online slugs. Each sentence is true because of code: RunFrontDesk::sendPassingReply()
-     * with ServiceToBook::handle() adds the owner's link line to a scheduling reply about one of them (D-01, D-02), the
-     * service being the one service_slug names or the one the intake answers are about; BookAppointment::fromLink() books
-     * at once with nothing left for the owner to confirm; and the confirmation is texted at once after a page booking (D-28).
-     * It holds no booking address and quotes no owner line (WR-07).
+     * with ServiceToBook::handle() adds the owner's link line to a scheduling reply about one of them that is sent as it is
+     * (D-01, D-02), and a held reply gets it only when the owner checks the box on the approve step
+     * (SendOwnerReply::sendDraft(), D-45, IN-12), the service being the one service_slug names or the one the intake
+     * answers are about; BookAppointment::fromLink() books at once with nothing left for the owner to confirm; and the
+     * confirmation is texted at once after a page booking (D-28). It holds no booking address and quotes no owner line
+     * (WR-07).
      */
-    public const string BOOKING_ONLINE = "The business books these services online: {services}. When you label a reply scheduling and it is about one of them, the system adds a line after your words, in the owner's words, that invites the customer to pick a time and holds the booking link. The service is the one you name in service_slug; when you name none, it is the one service the customer's intake answers are about, and with neither, no link is added. On the booking page the customer picks a time and is booked at once, with nothing left for the owner to confirm, and the system then texts the customer a confirmation with the day and time. Those lines come from the system, so your own words do not repeat them.";
+    public const string BOOKING_ONLINE = "The business books these services online: {services}. When you label a reply scheduling, it is about one of them and the reply is sent as it is, the system adds a line after your words, in the owner's words, that invites the customer to pick a time and holds the booking link. When the reply is held for the owner, the owner decides whether that line is added. The service is the one you name in service_slug; when you name none, it is the one service the customer's intake answers are about, and with neither, no link is added. On the booking page the customer picks a time and is booked at once, with nothing left for the owner to confirm, and the system then texts the customer a confirmation with the day and time. Those lines come from the system, so your own words do not repeat them.";
 
     /**
      * The longest stretch of one waiting customer text the instructions quote.

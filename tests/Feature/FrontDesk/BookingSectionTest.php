@@ -33,6 +33,7 @@ it('tells a booked customer\'s run that the system adds the visit\'s day and tim
         $instructions = (string) $prompt->agent->instructions();
 
         return str_contains($instructions, "## Booking\n\n".FrontDeskPrompt::BOOKING_VISIT_BOOKED)
+            && str_contains($instructions, 'When you label a reply scheduling and the reply is sent as it is, the system adds a line after your words, in the owner\'s words, with that visit\'s service, day and time, so your own words do not give the day or the time. When the reply is held for the owner, the owner decides whether that line is added.')
             && str_contains($instructions, 'A visit the customer card lists as booked was recorded by the business\'s own booking system, so it is the business\'s booking.')
             && strpos($instructions, '## Customer card') < strpos($instructions, '## Booking')
             && strpos($instructions, '## Booking') < strpos($instructions, '## Right now')
@@ -97,6 +98,7 @@ it('tells an unbooked customer\'s run which services book online and that the pa
     $section = bookingSectionOf($instructions);
 
     expect($section)->toBe("## Booking\n\n".str_replace('{services}', 'ac-repair, furnace-repair and furnace-tune-up', FrontDeskPrompt::BOOKING_ONLINE))
+        ->and($section)->toContain('When you label a reply scheduling, it is about one of them and the reply is sent as it is, the system adds a line after your words, in the owner\'s words, that invites the customer to pick a time and holds the booking link. When the reply is held for the owner, the owner decides whether that line is added.')
         ->and($section)->not->toContain('system-replacement')
         ->and($instructions)->not->toContain(FrontDeskPrompt::BOOKING_VISIT_BOOKED);
 });

@@ -21,7 +21,7 @@ findings:
     title: "The visit lookup has no tie-break, so the line and the customer card can name different visits"
   - id: IN-12
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The Booking section's \"each sentence is true\" claim is stronger than the code"
   - id: WR-06
     severity: warning
@@ -91,7 +91,7 @@ findings:
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 5
+open: 4
 total: 22
 recorded: 2026-11-11T22:29:44.430Z
 ---
@@ -104,7 +104,7 @@ recorded: 2026-11-11T22:29:44.430Z
 | WR-10 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: a booking file synced before visit_line gets its own reason, "the booking file has no visit_line yet, so add it and sync again" (VisitAskedAbout::NO_VISIT_LINE), in whyNoLine() and the send's fallback; "online booking is turned off" stays for the room off or no booking file, and the pinned test row now expects the new reason |
 | IN-10 | info | open | - |
 | IN-11 | info | fixed | Ian, 2026-11-11: fixed test first as ruled: VisitAskedAbout::find() orders by starts_at then id, as CustomerCard does, so two visits at the same minute give the line, the alert and the card the same visit |
-| IN-12 | info | open | - |
+| IN-12 | info | fixed | Ian, 2026-11-11: fixed test first as ruled: both Booking section constants say the line is added when the reply is sent as it is, and that when it is held for the owner the owner decides whether it is added; the two pinned tests in BookingSectionTest check those sentences |
 | WR-06 | warning | fixed | Ian, 2026-11-09: fixed test first as ruled: the queued-then-died branch writes the D-27 note ("Reminder/Confirmation text may not have reached the customer: the send stopped partway.") and handle()'s catch ends the row on an existing message by meta.booking_send_id (78be6c8, 422621f) (not in the current review) |
 | WR-07 | warning | fixed | Ian, 2026-11-09: fixed at the source, no new prompt rule: FrontDeskPrompt shows an earlier text that carried a booking link as its words and "(The system added the booking link here.)", in the history and in the customer card the model reads; the DecideSendOrDraft hold is unchanged (5aec7f7, ec20f2a, e7aba5c) (not in the current review) |
 | WR-08 | warning | fixed | Ian, 2026-11-09: fixed test first as ruled: OutboundSender reports a failed lock release and never raises it, so once the channel accepted a text nothing withdraws its link or tells the owner it failed (ad5b653, 2302d1c) (not in the current review) |
