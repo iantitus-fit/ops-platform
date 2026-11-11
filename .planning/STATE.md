@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-25-PLAN.md
-last_updated: "2026-11-11T21:16:22.726Z"
+stopped_at: Completed 08-26-PLAN.md
+last_updated: "2026-11-11T21:29:43.803Z"
 last_activity: 2026-11-11
 last_activity_desc: Phase 08 execution started
-state_head: cebc04a9cfe12b5a09d505fb958df50a9b7bb11a
+state_head: 9521d89d3fac21873f00b250928253775b58bc40
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 60
-  completed_plans: 59
+  completed_plans: 60
   percent: 44
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 3 of 26
+Plan: 4 of 26
 Status: Ready to execute
 Last activity: 2026-11-11 — Phase 08 execution started
 
@@ -199,6 +199,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P23 | 22 min | 3 tasks | 7 files |
 | Phase 08 P24 | 20 min | 3 tasks | 12 files |
 | Phase 08 P25 | 19 min | 3 tasks | 10 files |
+| Phase 08 P26 | 12 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -310,6 +311,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-24: the visit line is a visit_line part on agent_reply, not a new kind; OutboundSender holds it to the owner-sentence rule, and it is considered only when no booking link was minted
 - [Phase 08]: 08-24: BookingSettings::visitLine is nullable so a version compiled before visit_line sends no line and nothing throws (D-03)
 - [Phase 08]: 08-25: the visit line on a held draft is settled as D-45 settles the link: the owner's approval decides, every condition is checked again at approval, a line is added only when it was on screen, and a length overrun refuses Send rather than dropping the line. No mint, no new kind, no agent action: the owner's own send through OutboundSender::sendExisting().
+- [Phase 08]: 08-26: the Booking section is drawn only from ServiceToBook and VisitAskedAbout conditions; a booked customer never reads the online variant; booking.md stays out of the agent's loads
 
 ### Pending Todos
 
@@ -376,8 +378,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-11T21:16:22.617Z
-Stopped at: Completed 08-25-PLAN.md
+Last session: 2026-11-11T21:29:43.687Z
+Stopped at: Completed 08-26-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

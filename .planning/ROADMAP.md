@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 25/26 plans executed, 23 executed (08-17 to 08-23 close the verification gaps; 08-24 to 08-26 close UAT gaps G-08-4 and G-08-4b under D-39 as amended)
+**Plans**: 26/26 plans executed, 23 executed (08-17 to 08-23 close the verification gaps; 08-24 to 08-26 close UAT gaps G-08-4 and G-08-4b under D-39 as amended)
 
 Plans:
 **Wave 1**
@@ -321,7 +321,7 @@ Plans:
 - [x] 08-25-PLAN.md — G-08-4: on a booked customer's held draft the owner sees the visit line with a box, settled as D-45 settles the link: starting state, every condition checked at approval, only what was shown, the length refusal; U-37
 
 **Wave 26** *(blocked on Wave 25 completion)*
-- [ ] 08-26-PLAN.md — G-08-4, G-08-4b: FrontDeskPrompt's line 41 rewritten (a proposed time is not set; a booked visit on the card is the business's) and a Booking section built from the send's own conditions; the Dev chat re-walk recorded for UAT
+- [x] 08-26-PLAN.md — G-08-4, G-08-4b: FrontDeskPrompt's line 41 rewritten (a proposed time is not set; a booked visit on the card is the business's) and a Booking section built from the send's own conditions; the Dev chat re-walk recorded for UAT
 
 **UI hint**: yes
 
@@ -433,7 +433,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 25/26 | In Progress | - |
+| 8. Schedule and Booking | 26/26 | In Progress | - |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
