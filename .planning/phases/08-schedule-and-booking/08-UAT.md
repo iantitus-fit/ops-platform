@@ -3,7 +3,7 @@ status: diagnosed
 phase: 08-schedule-and-booking
 source: [08-VERIFICATION.md]
 started: 2026-11-08T23:30:00Z
-updated: 2026-11-11T16:13:42.829Z
+updated: 2026-11-11T19:11:16Z
 ---
 
 ## Current Test
@@ -14,9 +14,11 @@ updated: 2026-11-11T16:13:42.829Z
 
 ### 1. Keyboard-only walk of the booking page at desktop width and at 375 px, including Try again on the rate-limited notice
 expected: A customer opens a booking link, reaches every time, books by keyboard alone, and focus lands on the confirmation heading; the rate-limited notice takes focus on its heading, Tab reaches Try again, and a successful press lands focus on the page's heading
-result: issue
+result: pass
 reported: "Issue, minor. Everything else passed at desktop and 375 px: every day and time is reachable by Tab with a visible outline, Enter on a time moves focus to \"Check your time\", \"Book this time\" moves focus to \"You are booked\", nothing needs a mouse, and nothing is cut off or scrolls sideways at 375. The rate-limited notice appears after too many tries with \"Try again\", and the times come back after the minute. The one problem: the Space key does nothing on any expandable section, both the day headings and the footer's Privacy notice and Accessibility statement. Enter works on all of them. A disclosure should open and close with Space as well as Enter."
 severity: minor
+original_result: issue
+reclassified: "Environment, not an app defect (Ian, 2026-11-11): in an Incognito window with extensions off, Space opens and closes every section, so an extension in Ian's normal Chrome profile swallowed Space. Closed with no app change; every other part of check 1 passed as reported."
 
 ### 2. VoiceOver walk of the booking page (picker, check step, confirmation, rate-limited notice, footer disclosures)
 expected: Each time is announced with its day and time; focus moves to the confirmation; errors are read beside the field; the footer disclosures are announced as expandable
@@ -53,8 +55,8 @@ not_walked: "VoiceOver on owner screens moves to Phase 11, as in Phase 7"
 ## Summary
 
 total: 7
-passed: 4
-issues: 3
+passed: 5
+issues: 2
 pending: 0
 skipped: 0
 blocked: 0
@@ -63,7 +65,7 @@ blocked: 0
 
 - gap_id: G-08-1
   truth: "Every expandable section on the booking page (the day headings and the footer's Privacy notice and Accessibility statement) opens and closes from the keyboard with Space as well as Enter"
-  status: failed
+  status: closed
   reason: "User reported: Issue, minor. Everything else passed at desktop and 375 px: every day and time is reachable by Tab with a visible outline, Enter on a time moves focus to \"Check your time\", \"Book this time\" moves focus to \"You are booked\", nothing needs a mouse, and nothing is cut off or scrolls sideways at 375. The rate-limited notice appears after too many tries with \"Try again\", and the times come back after the minute. The one problem: the Space key does nothing on any expandable section, both the day headings and the footer's Privacy notice and Accessibility statement. Enter works on all of them. A disclosure should open and close with Space as well as Enter."
   severity: minor
   test: 1
@@ -80,7 +82,8 @@ blocked: 0
     - "If the cause is outside the app, close G-08-1 as not an app defect with no code change"
     - "Optional guard either way: a browser test that opens and closes a day disclosure and both footer disclosures with Space (passes today in headless Chromium, so it pins, not red-to-green)"
   debug_session: ".planning/debug/booking-disclosures-ignore-space.md"
-  needs: manual_review
+  closed_as: environment
+  closed_by: "Ian, 2026-11-11: Space works on every section in Incognito with extensions off; a browser extension in the normal profile is the cause. No app change."
 
 - gap_id: G-08-2
   truth: "VoiceOver reads every time on the booking page as a time (9:00 AM as 'nine A M'), not as separate digits"
