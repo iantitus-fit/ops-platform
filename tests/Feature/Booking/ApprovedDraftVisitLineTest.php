@@ -267,6 +267,32 @@ it('checks every condition at approval and says why the visit line was left off 
     'a version synced before visit_line' => ['older version', 'online booking is turned off'],
 ]);
 
+it('sends the draft without the visit line when the visit changed after the line was shown (WR-09)', function (string $case) {
+    $draft = approvedVisitLineHeld();
+
+    $thread = approvedVisitLineThread()->assertSet('visitLine', APPROVED_VISIT_LINE_TEXT)->assertSet('addVisitLine', true);
+
+    match ($case) {
+        'moved' => Appointment::sole()->forceFill([
+            'starts_at' => CarbonImmutable::parse('2026-11-06 09:00', 'America/Chicago'),
+            'ends_at' => CarbonImmutable::parse('2026-11-06 10:30', 'America/Chicago'),
+        ])->save(),
+        'earlier booked' => Appointment::factory()->for(Contact::sole())->at(CarbonImmutable::parse('2026-11-04 08:00', 'America/Chicago'))->create(),
+    };
+
+    $thread->call('approveDraft')
+        ->assertHasNoErrors()
+        ->assertNotified(Notification::make()->title('Draft sent without the visit line: the visit changed after the line was shown')->warning());
+
+    expect(approvedVisitLineLastText())->toBe(approvedVisitLineLater(APPROVED_VISIT_LINE_WORDS))
+        ->and($draft->fresh()->status)->toBe(MessageStatus::Sent)
+        ->and($draft->fresh()->meta['visit_line_left_off'])->toBe('the visit changed after the line was shown')
+        ->and($draft->fresh()->meta)->not->toHaveKey('visit_line_appointment_id');
+})->with([
+    'the visit moved to another day' => ['moved'],
+    'an earlier visit booked' => ['earlier booked'],
+]);
+
 it('adds no visit line the owner was not shown (T-08-102)', function () {
     $draft = approvedVisitLineHeld(booked: false);
 
@@ -311,10 +337,10 @@ it('draws no visit line when neither the label nor the reading is about scheduli
         ->and($draft->fresh()->meta)->not->toHaveKey('visit_line_left_off');
 });
 
-it('sends only the words when the flag is set on a draft that is not about scheduling and called directly (T-08-102)', function () {
+it('sends only the words when a line is passed for a draft that is not about scheduling and called directly (T-08-102)', function () {
     $draft = approvedVisitLineHeld(['label' => 'faq_answer'], intent: 'faq');
 
-    app(ResolveDraft::class)->approve($draft, User::query()->where('phone', APPROVED_VISIT_LINE_OWNER_PHONE)->sole(), null, false, true);
+    app(ResolveDraft::class)->approve($draft, User::query()->where('phone', APPROVED_VISIT_LINE_OWNER_PHONE)->sole(), null, false, APPROVED_VISIT_LINE_TEXT);
 
     expect(approvedVisitLineLastText())->toBe(approvedVisitLineLater(APPROVED_VISIT_LINE_WORDS))
         ->and($draft->fresh()->meta)->not->toHaveKey('visit_line_left_off');

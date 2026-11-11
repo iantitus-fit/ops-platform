@@ -24,6 +24,12 @@ class VisitAskedAbout
      */
     public const string NO_VISIT_AHEAD = 'no visit is booked ahead';
 
+    /**
+     * The reason told to the owner when the line that would go now differs from the line the approve step showed: the
+     * visit moved, or another visit became the one asked about (WR-09).
+     */
+    public const string VISIT_CHANGED = 'the visit changed after the line was shown';
+
     public function __construct(private readonly ActiveConfig $config) {}
 
     /**

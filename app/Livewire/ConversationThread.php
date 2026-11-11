@@ -93,7 +93,8 @@ class ConversationThread extends Component
      *
      * The booking link box asks for a link only while the line was drawn (D-45). When the draft went out without the
      * link the owner asked for, because a condition stopped holding, the notice is a warning that says why. The visit line
-     * box works the same way, asking only while visitLine names the line on screen.
+     * box works the same way: it passes down the line on screen, taken from the locked visitLine and never from the
+     * browser, and the send leaves the line off with a reason when the line it would add now is not that line (WR-09).
      */
     public function approveDraft(ResolveDraft $resolveDraft): void
     {
@@ -109,7 +110,7 @@ class ConversationThread extends Component
                 auth()->user(),
                 $this->draftBody,
                 $this->addBookingLink && $this->bookingLinkService !== null,
-                $this->addVisitLine && $this->visitLine !== null,
+                $this->addVisitLine ? $this->visitLine : null,
             );
         } catch (ValidationException $exception) {
             $this->addError('draftBody', (string) $exception->validator->errors()->first());

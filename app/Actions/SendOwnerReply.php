@@ -114,16 +114,17 @@ class SendOwnerReply
      * row's key (D-33).
      *
      * A draft for a contact with a visit booked ahead can carry the owner's visit line instead, added here at send time
-     * and never put in the draft (D-39 amended, settled as D-45). `$addVisitLine` only asks: when the draft is about
-     * scheduling by its label or the stored reading's intent, VisitAskedAbout::whyNoLine() is asked now, at approval, and a
-     * reason sends the draft as it is with the reason recorded in meta.visit_line_left_off. The two lines are never both
-     * drawn, because a visit ahead stops the link (ServiceToBook::VISIT_BOOKED) and the visit line needs one. Nothing is
-     * minted, so a refused or failed send has nothing to take back.
+     * and never put in the draft (D-39 amended, settled as D-45). `$visitLineShown` is the line the owner saw with the box
+     * checked, and it only asks: when the draft is about scheduling by its label or the stored reading's intent,
+     * VisitAskedAbout::whyNoLine() is asked now, at approval, and a reason sends the draft as it is with the reason
+     * recorded in meta.visit_line_left_off; so does a line that would differ now from the one shown (WR-09). The two lines
+     * are never both drawn, because a visit ahead stops the link (ServiceToBook::VISIT_BOOKED) and the visit line needs
+     * one. Nothing is minted, so a refused or failed send has nothing to take back.
      *
      * @throws ValidationException when the reply cannot or should not go out
      * @throws DomainException when the draft is gone, the text channel failed, or another reply is being sent
      */
-    public function sendDraft(Message $draft, string $body, User $by, bool $edited, bool $addBookingLink = false, bool $addVisitLine = false): Message
+    public function sendDraft(Message $draft, string $body, User $by, bool $edited, bool $addBookingLink = false, ?string $visitLineShown = null): Message
     {
         $conversation = $draft->conversation;
         $conversation->refresh();
@@ -153,8 +154,8 @@ class SendOwnerReply
             return $this->sendDraftAskingForLink($draft, $conversation, $words, $composed, $attributes);
         }
 
-        if ($addVisitLine && VisitAskedAbout::aboutScheduling($this->storedIntent($draft), $draft->label)) {
-            return $this->sendDraftAskingForVisitLine($draft, $conversation, $words, $composed, $attributes);
+        if ($visitLineShown !== null && VisitAskedAbout::aboutScheduling($this->storedIntent($draft), $draft->label)) {
+            return $this->sendDraftAskingForVisitLine($draft, $conversation, $words, $composed, $attributes, $visitLineShown);
         }
 
         return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, $attributes);
@@ -215,26 +216,32 @@ class SendOwnerReply
 
     /**
      * Send an approved draft the owner asked to add the visit line to. A condition that no longer holds sends the draft
-     * as it is and records the plain reason. Otherwise the line is rendered now, so it is true when it goes, and the length
-     * with it is measured before anything is sent: over the limit refuses and keeps the draft live (U-37), never drops the
-     * line. The line follows the owner's words, and the sent row records which visit it named.
+     * as it is and records the plain reason. Otherwise the line is rendered now, so it is true when it goes, and it rides
+     * only when it is the line the owner saw: a visit that moved, or another visit that became the one asked about, sends
+     * the draft as it is with VisitAskedAbout::VISIT_CHANGED (WR-09). The length with the line is measured before
+     * anything is sent: over the limit refuses and keeps the draft live (U-37), never drops the line. The line follows the
+     * owner's words, and the sent row records which visit it named.
      *
      * @param  array<string, mixed>  $attributes
      *
      * @throws ValidationException when the words plus the visit line pass the limit
      * @throws DomainException when the draft is gone, the text channel failed, or another reply is being sent
      */
-    private function sendDraftAskingForVisitLine(Message $draft, Conversation $conversation, string $words, string $composed, array $attributes): Message
+    private function sendDraftAskingForVisitLine(Message $draft, Conversation $conversation, string $words, string $composed, array $attributes, string $visitLineShown): Message
     {
         $contact = $conversation->contact;
         $reason = $this->visitAskedAbout->whyNoLine($contact);
         $visit = $reason === null ? $this->visitAskedAbout->find($contact, $this->storedIntent($draft), $draft->label) : null;
         $line = $visit === null ? null : $this->visitAskedAbout->line($visit);
 
-        if ($visit === null || $line === null) {
+        if ($visit === null || $line === null || $line !== $visitLineShown) {
+            $leftOff = $line === null
+                ? $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : ServiceToBook::BOOKING_OFF)
+                : VisitAskedAbout::VISIT_CHANGED;
+
             return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, [
                 ...$attributes,
-                'meta' => [...($draft->meta ?? []), 'visit_line_left_off' => $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : ServiceToBook::BOOKING_OFF)],
+                'meta' => [...($draft->meta ?? []), 'visit_line_left_off' => $leftOff],
             ]);
         }
 
