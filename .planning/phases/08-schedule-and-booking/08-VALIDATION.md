@@ -23,7 +23,7 @@ created: "2026-11-02"
 | **Config file** | `phpunit.xml` (suites Unit, Feature; SQLite `:memory:`); `tests/Pest.php` (fresh copy of `examples/example-hvac` per Feature test) |
 | **Quick run command** | `php artisan test --compact <the task's narrowest test file>` |
 | **Full suite command** | `php artisan test --compact` |
-| **Estimated runtime** | ~275 seconds full on SQLite at 3007 tests (2026-11-07); 3126 tests after plan 08-23 (2026-11-08); Postgres runs in CI only, after Ian pushes |
+| **Estimated runtime** | ~275 seconds full on SQLite at 3007 tests (2026-11-07); 3126 tests after plan 08-23 (2026-11-08); 3205 tests after plan 08-26, about 332 seconds (2026-11-11); Postgres runs in CI only, after Ian pushes |
 
 ---
 
@@ -68,6 +68,9 @@ Seeded from RESEARCH.md "Phase Requirements → Test Map". The planner replaces 
 | 08-21-T1, 08-21-T2 | 08-21 | 21 | BOOK-02, A11Y-02 (WR-05, UI-FOOTER-HOVER) | T-08-87, T-08-88 | The privacy notice states only what the page does on every state; no hover border sits on an element without a border (with a snippet case against a vacuous pass); the footer disclosure's border turns to the accent on hover in Chromium | feature + file scan + browser | `php artisan test --compact tests/Feature/Booking/BookingPageTest.php tests/Feature/Booking/BookingPageContractTest.php tests/Feature/Booking/BookingPageBrowserTest.php` | ✅ | ✅ green |
 | 08-22-T1, 08-22-T2 | 08-22 | 22 | BOOK-02, A11Y-02 (IN-05) | T-08-89, T-08-90 | Try again under the rate-limited notice keeps the notice inside the minute with no extra attempt and brings the times back after it; it cannot get around the limit; focus goes to the notice, then Try again, then the heading of what the page shows; the 429 page is unchanged | Livewire feature + browser | `php artisan test --compact tests/Feature/Booking/BookingPageThrottleTest.php tests/Feature/Booking/BookingPageBrowserTest.php` | ✅ | ✅ green |
 | 08-23-T1, 08-23-T2, 08-23-T3 | 08-23 | 23 | BOOK-03 (UI-ZONE-NAME, IN-03, IN-04, IN-01) | T-08-25, T-08-91 to T-08-93 | Block time and Book by hand name the zone in plain words, never the raw id; Book by hand forecasts no confirmation for a customer with no phone; a span over midnight is under Upcoming until it ends and under Past only after, never both; Availability's docblocks match the drive buffer (grep prints 2) | feature | `php artisan test --compact tests/Feature/Filament/SchedulePageTest.php tests/Feature/Filament/AppointmentsRelationManagerTest.php` | ✅ | ✅ green |
+| 08-24-T1, 08-24-T2, 08-24-T3 | 08-24 | 24 | ROOM-12, BOOK-03 (G-08-4, D-39 amended) | T-08-17, T-08-97 to T-08-101 | A booked customer's scheduling reply goes out as the model's words plus the owner's visit_line, added by code after the verdict and never seen by Jev; OutboundSender's visit_line arm needs a clean reading; the sync checks visit_line like the other booking lines and never quotes it | feature + arch scan | `php artisan test --compact tests/Feature/Booking/VisitLineTest.php tests/Feature/Booking/BookingLinkTest.php tests/Feature/Rooms/BookingFileCheckTest.php tests/Unit/AppointmentWritesTest.php` | ✅ | ✅ green |
+| 08-25-T1, 08-25-T2, 08-25-T3 | 08-25 | 25 | BOOK-03 (G-08-4 held draft, D-45 pattern) | T-08-102 to T-08-104 | A held draft for a booked contact offers the visit line as an owner-checked box; every condition re-checked at approval; past 1,600 characters Send is refused; the line comes only from the server-locked property; keyboard reach and axe in real Chromium | feature + browser | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php tests/Feature/Filament/DraftVisitLineKeyboardTest.php` | ✅ | ✅ green |
+| 08-26-T1, 08-26-T2 | 08-26 | 26 | BOOK-02, BOOK-03 (G-08-4, G-08-4b) | T-08-105 to T-08-107 | The front desk reads that a booked visit is the business's and that code adds its day and time; the Booking section lists services booked online for an unbooked customer and is left out otherwise; no /book/, no `!`, no em dash | feature | `php artisan test --compact tests/Feature/FrontDesk/BookingSectionTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -94,6 +97,7 @@ Seeded from RESEARCH.md "Phase Requirements → Test Map". The planner replaces 
 | CI `pgsql` leg for BookingLinkLeakTest (`pg_class` table listing, `meta->booking_link_id` read), LinksBeforeTheFixTest (the migration's whereNotExists update and join) and BookingSendOnceTest (`meta->booking_send_id` read, the `DB::beforeExecuting` SQL match) | BOOK-02, BOOK-04 | No Postgres locally; CI runs only after Ian pushes | After Ian pushes the phase branch: the CI `pgsql` leg is green for these three files (WINDOWS entries 74 and 77) |
 | Keyboard-only and VoiceOver walk of the footer disclosures and of the rate-limited notice with Try again | A11Y-02 | Announcements and the feel of focus moves are not asserted by any test | At UAT (WINDOWS entries 55, 61 and 78): the notice is announced when it appears, Try again is reachable by Tab, focus lands on the heading of what the page shows |
 | Final privacy and accessibility wording on the booking page | BOOK-02 | An attorney decision (D-44), not a test | Stays on the attorney list with the facts 08-21 recorded |
+| Dev chat re-walk after `icm:sync`: a booked customer asks when the visit is and the reply carries the visit line; an unbooked customer is offered the link; a held reply on a booked contact is approved with the visit line box (08-24 to 08-26) | BOOK-02, BOOK-03 | Needs the live model and a phone | At UAT (WINDOWS entry 79): the four-part re-walk 08-26 recorded |
 
 ---
 
@@ -109,6 +113,8 @@ Seeded from RESEARCH.md "Phase Requirements → Test Map". The planner replaces 
 **Approval:** validated 2026-11-07 (validate-phase audit at phase close: 0 gaps; every test file in the map exists and the full suite was green, 3007 tests)
 
 **Re-approval:** validated 2026-11-08 (validate-phase re-audit after gap-closure plans 08-17 to 08-23: 0 gaps; every task in those plans has an automated verify, every test file in the map exists, the 13 files those plans added or changed ran green (311 tests), and the full suite was green, 3126 tests)
+
+**Re-approval:** validated 2026-11-11 (validate-phase re-audit after gap-closure plans 08-24 to 08-26: 0 gaps; every task in those plans has an automated verify, every test file in the map exists, the 8 files those plans added or changed ran green (193 tests), and the full suite was green, 3205 tests)
 
 ## Validation Audit 2026-11-07
 
