@@ -200,3 +200,8 @@ verify. Check these by hand for each business before it goes live.
   Send a text to that number and confirm it arrives in the dashboard thread.
   A business without a number the platform can text from is not a fit.
   (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
+
+A booking file (`rooms/schedule_and_booking/booking.md`) written before the
+visit line needs `visit_line:` added before the next sync; without it the sync
+refuses the whole folder and the previous version stays live (`08-REVIEW.md`
+IN-10).

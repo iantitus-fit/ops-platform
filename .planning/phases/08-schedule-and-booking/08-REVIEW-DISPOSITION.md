@@ -13,7 +13,7 @@ findings:
     title: "A booking file synced before `visit_line` existed tells the owner \"online booking is turned off\""
   - id: IN-10
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Making `visit_line` required refuses an existing owner's whole folder with no upgrade note"
   - id: IN-11
     severity: info
@@ -91,7 +91,7 @@ findings:
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 4
+open: 3
 total: 22
 recorded: 2026-11-11T22:29:44.430Z
 ---
@@ -102,7 +102,7 @@ recorded: 2026-11-11T22:29:44.430Z
 |---------|----------|-------------|--------|
 | WR-09 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: the approve step passes down the visit line on screen, taken from the locked visitLine, and the send leaves the line off with the reason "the visit changed after the line was shown" (VisitAskedAbout::VISIT_CHANGED, in meta.visit_line_left_off and the owner's notice) when the line it would add now differs |
 | WR-10 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: a booking file synced before visit_line gets its own reason, "the booking file has no visit_line yet, so add it and sync again" (VisitAskedAbout::NO_VISIT_LINE), in whyNoLine() and the send's fallback; "online booking is turned off" stays for the room off or no booking file, and the pinned test row now expects the new reason |
-| IN-10 | info | open | - |
+| IN-10 | info | fixed | Ian, 2026-11-11: fixed as ruled, docs only: visit_line stays required, and docs/SETUP.md now says a booking file written before the visit line needs visit_line added before the next sync |
 | IN-11 | info | fixed | Ian, 2026-11-11: fixed test first as ruled: VisitAskedAbout::find() orders by starts_at then id, as CustomerCard does, so two visits at the same minute give the line, the alert and the card the same visit |
 | IN-12 | info | fixed | Ian, 2026-11-11: fixed test first as ruled: both Booking section constants say the line is added when the reply is sent as it is, and that when it is held for the owner the owner decides whether it is added; the two pinned tests in BookingSectionTest check those sentences |
 | WR-06 | warning | fixed | Ian, 2026-11-09: fixed test first as ruled: the queued-then-died branch writes the D-27 note ("Reminder/Confirmation text may not have reached the customer: the send stopped partway.") and handle()'s catch ends the row on an existing message by meta.booking_send_id (78be6c8, 422621f) (not in the current review) |
