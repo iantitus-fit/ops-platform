@@ -64,6 +64,32 @@ class ServiceToBook
     }
 
     /**
+     * The slugs of the services a link can be texted for at all right now, sorted: empty when the room is not live or the
+     * folder has no booking file, otherwise every service whose book_online is true. It is asked before the reply's own
+     * service is known, so the front desk's prompt lists them (D-39 amended), and check() still decides each send.
+     *
+     * @return list<string>
+     */
+    public function onlineServiceSlugs(): array
+    {
+        if (! $this->config->hasRoom('schedule_and_booking') || BookingSettings::fromConfig($this->config) === null) {
+            return [];
+        }
+
+        $slugs = [];
+
+        foreach ($this->config->services() as $service) {
+            if (($service['book_online'] ?? false) === true) {
+                $slugs[] = (string) $service['slug'];
+            }
+        }
+
+        sort($slugs, SORT_STRING);
+
+        return $slugs;
+    }
+
+    /**
      * @return array{0: ?string, 1: ?string} The reason no link may ride, and the service slug when none stops it.
      */
     private function check(Conversation $conversation, ?string $serviceSlug): array

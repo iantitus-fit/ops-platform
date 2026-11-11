@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 48
+open_count: 49
 waived_count: 1
 fixed_count: 29
-total_count: 78
-last_updated: 2026-11-08T21:49:34.898Z
+total_count: 79
+last_updated: 2026-11-11T21:23:19.850Z
 ---
 
 # Broken Windows Ledger
@@ -93,6 +93,7 @@ last_updated: 2026-11-08T21:49:34.898Z
 | 76 | 08 | unrun-verify | tests/Feature/Booking/LinksBeforeTheFixTest.php |  | 08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres) | open |  | 2026-11-08T17:31:24.630Z |  |
 | 77 | 08 | unrun-verify | tests/Feature/Booking/BookingSendOnceTest.php |  | 08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL) | open |  | 2026-11-08T18:28:01.346Z |  |
 | 78 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes | open |  | 2026-11-08T21:49:34.898Z |  |
+| 79 | 08 | unrun-verify | app/Ai/FrontDeskPrompt.php |  | 08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25) | open |  | 2026-11-11T21:23:19.850Z |  |
 
 ````json
 [
@@ -1107,6 +1108,19 @@ last_updated: 2026-11-08T21:49:34.898Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-08T21:49:34.898Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 79,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Ai/FrontDeskPrompt.php",
+    "line": null,
+    "description": "08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-11T21:23:19.850Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

@@ -92,6 +92,16 @@ TEXT;
     public const string BOOKING_VISIT_BOOKED = "This customer has a visit booked ahead, shown on the customer card as the next appointment. When you label a reply scheduling, the system adds a line after your words, in the owner's words, with that visit's service, day and time, so your own words do not give the day or the time. Label a reply about this visit or its time scheduling. No booking link is added while this visit is booked.";
 
     /**
+     * What the model reads about a customer with no visit ahead, while a service is booked online (D-39 as amended,
+     * G-08-4b). {services} is the book_online slugs. Each sentence is true because of code: RunFrontDesk::sendPassingReply()
+     * with ServiceToBook::handle() adds the owner's link line to a scheduling reply about one of them (D-01, D-02), the
+     * service being the one service_slug names or the one the intake answers are about; BookAppointment::fromLink() books
+     * at once with nothing left for the owner to confirm; and the confirmation is texted at once after a page booking (D-28).
+     * It holds no booking address and quotes no owner line (WR-07).
+     */
+    public const string BOOKING_ONLINE = "The business books these services online: {services}. When you label a reply scheduling and it is about one of them, the system adds a line after your words, in the owner's words, that invites the customer to pick a time and holds the booking link. The service is the one you name in service_slug; when you name none, it is the one service the customer's intake answers are about, and with neither, no link is added. On the booking page the customer picks a time and is booked at once, with nothing left for the owner to confirm, and the system then texts the customer a confirmation with the day and time. Those lines come from the system, so your own words do not repeat them.";
+
+    /**
      * The longest stretch of one waiting customer text the instructions quote.
      */
     private const int WAITING_TEXT_LENGTH = 300;
@@ -272,15 +282,36 @@ TEXT;
     /**
      * The "Booking" section for this customer, or null when booking does not apply. For a visit booked ahead it is
      * included only while a visit line can ride (VisitAskedAbout::whyNoLine() is null), the condition the send and the
-     * approval ask (D-39 as amended). It holds fixed code sentences only; nothing a customer typed is put in it (T-08-105).
+     * approval ask; a booked customer never gets the online variant, since no link rides while a visit is booked. With no
+     * visit ahead it lists the services booked online (ServiceToBook::onlineServiceSlugs()) and is left out when there are
+     * none (D-39 as amended). It holds fixed code sentences and service slugs from the owner's synced folder only; nothing a
+     * customer typed is put in it (T-08-105).
      */
     private function bookingSection(Contact $contact): ?string
     {
-        if ($this->serviceToBook->visitBookedAhead($contact) && $this->visitAskedAbout->whyNoLine($contact) === null) {
-            return "## Booking\n\n".self::BOOKING_VISIT_BOOKED;
+        if ($this->serviceToBook->visitBookedAhead($contact)) {
+            return $this->visitAskedAbout->whyNoLine($contact) === null ? "## Booking\n\n".self::BOOKING_VISIT_BOOKED : null;
         }
 
-        return null;
+        $slugs = $this->serviceToBook->onlineServiceSlugs();
+
+        if ($slugs === []) {
+            return null;
+        }
+
+        return "## Booking\n\n".str_replace('{services}', $this->listed($slugs), self::BOOKING_ONLINE);
+    }
+
+    /**
+     * Names as a, b and c: one alone, two as a and b.
+     *
+     * @param  non-empty-list<string>  $names
+     */
+    private function listed(array $names): string
+    {
+        $last = array_pop($names);
+
+        return $names === [] ? $last : implode(', ', $names).' and '.$last;
     }
 
     /**
