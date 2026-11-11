@@ -20,7 +20,7 @@ class BookingFileType implements RoomFileType
     /**
      * The booking file's field rules (D-03). The numbers carry the planner's limits: step 5 to 240 minutes, buffer 0 to 240,
      * 1 to 60 days ahead, links lasting 1 to 30 days, at most five reminders of 1 to 336 hours, and lines up to 300
-     * characters. The reminder list may be empty (no reminders), so it is `present`, not `required`.
+     * characters (link, confirmation, reminder and visit lines). The reminder list may be empty (no reminders), so it is `present`, not `required`.
      *
      * @return array<string, mixed>
      */
@@ -39,13 +39,14 @@ class BookingFileType implements RoomFileType
             'link_line' => 'bail|required|string|max:300',
             'confirmation_line' => 'bail|required|string|max:300',
             'reminder_line' => 'bail|required|string|max:300',
+            'visit_line' => 'bail|required|string|max:300',
         ];
     }
 
     /**
      * What a rule string cannot say (D-03, D-28; the placeholders are the planner's). The send window is two 24-hour times,
-     * start before end. The link line holds {link} exactly once and no other word in braces. The confirmation and reminder
-     * lines each hold {day} and {time} exactly once, {service} at most once, and no other word in braces. No line holds an
+     * start before end. The link line holds {link} exactly once and no other word in braces. The confirmation, reminder and
+     * visit lines (D-39 amended) each hold {day} and {time} exactly once, {service} at most once, and no other word in braces. No line holds an
      * exclamation point or an em dash (02.1 D-41). Every message names the field and at most the placeholder, never the
      * owner's line, so a refusal cannot carry customer wording into a stored version or changelog.md (T-08-17).
      *
@@ -74,6 +75,7 @@ class BookingFileType implements RoomFileType
             ...$this->lineErrors($file, 'link_line', ['link' => [1, 1]]),
             ...$this->lineErrors($file, 'confirmation_line', ['day' => [1, 1], 'time' => [1, 1], 'service' => [0, 1]]),
             ...$this->lineErrors($file, 'reminder_line', ['day' => [1, 1], 'time' => [1, 1], 'service' => [0, 1]]),
+            ...$this->lineErrors($file, 'visit_line', ['day' => [1, 1], 'time' => [1, 1], 'service' => [0, 1]]),
         );
 
         return $errors;

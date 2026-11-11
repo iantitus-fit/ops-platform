@@ -28,4 +28,4 @@ send_window is the earliest and latest time of day a booking text goes out. A te
 
 visit_line is what the front desk adds after its own words when a customer with a visit booked ahead asks about it, so the day and time always come from the booking itself.
 
-link_line, confirmation_line and reminder_line are the exact words the customer gets. The link line must hold {link} once. The confirmation and reminder lines must hold {day} and {time} once each, and may hold {service} once. No exclamation points or dashes, and no other words in braces.
+link_line, confirmation_line, reminder_line and visit_line are the exact words the customer gets. The link line must hold {link} once. The confirmation, reminder and visit lines must hold {day} and {time} once each, and may hold {service} once. No exclamation points or dashes, and no other words in braces.
