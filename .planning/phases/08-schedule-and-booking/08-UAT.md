@@ -108,21 +108,28 @@ blocked: 0
 - test: 4
   idea: "The Phase 2 safety bars held three plain customer texts in a row: \"Hi, my AC isn't cooling. Can someone come take a look?\" (intent 0.78 against 0.85, asks_for_person 0.41 to 0.50), \"It's blowing warm air\" (complaint 0.16 against 0.15) and \"Over 10 years\" (complaint 0.20). This is calibration of D-47 and D-56 for later, using the stored verdicts; Phase 10's walk tests should script these texts."
   deferred_at: 2026-11-10
+  went_to: "ROADMAP Phase 10 planning notes (calibrate before the tour deploy; reopens 02 D-47 and D-56, Ian decides in discuss-phase); BLUEPRINT 10 open items (2026-11-11)"
 - test: 4
   idea: "On +13175550176 the reply cap (6 per hour) was reached before \"What time are you coming?\", so the assistant paused. Two of the six counted texts were holding replies from those holds, and the booking confirmation also counts toward the cap. Design question for later."
   deferred_at: 2026-11-10
+  went_to: "ROADMAP Phase 10 planning notes (whether confirmations and reminders count toward the cap); BLUEPRINT 1 open items (2026-11-11)"
 - test: 4
   idea: "Dev chat shows the stored copy of each text, so a link sent through the front desk shows /book/[link] and cannot be clicked there. That is D-12 working; walking a booking in Dev chat needs a link minted by script. Not a product bug."
   deferred_at: 2026-11-10
+  went_to: "ROADMAP Phase 12 planning notes, under \"How a visitor tries the front desk on staging\"; BLUEPRINT 1 open items (2026-11-11)"
 - test: 4
   idea: "The local database had no owner login, so Ian made one with make:filament-user. It has no phone, so owner alerts were \"not sent: No phone on file\"."
   deferred_at: 2026-11-10
+  went_to: "docs/SETUP.md step 4 (fill in \"Mobile phone for alerts\" on the profile page) (2026-11-11)"
 - test: 7
   idea: "VoiceOver walk of the owner screens (Schedule page, Block time dialog, Book by hand dialog) moves to Phase 11, as in Phase 7."
   deferred_at: 2026-11-11
+  went_to: "ROADMAP Phase 11 planning notes, inputs from Phase 8 UAT check 7 (already success criterion 6) (2026-11-11)"
 - test: 7
   idea: "Cosmetic, for Phase 11: the Schedule table scrolls sideways at a normal laptop window width with the What column squeezed."
   deferred_at: 2026-11-11
+  went_to: "ROADMAP Phase 11 planning notes and the phone design pass todo (.planning/todos/pending/2026-10-17-phone-design-pass.md), under the visual direction rule; BLUEPRINT 4 open items (2026-11-11)"
 - test: 7
   idea: "Cosmetic, for Phase 11: the automatic-texts timeline badges show the raw type value (automatic_texts_turned_on), while other entries show a plain label, as D-46 specifies."
   deferred_at: 2026-11-11
+  went_to: "ROADMAP Phase 11 planning notes and the phone design pass todo (.planning/todos/pending/2026-10-17-phone-design-pass.md), under the visual direction rule; BLUEPRINT 4 open items (2026-11-11)"

@@ -64,9 +64,13 @@ php artisan make:filament-user
 composer run dev
 ```
 
-Open http://localhost:8000/admin and log in. `composer run dev` opens a
-dashboard with four tabs (server, queue, logs, vite); Tab switches between
-them, and `q` stops everything.
+Open http://localhost:8000/admin and log in. `make:filament-user` creates an
+owner with no phone, so open your profile and fill in "Mobile phone for
+alerts"; without it, owner alerts are logged as "Owner alert not sent: No
+phone on file" and never texted.
+
+`composer run dev` opens a dashboard with four tabs (server, queue, logs,
+vite); Tab switches between them, and `q` stops everything.
 
 ## 5. Run the tests
 

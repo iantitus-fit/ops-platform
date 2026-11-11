@@ -363,6 +363,8 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - How a walk test drives the agent deterministically (scripted model versus a live model) is not defined in the SPEC; the activation gate cannot depend on a flaky call. The same question applies to the clock (times offered, reminders) and to how the Jev reading is handled in a walk test. Jev is a real service; no stand-in without Ian.
 - New concepts expected: running the front desk against a scripted customer, and a sync step that can refuse activation.
+- Calibrate the Phase 2 safety bars before the tour deploy, using the stored verdicts and the walk-test scripts, since a visitor trying the front desk would hit the same holds: Phase 8 UAT check 4 had three plain customer texts held (quoted with their scores in [08-UAT.md](phases/08-schedule-and-booking/08-UAT.md)). This reopens 02 D-47 and D-56: Ian decides in discuss-phase. Affects: safety and compliance, customer communication, knowledge.
+- Settle whether booking confirmations and reminders count toward the reply cap (6 per hour): with holding replies counted too, a walk through intake, the offer, a link resend, the confirmation and one question reaches it (Phase 8 UAT check 4). Affects: customer communication, safety and compliance, operations.
 
 ### Phase 11: Phone Design Pass
 
@@ -384,6 +386,8 @@ Plans:
 - The layout is Ian's call at the pass. Inputs: the pending todo `.planning/todos/pending/2026-10-17-phone-design-pass.md`, `docs/phase-2.2-owner-input.md` sections 5 and 6, and PROJECT.md Frontend open items 1 to 8. Item 8, what "/" shows, is DEPL-03 in Phase 12.
 - Doing this pass reopens the 2026-10-11 Frontend decision (Ian, 2026-10-21), except the booking page's own UI-SPEC, built phone-first in Phase 8, which stands. Run `/gsd-ui-phase 11` first.
 - The hold-reason words live in `RunFrontDesk::noPriceReason()` and `Verdict::plainReasonFor()` (the todo). Tests that quote hold-reason words, walk tests included, change with them.
+- Settle in discuss-phase whether Phase 11 becomes the full visual pass (a design system for owner screens and customer pages; the tour deploy waits for it, per DEPL-02), or keeps only what survives a redesign (the urgency order, the wording and hold reasons, phone fit, accessibility semantics, the owner-screen VoiceOver walk) with the full visual pass after the tour deploy. Either way it reopens the 2026-10-21 phone design pass decision, and the first may touch DEPL-02: Ian's call. Until then the visual direction rule holds (CLAUDE.md, Rules; PROJECT.md Frontend, Ian, 2026-11-11). Affects: all ten areas (every screen), led by customer communication, operations and safety and compliance; connectors and data (the tour deploy).
+- Inputs from Phase 8 UAT check 7: the owner-screen VoiceOver walk (already success criterion 6); the Schedule table scrolls sideways at a normal laptop window width with the What column squeezed; the automatic-texts timeline badges show the raw type value (`automatic_texts_turned_on`, as D-46 specifies) while other entries show a plain label. The last two are on the todo too. Affects: operations, team, safety and compliance.
 
 ### Phase 12: Tour Deploy
 
@@ -403,6 +407,7 @@ Plans:
 - Hosting (Laravel Cloud or Forge) is chosen in this phase (PROJECT.md, Open decisions).
 - Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, recovery from disaster (backups, error tracking and a rollback plan, which took in the earlier error-tracking and backup items) (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
 - How a visitor tries the front desk on staging (`/dev/chat` is local-only today), and whether the text a visitor types is kept.
+  - Dev chat shows the stored copy of each text, so a booking link sent through the front desk shows `/book/[link]` and cannot be clicked. That is D-12 working. A visitor needs a way to open the link that was sent, settled without storing working links (Phase 8 UAT check 4). Affects: customer communication, connectors and data, safety and compliance.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
 - Deploy notes carry in from PROJECT.md: restart the worker after any `.env` or key change.
 - The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list, continuous deployment with its smoke check, recovery from disaster and performance budgets in CI (Ian, 2026-11-08). DEPL-01 is unchanged.
