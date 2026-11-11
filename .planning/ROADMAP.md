@@ -242,7 +242,7 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: 23/23 plans executed (08-17 to 08-23 close the verification gaps)
+**Plans**: 26 plans, 23 executed (08-17 to 08-23 close the verification gaps; 08-24 to 08-26 close UAT gaps G-08-4 and G-08-4b under D-39 as amended)
 
 Plans:
 **Wave 1**
@@ -313,6 +313,15 @@ Plans:
 
 **Wave 23** *(blocked on Wave 22 completion)*
 - [x] 08-23-PLAN.md — The UI review's zone name and review IN-03, IN-04, IN-01: owner dialogs say "Times are in Central Time.", no confirmation is forecast to a customer with no phone, Past lists only what has ended, and Availability's docblocks match the code
+
+**Wave 24** *(UAT gap closure; blocked on Wave 23 completion)*
+- [ ] 08-24-PLAN.md — G-08-4: a booked customer's scheduling reply carries the owner's visit_line from booking.md, added by code after the verdict as one more ReplyParts slot on agent_reply; the chokepoint holds it to a clean reading; the sync checks it like the confirmation and reminder lines
+
+**Wave 25** *(blocked on Wave 24 completion)*
+- [ ] 08-25-PLAN.md — G-08-4: on a booked customer's held draft the owner sees the visit line with a box, settled as D-45 settles the link: starting state, every condition checked at approval, only what was shown, the length refusal; U-37
+
+**Wave 26** *(blocked on Wave 25 completion)*
+- [ ] 08-26-PLAN.md — G-08-4, G-08-4b: FrontDeskPrompt's line 41 rewritten (a proposed time is not set; a booked visit on the card is the business's) and a Booking section built from the send's own conditions; the Dev chat re-walk recorded for UAT
 
 **UI hint**: yes
 
