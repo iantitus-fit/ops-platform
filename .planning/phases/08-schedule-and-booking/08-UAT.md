@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 08-schedule-and-booking
 source: [08-VERIFICATION.md]
 started: 2026-11-08T23:30:00Z
@@ -67,8 +67,20 @@ blocked: 0
   reason: "User reported: Issue, minor. Everything else passed at desktop and 375 px: every day and time is reachable by Tab with a visible outline, Enter on a time moves focus to \"Check your time\", \"Book this time\" moves focus to \"You are booked\", nothing needs a mouse, and nothing is cut off or scrolls sideways at 375. The rate-limited notice appears after too many tries with \"Try again\", and the times come back after the minute. The one problem: the Space key does nothing on any expandable section, both the day headings and the footer's Privacy notice and Accessibility statement. Enter works on all of them. A disclosure should open and close with Space as well as Enter."
   severity: minor
   test: 1
-  artifacts: []
-  missing: []
+  root_cause: "Investigation inconclusive - manual review needed. Nothing in the app swallows Space: no key handler in resources/js (app.js is empty), Livewire 4.4.7, Alpine or Boost's injected script; the day and footer disclosures are plain <details><summary>. In Chrome 157 and Chromium 153 driven by Playwright, Space opened and closed a day summary and both footer summaries. The symptom matches a page-wide preventDefault on Space keydown or keyup from outside the repo, most likely a browser extension, else a key remapper or a native macOS key path CDP cannot reproduce."
+  artifacts:
+    - path: "resources/views/components/booking/day.blade.php"
+      issue: "clean, no key handling"
+    - path: "resources/views/components/booking/footer.blade.php"
+      issue: "clean, no key handling"
+    - path: "tests/Feature/Booking/BookingPageBrowserTest.php"
+      issue: "no test presses Space on a disclosure"
+  missing:
+    - "Ian: press Space on a day heading in an Incognito window with extensions off; press Space on a plain <details> page in the normal profile; if it fails only on the booking page, log defaultPrevented for Space keydown/keyup in the console"
+    - "If the cause is outside the app, close G-08-1 as not an app defect with no code change"
+    - "Optional guard either way: a browser test that opens and closes a day disclosure and both footer disclosures with Space (passes today in headless Chromium, so it pins, not red-to-green)"
+  debug_session: ".planning/debug/booking-disclosures-ignore-space.md"
+  needs: manual_review
 
 - gap_id: G-08-2
   truth: "VoiceOver reads every time on the booking page as a time (9:00 AM as 'nine A M'), not as separate digits"
@@ -76,9 +88,24 @@ blocked: 0
   reason: "User reported: Issue, cosmetic. The VoiceOver walk otherwise passed: each day is read as a disclosure with expanded or collapsed; each time is read as one phrase with its day, for example \"8:00 AM, Tuesday, November 10, button\", in a list of 8; Enter on a time moves VoiceOver to \"Check your time, heading level 2\"; \"Book this time\" and \"Choose a different time\" are read as buttons; booking moves VoiceOver to \"You are booked, heading level 1\"; the footer's Privacy notice and Accessibility statement are read as disclosures with collapsed and expanded. The one problem: VoiceOver reads 9:00 AM as \"nine zero zero\" instead of as a time. Check the exact characters in the time's accessible text (for example a narrow no-break space before AM from date formatting, or a non-standard colon) and whether every time is affected. Not walked with VoiceOver: the rate-limited notice and the taken-time error; the browser tests cover their focus and button names."
   severity: cosmetic
   test: 2
-  artifacts: []
-  missing: []
-  # UAT note 2026-11-09 (orchestrator, read-only): the booked visit's time text is '9' ':'(U+003A) '0' '0' U+00A0 'A' 'M'. BookingPage::timeLabel() (app/Livewire/BookingPage.php:273) puts U+00A0 before AM/PM on every picker and visit time, so all times carry it. The user's example "8:00 AM" read correctly with the same characters, so U+00A0 may not be the whole cause.
+  root_cause: "Investigation inconclusive - manual VoiceOver check needed. Every time surface (picker button's sr-only name, the Check your time dd, the You are booked dd) exposes '9:00' + U+00A0 + 'AM'; Chromium's accessibility tree keeps it as one string; the macOS speech synthesizer reads plain space, U+00A0 and U+202F identically as a time in every voice tested. Left: VoiceOver mishandling U+00A0, VoiceOver's 'Read numbers as: Digits' setting, or VoiceOver splitting '9:00' at the colon in Chrome."
+  artifacts:
+    - path: "app/Livewire/BookingPage.php"
+      issue: "timeLabel() (273-276) swaps the space for U+00A0 on every time, used at 248 (picker) and 266 (visit)"
+    - path: "resources/views/components/booking/time.blade.php"
+      issue: "the sr-only name carries U+00A0 (line 2)"
+    - path: "resources/views/livewire/booking-page.blade.php"
+      issue: "the dd values carry U+00A0 (lines 50, 88)"
+    - path: "tests/Pest.php"
+      issue: "normalizedName() (497) turns U+00A0 into a space, so tests cannot see it"
+  missing:
+    - "Ian: open the scratchpad probe vo-time-probe.html in Chrome with VoiceOver and note VoiceOver Utility > Verbosity > Text > Read numbers as"
+    - "If the no-break space is the cause: U+00A0 only in the visible aria-hidden time, a plain space in the sr-only name and both dd values (whitespace-nowrap keeps the visual no-wrap), and a test that reads raw text"
+    - "If every number reads as digits: VoiceOver setting, close as environment"
+    - "If plain-space times also read as digits: a different spoken form conflicts with WCAG 2.5.3 label-in-name; bring to Ian as a decision"
+  debug_session: ".planning/debug/voiceover-reads-time-as-digits.md"
+  needs: manual_review
+  # UAT note 2026-11-09, corrected 2026-11-11: the booked visit's time text is '9' ':'(U+003A) '0' '0' U+00A0 'A' 'M'. BookingPage::timeLabel() (app/Livewire/BookingPage.php:273) puts U+00A0 before AM/PM on every picker and visit time. The user's "8:00 AM, Tuesday, November 10, button" was quoted as the shape of the phrase, not as proof it was read correctly, so every time may be affected.
 
 - gap_id: G-08-4
   truth: "With a booked visit on the customer's card, the front desk answers 'What time are you coming?' from the card, labeled scheduling (D-39)"
@@ -86,8 +113,23 @@ blocked: 0
   reason: "User reported: 1. D-39: on +13175550177, with a hand-booked AC repair visit for Thursday, November 12 at 10:00 AM on the card, \"What time are you coming?\" (customer reading scheduling 0.99, clean) got the draft \"Thanks for checking. I can't confirm the visit time myself, so the owner will follow up with you on exactly when we're coming.\", labeled other and held (label:other). The customer got the holding reply. The answer was not taken from the card (message 20)."
   severity: major
   test: 4
-  artifacts: []
-  missing: []
+  root_cause: "Shared with G-08-4b. FrontDeskPrompt.php:41 tells the model 'Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.' (added in f425e91 for G-02-2.4, before bookings were recorded by the system). Phase 8 put booked visits on the card (D-38) but D-05 and D-39 left the prompt unchanged, so the rule is now false. The card did carry 'Next appointment: Thursday, November 12, 2026 at 10:00 AM (Central Time)'; the model followed line 41 and deflected, and with no scheduling-shaped answer it labeled the reply other (scheduling is defined at :49 as 'using only the hours and notice in the files'), which DecideSendOrDraft holds as label:other. D-39 as written expects a reply stating the time to be held under the promise label, while the UAT truth says scheduling: D-39 can never give the UAT truth."
+  artifacts:
+    - path: "app/Ai/FrontDeskPrompt.php"
+      issue: "line 41 false since Phase 8; :49 scheduling definition; :72 and 343-379 link note only in earlier turns"
+    - path: "examples/example-hvac/agents/front-desk.md"
+      issue: "loads omits booking.md; body says it leaves promises to the owner"
+    - path: "app/SendRule/DecideSendOrDraft.php"
+      issue: "62-64, 98-99 hold label:other"
+    - path: "tests/Feature/FrontDesk/FrontDeskPromptTest.php"
+      issue: "322-332 pin both line 41 sentences"
+    - path: ".planning/phases/08-schedule-and-booking/08-CONTEXT.md"
+      issue: "D-39 expects a promise hold, not the UAT truth's scheduling label"
+  missing:
+    - "Ian rules first: when a booked customer asks the time, does the answer wait for one owner tap (D-39 as written) or send on its own as scheduling (the UAT truth)? Amend whichever is wrong"
+    - "Then Ian picks a fix option (A1 recommended; A2, B, C, D in the debug session): A1 corrects line 41 so visits recorded on the card are the business's bookings while a time the customer proposes is still not set, and adds a code-owned Booking section built from ServiceToBook's conditions (system adds the link line, page books at once, code texts the confirmation)"
+    - "Keep the label check, Jev and CodeChecks as the nets; re-walk D-05, D-39 and the link-again case in Dev chat"
+  debug_session: ".planning/debug/front-desk-booking-words.md"
   likely_source: "Likely common source for 1 and 2, for diagnosis: FrontDeskPrompt's Phase 2 rule \"Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.\", and nothing the model reads says the system adds a booking link where the customer books a time. Per Ian's METHOD file, fix what the model reads, not a rule that names the words to avoid. A fix there reopens D-05 (\"FrontDeskPrompt unchanged\") and D-39 (\"No new front-desk rule\"), so bring the proposed fix to Ian as a decision before planning it."
   decision_required: "A fix to what the model reads reopens D-05 (FrontDeskPrompt unchanged) and D-39 (no new front-desk rule). Bring the proposed fix to Ian as a decision before planning it."
 
@@ -97,8 +139,19 @@ blocked: 0
   reason: "User reported: 2. The front desk's booking texts say the owner will confirm, which is false now that the page books at once, and they repeat the link line's words. The held offer (message 10) said \"What day works best for you? The owner will confirm the time.\" The sent link-again reply (message 13) said \"Pick a time that works for you, and the owner will confirm the visit. Pick a time that works for you here: [link]\"."
   severity: major
   test: 4
-  artifacts: []
-  missing: []
+  root_cause: "Shared with G-08-4. Same false rule (FrontDeskPrompt.php:41, backed by :37-38 and the agent body's 'It leaves promises and complaints to the owner'), and nothing the model reads says the system appends the owner's link line, that the page books at once, or that code texts the confirmation: booking.md is not in the agent's loads (front-desk.md:10-16) and the only booking note, '(The system added the booking link here.)', appears in earlier turns. So the model wrote its own 'pick a time ... the owner will confirm' and code appended the owner's link line (RunFrontDesk.php:608-615), which says the same thing."
+  artifacts:
+    - path: "app/Ai/FrontDeskPrompt.php"
+      issue: "line 41 false since Phase 8; :49 scheduling definition; :72 and 343-379 link note only in earlier turns"
+    - path: "examples/example-hvac/agents/front-desk.md"
+      issue: "loads omits booking.md; body says it leaves promises to the owner"
+    - path: "app/Actions/RunFrontDesk.php"
+      issue: "601-615 append the link line after the model's words"
+  missing:
+    - "Ian rules first: when a booked customer asks the time, does the answer wait for one owner tap (D-39 as written) or send on its own as scheduling (the UAT truth)? Amend whichever is wrong"
+    - "Then Ian picks a fix option (A1 recommended; A2, B, C, D in the debug session): A1 corrects line 41 so visits recorded on the card are the business's bookings while a time the customer proposes is still not set, and adds a code-owned Booking section built from ServiceToBook's conditions (system adds the link line, page books at once, code texts the confirmation)"
+    - "Keep the label check, Jev and CodeChecks as the nets; re-walk D-05, D-39 and the link-again case in Dev chat"
+  debug_session: ".planning/debug/front-desk-booking-words.md"
   likely_source: "Likely common source for 1 and 2, for diagnosis: FrontDeskPrompt's Phase 2 rule \"Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.\", and nothing the model reads says the system adds a booking link where the customer books a time. Per Ian's METHOD file, fix what the model reads, not a rule that names the words to avoid. A fix there reopens D-05 (\"FrontDeskPrompt unchanged\") and D-39 (\"No new front-desk rule\"), so bring the proposed fix to Ian as a decision before planning it."
   decision_required: "A fix to what the model reads reopens D-05 (FrontDeskPrompt unchanged) and D-39 (no new front-desk rule). Bring the proposed fix to Ian as a decision before planning it."
 
