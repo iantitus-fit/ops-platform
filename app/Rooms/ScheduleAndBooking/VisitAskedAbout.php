@@ -30,6 +30,12 @@ class VisitAskedAbout
      */
     public const string VISIT_CHANGED = 'the visit changed after the line was shown';
 
+    /**
+     * The reason told to the owner when booking is on but the live booking file was synced before visit_line existed, so
+     * the owner knows the fix is a line in their file (WR-10).
+     */
+    public const string NO_VISIT_LINE = 'the booking file has no visit_line yet, so add it and sync again';
+
     public function __construct(private readonly ActiveConfig $config) {}
 
     /**
@@ -74,15 +80,22 @@ class VisitAskedAbout
 
     /**
      * Why a visit line cannot ride now, in words for the owner, or null when it can (D-45 analog). The checks run in
-     * this order and the first failure wins: online booking is off (the room is off, there is no booking file, or the
-     * live version predates visit_line), then the contact has no booked visit ahead. The label and the reading are not a
-     * reason: they are fixed on the draft, and a line is only drawn when they hold. The screen draws its line only when
-     * this is null, and the send asks it again, so the two agree.
+     * this order and the first failure wins: online booking is off (the room is off or there is no booking file), then
+     * the live booking file has no visit_line because it was synced before the field existed (WR-10), then the contact
+     * has no booked visit ahead. The label and the reading are not a reason: they are fixed on the draft, and a line is
+     * only drawn when they hold. The screen draws its line only when this is null, and the send asks it again, so the two
+     * agree.
      */
     public function whyNoLine(Contact $contact): ?string
     {
-        if (BookingSettings::fromConfig($this->config)?->visitLine === null) {
+        $settings = BookingSettings::fromConfig($this->config);
+
+        if ($settings === null) {
             return ServiceToBook::BOOKING_OFF;
+        }
+
+        if ($settings->visitLine === null) {
+            return self::NO_VISIT_LINE;
         }
 
         if (! $contact->appointments()->booked()->ahead()->exists()) {

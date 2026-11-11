@@ -264,7 +264,7 @@ it('checks every condition at approval and says why the visit line was left off 
 })->with([
     'the visit cancelled' => ['visit cancelled', 'no visit is booked ahead'],
     'the booking file deleted' => ['booking file deleted', 'online booking is turned off'],
-    'a version synced before visit_line' => ['older version', 'online booking is turned off'],
+    'a version synced before visit_line' => ['older version', 'the booking file has no visit_line yet, so add it and sync again'],
 ]);
 
 it('sends the draft without the visit line when the visit changed after the line was shown (WR-09)', function (string $case) {

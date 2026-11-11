@@ -236,7 +236,7 @@ class SendOwnerReply
 
         if ($visit === null || $line === null || $line !== $visitLineShown) {
             $leftOff = $line === null
-                ? $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : ServiceToBook::BOOKING_OFF)
+                ? $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : VisitAskedAbout::NO_VISIT_LINE)
                 : VisitAskedAbout::VISIT_CHANGED;
 
             return $this->outboundSender->sendExisting($draft, $composed, SendOrigin::Owner, [

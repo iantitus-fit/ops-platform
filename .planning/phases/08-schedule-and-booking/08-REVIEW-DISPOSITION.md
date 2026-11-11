@@ -9,7 +9,7 @@ findings:
     title: "The visit line sent on approval is not checked against the line the owner saw"
   - id: WR-10
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A booking file synced before `visit_line` existed tells the owner \"online booking is turned off\""
   - id: IN-10
     severity: info
@@ -91,7 +91,7 @@ findings:
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 7
+open: 6
 total: 22
 recorded: 2026-11-11T22:29:44.430Z
 ---
@@ -101,7 +101,7 @@ recorded: 2026-11-11T22:29:44.430Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-09 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: the approve step passes down the visit line on screen, taken from the locked visitLine, and the send leaves the line off with the reason "the visit changed after the line was shown" (VisitAskedAbout::VISIT_CHANGED, in meta.visit_line_left_off and the owner's notice) when the line it would add now differs |
-| WR-10 | warning | open | - |
+| WR-10 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: a booking file synced before visit_line gets its own reason, "the booking file has no visit_line yet, so add it and sync again" (VisitAskedAbout::NO_VISIT_LINE), in whyNoLine() and the send's fallback; "online booking is turned off" stays for the room off or no booking file, and the pinned test row now expects the new reason |
 | IN-10 | info | open | - |
 | IN-11 | info | open | - |
 | IN-12 | info | open | - |
