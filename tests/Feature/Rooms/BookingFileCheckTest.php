@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 
 /**
  * The booking file checks (ROOM-12; D-03, D-28): the sync refuses a booking file whose numbers are out of range, whose send
- * window runs backwards, or whose customer lines hold a missing or stray placeholder, an exclamation point or an em dash.
+ * window runs backwards, or whose customer lines (link, confirmation, reminder and visit) hold a missing or stray placeholder, an exclamation point or an em dash.
  * Each refusal is a plain line that starts with the file's path and names the field, and the previous version stays live.
  * BookingSettings reads the live file back typed, and is null when there is no file, because code holds no default line (D-03).
  */
@@ -51,6 +51,14 @@ it('refuses a broken booking file in plain words', function (string $key, string
     'reminder_line with the day twice' => ['reminder_line', 'reminder_line: "A reminder: {day} {day} at {time}."', 'reminder_line'],
     'link_line ending with an exclamation point' => ['link_line', 'link_line: "Pick a time here: {link}!"', 'link_line'],
     'confirmation_line with an em dash' => ['confirmation_line', 'confirmation_line: "You are booked on {day} at {time} — see you then."', 'confirmation_line'],
+    'visit_line missing' => ['visit_line', '', 'visit_line'],
+    'visit_line without the time' => ['visit_line', 'visit_line: "Your visit is on {day}."', 'visit_line'],
+    'visit_line with the day twice' => ['visit_line', 'visit_line: "Your visit is on {day}, {day} at {time}."', 'visit_line'],
+    'visit_line with a link' => ['visit_line', 'visit_line: "Your visit is on {day} at {time}. {link}"', 'visit_line'],
+    'visit_line with the service twice' => ['visit_line', 'visit_line: "{service}: your {service} visit is on {day} at {time}."', 'visit_line'],
+    'visit_line with an exclamation point' => ['visit_line', 'visit_line: "See you on {day} at {time}!"', 'visit_line'],
+    'visit_line with an em dash' => ['visit_line', 'visit_line: "Your visit is on {day} at {time} — see you then."', 'visit_line'],
+    'visit_line over 300 characters' => ['visit_line', 'visit_line: "Your visit for {service} is on {day} at {time}. To change it, reply to this text. '.str_repeat('More words here. ', 18).'"', 'visit_line'],
 ]);
 
 it('accepts the example booking file and an empty reminder list', function () {
@@ -90,7 +98,21 @@ it('reads the live file back typed', function () {
     expect($settings->renderConfirmation('AC repair', $startsAt, 'America/Chicago'))
         ->toBe('You are booked for AC repair on Thursday, November 5 at 10:00 AM. To change it, reply to this text.')
         ->and($settings->renderReminder('AC repair', $startsAt, 'America/Chicago'))
-        ->toBe('A reminder: AC repair is on Thursday, November 5 at 10:00 AM. To change it, reply to this text.');
+        ->toBe('A reminder: AC repair is on Thursday, November 5 at 10:00 AM. To change it, reply to this text.')
+        ->and($settings->renderVisit('AC repair', $startsAt, 'America/Chicago'))
+        ->toBe('Your visit for AC repair is on Thursday, November 5 at 10:00 AM. To change it, reply to this text.');
+});
+
+it('never quotes the owner\'s visit line in a refusal (T-08-17)', function () {
+    activateExampleFolder();
+    replaceBookingLine('visit_line', 'visit_line: "Zanzibarmarker visit on {name}"');
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    $errors = rejectedErrors();
+
+    expect($errors)->not->toBeEmpty()
+        ->and(implode(' ', $errors))->not->toContain('Zanzibarmarker');
 });
 
 it('is null with no booking file or with the room off', function (string $drop) {
