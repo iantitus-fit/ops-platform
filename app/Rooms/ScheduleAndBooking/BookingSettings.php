@@ -9,7 +9,7 @@ use IntlDateFormatter;
 
 /**
  * The live booking file, read back typed (D-03). Every booking setting is here except booking_lead_minutes, which stays in
- * business/hours.md. Code holds no default link, confirmation or reminder line: with the room off or no booking file,
+ * business/hours.md. Code holds no default link, confirmation, reminder or visit line: with the room off or no booking file,
  * fromConfig() is null and nothing customer-facing can be built from it. Business configuration is read only through
  * ActiveConfig. The sync has already checked the file (BookingFileType), so the values here are the ones it let through.
  */
@@ -17,6 +17,7 @@ final readonly class BookingSettings
 {
     /**
      * @param  list<int>  $reminderHoursBefore
+     * @param  ?string  $visitLine  Null only for a live version compiled before visit_line existed (D-39 amended).
      */
     public function __construct(
         public int $stepMinutes,
@@ -29,6 +30,7 @@ final readonly class BookingSettings
         public string $linkLine,
         public string $confirmationLine,
         public string $reminderLine,
+        public ?string $visitLine = null,
     ) {}
 
     /**
@@ -57,6 +59,7 @@ final readonly class BookingSettings
             linkLine: (string) $file['link_line'],
             confirmationLine: (string) $file['confirmation_line'],
             reminderLine: (string) $file['reminder_line'],
+            visitLine: isset($file['visit_line']) ? (string) $file['visit_line'] : null,
         );
     }
 
@@ -82,6 +85,17 @@ final readonly class BookingSettings
     public function renderReminder(string $service, CarbonInterface $startsAt, string $zone): string
     {
         return $this->renderVisitLine($this->reminderLine, $service, $startsAt, $zone);
+    }
+
+    /**
+     * The owner's visit line for a booked visit the customer asked about (D-39 amended), with the service, day and time
+     * in the business's zone. Null only for a live version compiled before visit_line existed, which the sync requires
+     * from plan 08-24 on. Code still holds no default line (D-03), so such a version sends no visit line until the owner
+     * syncs again, the same shape as ActiveConfig::projectWord()'s older-version case (07-01).
+     */
+    public function renderVisit(string $service, CarbonInterface $startsAt, string $zone): ?string
+    {
+        return $this->visitLine === null ? null : $this->renderVisitLine($this->visitLine, $service, $startsAt, $zone);
     }
 
     /**

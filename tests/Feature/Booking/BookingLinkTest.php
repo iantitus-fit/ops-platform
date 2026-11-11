@@ -242,8 +242,9 @@ it('adds no link and changes nothing else when the room, the file or the service
 it('adds no link while a visit is booked ahead, and adds one after it is cancelled (D-01)', function () {
     bookingLinkRunsScheduling(beforeRun: fn (Contact $contact) => bookingLinkVisitAhead($contact));
 
+    // Re-pointed by 08-24: a booked customer's scheduling reply now carries the owner's visit line (D-39 amended).
     expect(bookingLinkTextsToDana())->toHaveCount(1)
-        ->and(bookingLinkTextsToDana()[0])->toBe(composedFirstReply('We can get a tech out this week.'))
+        ->and(bookingLinkTextsToDana()[0])->toBe(composedFirstReply('We can get a tech out this week. Your visit for AC repair is on Thursday, November 5 at 10:00 AM. To change it, reply to this text.'))
         ->and(BookingLink::query()->count())->toBe(0);
 
     Appointment::sole()->forceFill(['state' => AppointmentState::Cancelled])->save();

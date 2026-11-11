@@ -30,6 +30,7 @@ use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Rooms\ScheduleAndBooking\BookingSettings;
 use App\Rooms\ScheduleAndBooking\ServiceToBook;
+use App\Rooms\ScheduleAndBooking\VisitAskedAbout;
 use App\Rooms\ScheduleAndBooking\WithdrawUnsentLink;
 use App\SendRule\AsksForPerson;
 use App\SendRule\CustomerReading;
@@ -151,6 +152,7 @@ class RunFrontDesk
         private readonly ResolveDraft $resolveDraft,
         private readonly ReadCustomerText $readCustomerText,
         private readonly ServiceToBook $serviceToBook,
+        private readonly VisitAskedAbout $visitAskedAbout,
         private readonly MintBookingLink $mintBookingLink,
         private readonly WithdrawUnsentLink $withdrawUnsentLink,
     ) {}
@@ -265,7 +267,8 @@ class RunFrontDesk
             return;
         }
 
-        $this->changeRequestVisit = $this->visitAskedAbout($conversation, $run->reply->label);
+        $visit = $this->visitAskedAbout->find($conversation->contact, $this->readingIntent(), $run->reply->label);
+        $this->changeRequestVisit = $visit === null ? null : $this->visitAskedAbout->describe($visit);
 
         $this->answerFromAgentReply($agent, $run, $conversation, $burst, $waiting);
         $this->raiseChangeRequestWhenNoAlertWent($conversation);
@@ -445,27 +448,12 @@ class RunFrontDesk
     }
 
     /**
-     * The contact's earliest booked visit still ahead, described as "AC repair, Thursday, November 5 at 10:00 AM" in the
-     * business zone, when this text is about scheduling; otherwise null (D-34). A text is about scheduling when the
-     * reading's intent is the owner's `scheduling` intent or the agent labeled its reply scheduling. The visit is read
-     * through the contact's appointments() relation, so this class never imports the Appointment model: it writes
-     * messages and never an appointment (D-04).
+     * The intent Jev read in the customer's text, or null when it gave none. With the reply's label it decides whether
+     * the text is about scheduling (VisitAskedAbout, D-34).
      */
-    private function visitAskedAbout(Conversation $conversation, ReplyLabel $label): ?string
+    private function readingIntent(): ?string
     {
-        if (($this->reading()->answers['intent'] ?? null) !== 'scheduling' && $label !== ReplyLabel::Scheduling) {
-            return null;
-        }
-
-        $visit = $conversation->contact->appointments()->booked()->ahead()->orderBy('starts_at')->first();
-
-        if ($visit === null) {
-            return null;
-        }
-
-        $start = $visit->starts_at->copy()->setTimezone($this->activeConfig->displayTimezone());
-
-        return $visit->service_name.', '.$start->format('l, F j').' at '.$start->format('g:i A');
+        return $this->reading()->answers['intent'] ?? null;
     }
 
     /**
@@ -594,6 +582,12 @@ class RunFrontDesk
      * (WithdrawUnsentLink). Once the text is out the link stays live, and a failure to record which message carried it is
      * reported, because BookAppointment::alertOwner() finds that message by meta.booking_link_id (D-33).
      *
+     * When no link rides, a reply the model wrote words for also carries the owner's visit line (D-39 amended) if the
+     * contact has a visit booked ahead and the text is about scheduling, under VisitAskedAbout's one condition. It is
+     * added after the verdict, as one more code-owned part on the same agent_reply kind, so the model's words were judged
+     * without it and a held draft never carries it. meta.visit_line_appointment_id records which visit it named. It never
+     * rides with the link line: ServiceToBook refuses a link while a visit is booked ahead.
+     *
      * @param  Collection<int, Message>  $burst
      * @param  array<string, mixed>  $attributes
      * @param  array{meta: array<string, mixed>}  $sentMeta
@@ -615,7 +609,17 @@ class RunFrontDesk
                 }
             }
 
-            $sent = $link === null && $parts->codeSentences === [] && $parts->line === null
+            if ($link === null && $parts->hasModelWords()) {
+                $visit = $this->visitAskedAbout->find($conversation->contact, $this->readingIntent(), $run->reply->label);
+                $visitLine = $visit === null ? null : $this->visitAskedAbout->line($visit);
+
+                if ($visit !== null && $visitLine !== null && $this->visitLineFits($conversation, $parts, $visitLine)) {
+                    $parts = $this->withVisitLine($parts, $visitLine);
+                    $sentMeta = ['meta' => [...$sentMeta['meta'], 'visit_line_appointment_id' => $visit->id]];
+                }
+            }
+
+            $sent = $link === null && $parts->codeSentences === [] && $parts->line === null && $parts->visitLine === null
                 ? $this->outboundSender->send(
                     $conversation,
                     $composed,
@@ -672,6 +676,15 @@ class RunFrontDesk
     }
 
     /**
+     * Whether the text still fits the 1,600-character limit with the owner's visit line in it. A line that would pass
+     * the limit is left off (D-39 amended).
+     */
+    private function visitLineFits(Conversation $conversation, ReplyParts $parts, string $visitLine): bool
+    {
+        return $this->sendCombinedReply->composedLength($conversation, $this->withVisitLine($parts, $visitLine)) <= SendOwnerReply::MAX_LENGTH;
+    }
+
+    /**
      * The service a draft that carries over a waiting draft's label is about: the waiting draft's own when it has a
      * label (the label and the service belong together), otherwise the run's (D-45).
      */
@@ -692,6 +705,23 @@ class RunFrontDesk
             lineKind: $parts->lineKind,
             line: $parts->line,
             bookingLine: $bookingLine,
+            visitLine: $parts->visitLine,
+        );
+    }
+
+    /**
+     * A copy of the parts with the owner's visit line added after the fixed line.
+     */
+    private function withVisitLine(ReplyParts $parts, string $visitLine): ReplyParts
+    {
+        return new ReplyParts(
+            complaintLine: $parts->complaintLine,
+            codeSentences: $parts->codeSentences,
+            modelWords: $parts->modelWords,
+            lineKind: $parts->lineKind,
+            line: $parts->line,
+            bookingLine: $parts->bookingLine,
+            visitLine: $visitLine,
         );
     }
 
