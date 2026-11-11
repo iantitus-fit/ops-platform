@@ -37,7 +37,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [x] **ROOM-09**: Marketing room, to the room standard. It owns `business/lead-sources.md` and `business/offers/`; the leads room and the front desk read them.
 - [x] **ROOM-10**: Content generation room, to the room standard, with no connector.
 - [x] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). It owns one file in `rooms/google_business_profile/` holding the primary category and up to 9 additional categories, and reads `business/profile.md`, `business/hours.md`, `business/services/*.md` and `business/offers/*.md`. Its slot is read-only (one method fetches the listing), and its connector file declares `owns: none` and `reads: none`. *(Phase 5 discuss, 2026-10-25, `05-CONTEXT.md` D-06 to D-11. Affects: marketing, knowledge, connectors and data.)*
-- [ ] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
+- [x] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
 - [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [x] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
 - [x] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
@@ -208,7 +208,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-09 | Phase 5 | Complete |
 | ROOM-10 | Phase 5 | Complete |
 | ROOM-11 | Phase 5 | Complete |
-| ROOM-12 | Phase 8 | Gaps Found |
+| ROOM-12 | Phase 8 | Complete |
 | ROOM-13 | Phase 9 | Pending |
 | ROOM-14 | Phase 5 | Complete |
 | ROOM-15 | Phase 6 | Complete |

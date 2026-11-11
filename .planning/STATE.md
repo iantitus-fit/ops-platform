@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-23-PLAN.md
-last_updated: "2026-11-08T22:40:27.546Z"
-last_activity: 2026-11-08
+stopped_at: Completed 08-24-PLAN.md
+last_updated: "2026-11-11T20:54:43.961Z"
+last_activity: 2026-11-11
 last_activity_desc: Phase 08 execution started
-state_head: 216faf600fc5f7d974ae8954863ddddb792d10c1
+state_head: 09ce9103c102c439fadb18cceb2ee64b59d5d56b
 progress:
   total_phases: 9
   completed_phases: 4
-  total_plans: 57
-  completed_plans: 57
+  total_plans: 60
+  completed_plans: 58
   percent: 44
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 2 of 23
+Plan: 2 of 26
 Status: Ready to execute
-Last activity: 2026-11-08 — Phase 08 execution started
+Last activity: 2026-11-11 — Phase 08 execution started
 
 Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 
@@ -197,6 +197,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P21 | 17 min | 2 tasks | 6 files |
 | Phase 08 P22 | 17 min | 2 tasks | 9 files |
 | Phase 08 P23 | 22 min | 3 tasks | 7 files |
+| Phase 08 P24 | 20 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -305,6 +306,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-21: footer disclosure hover border lives on the details element that carries border-2; a contract check forbids hover:border-accent without border-2 on every customer state (UI-FOOTER-HOVER)
 - [Phase 08]: 08-22: tryAgain() goes through withinLimit(), so a limited address cannot get around the limit; every booking-page state branch carries a wire:key so a retry's new heading takes focus
 - [Phase 08]: 08-23: Book by hand and Block time dialogs both name the zone through BookingSettings::zoneName(); IN-03 next-opening variant not added (the line is drawn before a time is picked; default stays true per D-28); Past splits booked rows by ends_at, done visits keep starts_at (D-40)
+- [Phase 08]: 08-24: the visit line is a visit_line part on agent_reply, not a new kind; OutboundSender holds it to the owner-sentence rule, and it is considered only when no booking link was minted
+- [Phase 08]: 08-24: BookingSettings::visitLine is nullable so a version compiled before visit_line sends no line and nothing throws (D-03)
 
 ### Pending Todos
 
@@ -371,8 +374,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T22:40:22.587Z
-Stopped at: Completed 08-23-PLAN.md
+Last session: 2026-11-11T20:54:43.864Z
+Stopped at: Completed 08-24-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
