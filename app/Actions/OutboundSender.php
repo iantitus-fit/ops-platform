@@ -542,6 +542,7 @@ class OutboundSender
                 'code_sentences' => $reading->allowsOwnerSentences() ? null : "an owner sentence needs a clean reading of the customer's text",
                 'model_words' => $this->whyModelWordsAreBlocked($attributes, $reading),
                 'booking_link' => $reading->allowsOwnerSentences() ? null : "a booking link needs a clean reading of the customer's text",
+                'visit_line' => $reading->allowsOwnerSentences() ? null : "a visit line needs a clean reading of the customer's text",
                 default => null,
             };
 
@@ -554,7 +555,9 @@ class OutboundSender
     }
 
     /**
-     * The parts a text is made of. A combined text records them in meta.parts. A text with no parts is the model's words
+     * The parts a text is made of. The visit line (D-39 amended) is the owner's visit_line rendered by code for a booked
+     * visit; it is held to the owner-sentence rule like the booking link, so a complaint reading never lets it out, and it
+     * rides on agent_reply, so no kind is added. A combined text records its parts in meta.parts. A text with no parts is the model's words
      * when its kind is agent_reply, and a text with no kind is treated the same, so a path that forgets to name its kind
      * is held to the strictest rule. A kind only a combined text has (code_answer, partial_holding, check_in_reply,
      * added_info_reply) that arrives without its parts is held to the strictest rule too, owner sentences and model
