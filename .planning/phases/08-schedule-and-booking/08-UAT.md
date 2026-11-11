@@ -3,7 +3,7 @@ status: diagnosed
 phase: 08-schedule-and-booking
 source: [08-VERIFICATION.md]
 started: 2026-11-08T23:30:00Z
-updated: 2026-11-11T19:11:16Z
+updated: 2026-11-11T19:40:23Z
 ---
 
 ## Current Test
@@ -22,9 +22,11 @@ reclassified: "Environment, not an app defect (Ian, 2026-11-11): in an Incognito
 
 ### 2. VoiceOver walk of the booking page (picker, check step, confirmation, rate-limited notice, footer disclosures)
 expected: Each time is announced with its day and time; focus moves to the confirmation; errors are read beside the field; the footer disclosures are announced as expandable
-result: issue
+result: pass
 reported: "Issue, cosmetic. The VoiceOver walk otherwise passed: each day is read as a disclosure with expanded or collapsed; each time is read as one phrase with its day, for example \"8:00 AM, Tuesday, November 10, button\", in a list of 8; Enter on a time moves VoiceOver to \"Check your time, heading level 2\"; \"Book this time\" and \"Choose a different time\" are read as buttons; booking moves VoiceOver to \"You are booked, heading level 1\"; the footer's Privacy notice and Accessibility statement are read as disclosures with collapsed and expanded. The one problem: VoiceOver reads 9:00 AM as \"nine zero zero\" instead of as a time. Check the exact characters in the time's accessible text (for example a narrow no-break space before AM from date formatting, or a non-standard colon) and whether every time is affected. Not walked with VoiceOver: the rate-limited notice and the taken-time error; the browser tests cover their focus and button names."
 severity: cosmetic
+original_result: issue
+reclassified: "VoiceOver behaviour in Chrome, not an app defect (Ian, 2026-11-11): on the probe page every time row (plain space, U+00A0 and U+202F, as definition-list values and as button names) read \"nine zero zero\" with Read numbers as set to Words, so the character makes no difference. Closed with no code change; showing on-the-hour times as \"9 AM\" is a ROADMAP Phase 11 planning note for Ian. Every other part of check 2 passed as reported."
 
 ### 3. 200% zoom of the booking page, and 320 px reflow
 expected: The page reflows and stays usable. No test covers 320 px (08-UI-REVIEW.md)
@@ -55,8 +57,8 @@ not_walked: "VoiceOver on owner screens moves to Phase 11, as in Phase 7"
 ## Summary
 
 total: 7
-passed: 5
-issues: 2
+passed: 6
+issues: 1
 pending: 0
 skipped: 0
 blocked: 0
@@ -87,7 +89,7 @@ blocked: 0
 
 - gap_id: G-08-2
   truth: "VoiceOver reads every time on the booking page as a time (9:00 AM as 'nine A M'), not as separate digits"
-  status: failed
+  status: closed
   reason: "User reported: Issue, cosmetic. The VoiceOver walk otherwise passed: each day is read as a disclosure with expanded or collapsed; each time is read as one phrase with its day, for example \"8:00 AM, Tuesday, November 10, button\", in a list of 8; Enter on a time moves VoiceOver to \"Check your time, heading level 2\"; \"Book this time\" and \"Choose a different time\" are read as buttons; booking moves VoiceOver to \"You are booked, heading level 1\"; the footer's Privacy notice and Accessibility statement are read as disclosures with collapsed and expanded. The one problem: VoiceOver reads 9:00 AM as \"nine zero zero\" instead of as a time. Check the exact characters in the time's accessible text (for example a narrow no-break space before AM from date formatting, or a non-standard colon) and whether every time is affected. Not walked with VoiceOver: the rate-limited notice and the taken-time error; the browser tests cover their focus and button names."
   severity: cosmetic
   test: 2
@@ -107,7 +109,8 @@ blocked: 0
     - "If every number reads as digits: VoiceOver setting, close as environment"
     - "If plain-space times also read as digits: a different spoken form conflicts with WCAG 2.5.3 label-in-name; bring to Ian as a decision"
   debug_session: ".planning/debug/voiceover-reads-time-as-digits.md"
-  needs: manual_review
+  closed_as: environment
+  closed_by: "Ian, 2026-11-11: every probe row read \"nine zero zero\" whatever the space character, with Read numbers as set to Words; this is how VoiceOver reads 9:00 in Chrome. No code change. The 9 AM wording idea went to ROADMAP Phase 11 planning notes."
   # UAT note 2026-11-09, corrected 2026-11-11: the booked visit's time text is '9' ':'(U+003A) '0' '0' U+00A0 'A' 'M'. BookingPage::timeLabel() (app/Livewire/BookingPage.php:273) puts U+00A0 before AM/PM on every picker and visit time. The user's "8:00 AM, Tuesday, November 10, button" was quoted as the shape of the phrase, not as proof it was read correctly, so every time may be affected.
 
 - gap_id: G-08-4
