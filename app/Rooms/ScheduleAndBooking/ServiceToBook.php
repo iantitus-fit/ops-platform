@@ -4,6 +4,7 @@ namespace App\Rooms\ScheduleAndBooking;
 
 use App\Enums\ReplyLabel;
 use App\Icm\ActiveConfig;
+use App\Models\Contact;
 use App\Models\Conversation;
 
 /**
@@ -54,6 +55,15 @@ class ServiceToBook
     }
 
     /**
+     * Whether the contact has a visit booked still ahead. The link send, the owner's approval and the front desk's prompt
+     * all ask this one method (D-39 amended), so what the model is told about links cannot drift from when a link rides.
+     */
+    public function visitBookedAhead(Contact $contact): bool
+    {
+        return $contact->appointments()->booked()->ahead()->exists();
+    }
+
+    /**
      * @return array{0: ?string, 1: ?string} The reason no link may ride, and the service slug when none stops it.
      */
     private function check(Conversation $conversation, ?string $serviceSlug): array
@@ -72,7 +82,7 @@ class ServiceToBook
             return [self::SERVICE_NOT_BOOKABLE, null];
         }
 
-        if ($conversation->contact->appointments()->booked()->ahead()->exists()) {
+        if ($this->visitBookedAhead($conversation->contact)) {
             return [self::VISIT_BOOKED, null];
         }
 
