@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 08
 current_phase_name: Schedule and Booking
 status: executing
-stopped_at: Completed 08-24-PLAN.md
-last_updated: "2026-11-11T20:54:43.961Z"
+stopped_at: Completed 08-25-PLAN.md
+last_updated: "2026-11-11T21:16:22.726Z"
 last_activity: 2026-11-11
 last_activity_desc: Phase 08 execution started
-state_head: 09ce9103c102c439fadb18cceb2ee64b59d5d56b
+state_head: cebc04a9cfe12b5a09d505fb958df50a9b7bb11a
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 60
-  completed_plans: 58
+  completed_plans: 59
   percent: 44
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-01)
 ## Current Position
 
 Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 2 of 26
+Plan: 3 of 26
 Status: Ready to execute
 Last activity: 2026-11-11 — Phase 08 execution started
 
@@ -198,6 +198,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 08 P22 | 17 min | 2 tasks | 9 files |
 | Phase 08 P23 | 22 min | 3 tasks | 7 files |
 | Phase 08 P24 | 20 min | 3 tasks | 12 files |
+| Phase 08 P25 | 19 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -308,6 +309,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-23: Book by hand and Block time dialogs both name the zone through BookingSettings::zoneName(); IN-03 next-opening variant not added (the line is drawn before a time is picked; default stays true per D-28); Past splits booked rows by ends_at, done visits keep starts_at (D-40)
 - [Phase 08]: 08-24: the visit line is a visit_line part on agent_reply, not a new kind; OutboundSender holds it to the owner-sentence rule, and it is considered only when no booking link was minted
 - [Phase 08]: 08-24: BookingSettings::visitLine is nullable so a version compiled before visit_line sends no line and nothing throws (D-03)
+- [Phase 08]: 08-25: the visit line on a held draft is settled as D-45 settles the link: the owner's approval decides, every condition is checked again at approval, a line is added only when it was on screen, and a length overrun refuses Send rather than dropping the line. No mint, no new kind, no agent action: the owner's own send through OutboundSender::sendExisting().
 
 ### Pending Todos
 
@@ -374,8 +376,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-11T20:54:43.864Z
-Stopped at: Completed 08-24-PLAN.md
+Last session: 2026-11-11T21:16:22.617Z
+Stopped at: Completed 08-25-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
