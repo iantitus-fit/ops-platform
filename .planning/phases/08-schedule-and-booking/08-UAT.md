@@ -108,7 +108,7 @@ blocked: 0
   # UAT note 2026-11-09, corrected 2026-11-11: the booked visit's time text is '9' ':'(U+003A) '0' '0' U+00A0 'A' 'M'. BookingPage::timeLabel() (app/Livewire/BookingPage.php:273) puts U+00A0 before AM/PM on every picker and visit time. The user's "8:00 AM, Tuesday, November 10, button" was quoted as the shape of the phrase, not as proof it was read correctly, so every time may be affected.
 
 - gap_id: G-08-4
-  truth: "With a booked visit on the customer's card, the front desk answers 'What time are you coming?' from the card, labeled scheduling (D-39)"
+  truth: "With a visit booked ahead, the front desk's reply to 'What time are you coming?' sends on its own, labeled scheduling, and code adds the owner's visit_line with the appointment's day and time; the model's words never state them (D-39 as amended by Ian, 2026-11-11)"
   status: failed
   reason: "User reported: 1. D-39: on +13175550177, with a hand-booked AC repair visit for Thursday, November 12 at 10:00 AM on the card, \"What time are you coming?\" (customer reading scheduling 0.99, clean) got the draft \"Thanks for checking. I can't confirm the visit time myself, so the owner will follow up with you on exactly when we're coming.\", labeled other and held (label:other). The customer got the holding reply. The answer was not taken from the card (message 20)."
   severity: major
@@ -131,7 +131,7 @@ blocked: 0
     - "Keep the label check, Jev and CodeChecks as the nets; re-walk D-05, D-39 and the link-again case in Dev chat"
   debug_session: ".planning/debug/front-desk-booking-words.md"
   likely_source: "Likely common source for 1 and 2, for diagnosis: FrontDeskPrompt's Phase 2 rule \"Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.\", and nothing the model reads says the system adds a booking link where the customer books a time. Per Ian's METHOD file, fix what the model reads, not a rule that names the words to avoid. A fix there reopens D-05 (\"FrontDeskPrompt unchanged\") and D-39 (\"No new front-desk rule\"), so bring the proposed fix to Ian as a decision before planning it."
-  decision_required: "A fix to what the model reads reopens D-05 (FrontDeskPrompt unchanged) and D-39 (no new front-desk rule). Bring the proposed fix to Ian as a decision before planning it."
+  decision: "Ian, 2026-11-11: option A (rewrite FrontDeskPrompt line 41; conditional code-owned Booking section) plus a code-owned visit_line slot in ReplyParts filled under visitAskedAbout's condition, words from booking.md visit_line; no model flag, no new message kind (bring back to Ian if 02.1 D-49 needs one). Recorded as D-39 amended in 08-CONTEXT.md, reopening D-05."
 
 - gap_id: G-08-4b
   truth: "The front desk's booking texts never say the owner will confirm the time (the page books at once) and do not repeat the link line's words"
@@ -153,7 +153,7 @@ blocked: 0
     - "Keep the label check, Jev and CodeChecks as the nets; re-walk D-05, D-39 and the link-again case in Dev chat"
   debug_session: ".planning/debug/front-desk-booking-words.md"
   likely_source: "Likely common source for 1 and 2, for diagnosis: FrontDeskPrompt's Phase 2 rule \"Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.\", and nothing the model reads says the system adds a booking link where the customer books a time. Per Ian's METHOD file, fix what the model reads, not a rule that names the words to avoid. A fix there reopens D-05 (\"FrontDeskPrompt unchanged\") and D-39 (\"No new front-desk rule\"), so bring the proposed fix to Ian as a decision before planning it."
-  decision_required: "A fix to what the model reads reopens D-05 (FrontDeskPrompt unchanged) and D-39 (no new front-desk rule). Bring the proposed fix to Ian as a decision before planning it."
+  decision: "Ian, 2026-11-11: option A (rewrite FrontDeskPrompt line 41; conditional code-owned Booking section) plus a code-owned visit_line slot in ReplyParts filled under visitAskedAbout's condition, words from booking.md visit_line; no model flag, no new message kind (bring back to Ian if 02.1 D-49 needs one). Recorded as D-39 amended in 08-CONTEXT.md, reopening D-05."
 
 ## Deferred Follow-Ups
 
