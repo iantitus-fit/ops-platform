@@ -19,9 +19,13 @@ use App\Models\IcmVersion;
 use App\Models\Message;
 use App\Models\OwnerAlert;
 use App\Models\User;
+use App\Records\CustomerCard;
+use App\Rooms\ScheduleAndBooking\VisitAskedAbout;
 use App\SendRule\CustomerReading;
 use App\SendRule\ReplyParts;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -299,3 +303,36 @@ it('leaves the visit line off at the length limit and keeps it at exactly 1,600 
     '1601 characters leaves it off' => [1601, false],
     '1600 characters keeps it' => [1600, true],
 ]);
+
+it('names the visit the customer card names when two visits start at the same minute (IN-11)', function (bool $furnaceFirst) {
+    $thursday = CarbonImmutable::parse('2026-11-05 10:00', 'America/Chicago');
+
+    visitLineBookedDanaAsks(visit: function (Contact $dana) use ($thursday, $furnaceFirst): void {
+        $services = $furnaceFirst ? ['Furnace repair', 'AC repair'] : ['AC repair', 'Furnace repair'];
+
+        foreach ($services as $service) {
+            Appointment::factory()->for($dana)->at($thursday)->create(['service_name' => $service]);
+        }
+    });
+
+    $first = Appointment::query()->orderBy('id')->first();
+
+    expect(visitLineTextsToDana()[0])->toContain('Your visit for '.$first->service_name.' is on Thursday, November 5 at 10:00 AM.')
+        ->and(theAgentMessage()->meta['visit_line_appointment_id'])->toBe($first->id)
+        ->and(app(CustomerCard::class)->render(Contact::sole()))->toContain('- Next appointment: Thursday, November 5, 2026 at 10:00 AM (Central Time), '.$first->service_name.',');
+})->with(['the furnace visit added first' => [true], 'the AC visit added first' => [false]]);
+
+it('breaks a tie between visits at the same minute by id, as the customer card does (IN-11)', function () {
+    visitLineBookedDanaAsks();
+
+    $queries = [];
+    DB::listen(function (QueryExecuted $query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    app(VisitAskedAbout::class)->find(Contact::sole(), 'scheduling', null);
+
+    // SQLite already returns tied rows in id order, so the query itself is checked: another database may not.
+    expect(collect($queries)->filter(fn (string $sql): bool => str_contains($sql, '"appointments"')))->toHaveCount(1)
+        ->and(collect($queries)->first(fn (string $sql): bool => str_contains($sql, '"appointments"')))->toContain('order by "starts_at" asc, "id" asc');
+});

@@ -47,7 +47,9 @@ class VisitAskedAbout
     }
 
     /**
-     * The contact's earliest booked visit still ahead, when the text is about scheduling; otherwise null.
+     * The contact's earliest booked visit still ahead, when the text is about scheduling; otherwise null. Two visits at
+     * the same minute go by id, the order CustomerCard uses, so the line, the owner's alert and the card the model reads
+     * name the same visit (IN-11).
      */
     public function find(Contact $contact, ?string $readingIntent, ?ReplyLabel $label): ?Appointment
     {
@@ -55,7 +57,7 @@ class VisitAskedAbout
             return null;
         }
 
-        return $contact->appointments()->booked()->ahead()->orderBy('starts_at')->first();
+        return $contact->appointments()->booked()->ahead()->orderBy('starts_at')->orderBy('id')->first();
     }
 
     /**
