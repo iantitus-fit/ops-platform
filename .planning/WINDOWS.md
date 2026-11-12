@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 49
+open_count: 43
 waived_count: 1
-fixed_count: 29
+fixed_count: 35
 total_count: 79
-last_updated: 2026-11-11T21:23:19.850Z
+last_updated: 2026-11-12T20:54:47.363Z
 ---
 
 # Broken Windows Ledger
@@ -88,12 +88,12 @@ last_updated: 2026-11-11T21:23:19.850Z
 | 71 | 08 | unrun-verify | tests/Feature/Filament/ContactScreenKeyboardTest.php |  | 08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43) | open |  | 2026-11-07T16:29:09.095Z |  |
 | 72 | 08 | unrun-verify | .planning/phases/08-schedule-and-booking/08-16-PLAN.md |  | 08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only) | open |  | 2026-11-07T21:01:46.558Z |  |
 | 73 | 08 | unrun-verify | app/Records/CustomerCard.php |  | 08-16 Phase 8 UAT, Dev chat: a booked customer asks "what time are you coming?" and the reply is checked; it states the booked time or is held by the promise label (D-39) | open |  | 2026-11-07T21:01:46.663Z |  |
-| 74 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkLeakTest.php |  | 08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read | open |  | 2026-11-08T15:40:01.019Z |  |
-| 75 | 08 | unrun-verify | app/Support/BookingLinkTokens.php |  | 08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route("booking.show", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3) | open |  | 2026-11-08T15:40:01.106Z |  |
-| 76 | 08 | unrun-verify | tests/Feature/Booking/LinksBeforeTheFixTest.php |  | 08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres) | open |  | 2026-11-08T17:31:24.630Z |  |
-| 77 | 08 | unrun-verify | tests/Feature/Booking/BookingSendOnceTest.php |  | 08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL) | open |  | 2026-11-08T18:28:01.346Z |  |
-| 78 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes | open |  | 2026-11-08T21:49:34.898Z |  |
-| 79 | 08 | unrun-verify | app/Ai/FrontDeskPrompt.php |  | 08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25) | open |  | 2026-11-11T21:23:19.850Z |  |
+| 74 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkLeakTest.php |  | 08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T15:40:01.019Z | 2026-11-12T20:54:46.631Z |
+| 75 | 08 | unrun-verify | app/Support/BookingLinkTokens.php |  | 08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route("booking.show", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3) | fixed | Settled in 08-UAT.md: check 4 walked the link-again case and the held draft live, and check 8 re-walked them (no booking address in the model's words) | 2026-11-08T15:40:01.106Z | 2026-11-12T20:54:46.729Z |
+| 76 | 08 | unrun-verify | tests/Feature/Booking/LinksBeforeTheFixTest.php |  | 08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres) | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T17:31:24.630Z | 2026-11-12T20:54:46.896Z |
+| 77 | 08 | unrun-verify | tests/Feature/Booking/BookingSendOnceTest.php |  | 08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL) | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T18:28:01.346Z | 2026-11-12T20:54:47.097Z |
+| 78 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes | fixed | Settled in 08-UAT.md: checks 1 and 2 (keyboard-only walk at desktop and 375 px including Try again, and the VoiceOver walk) | 2026-11-08T21:49:34.898Z | 2026-11-12T20:54:47.227Z |
+| 79 | 08 | unrun-verify | app/Ai/FrontDeskPrompt.php |  | 08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25) | fixed | Settled in 08-UAT.md check 8 (Dev chat re-walk, 2026-11-12): the code path and visit line held live; the remaining holds are a known limitation Ian routed to Phase 10 | 2026-11-11T21:23:19.850Z | 2026-11-12T20:54:47.363Z |
 
 ````json
 [
@@ -1053,10 +1053,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "tests/Feature/Booking/BookingLinkLeakTest.php",
     "line": null,
     "description": "08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
     "recorded_at": "2026-11-08T15:40:01.019Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:46.631Z",
     "milestone": "v2.0"
   },
   {
@@ -1066,10 +1066,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "app/Support/BookingLinkTokens.php",
     "line": null,
     "description": "08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route(\"booking.show\", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md: check 4 walked the link-again case and the held draft live, and check 8 re-walked them (no booking address in the model's words)",
     "recorded_at": "2026-11-08T15:40:01.106Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:46.729Z",
     "milestone": "v2.0"
   },
   {
@@ -1079,10 +1079,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "tests/Feature/Booking/LinksBeforeTheFixTest.php",
     "line": null,
     "description": "08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
     "recorded_at": "2026-11-08T17:31:24.630Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:46.896Z",
     "milestone": "v2.0"
   },
   {
@@ -1092,10 +1092,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "tests/Feature/Booking/BookingSendOnceTest.php",
     "line": null,
     "description": "08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
     "recorded_at": "2026-11-08T18:28:01.346Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:47.097Z",
     "milestone": "v2.0"
   },
   {
@@ -1105,10 +1105,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "resources/views/livewire/booking-page.blade.php",
     "line": null,
     "description": "08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md: checks 1 and 2 (keyboard-only walk at desktop and 375 px including Try again, and the VoiceOver walk)",
     "recorded_at": "2026-11-08T21:49:34.898Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:47.227Z",
     "milestone": "v2.0"
   },
   {
@@ -1118,10 +1118,10 @@ last_updated: 2026-11-11T21:23:19.850Z
     "file": "app/Ai/FrontDeskPrompt.php",
     "line": null,
     "description": "08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25)",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md check 8 (Dev chat re-walk, 2026-11-12): the code path and visit line held live; the remaining holds are a known limitation Ian routed to Phase 10",
     "recorded_at": "2026-11-11T21:23:19.850Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-12T20:54:47.363Z",
     "milestone": "v2.0"
   }
 ]

@@ -344,7 +344,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
 - [Phase 7, carried]: review info findings open for Ian's triage (07-REVIEW-DISPOSITION.md): IN-02, IN-03, IN-06 and IN-08 to IN-11; IN-08 (the focus wait catches every error, not only the timeout) is the one worth fixing before the next browser walk. WINDOWS rows 38 and 44 now belong to Phase 11. BLUEPRINT records three UAT follow-ups: phone numbers shown raw (Phase 11), VoiceOver "clickable" on plain text (Phase 11), and the example triage life_safety question counting a furnace as a plugged-in appliance (reword after Phase 7)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
-- [Phase 8, carried]: increment review info IN-13 (the visit-changed reason is also given when only the wording or zone changed), IN-14 (a live version compiled before visit_line gets no line and no explanation) and IN-15 (SETUP.md upgrade note under the wrong heading) are open for Ian's triage (08-REVIEW-DISPOSITION.md); IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild).
+- [Phase 8, carried]: increment review triaged by Ian on 2026-11-12 (08-REVIEW-DISPOSITION.md): IN-13 (the visit-changed reason is also given when only the wording or zone changed) deferred to Phase 9 next to IN-06, fix a reason true in every case, "the line changed after it was shown", plus the BLUEPRINT line; IN-14 closed with no change (no folder can be in that state: the example folder is at version 2 with visit_line and every sync requires it); IN-15 fixed (docs/SETUP.md section 13, Upgrading a business folder). IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild).
 - [Phase 8, carried to Phase 10]: the front desk's Booking section wording (BOOKING_ONLINE, BOOKING_VISIT_BOOKED) is measured and settled with the walk tests next to the bar calibration, so a booked customer's time question and a link resend send on their own (ROADMAP Phase 10 planning notes; 08-UAT.md check 8).
 
 ### Quick Tasks Completed
@@ -389,5 +389,4 @@ Resume file: None
 ## Operator Next Steps
 
 - Review, push and merge the Phase 8 branch (gsd/phase-08-schedule-and-booking); CI was green on both legs at 6b762eb (run #65); the commits after it are docs only
-- Triage IN-13 to IN-15 in 08-REVIEW-DISPOSITION.md
 - Discuss Phase 9 with /gsd-discuss-phase 9, then plan it with /gsd-plan-phase 9

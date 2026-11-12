@@ -5,15 +5,15 @@ titles: json
 findings:
   - id: IN-13
     severity: info
-    disposition: open
+    disposition: deferred
     title: "\"The visit changed after the line was shown\" is also said when the visit did not change"
   - id: IN-14
     severity: info
-    disposition: open
+    disposition: skipped
     title: "The WR-10 reason can only be reached by a downgrade the platform cannot do, so the real case stays silent"
   - id: IN-15
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The IN-10 note sits under a heading that says the sync cannot check it"
   - id: WR-09
     severity: warning
@@ -103,7 +103,7 @@ findings:
     severity: info
     disposition: deferred
     title: "The customer card's \"Next appointment\" line depends on the clock, so a rendered card goes stale"
-open: 6
+open: 3
 total: 25
 recorded: 2026-11-12T00:00:00.000Z
 ---
@@ -112,9 +112,9 @@ recorded: 2026-11-12T00:00:00.000Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| IN-13 | info | open | - (increment review 2026-11-12, 8269ff1^..6b762eb; awaiting Ian) |
-| IN-14 | info | open | - (increment review 2026-11-12, 8269ff1^..6b762eb; awaiting Ian) |
-| IN-15 | info | open | - (increment review 2026-11-12, 8269ff1^..6b762eb; awaiting Ian) |
+| IN-13 | info | deferred | Ian, 2026-11-12: deferred to Phase 9, next to IN-06. The fix when picked up: a reason that is true in every case, "the line changed after it was shown", plus the BLUEPRINT line to match. Not now, because a code change would make the passed verification stale (increment review 2026-11-12, 8269ff1^..6b762eb) |
+| IN-14 | info | skipped | Ian, 2026-11-12: closed, no change. No folder can be in that state: the example folder is resynced at version 2 with visit_line, and every folder synced from now on must carry it (IN-10) (increment review 2026-11-12, 8269ff1^..6b762eb) |
+| IN-15 | info | fixed | Ian, 2026-11-12: fixed now: the visit_line note moved in docs/SETUP.md under its own heading, "## 13. Upgrading a business folder", as its first bullet, with the line's rules ({day} and {time} once each, {service} at most once) (increment review 2026-11-12, 8269ff1^..6b762eb) |
 | WR-09 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: the approve step passes down the visit line on screen, taken from the locked visitLine, and the send leaves the line off with the reason "the visit changed after the line was shown" (VisitAskedAbout::VISIT_CHANGED, in meta.visit_line_left_off and the owner's notice) when the line it would add now differs |
 | WR-10 | warning | fixed | Ian, 2026-11-11: fixed test first as ruled: a booking file synced before visit_line gets its own reason, "the booking file has no visit_line yet, so add it and sync again" (VisitAskedAbout::NO_VISIT_LINE), in whyNoLine() and the send's fallback; "online booking is turned off" stays for the room off or no booking file, and the pinned test row now expects the new reason |
 | IN-10 | info | fixed | Ian, 2026-11-11: fixed as ruled, docs only: visit_line stays required, and docs/SETUP.md now says a booking file written before the visit line needs visit_line added before the next sync |

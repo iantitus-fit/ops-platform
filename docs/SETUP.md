@@ -201,7 +201,13 @@ verify. Check these by hand for each business before it goes live.
   A business without a number the platform can text from is not a fit.
   (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
 
-A booking file (`rooms/schedule_and_booking/booking.md`) written before the
-visit line needs `visit_line:` added before the next sync; without it the sync
-refuses the whole folder and the previous version stays live (`08-REVIEW.md`
-IN-10).
+## 13. Upgrading a business folder
+
+Some releases add a field the sync then requires. A folder synced before that
+release is refused as a whole until the field is added, and the previous
+version stays live. Add each field below before the next sync.
+
+- **`visit_line:` in `rooms/schedule_and_booking/booking.md`.** A booking file
+  written before the visit line needs it added; without it the sync refuses
+  the whole folder (`08-REVIEW.md` IN-10). The line holds `{day}` and `{time}`
+  once each, and `{service}` at most once.

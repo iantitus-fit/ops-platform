@@ -1,22 +1,21 @@
 ---
 phase: 08-schedule-and-booking
-verified: 2026-11-12T22:00:00Z
+verified: 2026-11-12T23:30:00Z
 status: passed
 score: 11/11 must-haves verified
 covered_files: [".planning/phases/08-schedule-and-booking/08-01-PLAN.md", ".planning/phases/08-schedule-and-booking/08-01-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-02-PLAN.md", ".planning/phases/08-schedule-and-booking/08-02-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-03-PLAN.md", ".planning/phases/08-schedule-and-booking/08-03-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-04-PLAN.md", ".planning/phases/08-schedule-and-booking/08-04-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-05-PLAN.md", ".planning/phases/08-schedule-and-booking/08-05-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-06-PLAN.md", ".planning/phases/08-schedule-and-booking/08-06-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-07-PLAN.md", ".planning/phases/08-schedule-and-booking/08-07-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-08-PLAN.md", ".planning/phases/08-schedule-and-booking/08-08-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-09-PLAN.md", ".planning/phases/08-schedule-and-booking/08-09-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-10-PLAN.md", ".planning/phases/08-schedule-and-booking/08-10-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-11-PLAN.md", ".planning/phases/08-schedule-and-booking/08-11-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-12-PLAN.md", ".planning/phases/08-schedule-and-booking/08-12-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-13-PLAN.md", ".planning/phases/08-schedule-and-booking/08-13-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-14-PLAN.md", ".planning/phases/08-schedule-and-booking/08-14-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-15-PLAN.md", ".planning/phases/08-schedule-and-booking/08-15-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-16-PLAN.md", ".planning/phases/08-schedule-and-booking/08-16-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-17-PLAN.md", ".planning/phases/08-schedule-and-booking/08-17-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-18-PLAN.md", ".planning/phases/08-schedule-and-booking/08-18-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-19-PLAN.md", ".planning/phases/08-schedule-and-booking/08-19-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-20-PLAN.md", ".planning/phases/08-schedule-and-booking/08-20-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-21-PLAN.md", ".planning/phases/08-schedule-and-booking/08-21-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-22-PLAN.md", ".planning/phases/08-schedule-and-booking/08-22-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-23-PLAN.md", ".planning/phases/08-schedule-and-booking/08-23-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-24-PLAN.md", ".planning/phases/08-schedule-and-booking/08-24-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-25-PLAN.md", ".planning/phases/08-schedule-and-booking/08-25-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-26-PLAN.md", ".planning/phases/08-schedule-and-booking/08-26-SUMMARY.md", "app/Actions/OutboundSender.php", "app/Actions/ResolveDraft.php", "app/Actions/RunFrontDesk.php", "app/Actions/SendOwnerReply.php", "app/Ai/FrontDeskPrompt.php", "app/Livewire/ConversationThread.php", "app/Rooms/ScheduleAndBooking/BookingFileType.php", "app/Rooms/ScheduleAndBooking/BookingSettings.php", "app/Rooms/ScheduleAndBooking/ServiceToBook.php", "app/Rooms/ScheduleAndBooking/VisitAskedAbout.php", "app/SendRule/ReplyParts.php", "docs/SETUP.md", "examples/example-hvac/rooms/schedule_and_booking/booking.md", "resources/views/livewire/conversation-thread.blade.php"]
-covered_digest: "v3:sha256:956b10ec6c853384ce3881b39e8025dae59d33bf66c416a35f3b86d25c1ed754"
+covered_digest: "v3:sha256:53671b023421ca930d16958c946fa2de0bdf1cd78b6760799b3c2251dd9e2d7f"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
-  previous_status: human_needed
-  previous_score: 10/11
-  gaps_closed:
-    - "Previous human item 1 (Dev chat re-walk, truth 11 and the live half of truth 9): walked live 2026-11-12 (UAT check 8). G-08-4b's 'owner will confirm' wording is gone from all three model replies; the visit line box and Send adding the line passed live. The residual (reply held by the Phase 2 bars and Jev's promise reading; link-again wording) was ruled a known limitation for Phase 10 by Ian, not a Phase 8 gap."
-    - "Previous human item 2 (keyboard walk of the visit line checkbox): UAT check 9 passed (Tab, visible outline, name, Space). VoiceOver on owner screens is Phase 11."
-    - "Previous human item 3 (CI pgsql leg): UAT check 10 passed, CI run #65 at 6b762eb green on sqlite and pgsql."
-    - "Previous advisory WR-09, WR-10, IN-10, IN-11, IN-12: fixed in 8269ff1, 11d8b16, 6b762eb, a7ea1f8, 084cd03; read in code in this run (see Review fixes below)."
+  previous_status: passed
+  previous_score: 11/11
+  gaps_closed: []
   gaps_remaining: []
   regressions: []
+  reason: "The covered input docs/SETUP.md changed in the working tree (IN-15 fix: the visit_line upgrade note moved to a new section 13, Upgrading a business folder). No code changed since c1a1905. The note's rules were checked against BookingFileType::checks() and BookingFileCheckTest."
+  earlier_history:
+    - "Report of c1a1905 (passed 11/11) closed the earlier human items: Dev chat re-walk and the visit line box (UAT check 8), keyboard walk (UAT check 9), CI pgsql leg (UAT check 10), and the review fixes WR-09, WR-10, IN-10, IN-11, IN-12 (8269ff1, 11d8b16, 6b762eb, a7ea1f8, 084cd03)."
 deferred:
   - truth: "A booked customer's 'What time are you coming?' and an unbooked customer's 'send the link again' send on their own (live model wording clears the Phase 2 bars and Jev's promise reading)"
     addressed_in: "Phase 10"
@@ -24,19 +23,14 @@ deferred:
   - truth: "VoiceOver walk of the owner screens (Schedule page, Block time and Book by hand dialogs, visit line checkbox)"
     addressed_in: "Phase 11"
     evidence: "ROADMAP Phase 11 planning notes, inputs from Phase 8 UAT check 7; 08-UAT.md Deferred Follow-Ups"
+  - truth: "IN-13: the WR-09 reason 'the visit changed after the line was shown' is also said when only the owner's visit_line wording or the time zone changed"
+    addressed_in: "Phase 9"
+    evidence: "Ian's ruling 2026-11-12 in 08-REVIEW-DISPOSITION.md (disposition: deferred): picked up in Phase 9 next to IN-06, with the reason reworded to 'the line changed after it was shown' plus the BLUEPRINT line. Deferred on purpose so no code change makes this passed verification stale. Recorded in the disposition file and STATE.md, not in ROADMAP.md Phase 9 text."
 advisory:
-  - finding: "IN-13 (08-REVIEW.md): the WR-09 reason 'the visit changed after the line was shown' is also said when only the owner's visit_line wording or the time zone changed and the visit did not"
+  - finding: "IN-13 (08-REVIEW.md): the WR-09 reason is wrong in the rare case where only the visit_line wording or time zone changed and the visit did not"
     category: other
-    reason: "Info, rare (5-second poll window plus a sync inside it). The send is safe: the draft goes without the line. Only the owner-facing reason can be wrong. Recorded open in 08-REVIEW-DISPOSITION.md, awaiting Ian's ruling."
-    evidence_status: "code read in this run (SendOwnerReply.php sendDraftAskingForVisitLine, VisitAskedAbout::VISIT_CHANGED); no failing test"
-  - finding: "IN-14: NO_VISIT_LINE (WR-10) is reachable only by deleting the key from stored compiled JSON; the real case (live version compiled before plan 08-24) shows no box and tells the owner nothing"
-    category: other
-    reason: "Info. A fresh or re-synced folder cannot reach it because visit_line is required by the sync. Open, awaiting Ian's ruling."
-    evidence_status: "code read in this run (VisitAskedAbout::whyNoLine)"
-  - finding: "IN-15: the IN-10 upgrade note sits in docs/SETUP.md section 12, titled 'checks the sync cannot make', though it describes a check the sync does make"
-    category: other
-    reason: "Info, documentation placement. Open, awaiting Ian's ruling."
-    evidence_status: "docs/SETUP.md read in this run"
+    reason: "Info, rare (5-second poll window plus a sync inside it). The send is safe: the draft goes without the line. Only the owner-facing reason can be wrong. Ian deferred it to Phase 9 (2026-11-12)."
+    evidence_status: "code read (SendOwnerReply.php sendDraftAskingForVisitLine, VisitAskedAbout::VISIT_CHANGED); no failing test"
   - finding: "Live wording on the sent-on-its-own path: the model narrates what the Booking section says code adds ('listed just below', 'you'll get a confirmation right away') and Jev reads it as a promise; the Phase 2 bars on the customer's own text also held two of three replies"
     category: other
     reason: "Ian's ruling 2026-11-12: known limitation, routed to Phase 10 (see deferred). No customer saw anything false: the replies were held, and the visit-line path was correct in code and on the held-draft box live."
@@ -48,7 +42,7 @@ advisory:
 **Phase Goal:** A customer can finish the conversation by booking a time, and the owner sees it and is told about it.
 **Verified:** 2026-11-12
 **Status:** passed
-**Re-verification:** Yes. The previous report (2026-11-11) was `human_needed` 10/11 and went stale because five review-fix commits landed after it. This run re-read each fix in code, ran the tests for them, took the UAT record as the answer to the earlier human items after checking it against the code, and regenerated the fingerprint.
+**Re-verification:** Yes. The report committed at c1a1905 (`passed`, 11/11) went stale because `docs/SETUP.md`, one of its covered files, changed in the working tree (Ian's IN-15 fix). `git diff c1a1905 --stat` shows no change under `app/`, `resources/`, `examples/` or `tests/`; the only differences are planning files (committed in 6cfa719 or uncommitted) and `docs/SETUP.md`. This run read the SETUP.md change, checked its rules against what the sync enforces, re-ran the visit-line tests and the booking-file check tests, reflected Ian's IN-13/14/15 rulings, and regenerated the fingerprint. Everything the c1a1905 report established still holds and is kept below.
 
 ## Goal Achievement
 
@@ -78,15 +72,21 @@ The booking path itself (link, page, confirmed appointment, project and timeline
 |---|------|-------------|----------|
 | 1 | Sent-on-its-own for a booked customer's "What time are you coming?" and a link-again request (Booking section wording measured with the walk tests; Phase 2 bar calibration) | Phase 10 | ROADMAP.md Phase 10 planning notes lines 375 to 376; BLUEPRINT section 10 open items; Ian 2026-11-12 (08-UAT.md check 8). |
 | 2 | VoiceOver on owner screens | Phase 11 | ROADMAP Phase 11 planning notes; 08-UAT.md Deferred Follow-Ups. |
+| 3 | IN-13: the WR-09 reason is also said when only the visit_line wording or time zone changed | Phase 9 | Ian 2026-11-12, 08-REVIEW-DISPOSITION.md (deferred, next to IN-06; reason to read "the line changed after it was shown"). The routing is in the disposition file and STATE.md; ROADMAP.md Phase 9 text does not name it. Info severity, send is safe. |
 
 ### Advisory (not blocking)
 
 | # | Finding | Category | Why advisory |
 |---|---------|----------|--------------|
-| 1 | IN-13: the WR-09 reason is worded as 'the visit changed' also when only the visit_line wording or time zone changed | other | Info; the send is safe; open, Ian's ruling pending |
-| 2 | IN-14: NO_VISIT_LINE reason reachable only by hand-editing stored JSON; the real pre-08-24 case says nothing to the owner | other | Info; open, Ian's ruling pending |
-| 3 | IN-15: SETUP.md upgrade note placed under 'checks the sync cannot make' | other | Info, docs placement; open, Ian's ruling pending |
-| 4 | Live wording of sent-on-its-own replies held by Jev and the Phase 2 bars | other | Known limitation per Ian; deferred to Phase 10 |
+| 1 | IN-13: the WR-09 reason is worded as 'the visit changed' also when only the visit_line wording or time zone changed | other | Info; the send is safe; Ian deferred it to Phase 9 (2026-11-12) so no code change stales this verification |
+| 2 | Live wording of sent-on-its-own replies held by Jev and the Phase 2 bars | other | Known limitation per Ian; deferred to Phase 10 |
+
+Closed by Ian's rulings of 2026-11-12 (no longer advisory):
+
+| Finding | Ruling | Check in this run |
+|---------|--------|-------------------|
+| IN-14: NO_VISIT_LINE reachable only by hand-editing stored JSON | Skipped, closed with no change. No folder can be in that state: the example folder is resynced at version 2 with `visit_line`, and every folder synced from now on must carry it (IN-10). | Consistent with the code: `BookingFileType` rules require `visit_line` (`required`, `string`, `max:300`), and `examples/example-hvac/rooms/schedule_and_booking/booking.md` line 12 carries it. `VisitAskedAbout::NO_VISIT_LINE` stays as a defensive reason; no code change was made. |
+| IN-15: upgrade note under 'checks the sync cannot make' | Fixed. The note moved to `docs/SETUP.md` section 13, "Upgrading a business folder", first bullet, with the line's rules. | Read the diff and the section (see SETUP.md note check below). Fix is correct. |
 
 ### Review fixes verified in code (commits 8269ff1, 11d8b16, a7ea1f8, 084cd03, 6b762eb)
 
@@ -96,7 +96,22 @@ The booking path itself (link, page, confirmed appointment, project and timeline
 | WR-10 (11d8b16) | `whyNoLine()` splits room-off/no-file (`BOOKING_OFF`) from a live file without `visit_line` (`NO_VISIT_LINE`); the leftover reason in `sendDraftAskingForVisitLine` no longer says 'booking is off' for a missing visit_line | VERIFIED |
 | IN-11 (a7ea1f8) | `find()` orders `starts_at` then `id` | VERIFIED |
 | IN-12 (084cd03) | Both Booking constants state the send-as-is vs held distinction; pinned in BookingSectionTest | VERIFIED |
-| IN-10 (6b762eb) | `docs/SETUP.md` carries the `visit_line:` upgrade note (placement is IN-15) | VERIFIED (docs) |
+| IN-10 (6b762eb) | `docs/SETUP.md` carries the `visit_line:` upgrade note | VERIFIED (docs). Placement fixed under IN-15 (below). |
+| IN-15 (uncommitted, Ian 2026-11-12) | The note moved out of section 12 to a new `## 13. Upgrading a business folder`, first bullet, stating `{day}` and `{time}` once each and `{service}` at most once | VERIFIED (docs), rules match the sync (below) |
+
+### SETUP.md upgrade note against the sync
+
+`docs/SETUP.md` section 13, first bullet, says a booking file written before the visit line needs `visit_line:` added or the sync refuses the whole folder, and that the line holds `{day}` and `{time}` once each and `{service}` at most once. Checked against the code:
+
+| Claim in SETUP.md | What the sync does | Match |
+|-------------------|--------------------|-------|
+| Without `visit_line` the sync refuses the whole folder | `BookingFileType::rules()` line 42: `'visit_line' => 'bail\|required\|string\|max:300'`; a validation error refuses the folder and the previous version stays live. `BookingFileCheckTest` row 'visit_line missing' pins it. | Yes |
+| `{day}` once | `checks()` line 78: `lineErrors($file, 'visit_line', ['day' => [1, 1], ...])`; `lineErrors` emits "visit_line must hold {day} exactly once" for 0 or 2+ uses. Pinned by 'visit_line with the day twice'. | Yes |
+| `{time}` once | Same call, `'time' => [1, 1]`. Pinned by 'visit_line without the time'. | Yes |
+| `{service}` at most once | Same call, `'service' => [0, 1]`; emits "may use {service} at most once". Pinned by 'visit_line with the service twice'. | Yes |
+| Section intro: a field a release adds is required and the previous version stays live | Matches the sync's refuse-and-keep-previous behavior (SyncTest, BookingFileCheckTest green) | Yes |
+
+The note is accurate. It does not repeat the other checks the sync also makes on `visit_line` (no other word in braces, no exclamation point or em dash, at most 300 characters). That is an omission of detail, not a wrong statement, and the example `booking.md` (lines 29 to 31) already tells the owner those rules. Section 12's own content (the `phone` check) is unchanged and is correctly titled 'checks the sync cannot make'.
 
 ### Required Artifacts
 
@@ -133,6 +148,10 @@ The booking path itself (link, page, confirmed appointment, project and timeline
 | Full suite | not re-run by me; orchestrator ran it 2026-11-12 | 3,210 tests, 22,642 assertions, 1 known browser-plugin warning | Taken from the orchestrator |
 | CI | UAT check 10 | run #65 at 6b762eb green on sqlite and pgsql | Taken from UAT |
 | Debt markers (TBD, FIXME, XXX) in the files changed by the five fixes | grep | none | PASS |
+| Visit-line, approval, Booking section and prompt tests (re-run for this verification) | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php tests/Feature/Booking/VisitLineTest.php tests/Feature/FrontDesk/BookingSectionTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | 112 passed, 562 assertions | PASS |
+| Sync checks that SETUP.md section 13 describes | `php artisan test --compact tests/Feature/Rooms/BookingFileCheckTest.php` | 31 passed, 176 assertions | PASS |
+| Code unchanged since c1a1905 | `git diff c1a1905 --stat` | only `.planning/*` and `docs/SETUP.md` | PASS |
+| Debt markers in `docs/SETUP.md` | grep | none | PASS |
 
 ### Probe Execution
 
@@ -152,21 +171,21 @@ Every ID the roadmap lists for Phase 8 appears in at least one plan's `requireme
 | BOOK-05 | SATISFIED | Truth 4 |
 | A11Y-02 | SATISFIED | Truth 6; UAT keyboard, VoiceOver and zoom walks passed |
 
-Bookkeeping, still open: REQUIREMENTS.md line 53 (BOOK-01) and line 57 (BOOK-05) are still unchecked `[ ]`, and traceability rows 216 and 220 still read "Gaps Found". The code and UAT support marking both complete and the rows "Complete". Whoever closes the phase should update them. This is a tracking inconsistency, not a goal gap.
+Bookkeeping, now closed: REQUIREMENTS.md (committed in 6cfa719) has BOOK-01 and BOOK-05 checked `[x]` and both traceability rows reading "Complete". The earlier tracking inconsistency no longer exists. BOOK-06 stays Pending in Phase 9.
 
 ### Anti-Patterns Found
 
-None blocking. No TBD, FIXME or XXX in the files changed by the five fixes. The earlier WARNING and INFO findings (WR-09, WR-10, IN-10, IN-11, IN-12) are fixed. IN-13 to IN-15 are open info items listed under Advisory.
+None blocking. No TBD, FIXME or XXX in the files changed by the five fixes or in `docs/SETUP.md`. The earlier WARNING and INFO findings (WR-09, WR-10, IN-10, IN-11, IN-12) are fixed. Of the three increment-review info findings, IN-13 is deferred to Phase 9, IN-14 is closed with no change and IN-15 is fixed, all by Ian's ruling of 2026-11-12.
 
 ### Human Verification Required
 
-None. The previous items are answered by UAT (checks 8, 9, 10), checked against the code above. Two things stay outside Phase 8 by Ian's ruling and are recorded under Deferred: live sent-on-its-own wording (Phase 10) and VoiceOver on owner screens (Phase 11). The attorney list (docs/BLUEPRINT.md section 10) remains a before-first-client item and is not a phase gate.
+None. The earlier items are answered by UAT (checks 8, 9, 10), checked against the code above. Two things stay outside Phase 8 by Ian's ruling and are recorded under Deferred: live sent-on-its-own wording (Phase 10) and VoiceOver on owner screens (Phase 11). The attorney list (docs/BLUEPRINT.md section 10) remains a before-first-client item and is not a phase gate.
 
 ### Gaps Summary
 
-No gaps. All eleven truths hold. The one place the live system fell short of a UAT expectation (replies held by the Phase 2 bars and Jev's promise reading) was ruled a known limitation by Ian and sits as a specific item in ROADMAP Phase 10, so it is deferred, not a Phase 8 gap.
+No gaps. All eleven truths hold, and nothing in the SETUP.md change touches any of them (code is byte-identical to c1a1905). The one place the live system fell short of a UAT expectation (replies held by the Phase 2 bars and Jev's promise reading) was ruled a known limitation by Ian and sits as a specific item in ROADMAP Phase 10, so it is deferred, not a Phase 8 gap.
 
 ---
 
-_Verified: 2026-11-12_
+_Verified: 2026-11-12T23:30:00Z_
 _Verifier: Claude (gsd-verifier)_
