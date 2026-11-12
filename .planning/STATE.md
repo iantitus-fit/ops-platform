@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 08
-current_phase_name: Schedule and Booking
-status: executing
-stopped_at: Completed 08-26-PLAN.md
-last_updated: "2026-11-11T21:29:43.803Z"
-last_activity: 2026-11-11
-last_activity_desc: Phase 08 execution started
-state_head: 9521d89d3fac21873f00b250928253775b58bc40
+current_phase: 9
+current_phase_name: Owner Intelligence
+status: planning
+stopped_at: Phase 08 complete, ready to plan Phase 9
+last_updated: "2026-11-12T20:43:25.267Z"
+last_activity: 2026-11-12
+last_activity_desc: Phase 08 complete, transitioned to Phase 9
+state_head: c1a190548df362c144904018e1e6929f791099fc
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 60
   completed_plans: 60
-  percent: 44
+  percent: 56
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-01)
+See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 08 — Schedule and Booking
+**Current focus:** Phase 9 — Owner Intelligence
 
 ## Current Position
 
-Phase: 08 (Schedule and Booking) — EXECUTING
-Plan: 4 of 26
-Status: Ready to execute
-Last activity: 2026-11-11 — Phase 08 execution started
+Phase: 9 — Owner Intelligence
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-12 — Phase 08 complete, transitioned to Phase 9
 
-Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
+Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 110
+- Total plans completed: 136
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | 05 | 9 | - | - |
 | 06 | 7 | - | - |
 | 07 | 9 | - | - |
+| 08 | 26 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -312,6 +313,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-24: BookingSettings::visitLine is nullable so a version compiled before visit_line sends no line and nothing throws (D-03)
 - [Phase 08]: 08-25: the visit line on a held draft is settled as D-45 settles the link: the owner's approval decides, every condition is checked again at approval, a line is added only when it was on screen, and a length overrun refuses Send rather than dropping the line. No mint, no new kind, no agent action: the owner's own send through OutboundSender::sendExisting().
 - [Phase 08]: 08-26: the Booking section is drawn only from ServiceToBook and VisitAskedAbout conditions; a booked customer never reads the online variant; booking.md stays out of the agent's loads
+- [Phase 08, close 2026-11-12]: UAT check 8 (the live re-walk): the code path and the visit line held live and "owner will confirm" is gone, but a booked customer's "What time are you coming?" and a request for the link again were still held (Jev promise 0.54 and 0.35; Phase 2 bars). Ian ruled it a known limitation routed to Phase 10, settled with the bar calibration; the phase closed with it.
 
 ### Pending Todos
 
@@ -342,6 +344,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
 - [Phase 7, carried]: review info findings open for Ian's triage (07-REVIEW-DISPOSITION.md): IN-02, IN-03, IN-06 and IN-08 to IN-11; IN-08 (the focus wait catches every error, not only the timeout) is the one worth fixing before the next browser walk. WINDOWS rows 38 and 44 now belong to Phase 11. BLUEPRINT records three UAT follow-ups: phone numbers shown raw (Phase 11), VoiceOver "clickable" on plain text (Phase 11), and the example triage life_safety question counting a furnace as a plugged-in appliance (reword after Phase 7)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
+- [Phase 8, carried]: increment review info IN-13 (the visit-changed reason is also given when only the wording or zone changed), IN-14 (a live version compiled before visit_line gets no line and no explanation) and IN-15 (SETUP.md upgrade note under the wrong heading) are open for Ian's triage (08-REVIEW-DISPOSITION.md); IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild).
+- [Phase 8, carried to Phase 10]: the front desk's Booking section wording (BOOKING_ONLINE, BOOKING_VISIT_BOOKED) is measured and settled with the walk tests next to the bar calibration, so a booked customer's time question and a link resend send on their own (ROADMAP Phase 10 planning notes; 08-UAT.md check 8).
 
 ### Quick Tasks Completed
 
@@ -378,11 +382,12 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-11T21:29:43.687Z
-Stopped at: Completed 08-26-PLAN.md
+Last session: 2026-11-12
+Stopped at: Phase 08 complete, ready to plan Phase 9
 Resume file: None
 
 ## Operator Next Steps
 
-- Review, push and merge the Phase 7 branch (gsd/phase-07-the-spine-and-leads); CI was green on both legs at 94ab259 (run 41337489371)
-- Discuss Phase 8 with /gsd-discuss-phase 8, then plan it with /gsd-plan-phase 8
+- Review, push and merge the Phase 8 branch (gsd/phase-08-schedule-and-booking); CI was green on both legs at 6b762eb (run #65); the commits after it are docs only
+- Triage IN-13 to IN-15 in 08-REVIEW-DISPOSITION.md
+- Discuss Phase 9 with /gsd-discuss-phase 9, then plan it with /gsd-plan-phase 9

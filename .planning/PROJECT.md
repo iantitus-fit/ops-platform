@@ -29,6 +29,8 @@ v2.0 Model Home: Phase 6 Front Desk and Team Rooms completed 2026-10-28 (7 plans
 
 v2.0 Model Home: Phase 7 The Spine and Leads completed 2026-11-01 (9 plans, 07-09 closing three UAT gaps on the contact screen; UAT complete; verification 5/5; CI green on both databases, run 41337489371). Every new lead opens a project in the business's own word (`project_word` in `business/profile.md`), tied to its contact and conversation; the owner opens, closes, reopens and renames projects from the contact screen through four actions, and the leads room lists open projects on the dashboard. The contact screen's keyboard, focus and button-name checks run as browser tests in CI; the live VoiceOver listen moved to the Phase 11 owner-screen pass (A11Y-03). Review findings left open as info: IN-02, IN-03, IN-06, IN-08 to IN-11 (07-REVIEW-DISPOSITION.md).
 
+v2.0 Model Home: Phase 8 Schedule and Booking completed 2026-11-12 (26 plans: 08-17 to 08-23 closed verification gaps, 08-24 to 08-26 closed UAT gaps G-08-4 and G-08-4b under D-39 as amended; UAT complete; verification 11/11; CI green on both databases, run #65 at 6b762eb). A customer texted a booking link taps one offered time on a one-column page and is booked at once; the appointment lands on the project, the timeline, the customer card and the owner's Schedule page; the owner is alerted once, reminders and the confirmation are sent once by the scheduler inside the send window, and the owner can book by hand or block time. A booked customer's reply about the visit carries the owner's own visit line, added by code. Known limitation, routed to Phase 10 by Ian: a booked customer's "What time are you coming?" and a request for the link again are still held by the Phase 2 bars and Jev's promise reading; the Booking section's wording is settled with the walk tests and the bar calibration. Review info IN-13 to IN-15 await Ian's triage (08-REVIEW-DISPOSITION.md).
+
 ## Current Milestone: v2.0 Model Home
 
 **Goal:** A cookie-cutter house that is a starting point for any business: every room built to one standard around the project, so a business is set up by walking the rooms and furnishing them at setup. Wording, policies and which rooms a business uses are the business's own decisions, not built in.
@@ -64,13 +66,13 @@ Full list with IDs: `.planning/REQUIREMENTS.md`. Roadmap: `.planning/ROADMAP.md`
 - ✓ The first real rooms meet the standard in the example business: company knowledge, marketing (owns the lead sources and offers; its "live today" line asks the front desk's own rule), content generation (no connector), Google Business Profile (a read-only slot bound to a fake that sends nothing, one categories file of at most nine additional categories) and money (no slot, no payment records; its notes file refuses card and 9-digit numbers in one digit-free line). Leaving out company knowledge or marketing is refused by name, a file name with a hidden character is refused with the character marked, and a room section that fails shows one line instead of taking down the dashboard (ROOM-08 to ROOM-11, ROOM-14) — Phase 5, v2.0
 - ✓ The front desk and the team are rooms at the standard with no behavior change: the front desk owns the sending, replies, triage and agent files and claims the two dashboard widgets it acts on; the team owns no file, reads three and owns the owner alerts; leaving either out is refused by name (ROOM-06, ROOM-15). Every owner alert is texted exactly once, with a send claim released after two minutes and one stored alert per conversation, message, reason and user; a failed front-desk run is reported once per claim token, against the burst its run claimed, a form-only burst included (ALRT-01, ALRT-02) — Phase 6, v2.0
 - ✓ The spine: every new lead opens a project named in the business's own word (Job, Project, Matter, Case, Work order, Engagement, checked by the sync), tied to its contact and conversation and shown on the customer card; the owner opens a second project, closes, reopens and renames from the contact screen, each through one action that records who did it, and nothing else writes projects; the front desk is unchanged (PROJ-01, PROJ-02). The leads room is at the standard, optional, and lists the newest open projects on the dashboard (ROOM-07, LEAD-05) — Phase 7, v2.0
+- ✓ Booking: availability from `hours.md` and each service's duration, a tap-to-choose link page that books at once (WCAG 2.2 AA, walked by keyboard and VoiceOver), appointments on the project, timeline, card and Schedule page, a confirmation and reminders sent once inside the send window, owner alerts once, and the schedule and booking room at the standard (ROOM-12, BOOK-01 to BOOK-05, A11Y-02) — Phase 8, v2.0
 
 ### Active
 
 Committed scope (SPEC: Sprints 0 to 2), v1:
 
 - Owner loop: parked to backlog 999.5 on 2026-10-19 (Ian), pulled by the first client with staff. See Key Decisions, "The model home is the next milestone".
-- [ ] Booking from availability in `hours.md`, a tap-to-choose booking link, appointments, reminders and owner alerts (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
 - [ ] Walk tests in `tests/*.md` run on every sync and gate activation; "Dana end to end" passes (was Phase 3; in v2.0 Model Home, v1 closed at 02.1 on 2026-10-19)
 - [ ] The rest of v2.0 Model Home: see Current Milestone above; IDs in `.planning/REQUIREMENTS.md`.
 
@@ -304,4 +306,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. Update Context with current state.
 
 ---
-*Last updated: 2026-11-02 after the Phase 8 UI-SPEC*
+*Last updated: 2026-11-12 after Phase 8*

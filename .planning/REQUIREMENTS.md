@@ -50,11 +50,11 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 
 Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 
-- [ ] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
+- [x] **BOOK-01**: Availability is computed from `business/hours.md` (weekly hours, closures, `booking_lead_minutes`), the service's `duration_minutes`, and existing appointments, in the business `timezone` from `business/profile.md`; nothing outside open hours or inside the lead time is offered.
 - [x] **BOOK-02**: The agent texts a booking link for services with `book_online: true`; the customer opens a Livewire page, taps one of the offered times, and gets a confirmed appointment without typing.
 - [x] **BOOK-03**: Appointments are stored as records and appear on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen (DEC-08: inbox, schedule, money).
 - [x] **BOOK-04**: The customer receives reminders before the appointment, sent by the scheduler. *(derived: SPEC says "reminders"; timing, send window, which conversation and exactly-once settled in `.planning/phases/08-schedule-and-booking/08-CONTEXT.md` D-26 and D-29 to D-31)*
-- [ ] **BOOK-05**: The owner is alerted (per `owner_alert` in `rules/sending.md`) when an appointment is booked and when a conversation needs a human.
+- [x] **BOOK-05**: The owner is alerted (per `owner_alert` in `rules/sending.md`) when an appointment is booked and when a conversation needs a human.
 - [ ] **BOOK-06**: The minutes from a contact's first inbound message to their booked appointment are recorded and visible on the contact and in a dashboard summary, so the headline metric can be read. *(derived from Principle 1; not an explicit Sprint 2 SPEC deliverable)*
 - [ ] **WALK-01**: Walk-test files (`tests/*.md`, type `walk_test`: persona, channel, script, expect) are validated by the sync with plain-words errors and compiled into the candidate version.
 - [ ] **WALK-02**: Every sync walk-tests the candidate version by running each scripted customer in `tests/` against it. Activation happens only if validation and every walk test pass; otherwise the previous version stays live, the message names the test and the check that failed, and the attempt is appended to `changelog.md` and shown on the Business Folder page.
@@ -213,11 +213,11 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-14 | Phase 5 | Complete |
 | ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
-| BOOK-01 | Phase 8 | Gaps Found |
+| BOOK-01 | Phase 8 | Complete |
 | BOOK-02 | Phase 8 | Complete |
 | BOOK-03 | Phase 8 | Complete |
 | BOOK-04 | Phase 8 | Complete |
-| BOOK-05 | Phase 8 | Gaps Found |
+| BOOK-05 | Phase 8 | Complete |
 | BOOK-06 | Phase 9 | Pending |
 | WALK-01 | Phase 10 | Pending |
 | WALK-02 | Phase 10 | Pending |
