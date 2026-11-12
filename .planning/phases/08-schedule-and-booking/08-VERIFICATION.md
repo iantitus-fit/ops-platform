@@ -1,142 +1,138 @@
 ---
 phase: 08-schedule-and-booking
-verified: 2026-11-11T23:00:00Z
-status: human_needed
-score: 10/11 must-haves verified
-covered_files: [".planning/phases/08-schedule-and-booking/08-01-PLAN.md",".planning/phases/08-schedule-and-booking/08-01-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-02-PLAN.md",".planning/phases/08-schedule-and-booking/08-02-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-03-PLAN.md",".planning/phases/08-schedule-and-booking/08-03-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-04-PLAN.md",".planning/phases/08-schedule-and-booking/08-04-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-05-PLAN.md",".planning/phases/08-schedule-and-booking/08-05-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-06-PLAN.md",".planning/phases/08-schedule-and-booking/08-06-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-07-PLAN.md",".planning/phases/08-schedule-and-booking/08-07-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-08-PLAN.md",".planning/phases/08-schedule-and-booking/08-08-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-09-PLAN.md",".planning/phases/08-schedule-and-booking/08-09-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-10-PLAN.md",".planning/phases/08-schedule-and-booking/08-10-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-11-PLAN.md",".planning/phases/08-schedule-and-booking/08-11-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-12-PLAN.md",".planning/phases/08-schedule-and-booking/08-12-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-13-PLAN.md",".planning/phases/08-schedule-and-booking/08-13-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-14-PLAN.md",".planning/phases/08-schedule-and-booking/08-14-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-15-PLAN.md",".planning/phases/08-schedule-and-booking/08-15-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-16-PLAN.md",".planning/phases/08-schedule-and-booking/08-16-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-17-PLAN.md",".planning/phases/08-schedule-and-booking/08-17-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-18-PLAN.md",".planning/phases/08-schedule-and-booking/08-18-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-19-PLAN.md",".planning/phases/08-schedule-and-booking/08-19-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-20-PLAN.md",".planning/phases/08-schedule-and-booking/08-20-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-21-PLAN.md",".planning/phases/08-schedule-and-booking/08-21-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-22-PLAN.md",".planning/phases/08-schedule-and-booking/08-22-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-23-PLAN.md",".planning/phases/08-schedule-and-booking/08-23-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-24-PLAN.md",".planning/phases/08-schedule-and-booking/08-24-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-25-PLAN.md",".planning/phases/08-schedule-and-booking/08-25-SUMMARY.md",".planning/phases/08-schedule-and-booking/08-26-PLAN.md",".planning/phases/08-schedule-and-booking/08-26-SUMMARY.md","app/Actions/OutboundSender.php","app/Actions/ResolveDraft.php","app/Actions/RunFrontDesk.php","app/Actions/SendOwnerReply.php","app/Ai/FrontDeskPrompt.php","app/Livewire/ConversationThread.php","app/Rooms/ScheduleAndBooking/BookingFileType.php","app/Rooms/ScheduleAndBooking/BookingSettings.php","app/Rooms/ScheduleAndBooking/ServiceToBook.php","app/Rooms/ScheduleAndBooking/VisitAskedAbout.php","app/SendRule/ReplyParts.php","examples/example-hvac/rooms/schedule_and_booking/booking.md","resources/views/livewire/conversation-thread.blade.php"]
-covered_digest: "v3:sha256:851b28a4f2a75784c11e321d44ccf226fcffe9c48b742994ed58a00e8c5fd01a"
-behavior_unverified: 1
+verified: 2026-11-12T22:00:00Z
+status: passed
+score: 11/11 must-haves verified
+covered_files: [".planning/phases/08-schedule-and-booking/08-01-PLAN.md", ".planning/phases/08-schedule-and-booking/08-01-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-02-PLAN.md", ".planning/phases/08-schedule-and-booking/08-02-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-03-PLAN.md", ".planning/phases/08-schedule-and-booking/08-03-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-04-PLAN.md", ".planning/phases/08-schedule-and-booking/08-04-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-05-PLAN.md", ".planning/phases/08-schedule-and-booking/08-05-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-06-PLAN.md", ".planning/phases/08-schedule-and-booking/08-06-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-07-PLAN.md", ".planning/phases/08-schedule-and-booking/08-07-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-08-PLAN.md", ".planning/phases/08-schedule-and-booking/08-08-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-09-PLAN.md", ".planning/phases/08-schedule-and-booking/08-09-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-10-PLAN.md", ".planning/phases/08-schedule-and-booking/08-10-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-11-PLAN.md", ".planning/phases/08-schedule-and-booking/08-11-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-12-PLAN.md", ".planning/phases/08-schedule-and-booking/08-12-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-13-PLAN.md", ".planning/phases/08-schedule-and-booking/08-13-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-14-PLAN.md", ".planning/phases/08-schedule-and-booking/08-14-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-15-PLAN.md", ".planning/phases/08-schedule-and-booking/08-15-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-16-PLAN.md", ".planning/phases/08-schedule-and-booking/08-16-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-17-PLAN.md", ".planning/phases/08-schedule-and-booking/08-17-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-18-PLAN.md", ".planning/phases/08-schedule-and-booking/08-18-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-19-PLAN.md", ".planning/phases/08-schedule-and-booking/08-19-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-20-PLAN.md", ".planning/phases/08-schedule-and-booking/08-20-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-21-PLAN.md", ".planning/phases/08-schedule-and-booking/08-21-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-22-PLAN.md", ".planning/phases/08-schedule-and-booking/08-22-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-23-PLAN.md", ".planning/phases/08-schedule-and-booking/08-23-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-24-PLAN.md", ".planning/phases/08-schedule-and-booking/08-24-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-25-PLAN.md", ".planning/phases/08-schedule-and-booking/08-25-SUMMARY.md", ".planning/phases/08-schedule-and-booking/08-26-PLAN.md", ".planning/phases/08-schedule-and-booking/08-26-SUMMARY.md", "app/Actions/OutboundSender.php", "app/Actions/ResolveDraft.php", "app/Actions/RunFrontDesk.php", "app/Actions/SendOwnerReply.php", "app/Ai/FrontDeskPrompt.php", "app/Livewire/ConversationThread.php", "app/Rooms/ScheduleAndBooking/BookingFileType.php", "app/Rooms/ScheduleAndBooking/BookingSettings.php", "app/Rooms/ScheduleAndBooking/ServiceToBook.php", "app/Rooms/ScheduleAndBooking/VisitAskedAbout.php", "app/SendRule/ReplyParts.php", "docs/SETUP.md", "examples/example-hvac/rooms/schedule_and_booking/booking.md", "resources/views/livewire/conversation-thread.blade.php"]
+covered_digest: "v3:sha256:956b10ec6c853384ce3881b39e8025dae59d33bf66c416a35f3b86d25c1ed754"
+behavior_unverified: 0
 overrides_applied: 0
 re_verification:
   previous_status: human_needed
-  previous_score: 8/8
+  previous_score: 10/11
   gaps_closed:
-    - "G-08-4 (UAT test 4, D-39 as amended): a booked customer's 'what time are you coming?' reply carries the owner's visit line built by code; a held draft offers the same line behind a box: plans 08-24, 08-25"
-    - "G-08-4b (UAT test 4): the front desk's prompt no longer tells the model the owner confirms recorded bookings, and says what code adds: plan 08-26 (code half; live model effect is a human item)"
-    - "G-08-1 and G-08-2: closed by Ian as environment and VoiceOver behaviour (a27c6f1, 1335509); not re-opened"
+    - "Previous human item 1 (Dev chat re-walk, truth 11 and the live half of truth 9): walked live 2026-11-12 (UAT check 8). G-08-4b's 'owner will confirm' wording is gone from all three model replies; the visit line box and Send adding the line passed live. The residual (reply held by the Phase 2 bars and Jev's promise reading; link-again wording) was ruled a known limitation for Phase 10 by Ian, not a Phase 8 gap."
+    - "Previous human item 2 (keyboard walk of the visit line checkbox): UAT check 9 passed (Tab, visible outline, name, Space). VoiceOver on owner screens is Phase 11."
+    - "Previous human item 3 (CI pgsql leg): UAT check 10 passed, CI run #65 at 6b762eb green on sqlite and pgsql."
+    - "Previous advisory WR-09, WR-10, IN-10, IN-11, IN-12: fixed in 8269ff1, 11d8b16, 6b762eb, a7ea1f8, 084cd03; read in code in this run (see Review fixes below)."
   gaps_remaining: []
   regressions: []
+deferred:
+  - truth: "A booked customer's 'What time are you coming?' and an unbooked customer's 'send the link again' send on their own (live model wording clears the Phase 2 bars and Jev's promise reading)"
+    addressed_in: "Phase 10"
+    evidence: "ROADMAP.md Phase 10 planning notes (line 375 to 376): calibrate the Phase 2 safety bars; 'Measure and settle the Booking section's wording (BOOKING_ONLINE and BOOKING_VISIT_BOOKED) with the walk tests ... so that a booked customer's \"What time are you coming?\" and an unbooked customer's request for the link again send on their own.' Also BLUEPRINT section 10 open items. Ian's ruling 2026-11-12, recorded in 08-UAT.md check 8 (known_limitation)."
+  - truth: "VoiceOver walk of the owner screens (Schedule page, Block time and Book by hand dialogs, visit line checkbox)"
+    addressed_in: "Phase 11"
+    evidence: "ROADMAP Phase 11 planning notes, inputs from Phase 8 UAT check 7; 08-UAT.md Deferred Follow-Ups"
 advisory:
-  - finding: "WR-09 (08-REVIEW.md): an approved held draft sends the visit line rendered at send time, not necessarily the line the owner saw on the box"
+  - finding: "IN-13 (08-REVIEW.md): the WR-09 reason 'the visit changed after the line was shown' is also said when only the owner's visit_line wording or the time zone changed and the visit did not"
     category: other
-    reason: "Real, narrow. ConversationThread::approveDraft() passes only a boolean ($this->addVisitLine && $this->visitLine !== null) and SendOwnerReply::sendDraftAskingForVisitLine() calls VisitAskedAbout::find() again. The page polls every 5 seconds (conversation-thread.blade.php:1, wire:poll.5s), so the box text refreshes within 5 seconds of a change, and the line sent is true at send time. The customer is never told anything false. It breaks the stated 'a line is added only when it was on the owner's screen' contract only when the earliest visit changes inside that window. No must-have text requires the sent line to equal the shown line. Ian's triage; the review's fix (pass the shown line down and compare) is small."
-    evidence_status: "code read in this run; no failing test exists for the change-between-render-and-click case"
-  - finding: "WR-10 (08-REVIEW.md): VisitAskedAbout::whyNoLine() returns 'online booking is turned off' when booking is on but the live version predates visit_line"
+    reason: "Info, rare (5-second poll window plus a sync inside it). The send is safe: the draft goes without the line. Only the owner-facing reason can be wrong. Recorded open in 08-REVIEW-DISPOSITION.md, awaiting Ian's ruling."
+    evidence_status: "code read in this run (SendOwnerReply.php sendDraftAskingForVisitLine, VisitAskedAbout::VISIT_CHANGED); no failing test"
+  - finding: "IN-14: NO_VISIT_LINE (WR-10) is reachable only by deleting the key from stored compiled JSON; the real case (live version compiled before plan 08-24) shows no box and tells the owner nothing"
     category: other
-    reason: "Wording for the owner, reachable only in the in-between state after upgrade, before the owner adds visit_line and syncs. visit_line is now required by the sync, so a fresh folder cannot reach it. The prompt's Booking section is left out in the same state, which the plan accepted (D-03). Ian's triage."
-    evidence_status: "code read (VisitAskedAbout.php whyNoLine, SendOwnerReply.php:237); test row pins the sentence"
-  - finding: "IN-10 (08-REVIEW.md): visit_line is required, so an older booking.md is refused whole by the sync with no upgrade note in SETUP.md"
+    reason: "Info. A fresh or re-synced folder cannot reach it because visit_line is required by the sync. Open, awaiting Ian's ruling."
+    evidence_status: "code read in this run (VisitAskedAbout::whyNoLine)"
+  - finding: "IN-15: the IN-10 upgrade note sits in docs/SETUP.md section 12, titled 'checks the sync cannot make', though it describes a check the sync does make"
     category: other
-    reason: "Recoverable: the refusal names the file and field and the previous version stays live. Owner-facing documentation edge."
-    evidence_status: "BookingFileType.php:42 read"
-  - finding: "IN-11 (08-REVIEW.md): VisitAskedAbout::find() orders by starts_at only, so two visits at the same minute can come back in either order, and the card can name a different one"
+    reason: "Info, documentation placement. Open, awaiting Ian's ruling."
+    evidence_status: "docs/SETUP.md read in this run"
+  - finding: "Live wording on the sent-on-its-own path: the model narrates what the Booking section says code adds ('listed just below', 'you'll get a confirmation right away') and Jev reads it as a promise; the Phase 2 bars on the customer's own text also held two of three replies"
     category: other
-    reason: "Two booked visits at one start minute for one contact is rare. The fix is one orderBy('id'). Ian's triage."
-    evidence_status: "VisitAskedAbout.php find() read"
-  - finding: "IN-12 (08-REVIEW.md): the Booking section tells the model 'the system adds a line after your words' as flat fact, which is not true of a reply the send rule holds as a draft until the owner ticks the box"
-    category: other
-    reason: "Wording the model reads. A held draft can reach the owner without a day or time, and the box then adds it. Small effect; folds into the live re-walk (human item 1)."
-    evidence_status: "FrontDeskPrompt.php:92, :102 read"
-  - finding: "WR-06..WR-08 and IN-09 from the earlier verification are fixed (WR-06, WR-07, WR-08 per 08-REVIEW-DISPOSITION.md) or unchanged (IN-09)"
-    category: other
-    reason: "Dispositions recorded by Ian on 2026-11-09; not re-weighed here."
-    evidence_status: "08-REVIEW-DISPOSITION.md"
-behavior_unverified_items:
-  - truth: "G-08-4b: the front desk's booking texts never say the owner will confirm the time and do not repeat the link line's words"
-    test: "In Dev chat after php artisan icm:sync (live version carries visit_line): finish intake and read the offer; then ask for the link again"
-    expected: "The offer is labeled scheduling with the owner's link line and its own words neither ask the customer to pick a time nor say the owner will confirm; the link-again reply does not repeat the link line"
-    why_human: "What the model writes under the new prompt cannot be asserted with the scripted fake agent. Tests prove the model now reads the corrected rule and the Booking section; only the live model (Jev and the front-desk agent) shows whether it follows them. Recorded as WINDOWS.md entry 79."
-human_verification:
-  - test: "Dev chat re-walk (WINDOWS.md entry 79): (1) D-05 offer after the last intake answer; (2) D-39 as amended, on a contact with a visit booked ahead, 'What time are you coming?'; (3) the link-again case; (4) a held reply on a booked contact shows the visit line box and Send adds the line"
-    expected: "(1) labeled scheduling with the link line, no 'owner will confirm' in the model's words; (2) sent on its own labeled scheduling, parts model_words and visit_line, the model gives no day or time, one change_request alert; (3) a fresh link line or a held draft, never /book/[link] to the customer; (4) the box reads 'The visit line will be added: ...' and Send adds the line after the words"
-    why_human: "Needs the live model; the scripted tests cannot show how it labels or words these replies. This is the exact UAT check that failed (test 4), so it is the one that closes G-08-4 and G-08-4b."
-  - test: "Keyboard-only and VoiceOver walk of the new visit line checkbox on the owner's conversation screen"
-    expected: "One Tab from the draft box reaches the checkbox, its name is the visible line, Space unticks it, and VoiceOver reads it as a checkbox with that name"
-    why_human: "CLAUDE.md: automated checks catch only part of WCAG. DraftVisitLineKeyboardTest covers axe, Tab, name and Space in real Chromium; VoiceOver on owner screens was moved to Phase 11 by Ian (UAT check 7)."
-  - test: "Push the branch and read CI's pgsql leg for the whole suite"
-    expected: "Both sqlite and pgsql legs green. CI run 42643059174 at 689b786 covered the phase before the gap plans; plans 08-24 to 08-26 (commits after 689b786) have run on SQLite only. The new code has no DISTINCT or raw SQL, so none is expected to differ"
-    why_human: "Postgres runs only in CI after Ian pushes"
-  - test: "Phone-width look at the booking page and the visit line box if Phase 11 has not yet restyled them; attorney list still before a real client"
-    expected: "Nothing scrolls sideways at 375 px; attorney has the four facts in docs/BLUEPRINT.md section 10"
-    why_human: "Already passed at UAT (checks 1, 3, 6); listed so the end-of-phase UAT record is complete"
+    reason: "Ian's ruling 2026-11-12: known limitation, routed to Phase 10 (see deferred). No customer saw anything false: the replies were held, and the visit-line path was correct in code and on the held-draft box live."
+    evidence_status: "08-UAT.md check 8, gaps G-08-4 and G-08-4b live_walk notes"
 ---
 
 # Phase 8: Schedule and Booking Verification Report
 
 **Phase Goal:** A customer can finish the conversation by booking a time, and the owner sees it and is told about it.
-**Verified:** 2026-11-11
-**Status:** human_needed
-**Re-verification:** Yes, after UAT gap closure (plans 08-24 to 08-26). The earlier report was `human_needed` 8/8.
+**Verified:** 2026-11-12
+**Status:** passed
+**Re-verification:** Yes. The previous report (2026-11-11) was `human_needed` 10/11 and went stale because five review-fix commits landed after it. This run re-read each fix in code, ran the tests for them, took the UAT record as the answer to the earlier human items after checking it against the code, and regenerated the fingerprint.
 
 ## Goal Achievement
 
-UAT passed the booking path (checks 1, 3, 5, 6, 7), closed G-08-1 and G-08-2 as environment, and failed check 4 on two linked symptoms: a booked customer asking "what time are you coming?" got a held deflection, and the front desk's booking texts said the owner would confirm a time the page books at once. Ian amended D-39 on 2026-11-11 and plans 08-24 to 08-26 were written to close both. I read the code each plan names, traced each path from the model's reply to the customer's phone and to the owner's approve button, and ran the tests. The code half of both gaps holds. The half that depends on how the live model words and labels its replies cannot be shown here, so that stays a human item and the status is `human_needed`. No blocker was found.
+The booking path itself (link, page, confirmed appointment, project and timeline and card and schedule screen, reminders, owner alerts, the room at the standard, the accessible page) is unchanged since the last full verification apart from the five fixes, and UAT walked it. The two UAT failures (G-08-4 and G-08-4b) have their code fixed and tested, and the live walk on 2026-11-12 showed the fix working where code controls the outcome. What did not hold live was the front desk sending two particular reply shapes on its own. Jev's promise reading and the Phase 2 bars held them. Ian ruled that a known limitation for Phase 10, and ROADMAP.md carries it as a specific Phase 10 item. That does not defeat the goal: the customer finishes the conversation by booking a time through the link, and held replies reach the owner, who can send them with the visit line.
 
 ### Observable Truths
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | SC1: a customer texted a link opens a page, taps one time and ends with a confirmed appointment without typing; only valid times offered | VERIFIED (regression check) | No file of the booking page, Availability or the link path changed since the last verification (git diff 1335509..HEAD touches none). BookingLinkTest and the Booking, Rooms and leak suites pass in this run. UAT check 1 passed at desktop and 375 px. |
-| 2 | SC2: a booked appointment attaches to the project, appears on the timeline, the card and the schedule screen | VERIFIED (regression check) | Unchanged files; UAT check 7 walked the Schedule page and card. |
-| 3 | SC3: the customer is reminded before the appointment, by the scheduler, and a text is sent once | VERIFIED (regression check) | SendBookingText untouched since the last verification; BookingSendOnceTest passes. |
-| 4 | SC4: the owner is alerted once when an appointment is booked and when a conversation needs a human | VERIFIED | The D-34 change_request alert now reads its visit through `VisitAskedAbout::find()` then `describe()` (RunFrontDesk.php:270-271). VisitLineTest asserts exactly one change_request alert with body containing 'AC repair, Thursday, November 5 at 10:00 AM' on the visit-line path. |
-| 5 | SC5: the room meets the standard | VERIFIED (regression check) | ScheduleAndBookingBootTest, SyncTest and BookingFileCheckTest pass (tests/Feature/Rooms, 513 tests across the extra run). The booking file type gained `visit_line` (BookingFileType.php:42, :78) with its own refusal rows. |
-| 6 | SC6: the booking page meets WCAG 2.2 AA (automated part); UI-SPEC carries it | VERIFIED (automated part) | Unchanged since last verification; UAT checks 1 to 3 passed the keyboard, VoiceOver and zoom walks. |
-| 7 | D-12 (locked): a copy of the database or business folder holds no working booking link | VERIFIED (regression check) | BookingLinkLeakTest and BookingTextKindTest pass. New code adds no link: the visit line holds no `/book/`, and `OutboundSender` still refuses any text holding the hidden form. The prompt's Booking sections are tested to hold no `/book/` and no stored link line (BookingSectionTest, 'writes the Booking section with no booking address, exclamation point or em dash'). |
-| 8 | D-46: the automatic-texts switch writes one timeline entry per change | VERIFIED (regression check) | UAT check 7 walked it: "Ian Owner turned automatic texts on/off." |
-| 9 | G-08-4, D-39 as amended: with a visit booked ahead, a scheduling reply reaches the customer as the model's words then the owner's visit line, rendered by code; kind `agent_reply`, label scheduling, `meta.parts ['model_words','visit_line']`, `meta.visit_line_appointment_id` set, verdict judges the model's words alone | VERIFIED (code half; the live label depends on the model, see human item 1) | `RunFrontDesk::sendPassingReply()` (:610-620): when no link was minted and the reply has model words, `VisitAskedAbout::find()` (reading intent scheduling or label scheduling, earliest booked visit ahead, through the contact's own relation) then `line()` (BookingSettings::renderVisit, owner's `visit_line`) then `visitLineFits()` (<= 1,600 composed) then `withVisitLine()`. It goes the `SendCombinedReply` path, whose `meta.parts` come from `ReplyParts::partNames()` (`visit_line` placed after the fixed line, before the booking line, ReplyParts.php:37-59, :95-97). `OutboundSender::whyReadingBlocks()` holds `visit_line` to `allowsOwnerSentences()` (:545), so a complaint or failed reading refuses it. The link is only minted when `ServiceToBook` finds no visit ahead (`visitBookedAhead`), so the two lines never ride together. VisitLineTest (real send path through the queued job and the fake classifier): asserts the customer's phone received `composedFirstReply('Thanks for checking. Your visit for AC repair is on Thursday, November 5 at 10:00 AM. To change it, reply to this text.')`, kind, label, status, parts, appointment id, `gate.inputs.agent_reply` equal to the model's words alone, no BookingLink row, no classifier call containing the line, one change_request alert. Further rows pass for clean reading at the chokepoint, faq_answer with scheduling intent, no line when not about scheduling, link line when no visit ahead, room off / no file / old version, never in a held draft, a waiting price draft, and the 1,600 boundary both ways. No new MessageKind, no field on the model's structured reply, no Appointment import in RunFrontDesk (grep). |
-| 10 | G-08-4, D-39 amended, D-45 analog: a held reply for a booked customer shows one native checkbox 'The visit line will be added: <line>'; Send adds the line after the owner's words; conditions re-checked at approval; refusal over 1,600; when the reading is not clean the box starts unchecked | VERIFIED | `ConversationThread::syncDraftFields()` (:333-361) fills the locked `visitLine` from `SendOwnerReply::visitLineFor()` every render and sets the box start from `visitLineStartsOn()` (clean reading only). The blade shows `data-visit-line-choice`, `#add-visit-line`, label text 'The visit line will be added: {{ $visitLine }}' only when `$visitLine !== null`. `approveDraft()` passes the box only while a line was drawn. `SendOwnerReply::sendDraft()` routes to `sendDraftAskingForVisitLine()`, which asks `whyNoLine()` again at approval, sends without the line and records `meta.visit_line_left_off` when a reason holds, refuses with TOO_LONG_WITH_VISIT_LINE over 1,600 and keeps the draft live, and otherwise sends words + line through `OutboundSender::sendExisting()` on the owner origin with `meta.visit_line_appointment_id`. `aboutScheduling()` takes intent OR label, so UAT message 20's shape (label other, reading scheduling) shows the box. ApprovedDraftVisitLineTest and DraftVisitLineKeyboardTest (real Chromium: axe, one Tab, name, Space) pass. WR-09 (below) is the one gap between the stated contract and the code; it does not stop the box working. |
-| 11 | G-08-4b, D-39 amended: the model reads a corrected rule, and a Booking section that says what code adds, so its words do not restate the day, time or link or say the owner confirms | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | `FrontDeskPrompt::RULES` line 47 no longer holds 'Never say a visit, a time or a booking is set... the owner confirms those'. It now says a day or time the customer proposes is not set and a visit the card lists as booked is the business's own recorded booking. `bookingSection()` (:290-303) adds '## Booking' after the card and before 'Already with the owner' and 'Right now' (:150-155): BOOKING_VISIT_BOOKED for a booked customer, only while `whyNoLine()` is null; BOOKING_ONLINE with the slugs from `ServiceToBook::onlineServiceSlugs()` (sorted, book_online only) for an unbooked customer; nothing when booking does not apply. Neither constant holds `/book/`, an exclamation point or an em dash (tested). `booking.md` is not added to the agent's loads (tested). BookingSectionTest and FrontDeskPromptTest pass. Present and wired; whether the live model now labels the reply scheduling and stops saying the owner confirms is what UAT test 4 failed on and no test can assert. Routes to human item 1. |
+| 1 | SC1: a customer texted a link opens a page, taps one time and ends with a confirmed appointment without typing; only valid times offered | VERIFIED | Booking page, Availability and link path untouched since 1335509 (git diff names only the files listed under Review fixes and the gap plans). UAT check 1 passed at desktop and 375 px; UAT check 4 booked through a live link (confirmation sent at once with the right day and time). |
+| 2 | SC2: a booked appointment attaches to the project, appears on the timeline, the card and the schedule screen | VERIFIED | UAT checks 4 and 7: hand-booked and page-booked visits on the card and the Schedule page; Upcoming and Past never list the same row. |
+| 3 | SC3: the customer is reminded before the appointment, by the scheduler, sent once | VERIFIED | SendBookingText untouched; BookingSendOnceTest passes in the CI run. UAT check 8 saw a confirmation wait for the 8:00 send window and send at 9:00. |
+| 4 | SC4: the owner is alerted once when an appointment is booked and when a conversation needs a human | VERIFIED | UAT check 8: one change_request alert for message 36 (not sent only because the dev owner has no phone, which is a setup note, not a code gap). VisitLineTest asserts exactly one change_request alert on the visit-line path; the D-34 alert reads its visit through `VisitAskedAbout::find()` and `describe()`, and `find()` now breaks ties by id so alert, line and card name the same visit (IN-11). |
+| 5 | SC5: the room meets the standard | VERIFIED | ScheduleAndBookingBootTest, SyncTest and BookingFileCheckTest part of the green full suite (3,210 tests) and CI #65; `visit_line` required by `BookingFileType`. |
+| 6 | SC6: the booking page meets WCAG 2.2 AA (automated part) and the walks | VERIFIED | Automated checks green; UAT checks 1 to 3 passed (G-08-1 and G-08-2 closed by Ian as environment and VoiceOver behaviour, no code change). VoiceOver on owner screens is Phase 11. |
+| 7 | D-12 (locked): a copy of the database or business folder holds no working booking link | VERIFIED | BookingLinkLeakTest and BookingTextKindTest in the green suite and CI #65 (including the pg_class scan on the pgsql leg). UAT check 8: no booking address of any form in the model's words; link-again was held, nothing broken reached the customer. The Booking section constants hold no `/book/` (BookingSectionTest). |
+| 8 | D-46: the automatic-texts switch writes one timeline entry per change | VERIFIED | UAT check 7 walked it. |
+| 9 | G-08-4, D-39 as amended: with a visit booked ahead, a scheduling reply reaches the customer as the model's words then the owner's visit line rendered by code (`meta.parts model_words, visit_line`); a held draft offers the line behind a box | VERIFIED | Code read as before (RunFrontDesk::sendPassingReply, ReplyParts, OutboundSender::whyReadingBlocks, SendOwnerReply::sendDraftAskingForVisitLine). VisitLineTest (real queued send path with the fake classifier) asserts the phone received the words then the line, parts, appointment id, verdict judged on the words alone. Live (UAT check 8, message 37): reply labeled scheduling with no day or time in the words, so the code path is right; sending on its own was prevented by the customer reading (asks_for_person 0.08, in the unsure band) and the words check (promise 0.54). That is a Phase 2 and Jev calibration matter that Ian routed to Phase 10; it is not the visit-line code. The behavioral test exists and passes, so this truth is not left on presence alone. |
+| 10 | G-08-4: a held reply for a booked customer shows one native checkbox with the line; Send adds it after the owner's words; every condition re-checked at approval; over 1,600 refused; line sent equals the line shown (WR-09) | VERIFIED | `ConversationThread::approveDraft()` now passes the locked `visitLine` that was on screen (`$this->addVisitLine ? $this->visitLine : null`, ConversationThread.php:110-113 in the diff), never a browser value. `SendOwnerReply::sendDraftAskingForVisitLine()` adds the line only when `$line === $visitLineShown` and otherwise sends the words alone with `meta.visit_line_left_off` `VISIT_CHANGED`. ApprovedDraftVisitLineTest has rows for a moved visit and an earlier visit booked after the render. Live (UAT checks 8 and 9): message 37's box read 'The visit line will be added: ...', the owner edited the words and sent with the box checked, and the customer got the words then the line (`visit_line_appointment_id` 9). Keyboard walk passed: one Tab, visible outline, name equals the visible line, Space toggles. |
+| 11 | G-08-4b, D-39 amended: the model reads a corrected rule and a Booking section that says what code adds, so its words do not say the owner confirms | VERIFIED | `FrontDeskPrompt::RULES` line 47 no longer says the owner confirms; `bookingSection()` places `BOOKING_VISIT_BOOKED` or `BOOKING_ONLINE` after the card. IN-12 fix: both constants now say the line is added when the reply is sent as it is and that the owner decides when it is held, which matches the code (read in this run). BookingSectionTest and FrontDeskPromptTest pass. Live: UAT check 8 reports none of the three model replies says the owner confirms and no model reply carried a booking address. This was the item no test could assert; the live walk answered it. Residual wording (the model narrates what code adds; link-again repeats the link line's invitation) is the deferred Phase 10 item, not this truth. |
 
-**Score:** 10/11 truths verified (1 present, behavior-unverified)
+**Score:** 11/11 truths verified (0 present, behavior-unverified)
 
-### Required Artifacts (gap plans 08-24 to 08-26)
+### Deferred Items
+
+| # | Item | Addressed In | Evidence |
+|---|------|-------------|----------|
+| 1 | Sent-on-its-own for a booked customer's "What time are you coming?" and a link-again request (Booking section wording measured with the walk tests; Phase 2 bar calibration) | Phase 10 | ROADMAP.md Phase 10 planning notes lines 375 to 376; BLUEPRINT section 10 open items; Ian 2026-11-12 (08-UAT.md check 8). |
+| 2 | VoiceOver on owner screens | Phase 11 | ROADMAP Phase 11 planning notes; 08-UAT.md Deferred Follow-Ups. |
+
+### Advisory (not blocking)
+
+| # | Finding | Category | Why advisory |
+|---|---------|----------|--------------|
+| 1 | IN-13: the WR-09 reason is worded as 'the visit changed' also when only the visit_line wording or time zone changed | other | Info; the send is safe; open, Ian's ruling pending |
+| 2 | IN-14: NO_VISIT_LINE reason reachable only by hand-editing stored JSON; the real pre-08-24 case says nothing to the owner | other | Info; open, Ian's ruling pending |
+| 3 | IN-15: SETUP.md upgrade note placed under 'checks the sync cannot make' | other | Info, docs placement; open, Ian's ruling pending |
+| 4 | Live wording of sent-on-its-own replies held by Jev and the Phase 2 bars | other | Known limitation per Ian; deferred to Phase 10 |
+
+### Review fixes verified in code (commits 8269ff1, 11d8b16, a7ea1f8, 084cd03, 6b762eb)
+
+| Fix | What the code now does | Status |
+|-----|------------------------|--------|
+| WR-09 (8269ff1) | `ResolveDraft::approve` and `SendOwnerReply::sendDraft` take `?string $visitLineShown`; the line rides only when `$line === $visitLineShown`, else the draft goes as is with `VISIT_CHANGED` recorded | VERIFIED, tests pass |
+| WR-10 (11d8b16) | `whyNoLine()` splits room-off/no-file (`BOOKING_OFF`) from a live file without `visit_line` (`NO_VISIT_LINE`); the leftover reason in `sendDraftAskingForVisitLine` no longer says 'booking is off' for a missing visit_line | VERIFIED |
+| IN-11 (a7ea1f8) | `find()` orders `starts_at` then `id` | VERIFIED |
+| IN-12 (084cd03) | Both Booking constants state the send-as-is vs held distinction; pinned in BookingSectionTest | VERIFIED |
+| IN-10 (6b762eb) | `docs/SETUP.md` carries the `visit_line:` upgrade note (placement is IN-15) | VERIFIED (docs) |
+
+### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `app/Rooms/ScheduleAndBooking/VisitAskedAbout.php` | One place for the condition, description and line | VERIFIED | `find()`, `describe()`, `line()`, `whyNoLine()`, `aboutScheduling()`; read-only queries, no writes |
-| `app/SendRule/ReplyParts.php` | `visitLine` slot named `visit_line` | VERIFIED | Placed after the fixed line, before the booking line; kept out of codeSentences |
-| `app/Rooms/ScheduleAndBooking/BookingSettings.php` | `renderVisit()` | VERIFIED | Returns null for a version compiled before the field |
-| `examples/.../booking.md` | Owner-worded `visit_line` | VERIFIED | Present, with the explanation paragraph; no exclamation point or dash |
-| `app/Rooms/ScheduleAndBooking/BookingFileType.php` | Sync check | VERIFIED | `required|string|max:300`; `lineErrors` with day and time once, service at most once |
-| `app/Actions/SendOwnerReply.php` | `visitLineFor`, `visitLineStartsOn`, `sendDraft` branch | VERIFIED | As Truth 10 |
-| `resources/views/livewire/conversation-thread.blade.php` | The box | VERIFIED | `data-visit-line-choice`, label tied to checkbox by `for`/`id`, 1.5rem target |
-| `app/Ai/FrontDeskPrompt.php` | Corrected rule, Booking section | VERIFIED | `BOOKING_VISIT_BOOKED`, `BOOKING_ONLINE`, `bookingSection()` |
-| `app/Rooms/ScheduleAndBooking/ServiceToBook.php` | `visitBookedAhead()`, `onlineServiceSlugs()` | VERIFIED | `check()` reads the VISIT_BOOKED condition through `visitBookedAhead()` |
-| Tests: VisitLineTest, ApprovedDraftVisitLineTest, DraftVisitLineKeyboardTest, BookingSectionTest | Proof | VERIFIED | `verify.artifacts` all_passed on all three plans (13/13); 170 tests pass in the seven gap-plan files I ran |
+| `app/Rooms/ScheduleAndBooking/VisitAskedAbout.php` | One place for the condition, description, line, reasons | VERIFIED | `find()` (id tie-break), `describe()`, `line()`, `whyNoLine()`, `VISIT_CHANGED`, `NO_VISIT_LINE` |
+| `app/SendRule/ReplyParts.php` | `visit_line` slot | VERIFIED | Unchanged since last report |
+| `app/Rooms/ScheduleAndBooking/BookingSettings.php`, `BookingFileType.php`, `examples/.../booking.md` | Owner's `visit_line`, required by the sync | VERIFIED | Unchanged since last report |
+| `app/Actions/SendOwnerReply.php`, `ResolveDraft.php`, `app/Livewire/ConversationThread.php`, `conversation-thread.blade.php` | The box and the approval | VERIFIED | WR-09 wiring read end to end: locked property to approve to send |
+| `app/Ai/FrontDeskPrompt.php` | Corrected rule, Booking section | VERIFIED | Constants updated by IN-12 |
+| Tests: VisitLineTest, ApprovedDraftVisitLineTest, DraftVisitLineKeyboardTest, BookingSectionTest | Proof | VERIFIED | See spot-checks |
 
 ### Key Link Verification
 
-`verify.key-links` could not evaluate these plans: their `from` fields name methods, not files, so it returned "Source file not found". I checked each by hand against the pattern the plan gives.
-
-| From | To | Via | Status | Details |
-|------|----|-----|--------|---------|
-| RunFrontDesk::sendPassingReply | SendCombinedReply and OutboundSender | `visitAskedAbout->find(` then `withVisitLine` | WIRED | RunFrontDesk.php:613-618, :622-626 |
-| RunFrontDesk::handle | D-34 change_request alert | `visitAskedAbout->describe(` | WIRED | :270-271 |
-| OutboundSender::whyReadingBlocks | `visit_line` part | `'visit_line' =>` arm | WIRED | :545 |
-| BookingFileType::checks | `visit_line` | `lineErrors($file, 'visit_line'` | WIRED | :78 |
-| ConversationThread::approveDraft | ResolveDraft::approve then sendDraft | `addVisitLine && $this->visitLine !== null` | WIRED | :104-110 |
-| SendOwnerReply::sendDraft | OutboundSender::sendExisting | `whyNoLine(` then compose | WIRED | :230-250 |
-| ConversationThread::syncDraftFields | visitLineFor, visitLineStartsOn | every render | WIRED | :345, :360 |
-| FrontDeskPrompt::instructions | the Booking section | `bookingSection(` after the card | WIRED | :150-155 |
-| ServiceToBook::check | visitBookedAhead | VISIT_BOOKED | WIRED | ServiceToBook check() |
+| From | To | Via | Status |
+|------|----|-----|--------|
+| ConversationThread::approveDraft | ResolveDraft::approve then SendOwnerReply::sendDraft | locked `visitLine` passed down as `$visitLineShown` | WIRED |
+| SendOwnerReply::sendDraftAskingForVisitLine | OutboundSender::sendExisting | `whyNoLine()`, `find()`, `line()`, compare to shown, then compose | WIRED |
+| RunFrontDesk::sendPassingReply | SendCombinedReply and OutboundSender | `visitAskedAbout->find(` then `withVisitLine` | WIRED (unchanged) |
+| FrontDeskPrompt::instructions | Booking section | `bookingSection(` after the card | WIRED (unchanged) |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data | Source | Real data | Status |
 |----------|------|--------|-----------|--------|
-| Customer's phone text | visit day and time | `$contact->appointments()->booked()->ahead()` then `renderVisit` of the owner's `visit_line` | Yes | FLOWING |
-| Held-draft box | `visitLine` | `visitLineFor($live)`, refreshed every render and every 5 s poll | Yes | FLOWING |
-| Prompt Booking section | service slugs | `ActiveConfig::services()` filtered by `book_online` | Yes | FLOWING |
+| Customer's text | visit day and time | `$contact->appointments()->booked()->ahead()` ordered by start then id, rendered through the owner's `visit_line` | Yes (UAT message sent with line, appointment 9) | FLOWING |
+| Held-draft box | `visitLine` | `visitLineFor()` each render and 5 s poll; passed down on Send | Yes (UAT check 8 and 9) | FLOWING |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Gap-plan test files (VisitLineTest, ApprovedDraftVisitLineTest, BookingLinkTest, BookingSectionTest, FrontDeskPromptTest, BookingFileCheckTest, DraftVisitLineKeyboardTest) | `php artisan test --compact` on those seven files | 170 passed, 893 assertions, 15 s | PASS |
-| Architecture, booking-text-kind, leak, refusal sentences and the whole Rooms directory | `php artisan test --compact tests/Unit/ArchitectureTest.php tests/Unit/BookingTextKindTest.php tests/Feature/Booking/BookingLinkLeakTest.php tests/Feature/Booking/RefusalSentencesTest.php tests/Feature/Rooms` | 513 passed, 2,709 assertions, 39 s | PASS |
-| Debt markers in files changed since 1335509 | grep TBD, FIXME, XXX across app, resources, database, examples, tests, routes | none | PASS |
-| Full suite | not re-run by me | orchestrator: 3205 tests green after 08-26 | not re-verified |
+| WR-09 to IN-12 test files | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php tests/Feature/Booking/VisitLineTest.php tests/Feature/FrontDesk/BookingSectionTest.php tests/Feature/FrontDesk/FrontDeskPromptTest.php` | 112 passed, 562 assertions | PASS |
+| Full suite | not re-run by me; orchestrator ran it 2026-11-12 | 3,210 tests, 22,642 assertions, 1 known browser-plugin warning | Taken from the orchestrator |
+| CI | UAT check 10 | run #65 at 6b762eb green on sqlite and pgsql | Taken from UAT |
+| Debt markers (TBD, FIXME, XXX) in the files changed by the five fixes | grep | none | PASS |
 
 ### Probe Execution
 
@@ -146,42 +142,31 @@ Step 7c: SKIPPED. No `scripts/*/tests/probe-*.sh` exists and no plan declares a 
 
 Every ID the roadmap lists for Phase 8 appears in at least one plan's `requirements:` frontmatter and in REQUIREMENTS.md. No orphans; BOOK-06 maps to Phase 9.
 
-| Requirement | Source plans | Status | Evidence |
-|-------------|--------------|--------|----------|
-| ROOM-12 | 08-04, 08-14, 08-24 | SATISFIED | Truth 5; the booking file type carries `visit_line` |
-| BOOK-01 | 08-05, 08-06 | SATISFIED | Truth 1 (unchanged) |
-| BOOK-02 | 10 plans incl. 08-17, 08-18, 08-20 to 08-22 | SATISFIED | Truths 1, 7 |
-| BOOK-03 | 11 plans incl. 08-24 to 08-26 | SATISFIED | Truths 2, 8, 9, 10 |
-| BOOK-04 | 7 plans | SATISFIED | Truth 3 |
-| BOOK-05 | 08-03, 08-07 | SATISFIED | Truth 4 |
-| A11Y-02 | 6 plans | SATISFIED for the automated part; UAT walks passed (checks 1 to 3) | Truth 6 |
+| Requirement | Status | Evidence |
+|-------------|--------|----------|
+| ROOM-12 | SATISFIED | Truth 5 |
+| BOOK-01 | SATISFIED | Truth 1 |
+| BOOK-02 | SATISFIED | Truths 1, 7 |
+| BOOK-03 | SATISFIED | Truths 2, 8, 9, 10 |
+| BOOK-04 | SATISFIED | Truth 3 |
+| BOOK-05 | SATISFIED | Truth 4 |
+| A11Y-02 | SATISFIED | Truth 6; UAT keyboard, VoiceOver and zoom walks passed |
 
-Bookkeeping: REQUIREMENTS.md line 53 (BOOK-01) and line 57 (BOOK-05) are still unchecked, and traceability rows 216 and 220 still read "Gaps Found". The code supports marking both complete. Whoever closes the phase should update them.
+Bookkeeping, still open: REQUIREMENTS.md line 53 (BOOK-01) and line 57 (BOOK-05) are still unchecked `[ ]`, and traceability rows 216 and 220 still read "Gaps Found". The code and UAT support marking both complete and the rows "Complete". Whoever closes the phase should update them. This is a tracking inconsistency, not a goal gap.
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| app/Livewire/ConversationThread.php, app/Actions/SendOwnerReply.php | 104-110, 230-250 | The shown line is not passed down; the send re-renders (WR-09) | WARNING | Narrow window (5 s poll); line is true at send time; contract in docblocks and BLUEPRINT.md:133 overstated |
-| app/Rooms/ScheduleAndBooking/VisitAskedAbout.php | whyNoLine | 'online booking is turned off' for a pre-visit_line version (WR-10) | WARNING | Owner-facing wording in the in-between state only |
-| app/Rooms/ScheduleAndBooking/VisitAskedAbout.php | find | no `id` tie-break (IN-11) | INFO | Same-minute double booking only |
-| app/Ai/FrontDeskPrompt.php | 92, 102 | flat 'the system adds a line' (IN-12) | INFO | Model reads a claim that is only true on a send, not a held draft |
-| docs/SETUP.md | - | no upgrade note for required `visit_line` (IN-10) | INFO | Refusal names the field |
-
-No TBD, FIXME or XXX marker in changed files. I weighed WR-09, WR-10 and IN-10 to IN-12 against the must-haves. None defeats one: Truth 10 requires the line be added only when drawn, that every condition be re-checked at approval, and that the owner's choice decide, all of which the code does; none requires that the sent text equal the shown text, though the docblock implies it. WR-09 is the one I would fix first, before a real client, because the box's accessible name is the line the owner agrees to.
+None blocking. No TBD, FIXME or XXX in the files changed by the five fixes. The earlier WARNING and INFO findings (WR-09, WR-10, IN-10, IN-11, IN-12) are fixed. IN-13 to IN-15 are open info items listed under Advisory.
 
 ### Human Verification Required
 
-1. **Dev chat re-walk** (WINDOWS.md entry 79). This is the check that failed at UAT and is the only way to close Truth 11 and the live half of Truth 9. Expected: offer labeled scheduling with the link line and no "owner will confirm" in the model's words; "What time are you coming?" on a booked contact sends on its own with the model's words and the visit line; link-again gives a fresh link line or a held draft, never `/book/[link]`; a held reply shows the visit line box.
-2. **Keyboard and VoiceOver walk** of the new visit line checkbox (axe, Tab, name and Space are tested in Chromium; VoiceOver on owner screens was moved to Phase 11 by Ian).
-3. **Push and read CI's pgsql leg.** CI run 42643059174 at 689b786 predates the gap plans.
-4. **Attorney list** stays a before-first-client item (docs/BLUEPRINT.md section 10).
+None. The previous items are answered by UAT (checks 8, 9, 10), checked against the code above. Two things stay outside Phase 8 by Ian's ruling and are recorded under Deferred: live sent-on-its-own wording (Phase 10) and VoiceOver on owner screens (Phase 11). The attorney list (docs/BLUEPRINT.md section 10) remains a before-first-client item and is not a phase gate.
 
 ### Gaps Summary
 
-No gaps. Both UAT failures have their code fixed and tested: the visit line is built by code from the owner's `visit_line`, rides only under one shared condition on the automated path, is held to a clean reading at the chokepoint, and is offered behind a checkbox on a held draft; the model now reads a corrected rule and a Booking section built from the same conditions the send uses. Nothing here can show how the live model will label and word its replies, which is exactly what UAT test 4 failed on, so the Dev chat re-walk decides whether G-08-4 and G-08-4b are closed in practice. WR-09 and WR-10 are open warnings for Ian's triage and do not block.
+No gaps. All eleven truths hold. The one place the live system fell short of a UAT expectation (replies held by the Phase 2 bars and Jev's promise reading) was ruled a known limitation by Ian and sits as a specific item in ROADMAP Phase 10, so it is deferred, not a Phase 8 gap.
 
 ---
 
-_Verified: 2026-11-11_
+_Verified: 2026-11-12_
 _Verifier: Claude (gsd-verifier)_
