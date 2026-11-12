@@ -38,9 +38,14 @@ files_reviewed_list:
 findings:
   critical: 0
   warning: 2
-  info: 3
-  total: 5
+  info: 6
+  total: 8
 status: issues_found
+increments:
+  - reviewed: 2026-11-12T00:00:00Z
+    scope: "8269ff1^..6b762eb (WR-09, WR-10, IN-10, IN-11, IN-12 fixes)"
+    findings: {critical: 0, warning: 0, info: 3}
+    ids: [IN-13, IN-14, IN-15]
 ---
 
 # Phase 8: Code Review Report (incremental, 67d16e0..HEAD)
@@ -162,5 +167,105 @@ whether it is added", and update the two constant-pinned tests in `BookingSectio
 ---
 
 _Reviewed: 2026-11-11T00:00:00Z_
+_Reviewer: Claude (gsd-code-reviewer)_
+_Depth: standard_
+
+---
+
+# Phase 8: Code Review Report (increment: fixes for WR-09, WR-10, IN-10, IN-11, IN-12)
+
+**Reviewed:** 2026-11-12
+**Depth:** standard
+**Files Reviewed:** 10
+**Status:** issues_found (info only)
+
+## Summary
+
+Each of the five commits does what its finding asked. The full suite passes (3,210 tests), and so do the three
+changed test files on their own.
+
+Project rules hold. Every send in the changed code still goes through `OutboundSender::sendExisting()` with the
+owner origin. The text that goes out is always the line built fresh at send time (`$line`). The text the browser
+held (`$visitLineShown`) is only compared against it and is never sent. So even if someone changed that value in the
+browser, the worst outcome is that no line is added; a made-up line can never go out. `visitLine` stays `#[Locked]`.
+No money is touched.
+
+## Verdicts on the fixed findings
+
+- **WR-09: closed.** The approve step now passes down the locked line that was on screen. The send adds a line only
+  when the line it would build now is word-for-word the same; otherwise it sends the words alone and gives the
+  reason `VISIT_CHANGED`. Tests cover a visit that moved and an earlier visit that was booked. The thread refreshes
+  itself every 5 seconds (`wire:poll.5s`), so "on screen" means the most recent refresh, which is what the snapshot
+  holds when Send is pressed. The reason's wording is too narrow; see IN-13.
+- **WR-10: closed.** A booking file synced before `visit_line` existed now gets its own reason, and "online booking is
+  turned off" is kept for the room off or no booking file. The pinned test row was updated. The prompt half of WR-10
+  (the Booking section is left out for such a customer) was not changed, and leaving it out is right, because its
+  sentences would be false. The new reason can almost never reach an owner; see IN-14.
+- **IN-10: closed (docs only, as Ian ruled).** SETUP.md now says to add `visit_line:` before the next sync. The note
+  sits under a heading that says the opposite of what it describes; see IN-15.
+- **IN-11: closed.** `find()` now orders by `starts_at` then `id`, the same order as `CustomerCard::render()` (line 72)
+  and `ContactInfolist::nextAppointmentLine()`. The new SQL-text test proves the order. The first IN-11 test would also
+  pass without the fix on SQLite, and the test's own comment says so.
+- **IN-12: closed.** Both Booking constants now say the line is added when the reply is sent as it is, and that the
+  owner decides when it is held. That is true of the code: a held draft shows the visit-line box or the link box only
+  under the same conditions the constants describe. Both sentences are pinned in `BookingSectionTest`.
+
+## Info
+
+### IN-13: "The visit changed after the line was shown" is also said when the visit did not change
+
+**File:** `app/Actions/SendOwnerReply.php:237-241`, `app/Rooms/ScheduleAndBooking/VisitAskedAbout.php:27-31`, `docs/BLUEPRINT.md:133`
+**Issue:** The WR-09 check compares the whole rendered line, but the line is built from four things: the visit's
+start, the visit's service name, the owner's `visit_line` wording in `booking.md`, and the business time zone
+(`VisitAskedAbout::line()`, `BookingSettings::renderVisitLine()`). If the owner edits the `visit_line` wording or the
+time zone and syncs between the last screen refresh and the click, the visit is the same but the line is not. The
+draft then goes without the line, and the owner reads "Draft sent without the visit line: the visit changed after the
+line was shown". That is false: the visit did not change. The owner may go looking for a change to a visit that never
+moved. The BLUEPRINT line ("it moved, or an earlier visit was booked") gives the same incomplete list. Because the
+thread refreshes every 5 seconds, this can only happen in a short window, so it is rare. CLAUDE.md still lists wording
+as something that gates a phase, and WR-10 was raised for the same kind of false reason.
+**Fix:** Either use a reason that is true in every case, for example
+`'the line changed after it was shown'`, or tell the cases apart. To tell them apart, also pass the visit id that was
+on screen (a second `#[Locked]` property filled in `syncDraftFields()`), then choose the reason:
+```php
+$leftOff = $line === null
+    ? $reason ?? ($visit === null ? VisitAskedAbout::NO_VISIT_AHEAD : VisitAskedAbout::NO_VISIT_LINE)
+    : ($visit->id === $visitIdShown ? VisitAskedAbout::LINE_WORDING_CHANGED : VisitAskedAbout::VISIT_CHANGED);
+```
+Add one dataset row to the WR-09 test that resyncs `booking.md` with a different `visit_line`. Update the BLUEPRINT
+line to match.
+
+### IN-14: The WR-10 reason can only be reached by a downgrade the platform cannot do, so the real case stays silent
+
+**File:** `app/Actions/SendOwnerReply.php:186-191` (`visitLineFor()`), `app/Rooms/ScheduleAndBooking/ScheduleSection.php:60`, `tests/Feature/Booking/ApprovedDraftVisitLineTest.php:159-169`
+**Issue:** `NO_VISIT_LINE` reaches the owner only on the approve path, and only when the live version had `visit_line`
+when the screen last refreshed and lost it by the time Send was pressed. A sync cannot do that, because `visit_line`
+is required (`BookingFileType.php:42`). There is no rollback to an older version either. The test reaches the case
+only by deleting the key from the stored compiled JSON (`approvedVisitLineOlderVersion()`). The case that can really
+happen is a business whose live version was compiled before plan 08-24 shipped. In that case `visitLineFor()` returns
+null, so the box is never drawn. The front desk adds no visit line. The Booking section is left out of the prompt
+(`FrontDeskPrompt.php:296`). Nothing anywhere tells the owner why, and that is the confusion WR-10 was about. The
+owner finds out only when a later sync is refused (IN-10).
+**Fix:** Show the reason where the owner already looks for booking state. Next to `ScheduleSection::BOOKING_OFF_LINE`,
+add a notice shown when `BookingSettings::fromConfig()?->visitLine === null` while a booking file is live, for example
+"Visit lines stay off until visit_line is added to rooms/schedule_and_booking/booking.md and the folder is synced
+again." Alternatively, have the approve step show `whyNoLine()` as a one-line hint under the draft when it returns
+`NO_VISIT_LINE` for a scheduling draft. Keep the existing test; add one for the new notice.
+
+### IN-15: The IN-10 note sits under a heading that says the sync cannot check it
+
+**File:** `docs/SETUP.md:191-207`
+**Issue:** Section 12 is titled "Setting up a business: checks the sync cannot make", and its opening says these are
+facts the sync cannot verify, to be checked by hand. The new paragraph describes the opposite: a check the sync does
+make, and one that refuses the whole folder. It is also loose text after the section's bullet list rather than a
+bullet. Someone reading the heading to decide what to check by hand will be misled, and someone looking for upgrade
+steps will not look under this heading. The example folder's `changelog.md` that IN-10 mentioned has no entry either.
+**Fix:** Move the paragraph under its own short heading, for example "## 13. Upgrading a business folder", with the
+`visit_line` note as its first bullet and the rules for the line (holds `{day}` and `{time}` once each, `{service}` at
+most once). Optionally add a dated line to `examples/example-hvac/changelog.md`.
+
+---
+
+_Reviewed: 2026-11-12_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
