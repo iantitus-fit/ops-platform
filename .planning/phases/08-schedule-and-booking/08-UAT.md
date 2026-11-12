@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 08-schedule-and-booking
 source: [08-VERIFICATION.md]
 started: 2026-11-08T23:30:00Z
-updated: 2026-11-11T19:40:23Z
+updated: 2026-11-12T20:30:52.336Z
 ---
 
 ## Current Test
@@ -54,13 +54,32 @@ result: pass
 evidence: "pass. Both dialogs say \"Times are in Central Time.\" A block from Thursday, November 12, 1:00 PM to Friday, November 13, 9:28 PM shows once in Upcoming as a single row (32 hr 28 min, Blocked by Ian Owner, Remove block) and never in Past. Past was empty while Tuesday's already-ended 9:00 AM visit stayed in Upcoming; after midnight Upcoming dropped to 7 rows without it. Book by hand refused a time inside the block with \"That time is taken by another booking or blocked time. Pick another time.\" For a new email-only contact, Book by hand first said \"No confirmation text will go out. This customer has not agreed to automatic texts.\"; after Turn on automatic texts (timeline: \"Ian Owner turned automatic texts on.\") it said \"No confirmation text will go out. This customer has no phone number on file.\"; booking Monday, November 16 at 10:00 AM logged \"Confirmation text not sent: the customer has no phone number on file.\"; Turn off logged \"Ian Owner turned automatic texts off.\" Keyboard: Tab reaches Block time, Enter opens it with focus inside, Tab moves through Starts, Ends, Note and the buttons, and Escape closes it with focus back on Block time. VoiceOver on owner screens moves to Phase 11, as in Phase 7. Cosmetic notes for Phase 11, not gaps: the Schedule table scrolls sideways at a normal laptop window width with the What column squeezed; the automatic-texts timeline badges show the raw type value (automatic_texts_turned_on), while other entries show a plain label, as D-46 specifies."
 not_walked: "VoiceOver on owner screens moves to Phase 11, as in Phase 7"
 
+### 8. Dev chat re-walk after the gap plans (WINDOWS.md entry 79), on fresh numbers after php artisan icm:sync so the live version carries visit_line
+expected: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and the model's own words neither ask the customer to pick a time nor say the owner will confirm. (2) D-39 as amended: on a contact with a visit booked ahead, "What time are you coming?" sends on its own, labeled scheduling, parts model_words and visit_line; the model's words give no day or time, the visit line gives them, and the owner gets one change_request alert. (3) "Can you send the link again?" gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line. (4) A held reply on a booked contact shows "The visit line will be added: ..." with its box, and Send adds the line after the words
+result: skipped
+reason: "Deferred follow-up: known limitation routed to Phase 10 by Ian (2026-11-12); no Phase 8 fix planned, and the phase closes with it. Parts (1), (3) no address and (4) passed live; (2) and (3) wording held."
+reported: "Issue, but not a Phase 8 gap: route it to Phase 10. Record it as a known limitation, plan no Phase 8 fix, and let the phase close with it.\n\nWhat passed:\n(1) D-05: on +13175550178 the offer went out on its own, labeled scheduling, parts model_words and booking_link (link 8), with the words \"Thanks, that's everything I need for now. Would you like to book a visit so we can take a look at your AC?\" The words neither ask the customer to pick a time nor say the owner will confirm. G-08-4b is fixed live: none of the three model replies in this walk says the owner confirms.\n(3) No booking address of any form in the model's words; \"Can you send the link again?\" was held (message 31), so nothing broken reached the customer.\n(4) On +13175550179's held draft (message 37) the Needs you block showed \"The visit line will be added: Your visit for AC repair is on Tuesday, November 17 at 10:00 AM. To change it, reply to this text.\" Ian edited the words and sent with the box checked; the customer got his words then the visit line (resolution edited, resolved_by 1, visit_line_appointment_id 9).\nAlso: one change_request alert was raised for message 36 (not sent only because the dev owner has no phone), and the 0179 confirmation, booked at 9:21 pm, waited for the 8:00 send window (it sent at 9:00 because the Mac was asleep until then).\n\nWhat did not:\n(2) \"What time are you coming?\" on 0179 (message 37) came back labeled scheduling with no day or time in the words, so the code path is right, but it was held twice over: the customer reading put asks_for_person at 0.08, inside the unsure band, and the words check put promise at 0.54 on \"Your AC repair visit is already booked in our system, and the day and time are listed just below. If you need to change it, reply here and we'll take care of it.\" The customer got the holding reply.\n(3) The link-again draft (message 31) said \"Sure, here's the booking link again. Pick any time that works for you and you'll get a confirmation right away.\" It repeats the link line's invitation, and the words check read the confirmation sentence as a promise (0.35). The customer reading also put complaint at 0.20.\n\nThe pattern: the model now narrates what the Booking section tells it code adds (\"listed just below\", \"you'll get a confirmation right away\", \"reply here and we'll take care of it\"), and Jev reads that as a promise. Separately, the Phase 2 bars on the customer's own text would have held two of these three replies anyway. Rewording the Booking section alone cannot make sending on its own reliable until the bars are calibrated, so both belong with the walk tests."
+known_limitation: true
+went_to: "ROADMAP Phase 10 planning notes (measure and settle the Booking section's wording with the walk tests, next to the bar calibration); BLUEPRINT 10 open items (2026-11-12)"
+
+### 9. Keyboard-only walk of the new visit line checkbox on the owner's conversation screen
+expected: One Tab from the draft box reaches the checkbox, it shows a visible focus outline, its label is the visible line "The visit line will be added: ...", and Space unticks and reticks it. VoiceOver on owner screens stays with Phase 11
+result: pass
+evidence: "pass. In an Incognito window (my normal profile has an extension that takes the Space key): with a visit booked by hand for +13175550178, its held scheduling draft (message 31) shows the visit line box. One Tab from the draft box reaches the checkbox with a visible focus outline, its label is the visible line \"The visit line will be added: Your visit for AC repair is on Wednesday, November 18 at 10:00 AM. To change it, reply to this text.\", and Space unticks and reticks it. VoiceOver on owner screens stays with Phase 11."
+not_walked: "VoiceOver on owner screens moves to Phase 11, as in Phase 7"
+
+### 10. Push the branch and read CI's pgsql leg for the whole suite after the gap plans
+expected: Both sqlite and pgsql legs green at the current head (6b762eb or later). CI run 42643059174 at 689b786 predates plans 08-24 to 08-26 and the WR-09, WR-10, IN-10 to IN-12 fixes, which have run on SQLite only
+result: pass
+evidence: "CI run #65 at 6b762eb: sqlite and pgsql legs green, covering 08-24 to 08-26 and the five re-review fixes (WR-09, WR-10, IN-10 to IN-12)"
+
 ## Summary
 
-total: 7
-passed: 6
+total: 10
+passed: 8
 issues: 1
 pending: 0
-skipped: 0
+skipped: 1
 blocked: 0
 
 ## Gaps
@@ -115,7 +134,10 @@ blocked: 0
 
 - gap_id: G-08-4
   truth: "With a visit booked ahead, the front desk's reply to 'What time are you coming?' sends on its own, labeled scheduling, and code adds the owner's visit_line with the appointment's day and time; the model's words never state them (D-39 as amended by Ian, 2026-11-11)"
-  status: failed
+  status: resolved
+  resolved_by: 08-26-PLAN.md
+  resolved_at: 2026-11-11
+  live_walk: "UAT test 8 (2026-11-12): the code path held live (message 37 labeled scheduling, no day or time in the words, visit line box and Send adding the line). Sending on its own did not: the customer reading (asks_for_person 0.08) and the words check (promise 0.54) held it. Ian ruled it a known limitation for Phase 10, not a Phase 8 gap."
   reason: "User reported: 1. D-39: on +13175550177, with a hand-booked AC repair visit for Thursday, November 12 at 10:00 AM on the card, \"What time are you coming?\" (customer reading scheduling 0.99, clean) got the draft \"Thanks for checking. I can't confirm the visit time myself, so the owner will follow up with you on exactly when we're coming.\", labeled other and held (label:other). The customer got the holding reply. The answer was not taken from the card (message 20)."
   severity: major
   test: 4
@@ -141,7 +163,10 @@ blocked: 0
 
 - gap_id: G-08-4b
   truth: "The front desk's booking texts never say the owner will confirm the time (the page books at once) and do not repeat the link line's words"
-  status: failed
+  status: resolved
+  resolved_by: 08-26-PLAN.md
+  resolved_at: 2026-11-11
+  live_walk: "UAT test 8 (2026-11-12): fixed live; none of the three model replies says the owner confirms. The link-again draft (message 31) still repeats the link line's invitation; that wording goes to Phase 10 with the Booking section, as a known limitation."
   reason: "User reported: 2. The front desk's booking texts say the owner will confirm, which is false now that the page books at once, and they repeat the link line's words. The held offer (message 10) said \"What day works best for you? The owner will confirm the time.\" The sent link-again reply (message 13) said \"Pick a time that works for you, and the owner will confirm the visit. Pick a time that works for you here: [link]\"."
   severity: major
   test: 4
@@ -192,3 +217,7 @@ blocked: 0
   idea: "Cosmetic, for Phase 11: the automatic-texts timeline badges show the raw type value (automatic_texts_turned_on), while other entries show a plain label, as D-46 specifies."
   deferred_at: 2026-11-11
   went_to: "ROADMAP Phase 11 planning notes and the phone design pass todo (.planning/todos/pending/2026-10-17-phone-design-pass.md), under the visual direction rule; BLUEPRINT 4 open items (2026-11-11)"
+- test: 8
+  idea: "Issue, but not a Phase 8 gap: route it to Phase 10. Record it as a known limitation, plan no Phase 8 fix, and let the phase close with it.\n\nWhat passed:\n(1) D-05: on +13175550178 the offer went out on its own, labeled scheduling, parts model_words and booking_link (link 8), with the words \"Thanks, that's everything I need for now. Would you like to book a visit so we can take a look at your AC?\" The words neither ask the customer to pick a time nor say the owner will confirm. G-08-4b is fixed live: none of the three model replies in this walk says the owner confirms.\n(3) No booking address of any form in the model's words; \"Can you send the link again?\" was held (message 31), so nothing broken reached the customer.\n(4) On +13175550179's held draft (message 37) the Needs you block showed \"The visit line will be added: Your visit for AC repair is on Tuesday, November 17 at 10:00 AM. To change it, reply to this text.\" Ian edited the words and sent with the box checked; the customer got his words then the visit line (resolution edited, resolved_by 1, visit_line_appointment_id 9).\nAlso: one change_request alert was raised for message 36 (not sent only because the dev owner has no phone), and the 0179 confirmation, booked at 9:21 pm, waited for the 8:00 send window (it sent at 9:00 because the Mac was asleep until then).\n\nWhat did not:\n(2) \"What time are you coming?\" on 0179 (message 37) came back labeled scheduling with no day or time in the words, so the code path is right, but it was held twice over: the customer reading put asks_for_person at 0.08, inside the unsure band, and the words check put promise at 0.54 on \"Your AC repair visit is already booked in our system, and the day and time are listed just below. If you need to change it, reply here and we'll take care of it.\" The customer got the holding reply.\n(3) The link-again draft (message 31) said \"Sure, here's the booking link again. Pick any time that works for you and you'll get a confirmation right away.\" It repeats the link line's invitation, and the words check read the confirmation sentence as a promise (0.35). The customer reading also put complaint at 0.20.\n\nThe pattern: the model now narrates what the Booking section tells it code adds (\"listed just below\", \"you'll get a confirmation right away\", \"reply here and we'll take care of it\"), and Jev reads that as a promise. Separately, the Phase 2 bars on the customer's own text would have held two of these three replies anyway. Rewording the Booking section alone cannot make sending on its own reliable until the bars are calibrated, so both belong with the walk tests."
+  deferred_at: 2026-11-12
+  went_to: "ROADMAP Phase 10 planning notes (measure and settle the Booking section's wording with the walk tests, next to the bar calibration); BLUEPRINT 10 open items (2026-11-12)"
