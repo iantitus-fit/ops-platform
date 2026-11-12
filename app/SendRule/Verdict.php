@@ -114,6 +114,7 @@ readonly class Verdict
                 'discount' => 'Held: mentions a discount',
                 'complaint' => 'Held: complaint',
                 'never_say' => 'Held: uses a phrase you never say',
+                'booking_link' => 'Held: writes its own booking link, which would not open',
                 'life_safety' => 'Held: may be urgent',
                 'asks_for_person' => 'Held: may want to talk to a person',
                 default => 'Held: needs your judgment',

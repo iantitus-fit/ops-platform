@@ -60,7 +60,42 @@ class ConnectorChecks
     {
         $connectors = $files->filter(fn (IcmFile $file): bool => $file->kind === IcmFileKind::Typed && $file->type === 'connector' && str_starts_with($file->path, 'connectors/'))->values();
 
-        return [...$this->slotErrors($connectors, $files), ...$this->ownerErrors($connectors)];
+        return [...$this->slotErrors($connectors, $files), ...$this->ownerErrors($connectors), ...$this->scheduleOwnerErrors($connectors, $files)];
+    }
+
+    /**
+     * One owner per fact (D-36): while the schedule and booking room is in the folder it keeps the schedule, so a
+     * connector file that owns the schedule would make a second owner. Each such file is refused, and the line offers
+     * both ways out. A connector that only reads the schedule passes, and so does one that owns it while the room is
+     * off. A file already refused for its kinds is skipped, as ownerErrors() skips it.
+     *
+     * @param  Collection<int, IcmFile>  $connectors
+     * @param  Collection<int, IcmFile>  $files
+     * @return list<array{file: string, field: ?string, message: string}>
+     */
+    private function scheduleOwnerErrors(Collection $connectors, Collection $files): array
+    {
+        $room = $this->rooms->get('schedule_and_booking');
+
+        if ($room === null || ! $this->roomChecks->isPresent($room, $files)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($connectors as $file) {
+            $owns = $this->kinds($file, 'owns');
+
+            if ($owns !== array_values(array_filter($owns, fn (string $kind): bool => OwnableKind::tryFrom($kind) !== null))) {
+                continue;
+            }
+
+            if (in_array(OwnableKind::Schedule->value, $owns, true)) {
+                $errors[] = $this->error($file->path, 'owns', "the schedule is owned by {$file->path}; the {$room->label} room (rooms/{$room->key}/) would keep a second one; turn the room off, or have the connector read the schedule instead");
+            }
+        }
+
+        return $errors;
     }
 
     /**

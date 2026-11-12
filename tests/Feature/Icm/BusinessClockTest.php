@@ -151,3 +151,16 @@ it('checks in a set number of hours after the next opening, never later than clo
     'past closing becomes closing' => ['2026-10-16 18:00', 6, '1 pm tomorrow'],
     'exactly closing stays closing' => ['2026-10-16 18:00', 4, '1 pm tomorrow'],
 ]);
+
+it("gives one business day's window", function () {
+    activateExampleFolder();
+    $clock = app(BusinessClock::class);
+
+    $window = $clock->openWindowOn(chicago('2026-11-03 15:00'));
+
+    expect($window['open']->format('Y-m-d H:i'))->toBe('2026-11-03 08:00')
+        ->and($window['close']->format('Y-m-d H:i'))->toBe('2026-11-03 17:00')
+        ->and($window['open']->timezoneName)->toBe('America/Chicago')
+        ->and($clock->openWindowOn(chicago('2026-11-08 10:00')))->toBeNull()
+        ->and($clock->openWindowOn(chicago('2026-11-26 10:00')))->toBeNull();
+});

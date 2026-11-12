@@ -2,6 +2,7 @@
 
 namespace App\Channels;
 
+use App\Support\BookingLinkTokens;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -41,7 +42,9 @@ class FakeTextChannel implements TextChannel
      * and RecipientOptedOut is thrown.
      *
      * The body is customer data, so it is logged only in the local environment. Anywhere
-     * else the log carries the number, the id and the length.
+     * else the log carries the number, the id and the length. The log is the app's and the memory is the carrier's: the
+     * logged body has any booking address written /book/[link] (D-12), while sent() and refused() keep the whole text,
+     * because they are the fake carrier's own memory for tests and the dev chat and are never stored.
      */
     public function send(string $toE164, string $body): string
     {
@@ -58,7 +61,7 @@ class FakeTextChannel implements TextChannel
         $context = ['to' => $toE164, 'provider_message_id' => $id, 'length' => mb_strlen($body)];
 
         if (app()->environment('local')) {
-            $context['body'] = $body;
+            $context['body'] = BookingLinkTokens::hide($body);
         }
 
         Log::info('Fake text sent', $context);

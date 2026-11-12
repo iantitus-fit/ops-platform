@@ -4,12 +4,14 @@ use App\Ai\AgentFile;
 use App\Ai\Agents\FrontDeskAgent;
 use App\Ai\FrontDeskPrompt;
 use App\Enums\DraftResolution;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Icm\ActiveConfig;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Support\BookingLinkTokens;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -173,6 +175,42 @@ it('leaves drafts, failed sends and texts not yet sent out of the history', func
     ]);
 });
 
+/**
+ * The texts that went out in a booking-link case, as stored: the hidden form of the address, never a token (D-12).
+ *
+ * @return array{body: string, meta: array<string, mixed>, author?: MessageAuthor}
+ */
+function promptTestStoredLinkText(string $case): array
+{
+    $address = BookingLinkTokens::hide(route('booking.show', str_repeat('ab12', 16)));
+    $signOff = app(ActiveConfig::class)->voice()['sign_off'];
+
+    return match ($case) {
+        'front desk' => ['body' => "We can get a tech out this week. Pick a time that works for you here: {$address}\n{$signOff}", 'meta' => ['booking_link_id' => 1]],
+        'reworded line' => ['body' => "We can get a tech out this week. Book here: {$address}\n{$signOff}", 'meta' => ['booking_link_id' => 1]],
+        'owner paste' => ['body' => "Use this one: {$address} and tap a time.", 'meta' => [], 'author' => MessageAuthor::Owner],
+    };
+}
+
+it('shows an earlier text that carried a booking link as its words and a note, never the address (WR-07)', function (string $case, string $expected) {
+    [, $conversation] = promptTestThread();
+    promptTestFreezeAtTenInTheMorning();
+
+    Message::factory()->for($conversation)->create(['body' => 'Can someone come look at my AC?']);
+    Message::factory()->for($conversation)->outbound()->create(promptTestStoredLinkText($case));
+    $new = Message::factory()->for($conversation)->create(['body' => 'Can you send that again?']);
+
+    $turns = promptTestTurns(app(FrontDeskPrompt::class)->history($conversation, promptTestBurst($new)));
+    $signOff = app(ActiveConfig::class)->voice()['sign_off'];
+
+    expect($turns[1])->toBe(['assistant', '[Tue Oct 13, 10:00 am] '.str_replace('{sign_off}', $signOff, $expected)])
+        ->and(stripos(implode("\n", array_column($turns, 1)), '/book/'))->toBeFalse();
+})->with([
+    'the owner\'s link line on a front-desk reply' => ['front desk', "We can get a tech out this week. (The system added the booking link here.)\n{sign_off}"],
+    'a link line the owner has reworded since' => ['reworded line', "We can get a tech out this week. Book here: (The system added the booking link here.)\n{sign_off}"],
+    'an address the owner pasted into a reply' => ['owner paste', 'Use this one: (A booking link was here.) and tap a time.'],
+]);
+
 it('starts with a user turn when the business texted first', function () {
     [, $conversation] = promptTestThread();
     promptTestFreezeAtTenInTheMorning();
@@ -283,15 +321,20 @@ it('tells the model how to read the times in the thread (G-02-2.2)', function (s
     'no bracketed time in a reply' => 'Never put a bracketed time in your reply.',
 ]);
 
-it('tells the model the thread is not a booking (G-02-2.4)', function (string $sentence) {
+it('tells the model a time the customer proposes is not set, and a visit booked on the card is the business\'s (G-02-2.4, D-39 amended)', function (string $sentence) {
     [$agent, , $contact] = promptTestThread();
 
     expect(FrontDeskPrompt::RULES)->toContain($sentence)
         ->and(app(FrontDeskPrompt::class)->instructions($agent, $contact))->toContain($sentence);
 })->with([
-    'thread and card are what the customer said' => 'The thread and the customer card show what the customer said and did, not what the business has agreed to.',
-    'nothing is set until the owner confirms' => 'Never say a visit, a time or a booking is set, even when the thread mentions one; the owner confirms those.',
+    'a time the customer proposes is not set' => 'The thread shows what the customer said and did, not what the business has agreed to: a day or time the customer proposes or mentions is not set, so never say it is.',
+    'a visit booked on the card is the business\'s' => 'A visit the customer card lists as booked was recorded by the business\'s own booking system, so it is the business\'s booking.',
 ]);
+
+it('no longer tells the model the owner confirms a booking (D-39 amended)', function () {
+    expect(FrontDeskPrompt::RULES)->not->toContain('the owner confirms those')
+        ->and(FrontDeskPrompt::RULES)->not->toContain('Never say a visit, a time or a booking is set');
+});
 
 it('keeps a reply that went out after the burst arrived', function () {
     [, $conversation] = promptTestThread();

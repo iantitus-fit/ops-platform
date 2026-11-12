@@ -52,49 +52,6 @@ function projectsKeyboardContactPage(User $owner, bool $firstClosed): array
 }
 
 /**
- * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
- */
-function projectsKeyboardPress(Page $browser, string $key): void
-{
-    $browser->keyDown($key);
-    $browser->keyUp($key);
-}
-
-/**
- * What has keyboard focus now: its aria-label, else its visible text, else its tag name ("BODY" is focus fallen to the
- * page).
- */
-function projectsKeyboardFocusedName(Page $browser): string
-{
-    return (string) $browser->evaluate(<<<'JS'
-() => {
-  const element = document.activeElement;
-  return element.getAttribute('aria-label') ?? ((element.innerText ?? '').trim() || element.tagName);
-}
-JS);
-}
-
-/**
- * Wait, through Playwright's own locator waiting (its default timeout, 5 seconds), until the focused element is the one
- * named $name: by its aria-label, or by its exact text when it has none. When the wait runs out, the expectation names
- * what has focus instead, so a failure reads as the fault it found. The plugin's waitForFunction() is not used: in
- * pest-plugin-browser 5.1 it never reads Playwright's answer, so it returns at once without waiting.
- */
-function projectsKeyboardExpectFocusOn(Page $browser, string $name): void
-{
-    $quoted = json_encode($name, JSON_THROW_ON_ERROR);
-
-    try {
-        $browser->locator("[aria-label={$quoted}]:focus, :focus:not([aria-label]):text-is({$quoted})")
-            ->waitFor(['state' => 'attached']);
-    } catch (Throwable) {
-        // The expectation below reports what has focus.
-    }
-
-    expect(projectsKeyboardFocusedName($browser))->toBe($name);
-}
-
-/**
  * Press Enter on the open confirmation's submit button once Playwright sees it on the page.
  */
 function projectsKeyboardConfirm(Page $browser): void
@@ -119,12 +76,12 @@ it('reaches New job by Tab from the top of the contact page', function (bool $on
 
     $presses = 0;
 
-    while ($presses < PROJECTS_KEYBOARD_TAB_CAP && projectsKeyboardFocusedName($browser) !== 'New job') {
-        projectsKeyboardPress($browser, 'Tab');
+    while ($presses < PROJECTS_KEYBOARD_TAB_CAP && focusedName($browser) !== 'New job') {
+        pressKey($browser, 'Tab');
         $presses++;
     }
 
-    expect(projectsKeyboardFocusedName($browser))->toBe('New job');
+    expect(focusedName($browser))->toBe('New job');
 
     if (! $onPhone) {
         expect($browser->evaluate('() => window.scrollY'))->toBe(0);
@@ -169,9 +126,9 @@ it('moves focus into the New job dialog and back to New job on Escape', function
     $browser->locator('.fi-modal-open[aria-modal="true"]:is([role="dialog"], [role="alertdialog"]) :focus')
         ->waitFor(['state' => 'attached']);
 
-    projectsKeyboardPress($browser, 'Escape');
+    pressKey($browser, 'Escape');
 
-    projectsKeyboardExpectFocusOn($browser, 'New job');
+    expectFocusOn($browser, 'New job');
     expect($browser->locator('.fi-modal-open')->count())->toBe(0);
 });
 
@@ -188,13 +145,13 @@ it('keeps focus on the row\'s button through Close and Reopen confirmed by keybo
     $browser->getByRole('button', ['name' => 'Close Job 1', 'exact' => true])->press('Enter');
     projectsKeyboardConfirm($browser);
 
-    projectsKeyboardExpectFocusOn($browser, 'Reopen Job 1');
+    expectFocusOn($browser, 'Reopen Job 1');
     expect($first->refresh()->closed_at)->not->toBeNull();
 
-    projectsKeyboardPress($browser, 'Enter');
+    pressKey($browser, 'Enter');
     projectsKeyboardConfirm($browser);
 
-    projectsKeyboardExpectFocusOn($browser, 'Close Job 1');
+    expectFocusOn($browser, 'Close Job 1');
     expect($first->refresh()->closed_at)->toBeNull();
 });
 
@@ -211,6 +168,6 @@ it('leaves focus on the row\'s Close after Reopen is confirmed by keyboard', fun
     $browser->getByRole('button', ['name' => 'Reopen Job 1', 'exact' => true])->press('Enter');
     projectsKeyboardConfirm($browser);
 
-    projectsKeyboardExpectFocusOn($browser, 'Close Job 1');
+    expectFocusOn($browser, 'Close Job 1');
     expect($first->refresh()->closed_at)->toBeNull();
 });

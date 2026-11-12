@@ -76,9 +76,11 @@ class ProjectsRelationManager extends RelationManager
                     ->dateTime(timezone: $timezone),
                 TextColumn::make('opened_by')
                     ->label('Opened by')
-                    ->state(fn (Project $record): string => $record->opened_by === ProjectActor::Lead
-                        ? 'New lead'
-                        : ($record->openedByUser?->name ?? 'A removed user')),
+                    ->state(fn (Project $record): string => match ($record->opened_by) {
+                        ProjectActor::Lead => 'New lead',
+                        ProjectActor::User => $record->openedByUser?->name ?? 'A removed user',
+                        ProjectActor::Customer => 'Customer, booking page',
+                    }),
                 TextColumn::make('closed_at')
                     ->label('Closed')
                     ->dateTime(timezone: $timezone)
@@ -120,9 +122,16 @@ class ProjectsRelationManager extends RelationManager
                     ->requiresConfirmation()
                     ->modalHeading(fn (Project $record): string => ($record->isOpen() ? 'Close ' : 'Reopen ').$this->rowLabel($record, $word).'?')
                     ->modalDescription(fn (Project $record): string => $record->isOpen()
-                        ? $this->rowLabel($record, $word).' will be marked closed. You can reopen it at any time.'
+                        ? ($this->closeBlockedBy($record) ?? $this->rowLabel($record, $word).' will be marked closed. You can reopen it at any time.')
                         : $this->rowLabel($record, $word).' will be marked open again. You can close it at any time.')
                     ->modalSubmitActionLabel(fn (Project $record): string => $record->isOpen() ? 'Close' : 'Reopen')
+                    /*
+                     * A job with a visit booked ahead cannot be closed (08 D-25, U-31), so its dialog only explains and
+                     * offers Back. Both closures run each time the dialog opens, so a stale page shows the truth. This is
+                     * courtesy: CloseProject refuses the same close itself, and the action below shows its refusal.
+                     */
+                    ->modalSubmitAction(fn (Action $action, Project $record): Action|false => $record->isOpen() && $this->closeBlockedBy($record) !== null ? false : $action)
+                    ->modalCancelActionLabel(fn (Project $record): ?string => $record->isOpen() && $this->closeBlockedBy($record) !== null ? 'Back' : null)
                     ->schema([
                         Hidden::make('direction')
                             ->required()
@@ -131,7 +140,14 @@ class ProjectsRelationManager extends RelationManager
                     ->fillForm(fn (Project $record): array => ['direction' => $record->isOpen() ? 'close' : 'reopen'])
                     ->action(function (Project $record, array $data): void {
                         if ($data['direction'] === 'close') {
-                            app(CloseProject::class)->handle($record, auth()->user());
+                            try {
+                                app(CloseProject::class)->handle($record, auth()->user());
+                            } catch (DomainException $refusal) {
+                                // Filament renders a title as HTML, and the refusal names a job, which is owner text.
+                                Notification::make()->title(e($refusal->getMessage()))->danger()->send();
+
+                                return;
+                            }
 
                             Notification::make()->title('Closed')->success()->send();
 
@@ -166,6 +182,15 @@ class ProjectsRelationManager extends RelationManager
                     }),
             ])
             ->emptyStateHeading('No '.mb_strtolower($word->plural()).' yet');
+    }
+
+    /**
+     * The sentence that says why this job cannot be closed now (a visit is booked ahead), or null when it can be (D-25).
+     * CloseProject owns the sentence and the rule, so the dialog and the guard cannot disagree.
+     */
+    private function closeBlockedBy(Project $record): ?string
+    {
+        return app(CloseProject::class)->blockedBy($record);
     }
 
     /**

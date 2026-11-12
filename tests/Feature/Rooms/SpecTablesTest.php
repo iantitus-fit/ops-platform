@@ -212,6 +212,7 @@ it('declares for each single-file type the default path that SPEC gives it', fun
     ksort($single);
 
     expect($single)->toBe([
+        'booking' => $specFiles['booking'],
         'content_brief' => $specFiles['content_brief'],
         'gbp_categories' => $specFiles['gbp_categories'],
         'money_notes' => $specFiles['money_notes'],

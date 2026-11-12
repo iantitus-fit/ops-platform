@@ -37,6 +37,32 @@ class ConversationThread extends Component
     public string $draftBody = '';
 
     /**
+     * The owner's choice in the booking link box (D-45). It only asks: the server re-checks every condition when the
+     * draft is approved, and uses it only while bookingLinkService names the line on screen.
+     */
+    public bool $addBookingLink = false;
+
+    /**
+     * The service name the booking link line on screen shows, or null when no line is drawn. Locked and filled by the
+     * server at every render, so a link is added only when the owner saw the line it was added for (D-45).
+     */
+    #[Locked]
+    public ?string $bookingLinkService = null;
+
+    /**
+     * The owner's choice in the visit line box (D-39 amended, D-45). It only asks: the server re-checks every condition
+     * when the draft is approved, and uses it only while visitLine names the line on screen.
+     */
+    public bool $addVisitLine = false;
+
+    /**
+     * The visit line the box on screen shows, or null when no box is drawn. Locked and filled by the server at every
+     * render, so a line is added only when the owner saw the line it was added for (D-39 amended, D-45).
+     */
+    #[Locked]
+    public ?string $visitLine = null;
+
+    /**
      * Send what the owner typed as a text and clear the box.
      *
      * A refusal comes back as an error under the box. A failed send is kept in the thread as
@@ -64,6 +90,11 @@ class ConversationThread extends Component
      * A draft that a newer text replaced is refused with the new draft shown and the owner's edit left in the box
      * (D-28). A refusal about the words comes back as an error under the box. When the draft is gone, or the text
      * channel failed so the draft row is kept as failed, the owner's words move to the reply box for another try.
+     *
+     * The booking link box asks for a link only while the line was drawn (D-45). When the draft went out without the
+     * link the owner asked for, because a condition stopped holding, the notice is a warning that says why. The visit line
+     * box works the same way: it passes down the line on screen, taken from the locked visitLine and never from the
+     * browser, and the send leaves the line off with a reason when the line it would add now is not that line (WR-09).
      */
     public function approveDraft(ResolveDraft $resolveDraft): void
     {
@@ -74,13 +105,35 @@ class ConversationThread extends Component
                 throw new DomainException(ResolveDraft::ALREADY_HANDLED);
             }
 
-            $resolveDraft->approve($draft, auth()->user(), $this->draftBody);
+            $sent = $resolveDraft->approve(
+                $draft,
+                auth()->user(),
+                $this->draftBody,
+                $this->addBookingLink && $this->bookingLinkService !== null,
+                $this->addVisitLine ? $this->visitLine : null,
+            );
         } catch (ValidationException $exception) {
             $this->addError('draftBody', (string) $exception->validator->errors()->first());
 
             return;
         } catch (DomainException $exception) {
             $this->draftRefused($exception, keepWords: true);
+
+            return;
+        }
+
+        $leftOff = $sent->meta['booking_link_left_off'] ?? null;
+
+        if (is_string($leftOff)) {
+            $this->draftResolved(SendOwnerReply::SENT_WITHOUT_LINK.$leftOff, warning: true);
+
+            return;
+        }
+
+        $visitLeftOff = $sent->meta['visit_line_left_off'] ?? null;
+
+        if (is_string($visitLeftOff)) {
+            $this->draftResolved(SendOwnerReply::SENT_WITHOUT_VISIT_LINE.$visitLeftOff, warning: true);
 
             return;
         }
@@ -206,6 +259,19 @@ class ConversationThread extends Component
     }
 
     /**
+     * The line above the reply box for a customer who has not texted the business or agreed to texts, or null (D-20,
+     * U-26). It only informs: the owner can still send, because the switch governs automatic sends and never the owner's
+     * own reply.
+     */
+    #[Computed]
+    public function notAgreedToTextsLine(): ?string
+    {
+        return $this->conversation->contact->mayGetAutomaticTexts()
+            ? null
+            : 'This customer has not texted the business or agreed to texts.';
+    }
+
+    /**
      * The banner above a paused thread, or null while the assistant is active (D-25).
      */
     #[Computed]
@@ -244,13 +310,15 @@ class ConversationThread extends Component
         }
     }
 
-    private function draftResolved(string $title): void
+    private function draftResolved(string $title, bool $warning = false): void
     {
         unset($this->liveDraft, $this->messages, $this->draftNotAlerted, $this->customerWroteAgain);
 
-        $this->reset('draftId', 'draftBody');
+        $this->reset('draftId', 'draftBody', 'addBookingLink', 'bookingLinkService', 'addVisitLine', 'visitLine');
 
-        Notification::make()->title($title)->success()->send();
+        $notification = Notification::make()->title($title);
+
+        ($warning ? $notification->warning() : $notification->success())->send();
     }
 
     /**
@@ -258,16 +326,24 @@ class ConversationThread extends Component
      *
      * A new live draft fills the box with its words, unless the owner has been editing the old one: then their edit
      * stays, and the new draft is shown beside it so nothing they typed is lost (D-28).
+     *
+     * The booking link line follows the conditions at every render, even while one draft stays live, so it appears and
+     * disappears as they change; the box keeps the owner's last choice meanwhile. A different draft becoming live resets
+     * the box to that draft's starting state (D-45, U-36). The visit line box follows the same rules (D-39 amended, U-37).
      */
-    private function syncDraftFields(): void
+    private function syncDraftFields(ActiveConfig $activeConfig): void
     {
         $live = $this->liveDraft;
 
         if ($live === null) {
-            $this->reset('draftId', 'draftBody');
+            $this->reset('draftId', 'draftBody', 'addBookingLink', 'bookingLinkService', 'addVisitLine', 'visitLine');
 
             return;
         }
+
+        $slug = app(SendOwnerReply::class)->bookingLinkServiceFor($live);
+        $this->bookingLinkService = $slug === null ? null : ($activeConfig->service($slug)['name'] ?? null);
+        $this->visitLine = app(SendOwnerReply::class)->visitLineFor($live);
 
         if ($live->id === $this->draftId) {
             return;
@@ -281,11 +357,13 @@ class ConversationThread extends Component
         }
 
         $this->draftId = $live->id;
+        $this->addBookingLink = app(SendOwnerReply::class)->bookingLinkStartsOn($live);
+        $this->addVisitLine = app(SendOwnerReply::class)->visitLineStartsOn($live);
     }
 
     public function render(ActiveConfig $activeConfig): View
     {
-        $this->syncDraftFields();
+        $this->syncDraftFields($activeConfig);
 
         return view('livewire.conversation-thread', [
             'timezone' => $activeConfig->displayTimezone(),

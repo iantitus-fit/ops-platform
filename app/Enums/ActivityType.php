@@ -17,6 +17,8 @@ enum ActivityType: string
     case AgentResumed = 'agent_resumed';
     case OptedOut = 'opted_out';
     case OptedIn = 'opted_in';
+    case AutomaticTextsTurnedOn = 'automatic_texts_turned_on';
+    case AutomaticTextsTurnedOff = 'automatic_texts_turned_off';
     case RoomEntry = 'room_entry';
     case ProjectOpened = 'project_opened';
     case ProjectClosed = 'project_closed';

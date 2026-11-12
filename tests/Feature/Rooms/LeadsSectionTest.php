@@ -172,6 +172,7 @@ it('hides when the leads room is off, and the project stays elsewhere', function
 
 /**
  * 05 D-32: a section that cannot load shows one line, reports the error and leaves the rest of the dashboard standing.
+ * The table is renamed, not dropped: appointments.project_id points at it, and Postgres refuses to drop it.
  */
 it('shows one line when the section cannot load', function () {
     activateExampleFolder();
@@ -182,7 +183,7 @@ it('shows one line when the section cannot load', function () {
         ->create();
 
     Exceptions::fake();
-    Schema::drop('projects');
+    Schema::rename('projects', 'projects_unavailable');
 
     $response = $this->get('/admin')->assertOk();
 

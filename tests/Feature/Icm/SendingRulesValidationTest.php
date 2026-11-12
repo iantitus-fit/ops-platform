@@ -7,7 +7,7 @@ use App\Icm\ActiveConfig;
 use App\Models\IcmVersion;
 use Illuminate\Support\Facades\File;
 
-const OWNER_ALERT_BLOCK = "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, check_in]\n  after_hours: next_opening\n";
+const OWNER_ALERT_BLOCK = "owner_alert:\n  channels: [text]\n  right_away: [complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, change_request, check_in]\n  after_hours: next_opening\n";
 
 /*
 | Each row: file to change, text to find, text to put in its place, and the exact line the owner must see.
@@ -22,7 +22,7 @@ dataset('broken send rules', [
     'scheduling in both lists' => ['rules/sending.md', 'draft_for_owner: [price, promise, discount, complaint, other]', 'draft_for_owner: [price, promise, discount, complaint, other, scheduling]', 'rules/sending.md: scheduling is in both send_on_own and draft_for_owner; put it in one list'],
     'email as an alert channel' => ['rules/sending.md', 'channels: [text]', 'channels: [email]', 'rules/sending.md: owner_alert channels item 1 must be one of text (you wrote email)'],
     'right_away without life_safety' => ['rules/sending.md', 'life_safety, ', '', 'rules/sending.md: owner_alert right_away must include life_safety: a safety message always reaches you at once'],
-    'an alert event nobody knows' => ['rules/sending.md', 'right_away: [complaint,', 'right_away: [soon, complaint,', 'rules/sending.md: owner_alert right_away item 1 must be one of draft_waiting, complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, check_in, safety_check_down, safety_check_missing (you wrote soon)'],
+    'an alert event nobody knows' => ['rules/sending.md', 'right_away: [complaint,', 'right_away: [soon, complaint,', 'rules/sending.md: owner_alert right_away item 1 must be one of draft_waiting, complaint, asked_for_person, life_safety, paused_message, opted_out_message, front_desk_failed, reply_cap, check_in, safety_check_down, safety_check_missing, appointment_booked, change_request (you wrote soon)'],
     'an after-hours rule nobody knows' => ['rules/sending.md', 'after_hours: next_opening', 'after_hours: later', 'rules/sending.md: owner_alert after_hours must be one of next_opening, right_away (you wrote later)'],
     'owner_alert written as a sentence' => ['rules/sending.md', OWNER_ALERT_BLOCK, "owner_alert: Text the owner when a draft is waiting or a customer asks for a person\n", 'rules/sending.md: owner_alert must list channels, right_away and after_hours (you wrote Text the owner when a draft is waiting or a customer asks for a person)'],
     'a sign-off that uses a never_say phrase' => ['voice/how-we-talk.md', 'sign_off: Example Heating & Air', 'sign_off: No problem, Example Heating & Air', 'voice/how-we-talk.md: sign_off uses a phrase the voice file says never to use (No problem)'],
@@ -79,7 +79,7 @@ it('keeps price, promise, discount and complaint off the send-on-its-own list fo
 });
 
 it('names every owner alert event in plain words', function () {
-    expect(AlertReason::values())->toBe(['draft_waiting', 'complaint', 'asked_for_person', 'life_safety', 'paused_message', 'opted_out_message', 'front_desk_failed', 'reply_cap', 'check_in', 'safety_check_down', 'safety_check_missing'])
+    expect(AlertReason::values())->toBe(['draft_waiting', 'complaint', 'asked_for_person', 'life_safety', 'paused_message', 'opted_out_message', 'front_desk_failed', 'reply_cap', 'check_in', 'safety_check_down', 'safety_check_missing', 'appointment_booked', 'change_request'])
         ->and(AlertReason::FrontDeskFailed->plainWords())->toBe('Front desk could not answer')
         ->and(AlertReason::PausedMessage->plainWords())->toBe("New message while you're handling it")
         ->and(collect(AlertReason::cases())->map->plainWords()->unique())->toHaveCount(count(AlertReason::cases()));

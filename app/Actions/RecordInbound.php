@@ -19,6 +19,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\SendRule\LifeSafety;
+use App\Support\BookingLinkTokens;
 use App\Support\PhoneNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
@@ -122,6 +123,9 @@ class RecordInbound
     }
 
     /**
+     * A customer may paste their own link back, so the stored words are the customer's own except that a booking
+     * address is written /book/[link] (D-12). The keyword check reads the data as it arrived, before that.
+     *
      * @return array{Message, ?string} the stored message and the keyword it turned out to be
      */
     private function record(InboundData $data): array
@@ -141,7 +145,7 @@ class RecordInbound
             'channel' => $data->channel,
             'direction' => MessageDirection::In,
             'author' => MessageAuthor::Customer,
-            'body' => $data->body,
+            'body' => BookingLinkTokens::hide($data->body),
             'status' => MessageStatus::Received,
             'provider' => $data->provider,
             'provider_message_id' => $data->providerMessageId,

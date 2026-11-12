@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 8
-current_phase_name: Schedule and Booking
+current_phase: 9
+current_phase_name: Owner Intelligence
 status: planning
-stopped_at: Phase 07 complete, ready to plan Phase 8
-last_updated: "2026-11-01T19:44:46.082Z"
-last_activity: 2026-11-01
-last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: 929d2e64248b0c70063acca4de2e049fc367fbf5
+stopped_at: Phase 08 complete, ready to plan Phase 9
+last_updated: "2026-11-12T20:43:25.267Z"
+last_activity: 2026-11-12
+last_activity_desc: Phase 08 complete, transitioned to Phase 9
+state_head: c1a190548df362c144904018e1e6929f791099fc
 progress:
   total_phases: 9
-  completed_phases: 4
-  total_plans: 34
-  completed_plans: 34
-  percent: 44
+  completed_phases: 5
+  total_plans: 60
+  completed_plans: 60
+  percent: 56
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-01)
+See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 8 — Schedule and Booking
+**Current focus:** Phase 9 — Owner Intelligence
 
 ## Current Position
 
-Phase: 8 — Schedule and Booking
+Phase: 9 — Owner Intelligence
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-01 — Phase 07 complete, transitioned to Phase 8
+Last activity: 2026-11-12 — Phase 08 complete, transitioned to Phase 9
 
-Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
+Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 110
+- Total plans completed: 136
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | 05 | 9 | - | - |
 | 06 | 7 | - | - |
 | 07 | 9 | - | - |
+| 08 | 26 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -174,6 +175,32 @@ Progress: [████░░░░░░] 44% (4 of 9 v2.0 phases complete)
 | Phase 07 P07 | 9 min | 2 tasks | 9 files |
 | Phase 07 P08 | 15 min | 3 tasks | 8 files |
 | Phase 07 P09 | 11 min | 3 tasks | 7 files |
+| Phase 08 P01 | 12 min | 3 tasks | 23 files |
+| Phase 08 P02 | 44 min | 3 tasks | 10 files |
+| Phase 08 P03 | 55 min | 3 tasks | 11 files |
+| Phase 08 P04 | continuation | 3 tasks | 18 files |
+| Phase 08 P05 | 7 min | 3 tasks | 6 files |
+| Phase 08 P06 | 12 min | 3 tasks | 10 files |
+| Phase 08 P07 | 45 min | 3 tasks | 15 files |
+| Phase 08 P08 | 17 min | 3 tasks | 26 files |
+| Phase 08 P09 | 33 min | 4 tasks | 14 files |
+| Phase 08 P10 | 21 min | 3 tasks | 8 files |
+| Phase 08 P11 | 11 min | 3 tasks | 6 files |
+| Phase 08 P12 | 15 min | 3 tasks | 10 files |
+| Phase 08 P13 | 25 min | 3 tasks | 15 files |
+| Phase 08 P14 | 23 min | 3 tasks | 17 files |
+| Phase 08 P15 | 13 min | 3 tasks | 16 files |
+| Phase 08 P16 | 40 min | 3 tasks | 8 files |
+| Phase 08 P17 | 25 min | 4 tasks | 13 files |
+| Phase 08 P18 | 8 min | 2 tasks | 7 files |
+| Phase 08 P19 | 10 min | 3 tasks | 6 files |
+| Phase 08 P20 | 15 min | 3 tasks | 13 files |
+| Phase 08 P21 | 17 min | 2 tasks | 6 files |
+| Phase 08 P22 | 17 min | 2 tasks | 9 files |
+| Phase 08 P23 | 22 min | 3 tasks | 7 files |
+| Phase 08 P24 | 20 min | 3 tasks | 12 files |
+| Phase 08 P25 | 19 min | 3 tasks | 10 files |
+| Phase 08 P26 | 12 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -241,6 +268,52 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 07]: 07-09: the Close/Reopen row button is one stable Filament action (toggle), gray while it reads Close and primary while it reads Reopen, so its wire:key never changes and keyboard focus stays on it; both directions confirm with a dialog naming the job, decided when pressed, with the direction carried to the submit (T-07-26 mitigated)
 - [Phase 07]: 07-09: a Filament relation manager or widget a keyboard must reach sets $isLazy to false; owner text in extraAttributes() goes through e() because Filament prints it unescaped
 - [Phase 07, Ian 2026-11-01]: the live VoiceOver listen of the Phase 7 screens moves to the Phase 11 owner-screen pass (A11Y-03), as Phase 5's did; Phase 7's keyboard, focus and button-name checks run as Pest browser tests in CI (08eeec0, a9497bc). In pest-plugin-browser 5.1 waitForFunction() and waitForURL() never wait; browser tests use Playwright locator waits
+- [Phase 08]: 08-01: one shape expression in the migration is the Postgres CHECK and, with NEW. prefixes, the SQLite triggers; a removed block stays as a cancelled row; contacts store only the owner's automatic-texts switch
+- [Phase 08]: 08-02: has-texted is derived from inbound SMS minus the opting-out STOP, nothing stored; D-21 sits after the paused check and before the no-phone check
+- [Phase 08]: 08-02: a booking text refusal is a class-constant sentence: UNREAD_CUSTOMER_TEXT means wait, APPOINTMENT_NOT_AHEAD means drop; no owner alert (D-26, D-27)
+- [Phase 08]: 08-03: change_request swaps in for draft_waiting and check_in, gives way to complaint, asked_for_person, life_safety, paused_message, front_desk_failed; raised at run end if no alert stored; appointment_booked quotes no customer text
+- [Phase 08]: 08-04: booking file placeholders are {link} once, {day} and {time} once each, {service} at most once; refusal messages never quote the owner's line
+- [Phase 08]: 08-04: RoomDropChecks (D-37) is built inside FolderSync::sync() from its own registry so the constructor keeps four parameters
+- [Phase 08]: 08-05: Availability reads booked rows once per range and applies one PHP overlap rule (appointments carry the drive buffer at their end, blocks none); offers() compares the exact instant; fixtures store spans in UTC
+- [Phase 08]: 08-06: Book by hand modal heading is plain text (Blade escapes it); notification titles keep e()
+- [Phase 08]: 08-06: the visit_booked timeline entry is written inside the booking transaction with the appointment row
+- [Phase 08]: 08-07: fromLink() judges the link with ResolveBookingLink::closedState() on the row re-read under the lock (no plain token, no open-times list), so a just-taken last time is taken(), not a closed link
+- [Phase 08]: 08-07: a page booking's job is the conversation's only open job, else the contact's only open job, else a new job opened as ProjectActor::Customer; the four ProjectActor readers are three-arm matches with no default
+- [Phase 08]: 08-07: the booked alert's subject is the link's message_id or the conversation's message whose meta.booking_link_id names it; with neither, a LogicException (link id, never the token) is reported and nothing is raised
+- [Phase 08]: 08-08: the booking page keeps the picker in the DOM, hidden, while a time is checked, and each day's details element is wire:ignore.self, so open days and focus return need no server bookkeeping
+- [Phase 08]: 08-08: the booking page limits taps inside choose() and book() (20 a minute per token hash and IP) as well as the GET (30 a minute per IP), because Livewire taps skip route throttles; KeepBookingLinkPrivate sits before the throttle so the 429 carries the private headers
+- [Phase 08]: 08-09: ServiceToBook::handle() and whyNoLink() share one private check(), so the agent's send and the owner's approval of a held draft cannot drift on D-01, D-02 or D-45
+- [Phase 08]: 08-09: the write that restores superseded booking links lives in MintBookingLink::restoreSuperseded(), keeping app/Rooms/ScheduleAndBooking free of Eloquent writes that AppointmentWritesTest scans for
+- [Phase 08]: 08-09: the sweep probes found no pre-existing test reaching the booking link on the agent path or the approval path, so no existing test was re-pointed or changed
+- [Phase 08]: 08-10: the time button's visible time is aria-hidden and one hidden span holds the whole name, because a block-level hidden span made the browser add a space before the comma; no aria-label
+- [Phase 08]: 08-10: LEADS_KEYBOARD_TAB_CAP is 23, measured 11 presses on desktop and 13 on a phone, plus a margin of 10
+- [Phase 08]: 08-11: ReminderSchedule is pure and zone-agnostic; BookAppointment writes each due_at in UTC because the datetime cast stores the instance's own wall time; a reminder at or before the booking moment gets no row; collapsed reminders keep the larger lead
+- [Phase 08]: 08-12: a booking text's send window is judged to the minute with both ends inside, every moment the sender writes or compares is UTC, an unread customer text gives the claim back and never times out into a send, and the copy that ends a row writes its note
+- [Phase 08]: 08-13: CloseProject::blockedBy() owns the D-25 sentence; handle() throws it inside its lock and the Close dialog reads it when it opens, so the screen and the guard cannot disagree
+- [Phase 08]: 08-13: after Cancel visit or Mark done, keyboard focus goes to Book by hand through a dispatched browser event the button listens for; the tab's axe run is scoped to the tab and open dialog and the contact details list contrast is deferred to Phase 11
+- [Phase 08]: 08-14: the Schedule page lists both row kinds through the appointment query without its kind scope; each row action is visible only for its own kind and re-reads through its own kind's scoped model
+- [Phase 08]: 08-14: BlockTime checks overlap under the schedule:book lock and refuses a block over a booked visit; blocks write no timeline entry
+- [Phase 08]: 08-14: the Show filter is a native select above the schedule table that applies at once
+- [Phase 08]: 08-15: a hand-added email is stored trimmed and lower-cased as RecordInbound stores it, matched phone then email, with the unique phone index backing a race; RecordInbound untouched
+- [Phase 08]: 08-15: the automaticTexts header action is one stable action with a Hidden direction field filled when the dialog opens, so a stale tab does what the dialog said; the reply-box line informs and never disables the box
+- [Phase 08]: 08-16: the card's Next appointment line is the one place it reads the clock (earliest booked visit after now); the job label uses the card's own numbering, so no project eager load
+- [Phase 08]: 08-16: a visit's note is printed only as a quote under the customer-supplied label, never in a sub-line (D-18)
+- [Phase 08]: Decision coverage override (Ian, 2026-11-07, gap planning): D-46 is cited by no PLAN.md. It was decided after planning and built during 08-16 (commits 17caa72, 9660cd3, 351a97e; 08-16-SUMMARY.md). Planning proceeded; re-verification should check the built code against D-46.
+- [Phase 08]: 08-17: hide() keeps the matched /book/ in its own letter case and replaces only the token; a failed send's DomainException keeps the raw gateway exception as previous only when the hidden message equals the raw one; the front desk hold stores '/book/' alone as the finding's match, never the address
+- [Phase 08]: 08-18: the migration revokes every unbooked link from before 08-17 (superseded and expired ones too) and redraws their cards; stored texts are not rewritten (rewriting is one-way); rated reversible, un-revoke is one update for the logged ids
+- [Phase 08]: 08-19: booking text late grace is 5 minutes (SendBookingText::LATE_GRACE_MINUTES); D-29 and ReminderSchedule unchanged; a message found still queued ends the row failed without a resend
+- [Phase 08]: 08-19: only OutboundSender, SendBookingText and MessageKind may name the booking text kind (BookingTextKindTest, IN-02)
+- [Phase 08]: 08-20: WR-04 for OutboundSender uses public sentence constants (house pattern); BookingRefused carries a BookingRefusal reason enum that BookingPage switches on
+- [Phase 08]: 08-20: WR-03 a booking link is withdrawn only when the send itself threw; attachMessage and the card redraw after a send only report
+- [Phase 08]: 08-21: the booking privacy notice states only what the page does (link books one visit, nothing typed, device address received and used to limit repeated tries); final wording stays on the attorney list with the facts (WR-05)
+- [Phase 08]: 08-21: footer disclosure hover border lives on the details element that carries border-2; a contract check forbids hover:border-accent without border-2 on every customer state (UI-FOOTER-HOVER)
+- [Phase 08]: 08-22: tryAgain() goes through withinLimit(), so a limited address cannot get around the limit; every booking-page state branch carries a wire:key so a retry's new heading takes focus
+- [Phase 08]: 08-23: Book by hand and Block time dialogs both name the zone through BookingSettings::zoneName(); IN-03 next-opening variant not added (the line is drawn before a time is picked; default stays true per D-28); Past splits booked rows by ends_at, done visits keep starts_at (D-40)
+- [Phase 08]: 08-24: the visit line is a visit_line part on agent_reply, not a new kind; OutboundSender holds it to the owner-sentence rule, and it is considered only when no booking link was minted
+- [Phase 08]: 08-24: BookingSettings::visitLine is nullable so a version compiled before visit_line sends no line and nothing throws (D-03)
+- [Phase 08]: 08-25: the visit line on a held draft is settled as D-45 settles the link: the owner's approval decides, every condition is checked again at approval, a line is added only when it was on screen, and a length overrun refuses Send rather than dropping the line. No mint, no new kind, no agent action: the owner's own send through OutboundSender::sendExisting().
+- [Phase 08]: 08-26: the Booking section is drawn only from ServiceToBook and VisitAskedAbout conditions; a booked customer never reads the online variant; booking.md stays out of the agent's loads
+- [Phase 08, close 2026-11-12]: UAT check 8 (the live re-walk): the code path and the visit line held live and "owner will confirm" is gone, but a booked customer's "What time are you coming?" and a request for the link again were still held (Jev promise 0.54 and 0.35; Phase 2 bars). Ian ruled it a known limitation routed to Phase 10, settled with the bar calibration; the phase closed with it.
 
 ### Pending Todos
 
@@ -254,10 +327,13 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 2]: Live agent runs need a provider key in `.env`; tests should use laravel/ai fakes.
 - [Phase 2]: Twilio going live waits on A2P approval for Ian's test number; the registering entity is unstated. Does not gate the build (DEC-05).
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is in backlog 999.5 (Owner Loop).
-- [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14).
+- [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14), and the text provider's own log of every sent text: Twilio keeps each body, booking links included, and the platform cannot hide it there (Ian, 2026-11-07; 08-VERIFICATION.md gap D-12).
 - [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved.
 - [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05. ALRT-01 and ALRT-02 done in Phase 6 (2026-10-28); GATE-05 is in Phase 9.
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
+- [Before first deploy]: Continuous deployment, before the first client, next to the Phase 12 tour deploy: deploys run automatically from the branch, each followed by a smoke check that the site is up and a booking can be made on the example business (Ian, 2026-11-08; BLUEPRINT section 10). Affects: safety and compliance, connectors and data, operations, customer communication.
+- [Before first deploy]: Recovery from disaster, before the first client, next to the Phase 12 tour deploy: backups with one restore actually performed and timed, error tracking that alerts on production exceptions, and a written rollback plan for a bad deploy and a bad migration. The earlier error-tracking and backup items (ROADMAP Phase 12 planning notes, BLUEPRINT's security-layers idea) fold into this one (Ian, 2026-11-08; BLUEPRINT section 10). Affects: all ten areas, led by safety and compliance and connectors and data.
+- [Before first deploy]: Performance budgets in CI, before the first client, next to the Phase 12 tour deploy: time limits on the booking page loading its times, on booking a time and on the front desk's reply, plus query-count checks so no screen runs one database query per row (Ian, 2026-11-08; BLUEPRINT section 10). Affects: all ten areas, led by customer communication and operations.
 - [Phase 02.1]: Plan 26 open for Ian: the blank-words whole-thread path sends the owner's sentences before it asks the second question (WR-04), so a danger or complaint found only there acts after the sentences; and a refused combined send plus refused partial line leaves the sentences out of the draft
 - [Phase 04, carried through Phase 5]: Phase 5's UAT walked the five room sections by keyboard and checked screen reader structure from Chrome's accessibility tree (Ian's call); the live VoiceOver walk is part of the Phase 11 owner-screen pass (A11Y-03). G-04-1 was closed by 05-04. Placeholder wording (D-21 empty line, the new refusals, G-04-2, G-04-3) waits for the 2026-10-17 wording pass. All Phase 4 open items, IN-09 and IN-10 included, are in `docs/BLUEPRINT.md` open items (Ian, 2026-10-23); the CI runner pin was closed by quick task 261026-jig
 - [Phase 5, review]: WR-01 fixed at close (0fef6e8): in text that is not valid UTF-8, each invalid byte joins digit groups as a space. IN-01 (the unreachable connected-to-Google branch) and IN-02 (Unicode digits) stay open as info; IN-03 is deferred to the hidden-characters-in-values decision (05-REVIEW-DISPOSITION.md)
@@ -268,6 +344,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
 - [Phase 7, carried]: review info findings open for Ian's triage (07-REVIEW-DISPOSITION.md): IN-02, IN-03, IN-06 and IN-08 to IN-11; IN-08 (the focus wait catches every error, not only the timeout) is the one worth fixing before the next browser walk. WINDOWS rows 38 and 44 now belong to Phase 11. BLUEPRINT records three UAT follow-ups: phone numbers shown raw (Phase 11), VoiceOver "clickable" on plain text (Phase 11), and the example triage life_safety question counting a furnace as a plugged-in appliance (reword after Phase 7)
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
+- [Phase 8, carried]: increment review triaged by Ian on 2026-11-12 (08-REVIEW-DISPOSITION.md): IN-13 (the visit-changed reason is also given when only the wording or zone changed) deferred to Phase 9 next to IN-06, fix a reason true in every case, "the line changed after it was shown", plus the BLUEPRINT line; IN-14 closed with no change (no folder can be in that state: the example folder is at version 2 with visit_line and every sync requires it); IN-15 fixed (docs/SETUP.md section 13, Upgrading a business folder). IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild).
+- [Phase 8, carried to Phase 10]: the front desk's Booking section wording (BOOKING_ONLINE, BOOKING_VISIT_BOOKED) is measured and settled with the walk tests next to the bar calibration, so a booked customer's time question and a link resend send on their own (ROADMAP Phase 10 planning notes; 08-UAT.md check 8).
 
 ### Quick Tasks Completed
 
@@ -304,11 +382,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T19:50:00.000Z
-Stopped at: Phase 07 complete, ready to plan Phase 8
+Last session: 2026-11-12
+Stopped at: Phase 08 complete, ready to plan Phase 9
 Resume file: None
 
 ## Operator Next Steps
 
-- Review, push and merge the Phase 7 branch (gsd/phase-07-the-spine-and-leads); CI was green on both legs at 94ab259 (run 41337489371)
-- Discuss Phase 8 with /gsd-discuss-phase 8, then plan it with /gsd-plan-phase 8
+- Review, push and merge the Phase 8 branch (gsd/phase-08-schedule-and-booking); CI was green on both legs at 6b762eb (run #65); the commits after it are docs only
+- Discuss Phase 9 with /gsd-discuss-phase 9, then plan it with /gsd-plan-phase 9

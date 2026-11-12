@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 15
+open_count: 43
 waived_count: 1
-fixed_count: 29
-total_count: 45
-last_updated: 2026-11-01T19:17:48.605Z
+fixed_count: 35
+total_count: 79
+last_updated: 2026-11-12T20:54:47.363Z
 ---
 
 # Broken Windows Ledger
@@ -60,6 +60,40 @@ last_updated: 2026-11-01T19:17:48.605Z
 | 43 | 07 | unrun-verify | .github/workflows |  | 07-08: after Ian pushes the phase branch, the CI tests workflow's pgsql leg is green for the whole suite, in particular OpenOnNewLeadTest's 'loses a race without an error and leaves one project' (the savepoint and the partial index on Postgres) and the three changed test lines (criterion 4 on both databases) | fixed | Evidence: CI run 41226007469 (Ian, 2026-11-01) | 2026-10-31T15:09:06.795Z | 2026-11-01T17:51:08.895Z |
 | 44 | 11 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/ProjectsRelationManager.php |  | 07-09: UAT retest of WINDOWS entry 38 with VoiceOver in Safari and by keyboard, contact with two projects: Tab from the top reaches the list; Close opens a dialog announced as Close Job 1?, and confirming it leaves focus on the row's button, read as Reopen Job 1, button, and the Closed notification is announced; Reopen opens a dialog announced as Reopen Job 1?, and confirming it leaves focus on Close Job 1; every row button is announced with its project (Close Johnny, Rename Job 2); New and Rename still take and return focus; the row buttons look and space as before (gaps G-07-2.1 to G-07-2.3) | open | Moved to Phase 11 (Ian, 2026-11-01): the live VoiceOver listen joins the Phase 11 owner-screen pass (A11Y-03), as Phase 5 did; the keyboard, focus and button-name checks are proven by the browser tests in 08eeec0 and a9497bc, green in CI | 2026-11-01T15:36:26.960Z |  |
 | 45 | 07 | unrun-verify | .github/workflows |  | 07-09: after Ian pushes the phase branch, the CI tests workflow is green on both legs with ProjectsRelationManagerTest and ProjectsRelationManagerKeyboardTest included (the focus proof in Chromium on SQLite and Postgres) | fixed | Evidence: CI run 41337489371 on 94ab259, pest (sqlite) and pest (pgsql) both success, ProjectsRelationManagerKeyboardTest and the leads walk passing on each | 2026-11-01T15:36:34.622Z | 2026-11-01T19:17:48.605Z |
+| 46 | 08 | unrun-verify | tests/Feature/Booking/AppointmentTableTest.php |  | 08-01: after Ian pushes the phase branch, the CI pgsql leg is green, in particular AppointmentTableTest 'refuses a row of the wrong shape' (the CHECK constraint) and the two unique-constraint cases | open |  | 2026-11-03T17:38:51.980Z |  |
+| 47 | 08 | unrun-verify | tests/Feature/Booking/AutomaticTextsRuleTest.php |  | Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY | open |  | 2026-11-03T22:59:31.752Z |  |
+| 48 | 08 | unrun-verify | tests/Feature/Alerts/ChangeRequestAlertTest.php |  | 08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally) | open |  | 2026-11-04T21:33:34.964Z |  |
+| 49 | 08 | unrun-verify | tests/Feature/Rooms/ScheduleAndBookingSyncTest.php |  | 08-04: CI pgsql leg for the D-37 cases (RoomDropChecks, the first sync check that reads the database) not run; needs Ian to push the phase branch | open |  | 2026-11-04T23:25:37.212Z |  |
+| 50 | 08 | unrun-verify | tests/Feature/Booking/AvailabilityTest.php |  | 08-05: CI pgsql leg for AvailabilityTest's overlap and DST cases (timestamp comparisons on Postgres) not run; needs Ian to push the phase branch | open |  | 2026-11-05T16:49:15.386Z |  |
+| 51 | 08 | unrun-verify | tests/Feature/Booking/BookAppointmentTest.php |  | 08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock. | open |  | 2026-11-05T17:47:56.902Z |  |
+| 52 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor | open |  | 2026-11-05T17:47:56.988Z |  |
+| 53 | 08 | unrun-verify | app/Actions/BookAppointment.php |  | 08-07: CI pgsql leg after Ian pushes the phase branch; in particular PageBookingTest's job choice under the row lock, BookingLinkTokenTest's at-most-once savepoint and the meta->booking_link_id JSON read; not run by the executor (SQLite only) | open |  | 2026-11-05T18:38:12.712Z |  |
+| 54 | 08 | unrun-verify | .github/workflows/tests.yml |  | 08-08: after Ian pushes the phase branch, the CI sqlite and pgsql legs are green and the new Build the front end step ran before the tests | open |  | 2026-11-05T21:52:43.906Z |  |
+| 55 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: Phase 8 UAT keyboard-only and VoiceOver walk of the booking page, 200 percent zoom and the 24 px floor (48 px chosen) on a phone (criterion 6, D-43) | open |  | 2026-11-05T21:52:43.993Z |  |
+| 56 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-08: the page's browser-side behavior is untested until plan 08-10: focus lands on the Check your time and You are booked headings and the error line, Choose a different time returns focus to the tapped time (Alpine lastTime), wire:loading sets aria-disabled while booking, and a day the customer opened stays open after a re-render (wire:ignore.self) | open |  | 2026-11-05T21:52:54.864Z |  |
+| 57 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkTest.php |  | 08-09: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkTest, ApprovedDraftBookingLinkTest, tests/Feature/Filament/DraftBookingLinkKeyboardTest.php and the front-desk tests | open |  | 2026-11-06T15:13:39.136Z |  |
+| 58 | 08 | unrun-verify | examples/example-hvac/agents/front-desk.md |  | 08-09: Phase 8 UAT in Dev chat: after the last intake answer the front desk's offer comes back labeled scheduling and carries the link (D-05) | open |  | 2026-11-06T15:13:39.223Z |  |
+| 59 | 08 | unrun-verify | resources/views/livewire/conversation-thread.blade.php |  | 08-09: Phase 8 UAT on a held scheduling draft: the approve step reads 'A booking link for {service} will be added' with the box checked; Send texts the link after the words, with the box off it texts none; on a complaint-read scheduling draft the box starts unchecked (D-45) | open |  | 2026-11-06T15:13:39.311Z |  |
+| 60 | 08 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 08-10: after Ian pushes the phase branch (with 08-08's build step), the CI browser tests (BookingPageBrowserTest, LeadsBootTest, ProjectsRelationManagerKeyboardTest) pass on both the sqlite and pgsql legs against the styled page; proven locally only | open |  | 2026-11-06T16:10:17.272Z |  |
+| 61 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-10: Phase 8 UAT on the booking page: a keyboard-only and VoiceOver walk, 200 percent zoom, and tap targets on a real phone (criterion 6, D-43); Phase 11 re-checks at 375 and 390 | open |  | 2026-11-06T16:10:17.364Z |  |
+| 62 | 08 | unrun-verify | tests/Feature/Booking/BookingSendRowsTest.php |  | 08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT) | open |  | 2026-11-06T21:09:25.495Z |  |
+| 63 | 08 | unrun-verify | tests/Feature/Booking/BookingSendTest.php |  | 08-12: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookingSendTest's claim race, the lease boundary and the conversation savepoint | open |  | 2026-11-06T23:17:17.534Z |  |
+| 64 | 08 | unrun-verify | tests/Feature/Booking/AppointmentActionsTest.php |  | 08-13: after Ian pushes the phase branch, the CI pgsql leg is green for AppointmentActionsTest and ProjectActionsTest's D-25 cases | open |  | 2026-11-07T00:21:02.661Z |  |
+| 65 | 08 | unrun-verify | app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php |  | 08-13: Phase 11 owner-screen pass (A11Y-03): the VoiceOver listen of the Appointments tab and its dialogs (Cancel visit, Mark done, Edit note, the Close dialog with Back only) (D-43) | open |  | 2026-11-07T00:21:02.753Z |  |
+| 66 | 08 | lint-warning | app/Filament/Resources/Contacts/ContactResource.php |  | 08-13: axe color-contrast on the contact screen's details list placeholders (.fi-in-placeholder), found while scoping the Appointments tab's axe run; not the tab's own markup, left to the Phase 11 owner-screen pass | open |  | 2026-11-07T00:21:14.726Z |  |
+| 67 | 08 | unrun-verify | tests/Feature/Filament/SchedulePageTest.php |  | Plan 08-14 human-check not run: after Ian pushes the phase branch, the CI pgsql leg is green for SchedulePageTest (the business-zone grouping and filters) and BlockTime's schedule:book lock; local runs are SQLite only | open |  | 2026-11-07T14:22:13.083Z |  |
+| 68 | 08 | unrun-verify | tests/Feature/Filament/ScheduleKeyboardTest.php |  | Plan 08-14 human-check not run: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the Schedule page and the room's dashboard section (D-43) | open |  | 2026-11-07T14:22:13.187Z |  |
+| 69 | 08 | todo | tests/Feature/Booking/BookingLinkTokenTest.php |  | 08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14 | open |  | 2026-11-07T14:25:58.568Z |  |
+| 70 | 08 | unrun-verify | tests/Feature/Filament/ContactByHandTest.php |  | 08-15: after Ian pushes the phase branch, the CI pgsql leg is green for ContactByHandTest's matching (phone then email, letter case) and the unique-phone race | open |  | 2026-11-07T16:29:09.000Z |  |
+| 71 | 08 | unrun-verify | tests/Feature/Filament/ContactScreenKeyboardTest.php |  | 08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43) | open |  | 2026-11-07T16:29:09.095Z |  |
+| 72 | 08 | unrun-verify | .planning/phases/08-schedule-and-booking/08-16-PLAN.md |  | 08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only) | open |  | 2026-11-07T21:01:46.558Z |  |
+| 73 | 08 | unrun-verify | app/Records/CustomerCard.php |  | 08-16 Phase 8 UAT, Dev chat: a booked customer asks "what time are you coming?" and the reply is checked; it states the booked time or is held by the promise label (D-39) | open |  | 2026-11-07T21:01:46.663Z |  |
+| 74 | 08 | unrun-verify | tests/Feature/Booking/BookingLinkLeakTest.php |  | 08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T15:40:01.019Z | 2026-11-12T20:54:46.631Z |
+| 75 | 08 | unrun-verify | app/Support/BookingLinkTokens.php |  | 08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route("booking.show", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3) | fixed | Settled in 08-UAT.md: check 4 walked the link-again case and the held draft live, and check 8 re-walked them (no booking address in the model's words) | 2026-11-08T15:40:01.106Z | 2026-11-12T20:54:46.729Z |
+| 76 | 08 | unrun-verify | tests/Feature/Booking/LinksBeforeTheFixTest.php |  | 08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres) | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T17:31:24.630Z | 2026-11-12T20:54:46.896Z |
+| 77 | 08 | unrun-verify | tests/Feature/Booking/BookingSendOnceTest.php |  | 08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL) | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T18:28:01.346Z | 2026-11-12T20:54:47.097Z |
+| 78 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes | fixed | Settled in 08-UAT.md: checks 1 and 2 (keyboard-only walk at desktop and 375 px including Try again, and the VoiceOver walk) | 2026-11-08T21:49:34.898Z | 2026-11-12T20:54:47.227Z |
+| 79 | 08 | unrun-verify | app/Ai/FrontDeskPrompt.php |  | 08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25) | fixed | Settled in 08-UAT.md check 8 (Dev chat re-walk, 2026-11-12): the code path and visit line held live; the remaining holds are a known limitation Ian routed to Phase 10 | 2026-11-11T21:23:19.850Z | 2026-11-12T20:54:47.363Z |
 
 ````json
 [
@@ -646,6 +680,448 @@ last_updated: 2026-11-01T19:17:48.605Z
     "reason": "Evidence: CI run 41337489371 on 94ab259, pest (sqlite) and pest (pgsql) both success, ProjectsRelationManagerKeyboardTest and the leads walk passing on each",
     "recorded_at": "2026-11-01T15:36:34.622Z",
     "resolved_at": "2026-11-01T19:17:48.605Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 46,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AppointmentTableTest.php",
+    "line": null,
+    "description": "08-01: after Ian pushes the phase branch, the CI pgsql leg is green, in particular AppointmentTableTest 'refuses a row of the wrong shape' (the CHECK constraint) and the two unique-constraint cases",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-03T17:38:51.980Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 47,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AutomaticTextsRuleTest.php",
+    "line": null,
+    "description": "Plan 08-02 human-check (the CI pgsql leg is green for the whole suite, in particular AutomaticTextsRuleTest and OutboundBookingKindTest, after Ian pushes the phase branch) not run by the executor; local Postgres 17 run recorded in the SUMMARY",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-03T22:59:31.752Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 48,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Alerts/ChangeRequestAlertTest.php",
+    "line": null,
+    "description": "08-03: after Ian pushes the phase branch, the CI pgsql leg is green, in particular ChangeRequestAlertTest's ordering dataset and BookingAlertTest's once-per-key case (never run on Postgres locally)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-04T21:33:34.964Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 49,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Rooms/ScheduleAndBookingSyncTest.php",
+    "line": null,
+    "description": "08-04: CI pgsql leg for the D-37 cases (RoomDropChecks, the first sync check that reads the database) not run; needs Ian to push the phase branch",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-04T23:25:37.212Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 50,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AvailabilityTest.php",
+    "line": null,
+    "description": "08-05: CI pgsql leg for AvailabilityTest's overlap and DST cases (timestamp comparisons on Postgres) not run; needs Ian to push the phase branch",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T16:49:15.386Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 51,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookAppointmentTest.php",
+    "line": null,
+    "description": "08-06: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookAppointmentTest's lock and overlap cases and the projects row lock.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T17:47:56.902Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 52,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php",
+    "line": null,
+    "description": "08-06: UAT keyboard-only and screen reader walk of the contact screen's Appointments tab and Book by hand dialog (native date-time input, Job select, field errors beside Starts, Job and Visit note, the confirmation status line); not run by the executor",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T17:47:56.988Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 53,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Actions/BookAppointment.php",
+    "line": null,
+    "description": "08-07: CI pgsql leg after Ian pushes the phase branch; in particular PageBookingTest's job choice under the row lock, BookingLinkTokenTest's at-most-once savepoint and the meta->booking_link_id JSON read; not run by the executor (SQLite only)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T18:38:12.712Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 54,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": ".github/workflows/tests.yml",
+    "line": null,
+    "description": "08-08: after Ian pushes the phase branch, the CI sqlite and pgsql legs are green and the new Build the front end step ran before the tests",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:43.906Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 55,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-08: Phase 8 UAT keyboard-only and VoiceOver walk of the booking page, 200 percent zoom and the 24 px floor (48 px chosen) on a phone (criterion 6, D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:43.993Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 56,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-08: the page's browser-side behavior is untested until plan 08-10: focus lands on the Check your time and You are booked headings and the error line, Choose a different time returns focus to the tapped time (Alpine lastTime), wire:loading sets aria-disabled while booking, and a day the customer opened stays open after a re-render (wire:ignore.self)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-05T21:52:54.864Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 57,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkTest.php",
+    "line": null,
+    "description": "08-09: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkTest, ApprovedDraftBookingLinkTest, tests/Feature/Filament/DraftBookingLinkKeyboardTest.php and the front-desk tests",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.136Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 58,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "examples/example-hvac/agents/front-desk.md",
+    "line": null,
+    "description": "08-09: Phase 8 UAT in Dev chat: after the last intake answer the front desk's offer comes back labeled scheduling and carries the link (D-05)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.223Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 59,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/conversation-thread.blade.php",
+    "line": null,
+    "description": "08-09: Phase 8 UAT on a held scheduling draft: the approve step reads 'A booking link for {service} will be added' with the box checked; Send texts the link after the words, with the box off it texts none; on a complaint-read scheduling draft the box starts unchecked (D-45)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T15:13:39.311Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 60,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingPageBrowserTest.php",
+    "line": null,
+    "description": "08-10: after Ian pushes the phase branch (with 08-08's build step), the CI browser tests (BookingPageBrowserTest, LeadsBootTest, ProjectsRelationManagerKeyboardTest) pass on both the sqlite and pgsql legs against the styled page; proven locally only",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T16:10:17.272Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 61,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-10: Phase 8 UAT on the booking page: a keyboard-only and VoiceOver walk, 200 percent zoom, and tap targets on a real phone (criterion 6, D-43); Phase 11 re-checks at 375 and 390",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T16:10:17.364Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 62,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingSendRowsTest.php",
+    "line": null,
+    "description": "08-11: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendRowsTest (hand check, run at end-of-phase UAT)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T21:09:25.495Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 63,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingSendTest.php",
+    "line": null,
+    "description": "08-12: after Ian pushes the phase branch, the CI pgsql leg is green, in particular BookingSendTest's claim race, the lease boundary and the conversation savepoint",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-06T23:17:17.534Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 64,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/AppointmentActionsTest.php",
+    "line": null,
+    "description": "08-13: after Ian pushes the phase branch, the CI pgsql leg is green for AppointmentActionsTest and ProjectActionsTest's D-25 cases",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:02.661Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 65,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/RelationManagers/AppointmentsRelationManager.php",
+    "line": null,
+    "description": "08-13: Phase 11 owner-screen pass (A11Y-03): the VoiceOver listen of the Appointments tab and its dialogs (Cancel visit, Mark done, Edit note, the Close dialog with Back only) (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:02.753Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 66,
+    "kind": "lint-warning",
+    "phase": "08",
+    "file": "app/Filament/Resources/Contacts/ContactResource.php",
+    "line": null,
+    "description": "08-13: axe color-contrast on the contact screen's details list placeholders (.fi-in-placeholder), found while scoping the Appointments tab's axe run; not the tab's own markup, left to the Phase 11 owner-screen pass",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T00:21:14.726Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 67,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/SchedulePageTest.php",
+    "line": null,
+    "description": "Plan 08-14 human-check not run: after Ian pushes the phase branch, the CI pgsql leg is green for SchedulePageTest (the business-zone grouping and filters) and BlockTime's schedule:book lock; local runs are SQLite only",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:22:13.083Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 68,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ScheduleKeyboardTest.php",
+    "line": null,
+    "description": "Plan 08-14 human-check not run: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the Schedule page and the room's dashboard section (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:22:13.187Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 69,
+    "kind": "todo",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkTokenTest.php",
+    "line": null,
+    "description": "08-14: the 'every day blocked' case of 'resolves each state a link can be in' reads the real clock (CarbonImmutable::now() before linkTokenSetUp's travelTo) and fails from 2026-11-07 on; pin the clock in that test. Pre-existing, found by the full suite, not caused by 08-14",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T14:25:58.568Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 70,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ContactByHandTest.php",
+    "line": null,
+    "description": "08-15: after Ian pushes the phase branch, the CI pgsql leg is green for ContactByHandTest's matching (phone then email, letter case) and the unique-phone race",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T16:29:09.000Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 71,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Filament/ContactScreenKeyboardTest.php",
+    "line": null,
+    "description": "08-15: at the Phase 11 owner-screen pass (A11Y-03), the VoiceOver listen of the New contact page and the automatic-texts dialog (D-43)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T16:29:09.095Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 72,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": ".planning/phases/08-schedule-and-booking/08-16-PLAN.md",
+    "line": null,
+    "description": "08-16: after Ian pushes the phase branch, the full suite is green on the CI SQLite and pgsql legs (local runs are SQLite only)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T21:01:46.558Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 73,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Records/CustomerCard.php",
+    "line": null,
+    "description": "08-16 Phase 8 UAT, Dev chat: a booked customer asks \"what time are you coming?\" and the reply is checked; it states the booked time or is held by the promise label (D-39)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-07T21:01:46.663Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 74,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingLinkLeakTest.php",
+    "line": null,
+    "description": "08-17: after Ian pushes the phase branch, the CI pgsql leg is green for BookingLinkLeakTest, in particular the table listing through pg_class and schema-qualified names, and the meta->booking_link_id read",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
+    "recorded_at": "2026-11-08T15:40:01.019Z",
+    "resolved_at": "2026-11-12T20:54:46.631Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 75,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Support/BookingLinkTokens.php",
+    "line": null,
+    "description": "08-17: Phase 8 UAT: the Dev chat check of entry 58 and the held-draft check of entry 59 now show the sent link as .../book/[link] in the thread (D-12), which is expected; for the booking page walks of entries 55 and 61, take a working link from the terminal, for example php artisan tinker --execute followed by an echo of route(\"booking.show\", the token that MintBookingLink::handle() returns for the latest conversation and ac-repair); the terminal is not stored. In Dev chat, after a scheduling reply, ask for the link again: the reply either comes with a fresh link line or is held as Held: writes its own booking link, which would not open, and never goes out holding /book/[link] (Task 3)",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md: check 4 walked the link-again case and the held draft live, and check 8 re-walked them (no booking address in the model's words)",
+    "recorded_at": "2026-11-08T15:40:01.106Z",
+    "resolved_at": "2026-11-12T20:54:46.729Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 76,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/LinksBeforeTheFixTest.php",
+    "line": null,
+    "description": "08-18: after Ian pushes the phase branch, the CI pgsql leg is green for LinksBeforeTheFixTest (the whereNotExists update and the join over messages and conversations on Postgres)",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
+    "recorded_at": "2026-11-08T17:31:24.630Z",
+    "resolved_at": "2026-11-12T20:54:46.896Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 77,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "tests/Feature/Booking/BookingSendOnceTest.php",
+    "line": null,
+    "description": "08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL)",
+    "status": "fixed",
+    "reason": "Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10)",
+    "recorded_at": "2026-11-08T18:28:01.346Z",
+    "resolved_at": "2026-11-12T20:54:47.097Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 78,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "resources/views/livewire/booking-page.blade.php",
+    "line": null,
+    "description": "08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md: checks 1 and 2 (keyboard-only walk at desktop and 375 px including Try again, and the VoiceOver walk)",
+    "recorded_at": "2026-11-08T21:49:34.898Z",
+    "resolved_at": "2026-11-12T20:54:47.227Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 79,
+    "kind": "unrun-verify",
+    "phase": "08",
+    "file": "app/Ai/FrontDeskPrompt.php",
+    "line": null,
+    "description": "08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25)",
+    "status": "fixed",
+    "reason": "Settled in 08-UAT.md check 8 (Dev chat re-walk, 2026-11-12): the code path and visit line held live; the remaining holds are a known limitation Ian routed to Phase 10",
+    "recorded_at": "2026-11-11T21:23:19.850Z",
+    "resolved_at": "2026-11-12T20:54:47.363Z",
     "milestone": "v2.0"
   }
 ]

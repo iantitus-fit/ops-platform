@@ -7,6 +7,7 @@ use App\Enums\ActivityType;
 use App\Enums\ProjectActor;
 use App\Filament\Resources\Contacts\ContactResource;
 use App\Filament\Resources\Contacts\Pages\ViewContact;
+use App\Filament\Resources\Contacts\RelationManagers\AppointmentsRelationManager;
 use App\Filament\Resources\Contacts\RelationManagers\ProjectsRelationManager;
 use App\Models\Contact;
 use App\Models\Message;
@@ -150,7 +151,7 @@ it('shows on the contact page in its first response, so Tab can reach the list',
         ->assertSee('New job', false)
         ->assertDontSee('__lazyLoad', false);
 
-    expect(ContactResource::getRelations())->toBe([ProjectsRelationManager::class]);
+    expect(ContactResource::getRelations())->toBe([ProjectsRelationManager::class, AppointmentsRelationManager::class]);
 });
 
 it('is not lazy', function () {

@@ -65,6 +65,15 @@ Full picture: `docs/SPEC.md`.
   never by an overlay widget. Every image carries alt text. Automated checks
   catch only part of WCAG, so customer pages and owner screens also get a
   keyboard-only and screen reader walk at UAT.
+- Visual direction (Ian, 2026-11-11): the platform has no design system yet. A
+  full visual pass comes later and will change the look a lot; where it sits is
+  settled in Phase 11's discuss-phase. Until then, a review finding that is only
+  about looks (spacing, color, type size, column width, visual weight) is
+  written to `.planning/todos/pending/2026-10-17-phone-design-pass.md` and not
+  fixed in the phase. These still gate a phase: wording, what each screen shows
+  and in what order, a customer page fitting a phone with no sideways scroll,
+  keyboard use, focus, screen-reader names, contrast and the automated
+  accessibility check.
 - Every agent action (a send, a write, a change to a record or the folder) goes
   through a code chokepoint that refuses it without the checks its kind needs
   and records which checks passed and who or what approved it (the

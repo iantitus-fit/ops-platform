@@ -12,6 +12,8 @@ files:
   - resources/views/livewire/conversation-thread.blade.php
   - app/Filament/Pages/BusinessFolder.php
   - resources/views/filament/pages/business-folder.blade.php
+  - app/Filament/Pages/Schedule.php
+  - app/Enums/ActivityType.php
 audit_acknowledged:
   milestone: v1.0
   at: 2026-10-20
@@ -40,6 +42,15 @@ Ian's phone walk in Phase 02.1 UAT test 1 (2026-10-17): the screens work but the
 
 **Draft hold reasons (02.1 review IN-02, added 2026-10-18):**
 - "Held: no price on file" shows for holds that are not that: a service that only needs the customer's answers, a blank-words promise, a failed reading or an unsure person reading. For a service waiting on answers it should say so, such as "waiting on the customer's answers for X" (`RunFrontDesk::noPriceReason()`, `Verdict::plainReasonFor()`).
+
+**Visual direction (Ian, 2026-11-11):**
+- The platform has no design system yet. A full visual pass comes later and will change the look a lot; where it sits is settled in Phase 11's discuss-phase.
+- Until then, a review finding that is only about looks (spacing, color, type size, column width, visual weight) is written here and not fixed in its phase (CLAUDE.md, Rules; PROJECT.md Frontend).
+- These still gate a phase: wording, what each screen shows and in what order, a customer page fitting a phone with no sideways scroll, keyboard use, focus, screen-reader names, contrast and the automated accessibility check.
+
+**From Phase 8 UAT check 7 (2026-11-11):**
+- The Schedule table scrolls sideways at a normal laptop window width, with the What column squeezed (`app/Filament/Pages/Schedule.php`).
+- The automatic-texts timeline badges show the raw type value (`automatic_texts_turned_on`, as 08 D-46 specifies), while other entries show a plain label (`app/Enums/ActivityType.php`).
 
 ## Solution
 

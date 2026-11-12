@@ -5,7 +5,9 @@ namespace App\Filament\Resources\Contacts\Schemas;
 use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
 use App\Models\Activity;
+use App\Models\Contact;
 use App\Rooms\RoomRegistry;
+use Carbon\CarbonImmutable;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -44,6 +46,14 @@ class ContactInfolist
                             ->label('Last activity')
                             ->dateTime(timezone: $timezone)
                             ->placeholder('(none)'),
+                        TextEntry::make('next_appointment')
+                            ->label('Next appointment')
+                            ->state(fn (Contact $record): ?string => self::nextAppointmentLine($record, $timezone))
+                            ->visible(fn (?string $state): bool => filled($state)),
+                        TextEntry::make('automatic_texts')
+                            ->label('Automatic texts')
+                            ->state(fn (Contact $record): string => self::automaticTextsLine($record, $timezone))
+                            ->visible(fn (Contact $record): bool => ! $record->hasTextedBusiness()),
                     ])
                     ->columns(4)
                     ->columnSpanFull(),
@@ -76,6 +86,48 @@ class ContactInfolist
                     ])
                     ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * The soonest visit still booked ahead, in one line (D-38, U-21): the day, the time on the business's clock, the
+     * service and the job in the business's word, such as "Tuesday, November 3, 2026 at 10:00 AM, AC repair, Job 2". Null
+     * when no visit is booked ahead, so the entry is left out. A cancelled or finished visit never counts (D-14).
+     */
+    private static function nextAppointmentLine(Contact $contact, string $timezone): ?string
+    {
+        $appointment = $contact->appointments()
+            ->booked()
+            ->ahead()
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->with(['project' => fn ($project) => $project->withNumber()])
+            ->first();
+
+        if ($appointment === null) {
+            return null;
+        }
+
+        $when = CarbonImmutable::instance($appointment->starts_at)->setTimezone($timezone)->format('l, F j, Y \a\t g:i A');
+        $job = $appointment->project === null
+            ? null
+            : $appointment->project->label(app(ActiveConfig::class)->projectWord(), (int) $appointment->project->number);
+
+        return implode(', ', array_filter([$when, $appointment->service_name, $job]));
+    }
+
+    /**
+     * The automatic-texts switch in words (U-26): Off, or On with who turned it on and when. A removed user is named as one.
+     */
+    private static function automaticTextsLine(Contact $contact, string $timezone): string
+    {
+        if ($contact->automatic_texts_on_at === null) {
+            return 'Off';
+        }
+
+        $who = $contact->automaticTextsTurnedOnBy?->name ?? 'a removed user';
+        $when = CarbonImmutable::instance($contact->automatic_texts_on_at)->setTimezone($timezone)->format('M j, Y');
+
+        return "On, turned on by {$who} on {$when}";
     }
 
     /**

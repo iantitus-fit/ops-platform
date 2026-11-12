@@ -32,6 +32,18 @@ class BusinessClock
     }
 
     /**
+     * The opening and closing instants of the local day that $day falls on, or null when that day is closed or is a
+     * closure date. This is the one public way to read a day's hours; availability uses it to lay out bookable times
+     * (BOOK-01).
+     *
+     * @return array{open: CarbonImmutable, close: CarbonImmutable}|null
+     */
+    public function openWindowOn(CarbonInterface $day): ?array
+    {
+        return $this->windowOn($this->inBusinessZone($day));
+    }
+
+    /**
      * The first opening strictly after the moment, or null when the shop does not open within the
      * next two weeks.
      */

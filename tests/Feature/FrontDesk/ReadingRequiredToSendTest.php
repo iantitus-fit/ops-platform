@@ -294,7 +294,7 @@ it('raises exactly one safety_check_missing alert naming that no business folder
 });
 
 it('still raises the safety_check_missing alert when the conversation has no customer text to point at', function () {
-    $conversation = Conversation::factory()->for(Contact::factory()->create(['phone_e164' => '+12025550177']))->create();
+    $conversation = Conversation::factory()->for(Contact::factory()->agreedToAutomaticTexts()->create(['phone_e164' => '+12025550177']))->create();
     User::factory()->withPhone(READING_REQUIRED_OWNER_PHONE)->create();
     activateExampleFolder();
 

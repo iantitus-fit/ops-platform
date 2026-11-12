@@ -20,6 +20,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\SendRule\CustomerReading;
+use App\Support\BookingLinkTokens;
 use Carbon\CarbonInterface;
 use DomainException;
 use Illuminate\Contracts\Cache\Lock;
@@ -40,6 +41,16 @@ use Throwable;
  * attached to its gate (gate.customer_reading). The safety line is the one exception and is never asked for one. A
  * reading marked missing counts as no reading at all (Ian, 2026-10-16). A refused send is never sent and the owner
  * is told: a text with no reading raises safety_check_missing, always right away and once per customer text.
+ *
+ * One kind of text is the exception beside the safety line (D-26, Ian's amendment of 02.1 D-49): a booking text, the
+ * confirmation or a reminder about a booked appointment, is written by code from an owner line and carries none of the
+ * model's words, so it goes out with no reading of a customer text. It does so only while its appointment is booked and
+ * still ahead and no customer text in the conversation is waiting unread (refuseBookingText()).
+ *
+ * Every stored copy of a text has its booking addresses written /book/[link] while the customer's phone gets the
+ * working link (D-12). The split happens here because every sender passes this one place: the text handed to deliver()
+ * goes to the channel as it is, and the row keeps BookingLinkTokens::hide() of it, so the card, the timeline, alert
+ * quotes and the history the front desk later reads carry the hidden form with no change of their own.
  */
 class OutboundSender
 {
@@ -61,6 +72,82 @@ class OutboundSender
     public const string NO_READING = 'Not sent without the safety check: ';
 
     /**
+     * The sentence for an automated text to a customer who has not texted the business and whose automatic texts the
+     * owner has not turned on (D-21).
+     */
+    public const string NOT_AGREED = 'The customer has not texted the business or agreed to automatic texts.';
+
+    /**
+     * How the sentence begins when a booking text was refused because it did not hold what D-26 asks of it: it must name
+     * an appointment of this customer, and name its parts with none of the model's words among them.
+     */
+    public const string BOOKING_TEXT_REFUSED = 'Not sent: ';
+
+    /**
+     * The sentence for a booking text whose appointment is no longer booked or no longer ahead. The text will never be
+     * right to send, so a caller drops it (D-26).
+     */
+    public const string APPOINTMENT_NOT_AHEAD = 'Not sent: the appointment is no longer booked or no longer ahead.';
+
+    /**
+     * The sentence for a booking text held back because a text from the customer in this conversation is still waiting
+     * to be read. The text may be right to send once that one is read, so a caller tries again later (D-26).
+     */
+    public const string UNREAD_CUSTOMER_TEXT = 'Not sent yet: an earlier text from the customer is still waiting to be read.';
+
+    /**
+     * The sentence for a text holding /book/[link], a booking link that does not open. The owner reads it after an
+     * approval or a reply, and every other sender is refused the same way (D-12).
+     */
+    public const string HIDDEN_BOOKING_LINK = 'This text has /book/[link] in it, a booking link that does not open. Take it out and send again.';
+
+    /**
+     * How the sentence begins when the customer opted out by texting STOP; the date and a full stop follow. The owner
+     * reads it in the reply box, and a booking text that meets it is dropped with a note (D-40).
+     */
+    public const string OPTED_OUT = 'Opted out by texting STOP on ';
+
+    /**
+     * The sentence for a closed conversation, as every sender but the owner reads it. A booking text that meets it is
+     * dropped with a note.
+     */
+    public const string CLOSED = 'This conversation is closed.';
+
+    /**
+     * The sentence for a closed conversation when the owner is the sender: the reply box shows it in place of the form.
+     */
+    public const string CLOSED_FOR_OWNER = 'This conversation is closed. Reopen it to reply.';
+
+    /**
+     * The sentence for a conversation where the assistant is paused (D-24). A booking text that meets it is dropped with
+     * a note.
+     */
+    public const string PAUSED = 'The assistant is paused in this conversation.';
+
+    /**
+     * The sentence for a customer with no phone number on file, as every sender but the owner reads it. A booking text
+     * that meets it is dropped with a note.
+     */
+    public const string NO_PHONE = 'There is no phone number on file for this customer.';
+
+    /**
+     * The sentence for an automated text that waited for the reply lock and did not get it: a front-desk reply to this
+     * customer is still being sent. A booking text that meets it gives its claim back and tries again at the next sweep.
+     */
+    public const string REPLY_IN_FLIGHT = 'Another reply to this customer is being sent.';
+
+    /**
+     * The sentence for the owner's send when another reply holds the lock: the owner reads it at once and checks the
+     * thread before sending again.
+     */
+    public const string OWNER_REPLY_IN_FLIGHT = 'Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.';
+
+    /**
+     * The sentence for a text longer than a text may be. A booking text that meets it is dropped with a note.
+     */
+    public const string TOO_LONG = 'Texts are limited to 1,600 characters.';
+
+    /**
      * Why a text with no reading of the customer's message was stopped, as the owner reads it in the alert.
      */
     private const string NO_READING_WHY = "A text was stopped because the safety check had not read the customer's message";
@@ -78,7 +165,9 @@ class OutboundSender
      * Any other send waits a few seconds for the lock first, because the owner's send is brief and the agent can
      * simply wait its turn. When the channel fails, the message stays on the record as failed and the failure is
      * raised. Once the channel has accepted the text, a failure while recording it is reported to the log and
-     * never raised: the customer has the text, and an error would invite a second send.
+     * never raised: the customer has the text, and an error would invite a second send. That includes the card redraw
+     * that follows the send and the release of the lock (release()), so a caller that withdraws a booking link when a
+     * send throws never withdraws one whose text went out (WR-03, WR-08).
      *
      * @param  array<string, mixed>  $attributes  Further message columns, such as kind, label, the verdict and meta.
      *
@@ -91,10 +180,12 @@ class OutboundSender
         $this->takeLock($lock, $origin);
 
         try {
-            return $this->deliver($conversation, trim($body), $author, $origin, $attributes);
+            $sent = $this->deliver($conversation, trim($body), $author, $origin, $attributes);
         } finally {
-            $lock->release();
+            $this->release($lock);
         }
+
+        return $sent;
     }
 
     /**
@@ -118,10 +209,12 @@ class OutboundSender
         $this->takeLock($lock, $origin);
 
         try {
-            return $this->deliverExisting($conversation, $message, trim($body), $origin, $attributes);
+            $sent = $this->deliverExisting($conversation, $message, trim($body), $origin, $attributes);
         } finally {
-            $lock->release();
+            $this->release($lock);
         }
+
+        return $sent;
     }
 
     /**
@@ -134,6 +227,11 @@ class OutboundSender
      *
      * A customer who texted STOP is refused first, for every origin: the owner's reply, an approved draft and the
      * life-safety line included (D-40). The owner is alerted separately so they can call.
+     *
+     * An automated text also needs a customer who has texted the business or whose automatic texts the owner turned on
+     * (D-21). That rule is for automated texts only: the owner's reply and the life-safety line keep today's rules, and
+     * ProcessInbound keeps its own per-conversation rule (02 D-41). It sits after the closed and paused checks, so those
+     * keep their own reasons, and before the no-phone check.
      */
     public function whyBlocked(Conversation $conversation, SendOrigin $origin): ?string
     {
@@ -143,20 +241,24 @@ class OutboundSender
         if ($contact->isOptedOut()) {
             $date = $contact->sms_opted_out_at->clone()->setTimezone($this->activeConfig->displayTimezone())->format('M j');
 
-            return "Opted out by texting STOP on {$date}.";
+            return self::OPTED_OUT."{$date}.";
         }
 
         if ($conversation->status === ConversationStatus::Closed) {
-            return $ownerIsSending ? 'This conversation is closed. Reopen it to reply.' : 'This conversation is closed.';
+            return $ownerIsSending ? self::CLOSED_FOR_OWNER : self::CLOSED;
         }
 
         if ($origin === SendOrigin::Automated && $conversation->isPaused()) {
-            return 'The assistant is paused in this conversation.';
+            return self::PAUSED;
+        }
+
+        if ($origin === SendOrigin::Automated && ! $contact->mayGetAutomaticTexts()) {
+            return self::NOT_AGREED;
         }
 
         if (blank($contact->phone_e164)) {
             if (! $ownerIsSending) {
-                return 'There is no phone number on file for this customer.';
+                return self::NO_PHONE;
             }
 
             return filled($contact->email)
@@ -168,13 +270,29 @@ class OutboundSender
     }
 
     /**
+     * Give the send lock back. A release that fails is reported and never raised (WR-08): with the database cache store
+     * the release is a DELETE that can fail after the channel accepted the text, and an error then would replace the
+     * sent message and make a caller withdraw a link the customer already has. When the send itself threw, that error
+     * still goes up, because this runs in the finally block and swallows only its own failure. A lock left behind runs
+     * out after its 30 seconds.
+     */
+    private function release(Lock $lock): void
+    {
+        try {
+            $lock->release();
+        } catch (Throwable $failure) {
+            report($failure);
+        }
+    }
+
+    /**
      * @throws DomainException
      */
     private function takeLock(Lock $lock, SendOrigin $origin): void
     {
         if ($origin === SendOrigin::Owner) {
             if (! $lock->get()) {
-                throw new DomainException('Another reply to this customer is being sent. Wait a moment, then check the thread before sending again.');
+                throw new DomainException(self::OWNER_REPLY_IN_FLIGHT);
             }
 
             return;
@@ -183,7 +301,7 @@ class OutboundSender
         try {
             $lock->block(config('gate.agent.lock_wait_seconds'));
         } catch (LockTimeoutException) {
-            throw new DomainException('Another reply to this customer is being sent.');
+            throw new DomainException(self::REPLY_IN_FLIGHT);
         }
     }
 
@@ -201,7 +319,11 @@ class OutboundSender
         }
 
         if ($origin === SendOrigin::Automated) {
-            $this->refuseWithoutReading($conversation, $attributes);
+            if ($this->kindOf($attributes) === MessageKind::BookingText) {
+                $this->refuseBookingText($conversation, $attributes);
+            } else {
+                $this->refuseWithoutReading($conversation, $attributes);
+            }
         }
 
         $summary = $attributes['activity_summary'] ?? null;
@@ -212,12 +334,12 @@ class OutboundSender
             'channel' => MessageChannel::Sms,
             'direction' => MessageDirection::Out,
             'author' => $author,
-            'body' => $body,
+            'body' => BookingLinkTokens::hide($body),
             'status' => MessageStatus::Queued,
             'provider' => $this->textChannel->name(),
         ]));
 
-        return $this->transmit($conversation, $message, $origin, $summary);
+        return $this->transmit($conversation, $message, $origin, $summary, $body);
     }
 
     /**
@@ -245,7 +367,7 @@ class OutboundSender
 
             $draft->update([
                 ...$attributes,
-                'body' => $body,
+                'body' => BookingLinkTokens::hide($body),
                 'status' => MessageStatus::Queued,
                 'provider' => $this->textChannel->name(),
             ]);
@@ -259,27 +381,34 @@ class OutboundSender
             throw new DomainException(ResolveDraft::whyGone($message));
         }
 
-        return $this->transmit($conversation, $message, $origin, $summary);
+        return $this->transmit($conversation, $message, $origin, $summary, $body);
     }
 
     /**
      * Hand a queued message to the text channel and record the outcome: sent with the channel's id, or failed with
-     * the error. `$summary` words the timeline entry; null means the usual line for who sent it.
+     * the error. `$summary` words the timeline entry; null means the usual line for who sent it. `$text` is the text as
+     * the customer receives it, working booking link included; the row holds only its hidden copy (D-12), so the channel
+     * is never handed `$message->body`.
      */
-    private function transmit(Conversation $conversation, Message $message, SendOrigin $origin, ?string $summary): Message
+    private function transmit(Conversation $conversation, Message $message, SendOrigin $origin, ?string $summary, string $text): Message
     {
         $contact = $conversation->contact;
 
         try {
-            $providerMessageId = $this->textChannel->send($contact->phone_e164, $message->body);
+            $providerMessageId = $this->textChannel->send($contact->phone_e164, $text);
         } catch (RecipientOptedOut $exception) {
             $this->recordCarrierOptOut($contact, $message);
 
             throw new DomainException(self::CARRIER_OPTED_OUT, previous: $exception);
         } catch (Throwable $exception) {
-            $this->recordFailure($contact, $message, $exception);
+            $hidden = BookingLinkTokens::hide($exception->getMessage());
 
-            throw new DomainException(self::NOT_SENT.$exception->getMessage(), previous: $exception);
+            $this->recordFailure($contact, $message, $hidden);
+
+            // A gateway's error can repeat the whole text. The raw exception is kept as the previous one only when it
+            // held no booking address, because a previous exception carries its own message into every log line and
+            // failed_jobs row that prints it.
+            throw new DomainException(self::NOT_SENT.$hidden, previous: $hidden === $exception->getMessage() ? $exception : null);
         }
 
         $sentAt = now();
@@ -309,9 +438,63 @@ class OutboundSender
             $this->markSentAfterRecordingFailed($message, $providerMessageId, $sentAt);
         }
 
-        CustomerRecordChanged::dispatch($contact->id);
+        try {
+            CustomerRecordChanged::dispatch($contact->id);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return $message;
+    }
+
+    /**
+     * Refuse a booking text that does not meet D-26, with no reading asked for and no owner alert raised (D-27): the
+     * owner reads a refused confirmation or reminder as a timeline note the caller writes, never as an alert.
+     *
+     * The text must name an appointment of this conversation's customer (meta.appointment_id) and name its parts
+     * (meta.parts) with none of the model's words among them; otherwise the sentence begins with BOOKING_TEXT_REFUSED.
+     * Then the appointment must be booked and start after now, or the sentence is APPOINTMENT_NOT_AHEAD: the caller
+     * drops the text for good. Last, no inbound text in the conversation may still be unread (handled_at null), or the
+     * sentence is UNREAD_CUSTOMER_TEXT: the caller waits and tries again. A text whose run is already in progress has
+     * been claimed (handled_at set), and the reply lock covers that run. The appointment is reached through the
+     * customer's own appointments, so another customer's visit is never found.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws DomainException
+     */
+    private function refuseBookingText(Conversation $conversation, array $attributes): void
+    {
+        $appointmentId = data_get($attributes, 'meta.appointment_id');
+
+        if (! is_int($appointmentId)) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED.'a booking text must name its appointment.');
+        }
+
+        $parts = data_get($attributes, 'meta.parts');
+
+        if (! is_array($parts) || $parts === [] || in_array('model_words', $parts, true)) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED.'a booking text must name its parts and carry no words from the model.');
+        }
+
+        $appointment = $conversation->contact->appointments()->whereKey($appointmentId)->first();
+
+        if ($appointment === null) {
+            throw new DomainException(self::BOOKING_TEXT_REFUSED."the appointment is not this customer's.");
+        }
+
+        if (! $appointment->isBooked() || $appointment->starts_at->lte(now())) {
+            throw new DomainException(self::APPOINTMENT_NOT_AHEAD);
+        }
+
+        $unread = $conversation->messages()
+            ->where('direction', MessageDirection::In->value)
+            ->whereNull('handled_at')
+            ->exists();
+
+        if ($unread) {
+            throw new DomainException(self::UNREAD_CUSTOMER_TEXT);
+        }
     }
 
     /**
@@ -358,6 +541,8 @@ class OutboundSender
             $why = match ($part) {
                 'code_sentences' => $reading->allowsOwnerSentences() ? null : "an owner sentence needs a clean reading of the customer's text",
                 'model_words' => $this->whyModelWordsAreBlocked($attributes, $reading),
+                'booking_link' => $reading->allowsOwnerSentences() ? null : "a booking link needs a clean reading of the customer's text",
+                'visit_line' => $reading->allowsOwnerSentences() ? null : "a visit line needs a clean reading of the customer's text",
                 default => null,
             };
 
@@ -370,7 +555,9 @@ class OutboundSender
     }
 
     /**
-     * The parts a text is made of. A combined text records them in meta.parts. A text with no parts is the model's words
+     * The parts a text is made of. The visit line (D-39 amended) is the owner's visit_line rendered by code for a booked
+     * visit; it is held to the owner-sentence rule like the booking link, so a complaint reading never lets it out, and it
+     * rides on agent_reply, so no kind is added. A combined text records its parts in meta.parts. A text with no parts is the model's words
      * when its kind is agent_reply, and a text with no kind is treated the same, so a path that forgets to name its kind
      * is held to the strictest rule. A kind only a combined text has (code_answer, partial_holding, check_in_reply,
      * added_info_reply) that arrives without its parts is held to the strictest rule too, owner sentences and model
@@ -389,13 +576,28 @@ class OutboundSender
             return array_values(array_filter($parts, is_string(...)));
         }
 
-        $kind = $attributes['kind'] ?? null;
-        $kind = is_string($kind) ? MessageKind::tryFrom($kind) : $kind;
+        $kind = $this->kindOf($attributes);
 
         return match (true) {
             $kind === null || $kind === MessageKind::AgentReply => ['model_words'],
             in_array($kind, [MessageKind::CodeAnswer, MessageKind::PartialHolding, MessageKind::CheckInReply, MessageKind::AddedInfoReply], true) => ['code_sentences', 'model_words'],
             default => [],
+        };
+    }
+
+    /**
+     * The kind a text is recorded with, whether the caller handed the enum or its string, or null when it names none.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function kindOf(array $attributes): ?MessageKind
+    {
+        $kind = $attributes['kind'] ?? null;
+
+        return match (true) {
+            $kind instanceof MessageKind => $kind,
+            is_string($kind) => MessageKind::tryFrom($kind),
+            default => null,
         };
     }
 
@@ -460,7 +662,11 @@ class OutboundSender
 
     /**
      * The last guard against a text the channel should never be handed: an empty one, or one past the limit that
-     * the send rule holds as a draft rather than cutting.
+     * the send rule holds as a draft rather than cutting, or one holding /book/[link].
+     *
+     * After 08-17 every stored copy of a sent text holds /book/[link], so a held draft, a stored body or anything copied
+     * from them can hold it. It never opens, so no sender may hand it to the channel (D-12). The front desk's own words
+     * are held earlier by the send rule; this is the backstop for an owner's unedited approval and every other path.
      */
     private function whyBodyIsRefused(string $body): ?string
     {
@@ -469,7 +675,11 @@ class OutboundSender
         }
 
         if (mb_strlen($body) > SendOwnerReply::MAX_LENGTH) {
-            return 'Texts are limited to 1,600 characters.';
+            return self::TOO_LONG;
+        }
+
+        if (BookingLinkTokens::holdsHiddenAddress($body)) {
+            return self::HIDDEN_BOOKING_LINK;
         }
 
         return null;
@@ -494,19 +704,20 @@ class OutboundSender
     }
 
     /**
-     * Keep the failed attempt on the record: the message as failed with the error, and a note.
+     * Keep the failed attempt on the record: the message as failed with the error, and a note. The error is the
+     * channel's own words with any booking address already written /book/[link] (D-12).
      */
-    private function recordFailure(Contact $contact, Message $message, Throwable $exception): void
+    private function recordFailure(Contact $contact, Message $message, string $error): void
     {
-        DB::transaction(function () use ($contact, $message, $exception): void {
+        DB::transaction(function () use ($contact, $message, $error): void {
             $message->update([
                 'status' => MessageStatus::Failed,
-                'meta' => [...($message->meta ?? []), 'error' => $exception->getMessage()],
+                'meta' => [...($message->meta ?? []), 'error' => $error],
             ]);
 
             $contact->activities()->create([
                 'type' => ActivityType::Note,
-                'summary' => "Reply not sent: {$exception->getMessage()}",
+                'summary' => "Reply not sent: {$error}",
                 'subject_type' => $message->getMorphClass(),
                 'subject_id' => $message->id,
                 'occurred_at' => now(),

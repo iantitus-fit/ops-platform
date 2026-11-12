@@ -26,7 +26,7 @@
     {
       "number": "8",
       "name": "Schedule and Booking",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "9",
@@ -51,8 +51,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 8)",
-    "reason": "Phase 8 of 9 — needs a plan"
+    "label": "Advance to the next step (plan phase 9)",
+    "reason": "Phase 9 of 9 — needs a plan"
   },
-  "updated_at": "2026-11-01T19:44:46.104Z"
+  "updated_at": "2026-11-12T20:43:25.292Z"
 }

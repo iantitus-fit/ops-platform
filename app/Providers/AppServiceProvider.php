@@ -6,6 +6,7 @@ use App\Channels\FakeTextChannel;
 use App\Channels\TextChannel;
 use App\Channels\TwilioTextChannel;
 use App\Icm\ActiveConfig;
+use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\IntakeAnswer;
@@ -16,6 +17,7 @@ use App\Models\User;
 use App\Rooms\RoomRegistry;
 use App\SendRule\Classifier;
 use App\SendRule\JevClassifier;
+use App\Support\PhoneNumber;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -24,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -90,6 +93,20 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
+        RateLimiter::for('booking', fn (Request $request) => Limit::perMinute(30)->by($request->ip())->response(function (): Response {
+            try {
+                $business = app(ActiveConfig::class)->business();
+            } catch (NoActiveVersion) {
+                abort(404);
+            }
+
+            return response()->view('booking.rate-limited', [
+                'businessName' => (string) $business['name'],
+                'phone' => (string) $business['phone'],
+                'phoneText' => PhoneNumber::national((string) $business['phone']),
+            ], 429);
+        }));
 
         if ($this->app->isLocal()) {
             DevCommands::artisan('schedule:work', 'schedule');

@@ -8,14 +8,19 @@ use App\Enums\MessageKind;
  * The parts of one outbound text and the kind of message they make (D-07, D-30).
  *
  * The body joins the non-empty parts with one space, in this order: the complaint line, the owner's sentences written
- * by code, the model's words that passed the checks, then one fixed line. The disclosure and sign-off are added later
- * by ComposeAutomatedText.
+ * by code, the model's words that passed the checks, one fixed line, the visit line, then the booking line. The disclosure and sign-off
+ * are added later by ComposeAutomatedText.
  */
 readonly class ReplyParts
 {
     /**
      * @param  list<string>  $codeSentences  Owner-written price or offer sentences chosen by code.
      * @param  ?MessageKind  $lineKind  The kind the fixed line makes when nothing else decides it.
+     * @param  ?string  $bookingLine  The owner's link line, added by code to a scheduling reply and placed last (D-01). It
+     *                                is kept out of codeSentences so a draft pre-fill never carries a minted link.
+     * @param  ?string  $visitLine  The owner's visit_line rendered by code for a booked visit the customer asked about
+     *                              (D-39 amended). It is added after the verdict and kept out of codeSentences so a draft
+     *                              pre-fill never carries it, and it never rides with the booking line.
      */
     public function __construct(
         public ?string $complaintLine = null,
@@ -23,11 +28,13 @@ readonly class ReplyParts
         public ?string $modelWords = null,
         public ?MessageKind $lineKind = null,
         public ?string $line = null,
+        public ?string $bookingLine = null,
+        public ?string $visitLine = null,
     ) {}
 
     public function body(): string
     {
-        $parts = [$this->complaintLine, ...$this->codeSentences, $this->modelWords, $this->line];
+        $parts = [$this->complaintLine, ...$this->codeSentences, $this->modelWords, $this->line, $this->visitLine, $this->bookingLine];
 
         return implode(' ', array_values(array_filter(
             array_map(fn (?string $part): string => trim((string) $part), $parts),
@@ -79,6 +86,14 @@ readonly class ReplyParts
                 MessageKind::AddedInfoReply => 'added_info_line',
                 default => 'partial_holding_line',
             };
+        }
+
+        if ($this->has($this->visitLine)) {
+            $names[] = 'visit_line';
+        }
+
+        if ($this->has($this->bookingLine)) {
+            $names[] = 'booking_link';
         }
 
         return $names;

@@ -19,10 +19,13 @@ use App\SendRule\FakeClassifier;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Pest\Browser\Playwright\Page;
+use PHPUnit\Framework\ExpectationFailedException;
 use Tests\Rooms\PretendRoom\PretendRoomServiceProvider;
 use Tests\TestCase;
 
@@ -207,6 +210,29 @@ function textsSentToCustomers(): array
 }
 
 /**
+ * Make the next release of a conversation's send lock fail, the way the database cache store's DELETE can after the text
+ * channel accepted a text (08-REVIEW WR-08). The cache moves to the database store, so the lock is a row in
+ * cache_locks, and DB::beforeExecuting throws once, on the DELETE that releases a "reply:" lock.
+ */
+function replyLockReleaseFails(string $message = 'the lock release failed'): void
+{
+    config(['cache.default' => 'database']);
+
+    $threw = false;
+
+    DB::beforeExecuting(function (string $query, array $bindings) use (&$threw, $message): void {
+        $sql = strtolower($query);
+        $isReplyLock = array_filter($bindings, fn (mixed $binding): bool => is_string($binding) && str_contains($binding, 'reply:')) !== [];
+
+        if (! $threw && str_starts_with($sql, 'delete') && str_contains($sql, 'cache_locks') && $isReplyLock) {
+            $threw = true;
+
+            throw new RuntimeException($message);
+        }
+    });
+}
+
+/**
  * The reply the front desk would send for a script: disclosure first, a blank line, the words, then the sign-off.
  */
 function composedFirstReply(string $words): string
@@ -292,7 +318,7 @@ function resetRecordsToTrackedFiles(string $records): void
  */
 function exampleFolderFileCount(): int
 {
-    return 26;
+    return 28;
 }
 
 /**
@@ -455,4 +481,151 @@ function rejectedErrors(): array
     $rejected = IcmVersion::query()->where('status', VersionStatus::Rejected->value)->latest('id')->firstOrFail();
 
     return $rejected->errors;
+}
+
+/**
+ * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
+ * The one copy every browser test shares (07 IN-11).
+ */
+function pressKey(Page $browser, string $key): void
+{
+    $browser->keyDown($key);
+    $browser->keyUp($key);
+}
+
+/**
+ * A name as a test compares it: every run of white space, a non-breaking space (U+00A0) too, one plain space. The
+ * booking page puts a non-breaking space before AM and PM so a time never breaks across two lines (U-10), and a name
+ * comparison should not depend on which space the markup used. Only the comparison is normalized; the markup keeps its
+ * non-breaking space.
+ */
+function normalizedName(string $name): string
+{
+    return trim(preg_replace('/[\s\x{00A0}]+/u', ' ', $name) ?? $name);
+}
+
+/**
+ * What has keyboard focus now: its aria-label, else its name from its content, else its tag name ("BODY" is focus
+ * fallen to the page). The content name is built the way the browser builds one: the text inside the element, the
+ * visually hidden text too (a screen reader reads it), and nothing that is display:none, visibility:hidden, hidden or
+ * aria-hidden; an element that is not inline is set off by a space on each side, as Playwright does when it computes a
+ * role's name, so a hidden day text that the browser draws as a block shows up here as the stray space it is. Every
+ * non-breaking space is a plain space and every run of white space one space, so a test writes
+ * '10:00 AM, Tuesday, November 3' and still matches the page's non-breaking space (see normalizedName()).
+ */
+function focusedName(Page $browser): string
+{
+    $name = $browser->evaluate(<<<'JS'
+() => {
+  const element = document.activeElement;
+  if (element === document.body || element === document.documentElement) {
+    return element.tagName;
+  }
+  const label = (element.getAttribute('aria-label') ?? '').trim();
+  if (label !== '') {
+    return label;
+  }
+  const skipped = (node) => {
+    const style = getComputedStyle(node);
+    return node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden';
+  };
+  const read = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE || skipped(node)) {
+      return '';
+    }
+    const inner = Array.from(node.childNodes).map(read).join('');
+    return getComputedStyle(node).display === 'inline' ? inner : ' ' + inner + ' ';
+  };
+  const text = Array.from(element.childNodes).map(read).join('');
+  return text.replace(/\s+/g, ' ').trim() || element.tagName;
+}
+JS);
+
+    return normalizedName((string) $name);
+}
+
+/**
+ * Wait, through Playwright's own locator waiting, until $selector is on the page, and swallow only that wait's own
+ * timeout: the caller's next line says what was found instead. Any other error (a selector Playwright cannot parse, a
+ * page that has gone) is rethrown, because an error hidden here would turn a broken page into a pass or a misleading
+ * comparison (07 IN-08, T-08-42). The plugin's function wait and URL wait are not used: in pest-plugin-browser 5.1
+ * they never read Playwright's answer, so they return at once without waiting (STATE.md, Phase 7). A timeout surfaces as an ExpectationFailedException whose message starts "Timeout 5000ms exceeded".
+ */
+function waitForFocusSelector(Page $browser, string $selector, int $timeoutMs = 5000): void
+{
+    try {
+        $browser->locator($selector)->waitFor(['state' => 'attached', 'timeout' => $timeoutMs]);
+    } catch (ExpectationFailedException $failure) {
+        if (preg_match('/^(?:[\w.]+: )?Timeout \d+ms exceeded/', $failure->getMessage()) !== 1) {
+            throw $failure;
+        }
+    }
+}
+
+/**
+ * Wait until the focused element is the one named $name (by its aria-label, or by its exact text when it has none),
+ * then compare focusedName() with the name, both normalized the same way. When the wait runs out the comparison names
+ * what has focus instead, so a failure reads as the fault it found. The one copy every browser test shares (07 IN-11).
+ */
+function expectFocusOn(Page $browser, string $name): void
+{
+    $name = normalizedName($name);
+    $quoted = json_encode($name, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    waitForFocusSelector($browser, "[aria-label={$quoted}]:focus, :focus:not([aria-label]):text-is({$quoted})");
+
+    expect(focusedName($browser))->toBe($name);
+}
+
+/**
+ * The footer buttons of the open Filament dialog that are still busy: Livewire's wire:loading puts fi-disabled and
+ * aria-disabled on every action button while a request is in flight, and a submit button bound to its form adds
+ * fi-processing and disabled while its action runs. Filament draws a busy button at 70% opacity.
+ */
+const OPEN_DIALOG_BUSY_BUTTON = '.fi-modal-open .fi-modal-footer-actions .fi-btn:is(.fi-disabled, .fi-processing, [aria-disabled="true"], [disabled])';
+
+/**
+ * Wait, through Playwright's own locator waiting, until no footer button of the open Filament dialog is busy (see
+ * OPEN_DIALOG_BUSY_BUTTON). The dialog opens from its mount request's own response, so focus can land inside it while
+ * Livewire still has that request's loading state on the buttons, and axe reads a button at 70% opacity as a contrast
+ * fault (CI run 42499058795, Postgres leg). Run this after the dialog has focus and before axe. The first busy button
+ * gone means none is left. Never a fixed sleep.
+ */
+function waitForOpenDialogIdle(Page $browser): void
+{
+    $browser->locator(OPEN_DIALOG_BUSY_BUTTON)->first()->waitFor(['state' => 'detached']);
+}
+
+/**
+ * Run axe on the whole document of the page now open, the way RoomSectionAxe runs it on one room section: the WCAG 2.2
+ * Level AA tags (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa) with the target-size rule switched on. axe is the copy the
+ * Pest browser plugin puts on every page. Hand the result to RoomSectionAxe::assertClean(). Shared here so the owner
+ * screens' browser tests in 08-13 and 08-14 reuse it.
+ *
+ * @return array{checked: int, violations: list<array{id: string, impact: ?string, help: string, targets: list<mixed>}>}
+ */
+function pageAxeReport(Page $page): array
+{
+    $options = json_encode([
+        'runOnly' => ['type' => 'tag', 'values' => ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']],
+        'rules' => ['target-size' => ['enabled' => true]],
+    ], JSON_THROW_ON_ERROR);
+
+    $report = $page->evaluate(<<<JS
+async () => {
+  const results = await window.axe.run(document, {$options});
+  return {
+    checked: results.passes.length + results.incomplete.length + results.violations.length,
+    violations: results.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help, targets: v.nodes.map(n => n.target) })),
+  };
+}
+JS);
+
+    return [
+        'checked' => (int) ($report['checked'] ?? 0),
+        'violations' => $report['violations'] ?? [],
+    ];
 }

@@ -2,14 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityType;
 use App\Enums\ContactStatus;
 use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
+use App\Enums\MessageChannel;
+use App\Enums\MessageDirection;
 use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable([
     'name',
@@ -20,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'acquisition_cost_cents',
     'last_activity_at',
     'sms_opted_out_at',
+    'automatic_texts_on_at',
+    'automatic_texts_on_by_user_id',
 ])]
 class Contact extends Model
 {
@@ -38,6 +46,7 @@ class Contact extends Model
             'acquisition_cost_cents' => 'integer',
             'last_activity_at' => 'datetime',
             'sms_opted_out_at' => 'datetime',
+            'automatic_texts_on_at' => 'datetime',
         ];
     }
 
@@ -47,6 +56,52 @@ class Contact extends Model
     public function isOptedOut(): bool
     {
         return $this->sms_opted_out_at !== null;
+    }
+
+    /**
+     * Whether this customer has ever texted the business (D-20). It is derived and nothing is stored: a customer text
+     * message over SMS in any of this contact's conversations counts, unless that very message is the one that opted
+     * the contact out, so a first text that is STOP never counts and a later START does. A web form, a call or an
+     * email is not a text.
+     *
+     * The conversation ids are read first and handed to the messages query as a list, never as a subquery: given the
+     * subquery, PostgreSQL could start from every customer text in the table and read conversations again for each one.
+     */
+    public function hasTextedBusiness(): bool
+    {
+        return Message::query()
+            ->whereIn('conversation_id', $this->conversations()->pluck('id')->all())
+            ->where('direction', MessageDirection::In->value)
+            ->where('channel', MessageChannel::Sms->value)
+            ->where('author', MessageAuthor::Customer->value)
+            ->whereNotExists(function (QueryBuilder $optOut): void {
+                $optOut->selectRaw('1')
+                    ->from('activities')
+                    ->where('activities.contact_id', $this->getKey())
+                    ->where('activities.type', ActivityType::OptedOut->value)
+                    ->where('activities.subject_type', (new Message)->getMorphClass())
+                    ->whereColumn('activities.subject_id', 'messages.id');
+            })
+            ->exists();
+    }
+
+    /**
+     * Whether an automatic text may go to this customer: they texted the business, or the owner turned automatic texts
+     * on for them (D-21). The switch is the only stored state (who and when); "has texted" is derived each time.
+     */
+    public function mayGetAutomaticTexts(): bool
+    {
+        return $this->automatic_texts_on_at !== null || $this->hasTextedBusiness();
+    }
+
+    /**
+     * The signed-in user who turned automatic texts on for this contact, when one did (D-20).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function automaticTextsTurnedOnBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'automatic_texts_on_by_user_id');
     }
 
     /**
@@ -77,6 +132,17 @@ class Contact extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    /**
+     * Every appointment this contact has. This is the scoped Appointment model, so a block never shows here (A3). The
+     * link between a contact and an appointment lives on the appointment (07 D-09).
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
     }
 
     /**

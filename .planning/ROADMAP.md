@@ -33,7 +33,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 5: Standard Rooms** - Marketing, content generation, Google Business Profile, company knowledge and money join the example business at the standard and nothing more (completed 2026-10-26)
 - [x] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once (completed 2026-10-28)
 - [x] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard (completed 2026-11-01)
-- [ ] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it
+- [x] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it (completed 2026-11-12)
 - [ ] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out
 - [ ] **Phase 10: Walk Tests and the Gate** - No folder change goes live until scripted customers have walked through it, and Dana books end to end
 - [ ] **Phase 11: Phone Design Pass** - Every owner-facing screen works on a phone, including the dashboard, the Needs you card and the Business Folder page
@@ -224,7 +224,7 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - What happens when an existing customer starts a second job (LEAD-05) is open: a new project, the same project, or a question for the owner.
 - Service history by address: whether history hangs off the person, the service address or both, and how an address match under a different name is handled (`docs/BLUEPRINT.md`, Ideas inbox, "Service history by address").
-- Where the appointment table and the project-to-appointment link first appear (here or in Phase 8) is open. PROJ-01 is mapped to this phase, but its appointment clause is only proven when booking attaches an appointment in Phase 8.
+- Settled by 07 D-09 (`.planning/phases/07-the-spine-and-leads/07-CONTEXT.md`): the appointment table and the project-to-appointment link arrive in Phase 8, with the link on the appointment. PROJ-01 is mapped to this phase, but its appointment clause is only proven when booking attaches an appointment in Phase 8.
 - What the card and the dashboard show for a project (a line on the card, a list, a screen of its own). Estimates and payments are not part of it (backlog 999.1).
 - Research behind the shape: `docs/research/contractor-operations-2026-10-19.md` (roofing, HVAC, remodel, landscaping contract).
 - Not decided here: a multi-year contract above several projects, a property room, subcontractors, regions.
@@ -242,7 +242,87 @@ Plans:
   5. The schedule and booking room meets the standard (folder, `CONTEXT.md`, example file, module, boot test).
   6. The booking page meets WCAG 2.2 Level AA: it works by keyboard alone and with a screen reader, each time is announced with its day and time, focus moves to the confirmation, errors are text beside the field, tap targets meet the 24-pixel minimum, and it stays usable at 200% zoom. It passes the automated check and a keyboard-only and VoiceOver walk at UAT, and its UI-SPEC carries this.
 
-**Plans**: TBD
+**Plans**: 26/26 plans complete, 23 executed (08-17 to 08-23 close the verification gaps; 08-24 to 08-26 close UAT gaps G-08-4 and G-08-4b under D-39 as amended)
+
+Plans:
+**Wave 1**
+- [x] 08-01-PLAN.md — The records: one appointments table behind two scoped models (A3) with its shape held by the database on both drivers, hashed booking links, one send row per lead time, the switch columns, and the appointment-writes scan
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 08-02-PLAN.md — OutboundSender: automatic texts need a customer who texted or agreed (D-21, every reached test found by probe and re-pointed), the booking text kind (D-26) and the booking-link reading rule
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 08-03-PLAN.md — The change-request alert in the one-alert order (D-34), the booked alert's words and timing (D-33), change_request right away in the example, and no text ever writes an appointment (D-04)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 08-04-PLAN.md — The schedule and booking room at the standard: provider, booking file and its checks, example folder, SPEC rows, boot test, section; D-36 and D-37 sync refusals; file count 26 to 28
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 08-05-PLAN.md — Availability (BOOK-01): hours, closures, lead from the next opening, length, step, range, buffer on appointments only, capacity as a count, both daylight-saving days
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 08-06-PLAN.md — Book by hand from the contact screen's Appointments tab: the booking lock and re-check, the job never guessed or reopened, owner times in the business zone
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 08-07-PLAN.md — The link token and the page booking: hashed, superseded, revocable, at most once, states in U-14's order, the job by D-23, ProjectActor::Customer, the booked alert once
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 08-08-PLAN.md — The customer booking page (Livewire, phone-first, UI-SPEC): pick, check, book, every state, rate limits inside the component, the contract scan, the CI front-end build (Ian pushes)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 08-09-PLAN.md — The link in the conversation: a scheduling reply carries the owner's link line under D-01 and D-02; an owner-approved scheduling draft gets it at approval, with a box to leave it off (D-45); the example front desk offers a visit after intake (D-05)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 08-10-PLAN.md — The booking page in a real browser (A11Y-02): keyboard at desktop and 375, time names, focus moves, 48 px targets, axe on every state; 07 IN-08, IN-09, IN-11
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 08-11-PLAN.md — When the confirmation and reminders are due: the send window, the move to the window before, the silent skips, one row per moment
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 08-12-PLAN.md — The scheduler sends them (BOOK-04): the owner-alert claim reused, the unread wait and drop, one note per refusal and no alert, a platform-started conversation
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 08-13-PLAN.md — Cancel, mark done (with the optional close) and the visit note on the contact screen; no job closes with a visit ahead (D-25); the tab by keyboard
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 08-14-PLAN.md — The Schedule screen grouped by the business's day, Block time and Remove block, the dashboard's next five visits, the six named writers complete
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [x] 08-15-PLAN.md — Contacts by hand (D-19), the automatic-texts switch and the reply-box line (D-20), the next appointment on the contact screen
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [x] 08-16-PLAN.md — Appointments on the customer card and timeline (D-38, D-39), no booking changes a status (D-41), and the phase's audit of every changed test line
+
+**Wave 17** *(gap closure; blocked on Wave 16 completion)*
+- [x] 08-17-PLAN.md — Gap D-12 going forward: the chokepoint stores every sent text with the booking address as /book/[link] while the customer gets the working link; a failed send, the log, a customer's paste, records/ and the session hide it too; a leak test searches every table on both databases, the folder, the log and the job payloads
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [x] 08-18-PLAN.md — Gap D-12 backward: links sent before the fix that have not booked are revoked and their cards redrawn (no text rewritten); 08-SECURITY.md closes T-08-01 and T-08-27; the provider's log joins the attorney list
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [x] 08-19-PLAN.md — Review WR-01, WR-02, IN-02: a booking text is sent once after a failed record or a dead sender; a reminder due at the window's close survives a late sweep, and one the visit overtook leaves a note; only SendBookingText names the booking text kind
+
+**Wave 20** *(blocked on Wave 19 completion)*
+- [x] 08-20-PLAN.md — Review WR-03, WR-04: a failure after the send never withdraws a delivered link; refusals are read by the sender's constants and a BookingRefusal reason, never by message text
+
+**Wave 21** *(blocked on Wave 20 completion)*
+- [x] 08-21-PLAN.md — Review WR-05 and the UI review's footer hover: the privacy notice states only what the page does, and the footer disclosures show the accent border on hover
+
+**Wave 22** *(blocked on Wave 21 completion)*
+- [x] 08-22-PLAN.md — Review IN-05: the rate-limited notice has a Try again button that brings the times back after the minute, with focus kept
+
+**Wave 23** *(blocked on Wave 22 completion)*
+- [x] 08-23-PLAN.md — The UI review's zone name and review IN-03, IN-04, IN-01: owner dialogs say "Times are in Central Time.", no confirmation is forecast to a customer with no phone, Past lists only what has ended, and Availability's docblocks match the code
+
+**Wave 24** *(UAT gap closure; blocked on Wave 23 completion)*
+- [x] 08-24-PLAN.md — G-08-4: a booked customer's scheduling reply carries the owner's visit_line from booking.md, added by code after the verdict as one more ReplyParts slot on agent_reply; the chokepoint holds it to a clean reading; the sync checks it like the confirmation and reminder lines
+
+**Wave 25** *(blocked on Wave 24 completion)*
+- [x] 08-25-PLAN.md — G-08-4: on a booked customer's held draft the owner sees the visit line with a box, settled as D-45 settles the link: starting state, every condition checked at approval, only what was shown, the length refusal; U-37
+
+**Wave 26** *(blocked on Wave 25 completion)*
+- [x] 08-26-PLAN.md — G-08-4, G-08-4b: FrontDeskPrompt's line 41 rewritten (a proposed time is not set; a booked visit on the card is the business's) and a Booking section built from the send's own conditions; the Dev chat re-walk recorded for UAT
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
@@ -292,6 +372,9 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - How a walk test drives the agent deterministically (scripted model versus a live model) is not defined in the SPEC; the activation gate cannot depend on a flaky call. The same question applies to the clock (times offered, reminders) and to how the Jev reading is handled in a walk test. Jev is a real service; no stand-in without Ian.
 - New concepts expected: running the front desk against a scripted customer, and a sync step that can refuse activation.
+- Calibrate the Phase 2 safety bars before the tour deploy, using the stored verdicts and the walk-test scripts, since a visitor trying the front desk would hit the same holds: Phase 8 UAT check 4 had three plain customer texts held (quoted with their scores in [08-UAT.md](phases/08-schedule-and-booking/08-UAT.md)). This reopens 02 D-47 and D-56: Ian decides in discuss-phase. Affects: safety and compliance, customer communication, knowledge.
+- Measure and settle the Booking section's wording (FrontDeskPrompt `BOOKING_ONLINE` and `BOOKING_VISIT_BOOKED`) with the walk tests, next to the bar calibration above, so that a booked customer's "What time are you coming?" and an unbooked customer's request for the link again send on their own. Change what the model reads; never add a rule that names the words to avoid (Ian's METHOD file). Starting evidence, [Phase 8 UAT](phases/08-schedule-and-booking/08-UAT.md) check 8 (Ian, 2026-11-12): the model narrates what the section says code adds, and Jev reads that as a promise. Message 37, a booked customer asking the time, came back labeled scheduling with no day or time in the words but was held twice: "Your AC repair visit is already booked in our system, and the day and time are listed just below. If you need to change it, reply here and we'll take care of it." (words check promise 0.54; customer reading asks_for_person 0.08, inside the unsure band). Message 31, the link again, was held: "Sure, here's the booking link again. Pick any time that works for you and you'll get a confirmation right away." repeats the link line's invitation (words check promise 0.35; customer reading complaint 0.20). The Phase 2 bars on the customer's own text would have held two of that walk's three replies anyway, so rewording alone cannot make these send on their own until the bars are calibrated. Affects: customer communication, safety and compliance, knowledge.
+- Settle whether booking confirmations and reminders count toward the reply cap (6 per hour): with holding replies counted too, a walk through intake, the offer, a link resend, the confirmation and one question reaches it (Phase 8 UAT check 4). Affects: customer communication, safety and compliance, operations.
 
 ### Phase 11: Phone Design Pass
 
@@ -313,6 +396,9 @@ Plans:
 - The layout is Ian's call at the pass. Inputs: the pending todo `.planning/todos/pending/2026-10-17-phone-design-pass.md`, `docs/phase-2.2-owner-input.md` sections 5 and 6, and PROJECT.md Frontend open items 1 to 8. Item 8, what "/" shows, is DEPL-03 in Phase 12.
 - Doing this pass reopens the 2026-10-11 Frontend decision (Ian, 2026-10-21), except the booking page's own UI-SPEC, built phone-first in Phase 8, which stands. Run `/gsd-ui-phase 11` first.
 - The hold-reason words live in `RunFrontDesk::noPriceReason()` and `Verdict::plainReasonFor()` (the todo). Tests that quote hold-reason words, walk tests included, change with them.
+- Settle in discuss-phase whether Phase 11 becomes the full visual pass (a design system for owner screens and customer pages; the tour deploy waits for it, per DEPL-02), or keeps only what survives a redesign (the urgency order, the wording and hold reasons, phone fit, accessibility semantics, the owner-screen VoiceOver walk) with the full visual pass after the tour deploy. Either way it reopens the 2026-10-21 phone design pass decision, and the first may touch DEPL-02: Ian's call. Until then the visual direction rule holds (CLAUDE.md, Rules; PROJECT.md Frontend, Ian, 2026-11-11). Affects: all ten areas (every screen), led by customer communication, operations and safety and compliance; connectors and data (the tour deploy).
+- Inputs from Phase 8 UAT check 7: the owner-screen VoiceOver walk (already success criterion 6); the Schedule table scrolls sideways at a normal laptop window width with the What column squeezed; the automatic-texts timeline badges show the raw type value (`automatic_texts_turned_on`, as D-46 specifies) while other entries show a plain label. The last two are on the todo too. Affects: operations, team, safety and compliance.
+- Consider showing on-the-hour times as "9 AM" on the booking page, so VoiceOver says "nine A M": Phase 8 UAT check 2 found VoiceOver in Chrome reads "9:00" as "nine zero zero" whatever the space character, with Read numbers as set to Words ([08-UAT.md](phases/08-schedule-and-booking/08-UAT.md) G-08-2, closed with no code change). It is a wording change touching the time format, label-in-name (WCAG 2.5.3, since the visible time and the spoken name must match) and the `{time}` in the confirmation and reminder texts, so Ian decides it here. Affects: customer communication, operations, safety and compliance.
 
 ### Phase 12: Tour Deploy
 
@@ -330,11 +416,12 @@ Plans:
 
 **Planning notes** (settle these in discuss-phase):
 - Hosting (Laravel Cloud or Forge) is chosen in this phase (PROJECT.md, Open decisions).
-- Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, error tracking, backups (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
+- Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, recovery from disaster (backups, error tracking and a rollback plan, which took in the earlier error-tracking and backup items) (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
 - How a visitor tries the front desk on staging (`/dev/chat` is local-only today), and whether the text a visitor types is kept.
+  - Dev chat shows the stored copy of each text, so a booking link sent through the front desk shows `/book/[link]` and cannot be clicked. That is D-12 working. A visitor needs a way to open the link that was sent, settled without storing working links (Phase 8 UAT check 4). Affects: customer communication, connectors and data, safety and compliance.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
 - Deploy notes carry in from PROJECT.md: restart the worker after any `.env` or key change.
-- The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list. DEPL-01 is unchanged.
+- The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list, continuous deployment with its smoke check, recovery from disaster and performance budgets in CI (Ian, 2026-11-08). DEPL-01 is unchanged.
 
 ## Progress
 
@@ -347,7 +434,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 5. Standard Rooms | 9/9 | Complete    | 2026-10-26 |
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
-| 8. Schedule and Booking | 0/TBD | Not started | - |
+| 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
 | 9. Owner Intelligence | 0/TBD | Not started | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |

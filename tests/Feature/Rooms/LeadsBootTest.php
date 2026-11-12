@@ -154,20 +154,13 @@ it('finds no accessibility violation in the leads section', function (bool $with
 ]);
 
 /**
- * The most Tab presses the dashboard walk may take from the top of /admin to the last of three leads rows. The panel's
- * own controls and the room sections above the leads come first, so the cap leaves room for them without letting the
- * walk wander.
+ * The most Tab presses the dashboard walk may take from the top of /admin to the last of three leads rows. This was
+ * measured on 2026-11-06 (plan 08-10, review item 07 IN-09): the walk took 11 presses on a desktop window and 13 on a
+ * phone, so the cap is the larger, 13, plus a margin of 10. The margin leaves room for one more room section above the
+ * leads without letting the walk wander; a walk that takes more than 23 presses means focus left the page or the
+ * order changed, and should fail.
  */
-const LEADS_KEYBOARD_TAB_CAP = 60;
-
-/**
- * Press one key on whatever has focus now, the way a person does: down and up at the page, not on a chosen element.
- */
-function leadsKeyboardPress(Page $browser, string $key): void
-{
-    $browser->keyDown($key);
-    $browser->keyUp($key);
-}
+const LEADS_KEYBOARD_TAB_CAP = 23;
 
 /**
  * The contact name of the leads row link that has focus now, or null when focus is anywhere else.
@@ -213,7 +206,7 @@ it('reaches each leads row by Tab in order and opens its contact with Enter', fu
     $presses = 0;
 
     while ($presses < LEADS_KEYBOARD_TAB_CAP && count($reached) < 3) {
-        leadsKeyboardPress($browser, 'Tab');
+        pressKey($browser, 'Tab');
         $presses++;
 
         $row = leadsKeyboardFocusedRow($browser);
@@ -225,7 +218,7 @@ it('reaches each leads row by Tab in order and opens its contact with Enter', fu
 
     expect($reached)->toBe(['Casey Ortiz', 'Blake Moreno', 'Avery Lane']);
 
-    leadsKeyboardPress($browser, 'Enter');
+    pressKey($browser, 'Enter');
 
     // The contact page is open once its project list's New job button is on it. Playwright's own locator wait is used
     // because the plugin's waitForURL() never reads Playwright's answer in pest-plugin-browser 5.1, so it does not wait.

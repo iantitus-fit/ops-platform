@@ -32,6 +32,8 @@ composer run setup
 `setup` installs the PHP packages, creates `.env`, generates the app key,
 creates the SQLite database, runs migrations and builds front-end assets.
 
+`CACHE_STORE` must be a shared store, `database` (the `.env.example` default) or `redis`, because the booking lock that stops two customers taking the same time lives there (`08-RESEARCH.md` A4).
+
 ## 3. Connect Claude Code to Laravel
 
 ```sh
@@ -62,9 +64,13 @@ php artisan make:filament-user
 composer run dev
 ```
 
-Open http://localhost:8000/admin and log in. `composer run dev` opens a
-dashboard with four tabs (server, queue, logs, vite); Tab switches between
-them, and `q` stops everything.
+Open http://localhost:8000/admin and log in. `make:filament-user` creates an
+owner with no phone, so open your profile and fill in "Mobile phone for
+alerts"; without it, owner alerts are logged as "Owner alert not sent: No
+phone on file" and never texted.
+
+`composer run dev` opens a dashboard with four tabs (server, queue, logs,
+vite); Tab switches between them, and `q` stops everything.
 
 ## 5. Run the tests
 
@@ -82,6 +88,8 @@ docker rm -f ops-pg-test
 
 Give the container a few seconds to start before the second command. GitHub
 Actions runs both databases on every push (`.github/workflows/tests.yml`).
+
+Migration checks (`migrate:fresh`, `migrate:rollback`, then `migrate` again) run with `--env=testing`, against a local, gitignored `.env.testing` (its own `APP_KEY`, and `DB_DATABASE=database/testing.sqlite`), so they never touch `database/database.sqlite`. The scratch file must be a real file, not `:memory:`: each artisan command is a new process, and an in-memory database starts empty every time, so a rollback would have nothing to undo. Create it once with `touch database/testing.sqlite` (gitignored by `database/.gitignore`); `migrate --no-interaction` will not create it. `php artisan test` is unaffected: `phpunit.xml` sets `DB_DATABASE` to `:memory:` before `.env.testing` is read, and an existing value is never replaced.
 
 ## 6. First commit
 
@@ -179,3 +187,27 @@ set these five keys in `.env` and `TEXT_CHANNEL=twilio`:
 
 The two URLs must match what is typed into the Twilio Console exactly, or every
 webhook is refused. `.env.example` has the same keys with a note.
+
+## 12. Setting up a business: checks the sync cannot make
+
+The sync checks the shape of a business's folder, but some facts it cannot
+verify. Check these by hand for each business before it goes live.
+
+- **`phone` in `business/profile.md` is the business's texting number on the
+  platform**, the number the platform texts from (Ian, 2026-11-02). The
+  booking page's "text us" lines link to it, so a customer who taps one lands
+  in the platform's thread with the front desk and the change-request alert.
+  Send a text to that number and confirm it arrives in the dashboard thread.
+  A business without a number the platform can text from is not a fit.
+  (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
+
+## 13. Upgrading a business folder
+
+Some releases add a field the sync then requires. A folder synced before that
+release is refused as a whole until the field is added, and the previous
+version stays live. Add each field below before the next sync.
+
+- **`visit_line:` in `rooms/schedule_and_booking/booking.md`.** A booking file
+  written before the visit line needs it added; without it the sync refuses
+  the whole folder (`08-REVIEW.md` IN-10). The line holds `{day}` and `{time}`
+  once each, and `{service}` at most once.
