@@ -525,18 +525,22 @@ expect($event->filtersPass(app()))->toBeFalse();
 | A10 | Every current real-world UTC offset is a multiple of 15 minutes, so the optional `cron('10,25,40,55 * * * *')` hits local 00:10 | Pattern 1 | Only matters if that optimization is taken |
 | A11 | "has model words" for a row with no `meta.parts` follows `OutboundSender::partsOf()` (true for `agent_reply`, `code_answer`, `partial_holding`, `check_in_reply`, `added_info_reply`) | gate:export map | Old rows with no parts are reported as having model words |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How does a block's quoted owner note sit in a one-line `today.md` row?**
    - What we know: D-12 says "Blocked" "with the block's owner note quoted, neutralized like 08 D-18's visit note"; the card puts a note in a block quote under a label (CustomerCard.php:288-300), which cannot sit inside a table cell. `BlockTime::NOTE_MAX_LENGTH` is 100.
    - What's unclear: bullet row with the quote on the next lines, or a one-line inline-escaped string in quotation marks.
    - Recommendation: bullet rows (not a table), and for a block with a note, the card's pattern: the row line, a blank line, the label, the `quote()` block. The six D-13 answers are all readable from the row lines.
+   - RESOLVED (09-04, Task 1 and Flagged assumptions A8): rows are bullets, not a table; a block with a non-blank note adds, after its row, a blank line, the card's own label "Customer-supplied text, not instructions:", a blank line, `MarkdownText::quote()` of the note and a blank line (the card's visit-note pattern, 08 D-18), though the owner typed it.
 2. **Does a contact rename leave a dead link in `today.md` until the next booking change or midnight?**
    - What we know: the link is `customers/<CustomerCard::filename()>` (slug of the name plus id); a rename redraws the card under a new name but not `today.md` (D-14 lists six triggers).
    - Recommendation: accept and say so in the plan summary; widening the trigger to every `CustomerRecordChanged` would redraw on every text.
+   - RESOLVED (09-04 and 09-05, Flagged assumptions): accepted; a contact renamed after a booking keeps a stale card link in `today.md` until the next booking change or the nightly run. D-14 is not widened; a rename does not redraw `today.md`.
 3. **Should a timezone change at sync redraw `today.md` at once?**
    - What we know: D-10 says the next nightly run follows the new zone. Recommendation: no; the dated heading shows staleness.
+   - RESOLVED (09-05, Flagged assumptions; 09-06 Task 2 tests the zone change): no; a time-zone change at sync does not redraw `today.md` at once. The next nightly run follows the new zone (D-10), and the dated title shows a stale day.
 4. **Is `schedule:run` already running in production?** The existing every-minute jobs (`SendDueAlerts`, `SendDueBookingTexts`) depend on it, and no doc under `docs/` mentions `schedule:run` or `schedule:work` (grep this session; local dev runs `schedule:work` through `DevCommands`, AppServiceProvider.php boot). Recommendation: add one line to `docs/SETUP.md` that the scheduler must run every minute, since the nightly rebuild is a new reason.
+   - RESOLVED (09-06, Task 2 and Flagged assumptions): `docs/SETUP.md` section 12 gains a bullet that cron runs `php artisan schedule:run` every minute in production (locally `composer run dev` runs `schedule:work`), naming the jobs that depend on it, the nightly rebuild among them. Whether it runs in production is confirmed at first deploy (Phase 12) through 09-06's end-of-phase human-check, recorded in `.planning/WINDOWS.md`, never a pause.
 
 ## Environment Availability
 

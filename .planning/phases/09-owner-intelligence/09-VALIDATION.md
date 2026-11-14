@@ -43,24 +43,25 @@ Task IDs are filled in by the planner; the requirement-to-test map below is the 
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | GATE-05 | — | `final_text` null unless sent or delivered; `status` on every line; failed and queued never read as out | feature | `php artisan test --compact tests/Feature/FrontDesk/GateExportTest.php` | ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | GATE-05 | — | `original_text` is `gate.inputs.agent_reply` on every path; null for blank or absent | feature | same | ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | GATE-05 | — | six kinds in; holding, handoff, life-safety, booking out; `kind` and the model-words flag on lines | feature | same | ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | GATE-05 | — | `answered` draft keeps `resolution`, gains `answered_by_message_id`, null `final_text` | feature | same | ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | GATE-05 | — | `--without-text` carries no text in new fields | feature | same | ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | BOOK-06 | — | D-06 formatter boundaries and singular forms | unit | `php artisan test --compact tests/Unit/OwnerIntelligence/DurationTextTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | BOOK-06 | — | D-01 to D-03 start/stop rules; D-07 median and 30-day window in the business zone | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TimeToBookedTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | BOOK-06 | — | D-04 query count equal for 3 and 10 contacts, and equal to 1 | feature | same | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | BOOK-06 | — | contact screen line shown, hidden with no number, hidden with room off, hidden and reported to the log when building it throws | feature (Livewire) | `php artisan test --compact tests/Feature/Filament/ContactTimeToBookedTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | RECS-02 | — | D-13 day: order, states, six reader answers, heading date, zone line, no phone/note/address, empty day, schedule-room-off line | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TodayRecordTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | RECS-02 | — | owner text (block note, customer name) with `#`, `\|`, newline or instruction-like sentence stays inside its row or quote | feature | same | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | RECS-02 | — | each of the six actions redraws `today.md` after commit, queued and locked; room-off deletes the files on sync and rebuild | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/RedrawTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | RECS-02 | — | nightly event runs at 00:10 in the business zone, follows a changed zone, one pass across DST days; `records:rebuild` turns `today.md` over and names what it wrote | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/NightlyRebuildTest.php tests/Feature/Records/RecordsRebuildTest.php` | ❌ W0 / ✅ extend | ⬜ pending |
-| TBD | TBD | TBD | RECS-02 | — | router text room on and off; tracked example equals room-on text | feature | `php artisan test --compact tests/Feature/Records/RecordsRebuildTest.php` | ✅ edit :45-51 | ⬜ pending |
-| TBD | TBD | TBD | ROOM-13 | — | boot, contract, folder holds only `CONTEXT.md`, optional, section position and lines | feature | `php artisan test --compact tests/Feature/Rooms/OwnerIntelligenceBootTest.php` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ROOM-13 / A11Y-01 | — | axe finds no violation in the section, with and without a qualifying contact | browser | same file | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-26 | — | owner notice reads "the line changed after it was shown" | feature | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php` | ✅ edit :270, :285, :289 | ⬜ pending |
-| TBD | TBD | TBD | shared code | — | arch scan lists only the six writers; File facade only in `RecordsWriter`; example count 29 | unit/feature | `php artisan test --compact tests/Unit tests/Feature/Icm tests/Feature/Rooms` | ✅ | ⬜ pending |
+| 09-01-T1 | 09-01 | 1 | GATE-05 | T-09-01 | `final_text` null unless sent or delivered; `status` on every line; failed and queued never read as out | feature | `php artisan test --compact tests/Feature/FrontDesk/GateExportTest.php` | ✅ extend | ⬜ pending |
+| 09-01-T2 | 09-01 | 1 | GATE-05 | T-09-02 | `original_text` is `gate.inputs.agent_reply` on every path; null for blank or absent | feature | same | ✅ extend | ⬜ pending |
+| 09-01-T2 | 09-01 | 1 | GATE-05 | — | six kinds in; holding, handoff, life-safety, booking out; `kind` and the model-words flag on lines | feature | same | ✅ extend | ⬜ pending |
+| 09-01-T2 | 09-01 | 1 | GATE-05 | — | `answered` draft keeps `resolution`, gains `answered_by_message_id`, null `final_text` | feature | same | ✅ extend | ⬜ pending |
+| 09-01-T2 | 09-01 | 1 | GATE-05 | T-09-03 | `--without-text` carries no text in new fields | feature | same | ✅ extend | ⬜ pending |
+| 09-02-T1 | 09-02 | 1 | BOOK-06 | — | D-06 formatter boundaries and singular forms | unit | `php artisan test --compact tests/Unit/OwnerIntelligence/DurationTextTest.php` | ❌ W0 | ⬜ pending |
+| 09-02-T2, 09-02-T3 | 09-02 | 1 | BOOK-06 | T-09-06 | D-01 to D-03 start/stop rules; D-07 median and 30-day window in the business zone | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TimeToBookedTest.php` | ❌ W0 | ⬜ pending |
+| 09-02-T3 | 09-02 | 1 | BOOK-06 | T-09-05 | D-04 query count equal for 3 and 10 contacts, and equal to 1 | feature | same | ❌ W0 | ⬜ pending |
+| 09-03-T2 | 09-03 | 2 | BOOK-06 | T-09-08 | contact screen line shown, hidden with no number, hidden with room off, hidden and reported to the log when building it throws | feature (Livewire) | `php artisan test --compact tests/Feature/Filament/ContactTimeToBookedTest.php` | ❌ W0 | ⬜ pending |
+| 09-04-T1, 09-04-T2 | 09-04 | 3 | RECS-02 | T-09-12 | D-13 day: order, states, six reader answers, heading date, zone line, no phone/note/address, empty day, schedule-room-off line | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TodayRecordTest.php` | ❌ W0 | ⬜ pending |
+| 09-04-T2 | 09-04 | 3 | RECS-02 | T-09-11 | owner text (block note, customer name) with `#`, `\|`, newline or instruction-like sentence stays inside its row or quote | feature | same | ❌ W0 | ⬜ pending |
+| 09-04-T2 | 09-04 | 3 | RECS-02, BOOK-06 | T-09-13, T-09-14 | time-to-booked.md content; room off deletes both files; the lock is taken before any read | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TimeToBookedFileTest.php` | ❌ W0 | ⬜ pending |
+| 09-05-T1, 09-05-T2, 09-05-T3 | 09-05 | 4 | RECS-02 | T-09-16, T-09-18 | each of the six actions redraws `today.md` after commit, queued and locked; no-ops and rollbacks do not; room-off deletes the files at the sync | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/RedrawTest.php` | ❌ W0 | ⬜ pending |
+| 09-06-T1, 09-06-T2 | 09-06 | 5 | RECS-02 | T-09-20, T-09-21, T-09-22 | nightly event runs at 00:10 in the business zone, follows a changed zone, one pass across DST days; `records:rebuild` turns `today.md` over | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/NightlyRebuildTest.php tests/Feature/Records/RecordsRebuildTest.php` | ❌ W0 / ✅ extend | ⬜ pending |
+| 09-04-T3 | 09-04 | 3 | RECS-02 | T-09-13 | router text room on and off; tracked example equals room-on text; `records:rebuild` names what it wrote | feature | `php artisan test --compact tests/Feature/Records/RecordsRebuildTest.php` | ✅ edit :46-52 | ⬜ pending |
+| 09-03-T1, 09-03-T3 | 09-03 | 2 | ROOM-13 | T-09-10 | boot, contract, folder holds only `CONTEXT.md`, optional, section position and lines | feature | `php artisan test --compact tests/Feature/Rooms/OwnerIntelligenceBootTest.php` | ❌ W0 | ⬜ pending |
+| 09-03-T3 | 09-03 | 2 | ROOM-13 / A11Y-01 | T-09-08 | axe finds no violation in the section, with and without a qualifying contact | browser | same file | ❌ W0 | ⬜ pending |
+| 09-01-T3 | 09-01 | 1 | D-26 | T-09-04 | owner notice reads "the line changed after it was shown" | feature | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php` | ✅ edit :270, :285, :289 | ⬜ pending |
+| 09-03-T1, 09-04-T1, 09-05-T1 | 09-03, 09-04, 09-05 | 2-4 | shared code | T-09-19 | arch scan lists only the six writers; File facade only in `RecordsWriter`; example count 29 | unit/feature | `php artisan test --compact tests/Unit tests/Feature/Icm tests/Feature/Rooms` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -71,6 +72,7 @@ Task IDs are filled in by the planner; the requirement-to-test map below is the 
 - [ ] `tests/Unit/OwnerIntelligence/DurationTextTest.php` — BOOK-06 formatter
 - [ ] `tests/Feature/OwnerIntelligence/TimeToBookedTest.php` — BOOK-06, D-04 query count
 - [ ] `tests/Feature/OwnerIntelligence/TodayRecordTest.php` — RECS-02, D-13
+- [ ] `tests/Feature/OwnerIntelligence/TimeToBookedFileTest.php` — RECS-02, D-15, D-23 (added at planning)
 - [ ] `tests/Feature/OwnerIntelligence/RedrawTest.php` — RECS-02, D-14, D-15
 - [ ] `tests/Feature/OwnerIntelligence/NightlyRebuildTest.php` — RECS-02, D-10
 - [ ] `tests/Feature/Rooms/OwnerIntelligenceBootTest.php` — ROOM-13, A11Y-01
