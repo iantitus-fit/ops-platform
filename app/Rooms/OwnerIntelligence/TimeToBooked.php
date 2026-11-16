@@ -2,11 +2,14 @@
 
 namespace App\Rooms\OwnerIntelligence;
 
+use App\Channels\TextKeywords;
+use App\Enums\MessageChannel;
 use App\Enums\MessageDirection;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\Message;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /**
  * Time to booked (BOOK-06): how long a contact took to book, from their first real inbound message to their first
@@ -79,13 +82,46 @@ class TimeToBooked
             ])
             ->get();
 
+        return $this->firstRealMessageSeconds($rows);
+    }
+
+    /**
+     * Walk each contact's messages in order and time the first real one.
+     *
+     * This mirrors RecordInbound::keywordIn(), which decided at record time whether a text was a keyword (D-01, 07 D-23):
+     * only an SMS is matched, by TextKeywords::actionFor() with the provider's own opt-out word, the body and whether the
+     * contact is opted out at that point. Each contact starts not opted out, a STOP opts them out and a START opts them
+     * back in, so YES is a keyword only while they are opted out. A web form is never a keyword, even one that reads
+     * STOP. The first message that is not a keyword starts the clock, and a contact whose every message was a keyword
+     * has no entry. The elapsed time is the difference of two Unix timestamps, and 0 or less gives no entry (A4).
+     *
+     * @param  Collection<int, Message>  $rows  messages before each contact's first booking, in contact then time order
+     * @return array<int, int> seconds by contact id
+     */
+    private function firstRealMessageSeconds(Collection $rows): array
+    {
         $seconds = [];
+        $optedOut = [];
 
         foreach ($rows as $row) {
             $contact = (int) $row->contact_id;
 
             if (isset($seconds[$contact])) {
                 continue;
+            }
+
+            if ($row->channel === MessageChannel::Sms) {
+                $action = TextKeywords::actionFor($row->meta['opt_out_type'] ?? null, (string) $row->body, $optedOut[$contact] ?? false);
+
+                if ($action !== null) {
+                    $optedOut[$contact] = match ($action) {
+                        'stop' => true,
+                        'start' => false,
+                        default => $optedOut[$contact] ?? false,
+                    };
+
+                    continue;
+                }
             }
 
             $elapsed = CarbonImmutable::parse($row->first_booked_at, 'UTC')->getTimestamp() - $row->created_at->getTimestamp();
