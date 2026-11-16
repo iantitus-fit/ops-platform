@@ -78,15 +78,17 @@ class GateExport extends Command
     /**
      * One decision as the array that becomes a line.
      *
-     * The final text is what went out, so a draft nobody sent has none. The original text is the agent's own words:
-     * the saved original when the owner edited the draft, otherwise the message body.
+     * The final text is the text that reached the customer's phone, so a queued, failed or held one has none, and every
+     * line names its status (02 WR-09, D-16). The original text is the agent's own words: the saved original when the
+     * owner edited the draft, otherwise the message body.
      *
      * @return array<string, mixed>
      */
     private function decision(Message $message, bool $withoutText): array
     {
         $gate = $message->gate ?? [];
-        $finalText = in_array($message->status, [MessageStatus::Draft, MessageStatus::Withdrawn], true) ? null : $message->body;
+        $wentOut = in_array($message->status, MessageStatus::onTheCustomersPhone(), true);
+        $finalText = $wentOut ? $message->body : null;
         $originalText = $message->original_body ?? $message->body;
 
         $line = [
@@ -115,6 +117,7 @@ class GateExport extends Command
             'resolved_at' => $message->resolved_at?->utc()->toIso8601String(),
             'resolved_by' => $message->resolved_by,
             'owner_edited' => $message->resolution === DraftResolution::Edited,
+            'status' => $message->status->value,
         ];
     }
 
