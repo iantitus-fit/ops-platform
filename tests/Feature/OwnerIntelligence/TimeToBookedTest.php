@@ -1,5 +1,6 @@
 <?php
 
+use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -7,6 +8,7 @@ use App\Models\Message;
 use App\Rooms\OwnerIntelligence\DurationText;
 use App\Rooms\OwnerIntelligence\TimeToBooked;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * BOOK-06: a contact's time to booked is worked out on read from two recorded facts, the first real inbound message and
@@ -177,4 +179,146 @@ it('gives no number when there is no message before the first booking (D-03)', f
         ->and($timeToBooked->forContact($neverBooked->id))->toBeNull()
         ->and($timeToBooked->forContact($onlyKeywords->id))->toBeNull()
         ->and($timeToBooked->forContact(999999))->toBeNull();
+});
+
+/**
+ * A contact who texted at 9:00:00 on the given day and was first booked the given number of seconds later.
+ */
+function timeToBookedTook(int $seconds, string $day = '2026-11-10'): Contact
+{
+    $contact = Contact::factory()->create();
+    timeToBookedMessage($contact, 'My AC is blowing warm air', '09:00:00', $day);
+    Appointment::factory()->create([
+        'contact_id' => $contact->id,
+        'booked_at' => timeToBookedAt('09:00:00', $day)->addSeconds($seconds),
+    ]);
+
+    return $contact;
+}
+
+it('gives the median of an odd count (D-07)', function () {
+    foreach ([600, 2520, 18000] as $seconds) {
+        timeToBookedTook($seconds);
+    }
+
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe('Half of your 3 new customers in the last 30 days booked within 42 minutes.');
+});
+
+it('gives the mean of the two middle values for an even count', function () {
+    foreach ([600, 2400, 3000, 18000] as $seconds) {
+        timeToBookedTook($seconds);
+    }
+
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe('Half of your 4 new customers in the last 30 days booked within 45 minutes.');
+});
+
+it('says in under a minute when the median is under a minute', function () {
+    foreach ([20, 50] as $seconds) {
+        timeToBookedTook($seconds);
+    }
+
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe('Half of your 2 new customers in the last 30 days booked in under a minute.');
+});
+
+it('says one customer in the singular', function () {
+    timeToBookedTook(2520);
+
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe('Your 1 new customer in the last 30 days booked within 42 minutes.');
+});
+
+it('says in under a minute for one customer', function () {
+    timeToBookedTook(40);
+
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe('Your 1 new customer in the last 30 days booked in under a minute.');
+});
+
+it('counts the 30 days in the business zone', function () {
+    // The window starts at 2026-10-15 00:00:00 America/Chicago, so 2026-10-14 23:59:59 is out: today and the 29 days before it, across the November 1
+    // daylight change.
+    $inside = Contact::factory()->create();
+    timeToBookedMessage($inside, 'Hello', '20:00', '2026-10-14');
+    Appointment::factory()->create(['contact_id' => $inside->id, 'booked_at' => timeToBookedAt('00:00:00', '2026-10-15')]);
+
+    $outside = Contact::factory()->create();
+    timeToBookedMessage($outside, 'Hello', '20:00', '2026-10-14');
+    Appointment::factory()->create(['contact_id' => $outside->id, 'booked_at' => timeToBookedAt('23:59:59', '2026-10-14')]);
+
+    // First booked on 2026-10-01; the second booking this week does not make them new (D-02).
+    $returning = Contact::factory()->create();
+    timeToBookedMessage($returning, 'Hello', '09:00', '2026-10-01');
+    timeToBookedBooking($returning, '09:30', '2026-10-01');
+    timeToBookedBooking($returning, '10:00', '2026-11-12');
+
+    $summary = app(TimeToBooked::class)->summary();
+
+    expect($summary['count'])->toBe(1)
+        ->and($summary['median_seconds'])->toBe(4 * 3600);
+});
+
+it('leaves out contacts with no number (D-03)', function () {
+    timeToBookedTook(2520);
+
+    $handAdded = Contact::factory()->create();
+    timeToBookedBooking($handAdded, '10:00', '2026-11-10');
+
+    $stopped = Contact::factory()->create();
+    timeToBookedMessage($stopped, 'STOP', '09:00', '2026-11-10');
+    timeToBookedBooking($stopped, '10:00', '2026-11-10');
+
+    expect(app(TimeToBooked::class)->summary())->toBe(['count' => 1, 'median_seconds' => 2520]);
+});
+
+it('says so when no new customer booked (D-07)', function () {
+    expect(app(TimeToBooked::class)->summaryLine())
+        ->toBe(TimeToBooked::EMPTY_LINE)
+        ->toBe('No new customers booked in the last 30 days.')
+        ->and(app(TimeToBooked::class)->summary())->toBe(['count' => 0, 'median_seconds' => null]);
+});
+
+it('works out the summary in one query (D-04)', function () {
+    $timeToBooked = app(TimeToBooked::class);
+    app(ActiveConfig::class)->displayTimezone();
+
+    $first = null;
+
+    foreach ([600, 2520, 18000] as $seconds) {
+        $first ??= timeToBookedTook($seconds);
+        timeToBookedTook($seconds);
+    }
+
+    $timeToBooked->summaryLine();
+    DB::enableQueryLog();
+    $timeToBooked->summaryLine();
+    $withThree = count(DB::getQueryLog());
+    DB::flushQueryLog();
+
+    foreach (range(1, 7) as $number) {
+        $contact = timeToBookedTook($number * 600);
+        timeToBookedMessage($contact, 'Are you still coming?', '09:10:00', '2026-11-10');
+    }
+
+    $stopFirst = Contact::factory()->create();
+    timeToBookedMessage($stopFirst, 'STOP', '08:00', '2026-11-10');
+    timeToBookedMessage($stopFirst, 'Hello', '09:00', '2026-11-10');
+    timeToBookedBooking($stopFirst, '09:30', '2026-11-10');
+
+    timeToBookedBooking(Contact::factory()->create(), '10:00', '2026-11-10');
+    timeToBookedBooking($first, '12:00', '2026-11-12');
+
+    $timeToBooked->summaryLine();
+    $withTen = count(DB::getQueryLog());
+    DB::flushQueryLog();
+
+    $timeToBooked->forContact($first->id);
+    $forOne = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($withThree)->toBe(1)
+        ->and($withTen)->toBe($withThree)
+        ->and($forOne)->toBe(1);
 });
