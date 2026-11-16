@@ -68,3 +68,113 @@ it('works out one contact\'s time to booked', function () {
     expect($seconds)->toBe(2520)
         ->and(DurationText::format($seconds))->toBe('42 minutes');
 });
+
+it('skips a keyword-only first text (D-01)', function (string $keyword) {
+    $contact = Contact::factory()->create();
+    timeToBookedMessage($contact, $keyword, '08:00');
+    timeToBookedMessage($contact, 'Can you come out?', '09:00');
+    timeToBookedBooking($contact, '09:42');
+
+    expect(app(TimeToBooked::class)->forContact($contact->id))->toBe(2520);
+})->with(['STOP' => 'STOP', 'HELP' => 'HELP', 'padded and lower case' => ' Stop ']);
+
+it('treats YES as a keyword only while the contact is opted out', function () {
+    $optedOut = Contact::factory()->create();
+    timeToBookedMessage($optedOut, 'STOP', '08:00');
+    timeToBookedMessage($optedOut, 'YES', '08:30');
+    timeToBookedMessage($optedOut, 'Hi', '09:00');
+    timeToBookedBooking($optedOut, '09:42');
+
+    $notOptedOut = Contact::factory()->create();
+    timeToBookedMessage($notOptedOut, 'YES', '08:00');
+    timeToBookedBooking($notOptedOut, '08:42');
+
+    expect(app(TimeToBooked::class)->forContact($optedOut->id))->toBe(2520)
+        ->and(app(TimeToBooked::class)->forContact($notOptedOut->id))->toBe(2520);
+});
+
+it('starts on a sentence that holds a keyword word', function () {
+    $contact = Contact::factory()->create();
+    timeToBookedMessage($contact, 'stop the noise please', '09:00');
+    timeToBookedBooking($contact, '09:42');
+
+    expect(app(TimeToBooked::class)->forContact($contact->id))->toBe(2520);
+});
+
+it('starts on a web form, even one that reads STOP', function () {
+    $contact = Contact::factory()->create();
+    timeToBookedMessage($contact, 'STOP', '09:00', web: true);
+    timeToBookedBooking($contact, '09:42');
+
+    expect(app(TimeToBooked::class)->forContact($contact->id))->toBe(2520);
+});
+
+it('reads every conversation of the contact', function () {
+    $contact = Contact::factory()->create();
+    $older = Conversation::factory()->closed()->create(['contact_id' => $contact->id]);
+    $newer = Conversation::factory()->create(['contact_id' => $contact->id]);
+    timeToBookedMessage($contact, 'Is anyone there?', '09:20', attributes: ['conversation_id' => $newer->id]);
+    timeToBookedMessage($contact, 'My AC is blowing warm air', '09:00', attributes: ['conversation_id' => $older->id]);
+    timeToBookedBooking($contact, '09:42');
+
+    expect(app(TimeToBooked::class)->forContact($contact->id))->toBe(2520);
+});
+
+it('stops at the first booking ever, whichever project and whoever booked it (D-02)', function () {
+    $twoProjects = Contact::factory()->create();
+    timeToBookedMessage($twoProjects, 'My AC is blowing warm air', '09:00');
+    timeToBookedBooking($twoProjects, '10:30');
+    timeToBookedBooking($twoProjects, '09:42');
+
+    $cancelled = Contact::factory()->create();
+    timeToBookedMessage($cancelled, 'My AC is blowing warm air', '09:00');
+    Appointment::factory()->cancelled()->create(['contact_id' => $cancelled->id, 'booked_at' => timeToBookedAt('09:42')]);
+    timeToBookedBooking($cancelled, '10:30');
+
+    $byCustomer = Contact::factory()->create();
+    timeToBookedMessage($byCustomer, 'My AC is blowing warm air', '09:00');
+    Appointment::factory()->byCustomer()->create(['contact_id' => $byCustomer->id, 'booked_at' => timeToBookedAt('09:42')]);
+
+    $returning = Contact::factory()->create();
+    timeToBookedMessage($returning, 'My AC is blowing warm air', '09:00', '2026-09-01');
+    timeToBookedBooking($returning, '09:42', '2026-09-01');
+    timeToBookedMessage($returning, 'Back again', '08:00', '2026-11-12');
+    timeToBookedBooking($returning, '08:10', '2026-11-12');
+
+    $timeToBooked = app(TimeToBooked::class);
+
+    expect($timeToBooked->forContact($twoProjects->id))->toBe(2520)
+        ->and($timeToBooked->forContact($cancelled->id))->toBe(2520)
+        ->and($timeToBooked->forContact($byCustomer->id))->toBe(2520)
+        ->and($timeToBooked->forContact($returning->id))->toBe(2520);
+});
+
+it('gives no number when there is no message before the first booking (D-03)', function () {
+    $timeToBooked = app(TimeToBooked::class);
+
+    $onlyBooking = Contact::factory()->create();
+    timeToBookedBooking($onlyBooking, '09:42');
+
+    $messageAfter = Contact::factory()->create();
+    timeToBookedMessage($messageAfter, 'Thanks for booking', '10:00');
+    timeToBookedBooking($messageAfter, '09:42');
+
+    $sameSecond = Contact::factory()->create();
+    timeToBookedMessage($sameSecond, 'Book me now', '09:42');
+    timeToBookedBooking($sameSecond, '09:42');
+
+    $neverBooked = Contact::factory()->create();
+    timeToBookedMessage($neverBooked, 'My AC is blowing warm air', '09:00');
+
+    $onlyKeywords = Contact::factory()->create();
+    timeToBookedMessage($onlyKeywords, 'STOP', '08:00');
+    timeToBookedMessage($onlyKeywords, 'HELP', '08:30');
+    timeToBookedBooking($onlyKeywords, '09:42');
+
+    expect($timeToBooked->forContact($onlyBooking->id))->toBeNull()
+        ->and($timeToBooked->forContact($messageAfter->id))->toBeNull()
+        ->and($timeToBooked->forContact($sameSecond->id))->toBeNull()
+        ->and($timeToBooked->forContact($neverBooked->id))->toBeNull()
+        ->and($timeToBooked->forContact($onlyKeywords->id))->toBeNull()
+        ->and($timeToBooked->forContact(999999))->toBeNull();
+});
