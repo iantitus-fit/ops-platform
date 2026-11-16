@@ -25,10 +25,11 @@ class VisitAskedAbout
     public const string NO_VISIT_AHEAD = 'no visit is booked ahead';
 
     /**
-     * The reason told to the owner when the line that would go now differs from the line the approve step showed: the
-     * visit moved, or another visit became the one asked about (WR-09).
+     * The reason told to the owner when the line that would go now differs from the line the approve step showed. That
+     * covers the visit moving, another visit becoming the one asked about, and the line's own words changing in the
+     * booking file (WR-09, 08 IN-13, Phase 9 D-26). A draft already sent keeps the words stored with it.
      */
-    public const string VISIT_CHANGED = 'the visit changed after the line was shown';
+    public const string VISIT_CHANGED = 'the line changed after it was shown';
 
     /**
      * The reason told to the owner when booking is on but the live booking file was synced before visit_line existed, so

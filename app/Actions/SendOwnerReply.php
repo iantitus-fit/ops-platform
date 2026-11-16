@@ -217,8 +217,9 @@ class SendOwnerReply
     /**
      * Send an approved draft the owner asked to add the visit line to. A condition that no longer holds sends the draft
      * as it is and records the plain reason. Otherwise the line is rendered now, so it is true when it goes, and it rides
-     * only when it is the line the owner saw: a visit that moved, or another visit that became the one asked about, sends
-     * the draft as it is with VisitAskedAbout::VISIT_CHANGED (WR-09). The length with the line is measured before
+     * only when it is the line the owner saw: a visit that moved, another visit that became the one asked about, or a
+     * change to the booking file's visit_line words sends the draft as it is with VisitAskedAbout::VISIT_CHANGED
+     * (WR-09, 08 IN-13). The length with the line is measured before
      * anything is sent: over the limit refuses and keeps the draft live (U-37), never drops the line. The line follows the
      * owner's words, and the sent row records which visit it named.
      *
