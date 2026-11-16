@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 09
 current_phase_name: Owner Intelligence
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-11-16T20:00:57.771Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-11-16T20:11:55.683Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 09 execution started
-state_head: 7144ad2a5acb995f38a1bc6464ddae690aa8af45
+state_head: 1f394599b3000b4986a585419169408825e96afe
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 66
-  completed_plans: 61
+  completed_plans: 62
   percent: 56
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09 (Owner Intelligence) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 09 execution started
 
@@ -202,6 +202,7 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | Phase 08 P25 | 19 min | 3 tasks | 10 files |
 | Phase 08 P26 | 12 min | 2 tasks | 6 files |
 | Phase 09 P01 | 15 min | 3 tasks | 6 files |
+| Phase 09 P02 | 24 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -318,6 +319,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-01: gate:export final_text goes through MessageStatus::onTheCustomersPhone(); original_text is only gate.inputs.agent_reply (null when blank), with no fallback to body (D-16, D-17)
 - [Phase 09]: 09-01: --without-text also swaps the verdict's customer_reading.error for its length and leaves a fixed verdict with no inputs key; has_model_words mirrors OutboundSender::partsOf() (A11) (D-20, flagged for Ian)
 - [Phase 09]: 09-01: the visit-line left-off reason is one sentence, 'the line changed after it was shown', for a moved visit, another visit and edited visit_line words (D-26, 08 IN-13)
+- [Phase 09]: 09-02: TimeToBooked mirrors RecordInbound::keywordIn() in a PHP walk (SMS only, opted-out flag per contact, YES a keyword only while opted out); keywords are never matched in SQL (D-01)
+- [Phase 09]: 09-02: a first message in the same second as the first booking gives no number (A4); the median is not rounded before DurationText formats it, so under a minute reads 'booked in under a minute' (A3)
 
 ### Pending Todos
 
@@ -386,8 +389,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T20:00:57.673Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-11-16T20:11:55.578Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
