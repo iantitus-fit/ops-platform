@@ -17,8 +17,11 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Prints every send-or-draft decision the front desk made, with what the owner did about it, as JSON lines (D-07).
  *
  * One line is one decision: the agent's reply, the verdict that sent or held it, and, for a held draft, whether the
- * owner approved it, edited it, discarded it or a newer draft replaced it. Together they are the labeled data the
- * thresholds are tuned from later. Holding, handoff and life-safety texts are not decisions and are left out.
+ * owner approved it, edited it, discarded it or a newer draft replaced it. The export also holds the six kinds of text
+ * code assembles from owner sentences and fixed lines (02.1's code-assembled kinds); each line names its kind, whether
+ * the model's own words were in it and its status. A draft closed because a code-assembled text answered it names that
+ * text in answered_by_message_id. Together they are the labeled data the thresholds are tuned from later.
+ * Holding, handoff and life-safety texts are not decisions and are left out. Booking texts are left out too.
  *
  * The app writes no file: the lines go to standard output and the owner redirects them to a file.
  * Without --without-text the lines hold the customers' own words, so keep that file private and share only an export
@@ -48,7 +51,10 @@ class GateExport extends Command
         $withoutText = (bool) $this->option('without-text');
 
         Message::query()
-            ->where('kind', MessageKind::AgentReply->value)
+            ->whereIn('kind', [
+                MessageKind::AgentReply->value,
+                ...array_map(fn (MessageKind $kind): string => $kind->value, MessageKind::assembledByCode()),
+            ])
             ->whereNotNull('gate_outcome')
             ->when($since, fn ($query) => $query->where('created_at', '>=', $since))
             ->lazyById()
@@ -78,16 +84,20 @@ class GateExport extends Command
     /**
      * One decision as the array that becomes a line.
      *
-     * The final text is what went out, so a draft nobody sent has none. The original text is the agent's own words:
-     * the saved original when the owner edited the draft, otherwise the message body.
+     * The final text is the text that reached the customer's phone, so a queued, failed or held one has none, and every
+     * line names its status (02 WR-09, D-16). The original text is always the model's own words as the stored verdict
+     * kept them, before the disclosure, the sign-off, any added line or an owner's edit; it is null when the model wrote
+     * none, and never falls back to the body (D-17).
      *
      * @return array<string, mixed>
      */
     private function decision(Message $message, bool $withoutText): array
     {
         $gate = $message->gate ?? [];
-        $finalText = in_array($message->status, [MessageStatus::Draft, MessageStatus::Withdrawn], true) ? null : $message->body;
-        $originalText = $message->original_body ?? $message->body;
+        $wentOut = in_array($message->status, MessageStatus::onTheCustomersPhone(), true);
+        $finalText = $wentOut ? $message->body : null;
+        $agentReply = $gate['inputs']['agent_reply'] ?? null;
+        $originalText = is_string($agentReply) && trim($agentReply) !== '' ? $agentReply : null;
 
         $line = [
             'message_id' => $message->id,
@@ -103,7 +113,7 @@ class GateExport extends Command
         if ($withoutText) {
             $line['verdict'] = $this->withoutText($gate);
             $line['final_text_length'] = $finalText === null ? null : mb_strlen($finalText);
-            $line['original_text_length'] = mb_strlen($originalText);
+            $line['original_text_length'] = $originalText === null ? null : mb_strlen($originalText);
         } else {
             $line['final_text'] = $finalText;
             $line['original_text'] = $originalText;
@@ -115,19 +125,53 @@ class GateExport extends Command
             'resolved_at' => $message->resolved_at?->utc()->toIso8601String(),
             'resolved_by' => $message->resolved_by,
             'owner_edited' => $message->resolution === DraftResolution::Edited,
+            'status' => $message->status->value,
+            'kind' => $message->kind->value,
+            'has_model_words' => $this->hasModelWords($message),
+            'answered_by_message_id' => isset($message->meta['answered_by']) ? (int) $message->meta['answered_by'] : null,
         ];
     }
 
     /**
+     * Whether the model's own words are in the text, by the rule OutboundSender::partsOf() reads: a non-empty
+     * meta.parts list decides; with none, an agent reply and the four kinds a combined text can be (code_answer,
+     * partial_holding, check_in_reply, added_info_reply) count as having model words, and any other kind does not. The
+     * test pins the table so the two cannot drift.
+     */
+    private function hasModelWords(Message $message): bool
+    {
+        $parts = $message->meta['parts'] ?? null;
+
+        if (is_array($parts) && $parts !== []) {
+            return in_array('model_words', $parts, true);
+        }
+
+        return in_array($message->kind, [
+            MessageKind::AgentReply,
+            MessageKind::CodeAnswer,
+            MessageKind::PartialHolding,
+            MessageKind::CheckInReply,
+            MessageKind::AddedInfoReply,
+        ], true);
+    }
+
+    /**
      * The stored verdict with every piece of text replaced by its length: the customer's words, the agent's words,
-     * the words a code check matched, and the error messages, which a provider can fill with the text it was sent.
+     * the words a code check matched, and the error messages, which a provider can fill with the text it was sent. A
+     * fixed verdict has no inputs and keeps its shape.
      *
      * @param  array<string, mixed>  $gate
      * @return array<string, mixed>
      */
     private function withoutText(array $gate): array
     {
-        $gate['inputs'] = $this->lengthsFor($gate['inputs'] ?? [], ['customer_text', 'agent_reply']);
+        if (isset($gate['inputs'])) {
+            $gate['inputs'] = $this->lengthsFor($gate['inputs'], ['customer_text', 'agent_reply']);
+        }
+
+        if (isset($gate['customer_reading']) && is_array($gate['customer_reading'])) {
+            $gate['customer_reading'] = $this->lengthsFor($gate['customer_reading'], ['error']);
+        }
 
         foreach ($gate['checks']['code']['findings'] ?? [] as $index => $finding) {
             $gate['checks']['code']['findings'][$index] = $this->lengthsFor($finding, ['match']);

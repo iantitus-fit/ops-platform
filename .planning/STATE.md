@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 9
+current_phase: 09
 current_phase_name: Owner Intelligence
-status: planning
-stopped_at: Phase 08 complete, ready to plan Phase 9
-last_updated: "2026-11-12T20:43:25.267Z"
-last_activity: 2026-11-12
-last_activity_desc: Phase 08 complete, transitioned to Phase 9
-state_head: c1a190548df362c144904018e1e6929f791099fc
+status: executing
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-11-16T20:11:55.683Z"
+last_activity: 2026-11-16
+last_activity_desc: Phase 09 execution started
+state_head: 1f394599b3000b4986a585419169408825e96afe
 progress:
   total_phases: 9
   completed_phases: 5
-  total_plans: 60
-  completed_plans: 60
+  total_plans: 66
+  completed_plans: 62
   percent: 56
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 9 — Owner Intelligence
+**Current focus:** Phase 09 — Owner Intelligence
 
 ## Current Position
 
-Phase: 9 — Owner Intelligence
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-11-12 — Phase 08 complete, transitioned to Phase 9
+Phase: 09 (Owner Intelligence) — EXECUTING
+Plan: 3 of 6
+Status: Ready to execute
+Last activity: 2026-11-16 — Phase 09 execution started
 
 Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 
@@ -201,6 +201,8 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | Phase 08 P24 | 20 min | 3 tasks | 12 files |
 | Phase 08 P25 | 19 min | 3 tasks | 10 files |
 | Phase 08 P26 | 12 min | 2 tasks | 6 files |
+| Phase 09 P01 | 15 min | 3 tasks | 6 files |
+| Phase 09 P02 | 24 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -314,6 +316,11 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 08]: 08-25: the visit line on a held draft is settled as D-45 settles the link: the owner's approval decides, every condition is checked again at approval, a line is added only when it was on screen, and a length overrun refuses Send rather than dropping the line. No mint, no new kind, no agent action: the owner's own send through OutboundSender::sendExisting().
 - [Phase 08]: 08-26: the Booking section is drawn only from ServiceToBook and VisitAskedAbout conditions; a booked customer never reads the online variant; booking.md stays out of the agent's loads
 - [Phase 08, close 2026-11-12]: UAT check 8 (the live re-walk): the code path and the visit line held live and "owner will confirm" is gone, but a booked customer's "What time are you coming?" and a request for the link again were still held (Jev promise 0.54 and 0.35; Phase 2 bars). Ian ruled it a known limitation routed to Phase 10, settled with the bar calibration; the phase closed with it.
+- [Phase 09]: 09-01: gate:export final_text goes through MessageStatus::onTheCustomersPhone(); original_text is only gate.inputs.agent_reply (null when blank), with no fallback to body (D-16, D-17)
+- [Phase 09]: 09-01: --without-text also swaps the verdict's customer_reading.error for its length and leaves a fixed verdict with no inputs key; has_model_words mirrors OutboundSender::partsOf() (A11) (D-20, flagged for Ian)
+- [Phase 09]: 09-01: the visit-line left-off reason is one sentence, 'the line changed after it was shown', for a moved visit, another visit and edited visit_line words (D-26, 08 IN-13)
+- [Phase 09]: 09-02: TimeToBooked mirrors RecordInbound::keywordIn() in a PHP walk (SMS only, opted-out flag per contact, YES a keyword only while opted out); keywords are never matched in SQL (D-01)
+- [Phase 09]: 09-02: a first message in the same second as the first booking gives no number (A4); the median is not rounded before DurationText formats it, so under a minute reads 'booked in under a minute' (A3)
 
 ### Pending Todos
 
@@ -382,8 +389,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-12
-Stopped at: Phase 08 complete, ready to plan Phase 9
+Last session: 2026-11-16T20:11:55.578Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

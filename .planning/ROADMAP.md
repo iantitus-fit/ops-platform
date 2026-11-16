@@ -345,7 +345,25 @@ Plans:
   3. `gate:export` counts only what went out (a failed or queued send is not counted as sent), gives `original_text` the same way on every path, and exports the `answered` resolution and the 02.1 fixed-reply kinds.
   4. The owner intelligence room meets the standard (folder, `CONTEXT.md` that says it writes `today.md`, example file, module, boot test).
 
-**Plans**: TBD
+**Plans**: 2/6 plans executed
+
+Plans:
+**Wave 1**
+- [x] 09-01-PLAN.md — gate:export counts only what reached the customer, gives original_text one meaning, exports the six code-assembled kinds and the answered link (GATE-05, D-16 to D-20); the visit-line reason reads "the line changed after it was shown" (D-26, 08 IN-13)
+- [x] 09-02-PLAN.md — Time to booked worked out on read: DurationText, TimeToBooked per contact and the 30-day median line, one query (BOOK-06, D-01 to D-04, D-06, D-07)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 09-03-PLAN.md — The owner intelligence room at the standard, its time-to-booked section and the contact screen's Time to booked line; exampleFolderFileCount() 28 to 29 (ROOM-13, BOOK-06, D-05, D-08, D-21, D-22, D-24, D-29)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 09-04-PLAN.md — records/today.md (the D-13 day) and records/time-to-booked.md while the room is live, deleted when off; the router and records:rebuild follow the room; SPEC bridge list (RECS-02, D-12, D-13, D-15, D-23, D-25)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 09-05-PLAN.md — today.md redrawn after each of the six named actions commits and at once when a sync switches the room (RECS-02, D-14, D-15)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 09-06-PLAN.md — The platform's nightly records:rebuild at 00:10 in the business zone, across zone changes and daylight-saving days; closes 08 IN-06 (RECS-02, D-09 to D-11)
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):
@@ -435,7 +453,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
-| 9. Owner Intelligence | 0/TBD | Not started | - |
+| 9. Owner Intelligence | 2/6 | In Progress | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
