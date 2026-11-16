@@ -267,7 +267,7 @@ it('checks every condition at approval and says why the visit line was left off 
     'a version synced before visit_line' => ['older version', 'the booking file has no visit_line yet, so add it and sync again'],
 ]);
 
-it('sends the draft without the visit line when the visit changed after the line was shown (WR-09)', function (string $case) {
+it('sends the draft without the visit line when the line changed after it was shown (WR-09, 08 IN-13)', function (string $case) {
     $draft = approvedVisitLineHeld();
 
     $thread = approvedVisitLineThread()->assertSet('visitLine', APPROVED_VISIT_LINE_TEXT)->assertSet('addVisitLine', true);
@@ -278,19 +278,28 @@ it('sends the draft without the visit line when the visit changed after the line
             'ends_at' => CarbonImmutable::parse('2026-11-06 10:30', 'America/Chicago'),
         ])->save(),
         'earlier booked' => Appointment::factory()->for(Contact::sole())->at(CarbonImmutable::parse('2026-11-04 08:00', 'America/Chicago'))->create(),
+        'words edited' => approvedVisitLineResync(fn () => breakFile(
+            'rooms/schedule_and_booking/booking.md',
+            fn (string $file): string => str_replace(
+                'visit_line: "Your visit for {service} is on {day} at {time}. To change it, reply to this text."',
+                'visit_line: "Your visit for {service} is on {day} at {time}. To move it, reply to this text."',
+                $file,
+            ),
+        )),
     };
 
     $thread->call('approveDraft')
         ->assertHasNoErrors()
-        ->assertNotified(Notification::make()->title('Draft sent without the visit line: the visit changed after the line was shown')->warning());
+        ->assertNotified(Notification::make()->title('Draft sent without the visit line: the line changed after it was shown')->warning());
 
     expect(approvedVisitLineLastText())->toBe(approvedVisitLineLater(APPROVED_VISIT_LINE_WORDS))
         ->and($draft->fresh()->status)->toBe(MessageStatus::Sent)
-        ->and($draft->fresh()->meta['visit_line_left_off'])->toBe('the visit changed after the line was shown')
+        ->and($draft->fresh()->meta['visit_line_left_off'])->toBe('the line changed after it was shown')
         ->and($draft->fresh()->meta)->not->toHaveKey('visit_line_appointment_id');
 })->with([
     'the visit moved to another day' => ['moved'],
     'an earlier visit booked' => ['earlier booked'],
+    'the visit line\'s own words edited' => ['words edited'],
 ]);
 
 it('adds no visit line the owner was not shown (T-08-102)', function () {
