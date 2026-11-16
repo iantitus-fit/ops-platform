@@ -25,6 +25,16 @@ use Illuminate\Support\Collection;
  */
 class TimeToBooked
 {
+    /**
+     * What the summary line says when no contact first booked in the window.
+     */
+    public const string EMPTY_LINE = 'No new customers booked in the last 30 days.';
+
+    /**
+     * The window, in days: today and the 29 days before it (A2).
+     */
+    public const int WINDOW_DAYS = 30;
+
     public function __construct(private readonly ActiveConfig $config) {}
 
     /**
@@ -34,6 +44,64 @@ class TimeToBooked
     public function forContact(int $contactId): ?int
     {
         return $this->secondsByContact(null, $contactId)[$contactId] ?? null;
+    }
+
+    /**
+     * How many new customers booked in the last 30 days and the median seconds they took (D-07, A2).
+     *
+     * A new customer here is a contact whose first booking ever fell in the window, counted in the business zone from
+     * business/profile.md: today and the 29 days before it, from the start of today, so the window keeps local midnight
+     * across a daylight change. Only contacts with a number are counted (D-03). The median is the middle value, or the
+     * mean of the two middle values for an even count, and is not rounded to a minute here: DurationText rounds when it
+     * formats, so a median under a minute reads "under a minute". Sorting happens in PHP because SQLite has no median.
+     *
+     * @return array{count: int, median_seconds: int|null}
+     */
+    public function summary(): array
+    {
+        $cutoff = CarbonImmutable::now($this->config->displayTimezone())
+            ->startOfDay()
+            ->subDays(self::WINDOW_DAYS - 1)
+            ->utc();
+
+        $seconds = array_values($this->secondsByContact($cutoff, null));
+        sort($seconds);
+        $count = count($seconds);
+
+        if ($count === 0) {
+            return ['count' => 0, 'median_seconds' => null];
+        }
+
+        $middle = intdiv($count, 2);
+
+        return [
+            'count' => $count,
+            'median_seconds' => $count % 2 === 1
+                ? $seconds[$middle]
+                : (int) round(($seconds[$middle - 1] + $seconds[$middle]) / 2),
+        ];
+    }
+
+    /**
+     * The one sentence for the median (D-07), built here so the dashboard section and records/time-to-booked.md read
+     * alike: "Half of your 12 new customers in the last 30 days booked within 42 minutes.", "Your 1 new customer in the
+     * last 30 days booked within 42 minutes.", "... booked in under a minute." for a median under a minute, and
+     * EMPTY_LINE when no new customer booked in the window.
+     */
+    public function summaryLine(): string
+    {
+        $summary = $this->summary();
+
+        if ($summary['count'] === 0 || $summary['median_seconds'] === null) {
+            return self::EMPTY_LINE;
+        }
+
+        $time = DurationText::format($summary['median_seconds']);
+        $booked = $time === 'under a minute' ? 'booked in under a minute' : 'booked within '.$time;
+
+        return $summary['count'] === 1
+            ? 'Your 1 new customer in the last '.self::WINDOW_DAYS.' days '.$booked.'.'
+            : 'Half of your '.$summary['count'].' new customers in the last '.self::WINDOW_DAYS.' days '.$booked.'.';
     }
 
     /**

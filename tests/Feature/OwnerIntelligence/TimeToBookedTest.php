@@ -293,6 +293,7 @@ it('works out the summary in one query (D-04)', function () {
 
     $timeToBooked->summaryLine();
     DB::enableQueryLog();
+    DB::flushQueryLog();
     $timeToBooked->summaryLine();
     $withThree = count(DB::getQueryLog());
     DB::flushQueryLog();
@@ -310,6 +311,7 @@ it('works out the summary in one query (D-04)', function () {
     timeToBookedBooking(Contact::factory()->create(), '10:00', '2026-11-10');
     timeToBookedBooking($first, '12:00', '2026-11-12');
 
+    DB::flushQueryLog();
     $timeToBooked->summaryLine();
     $withTen = count(DB::getQueryLog());
     DB::flushQueryLog();
