@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 46
+open_count: 48
 waived_count: 1
 fixed_count: 35
-total_count: 82
-last_updated: 2026-11-16T20:08:39.613Z
+total_count: 84
+last_updated: 2026-11-16T23:24:50.355Z
 ---
 
 # Broken Windows Ledger
@@ -97,6 +97,8 @@ last_updated: 2026-11-16T20:08:39.613Z
 | 80 | 09 | unrun-verify | tests/Feature/FrontDesk/GateExportTest.php |  | 09-01: after Ian pushes the phase branch, confirm the CI pgsql leg is green for GateExportTest (whereIn on kind, JSON meta reads); not run locally | open |  | 2026-11-16T19:57:48.961Z |  |
 | 81 | 09 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 09-01: 5 browser tests fail on this machine (target size 21px under 48px, footer hover border rgb(0,0,0)); no 09-01 file touches them; confirm they pass on CI before ship | open |  | 2026-11-16T19:57:49.065Z |  |
 | 82 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TimeToBookedTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TimeToBookedTest (the grouped sub-select with a having bound and the timestamp comparison, Assumption A9). Not run locally (09-02). | open |  | 2026-11-16T20:08:39.613Z |  |
+| 83 | 09 | unrun-verify | app/Filament/Resources/Contacts/Schemas/ContactInfolist.php |  | 09-03 UAT (D-29, 09-UI-SPEC.md): a keyboard-only walk and a VoiceOver walk of the contact screen's Time to booked line and the dashboard's Owner intelligence section (label read with its value, the section read under its heading, focus order on the contact screen unchanged), and a phone-width check of both lines for sideways scroll. Never a pause. | open |  | 2026-11-16T23:24:50.182Z |  |
+| 84 | 09 | unrun-verify | tests/Feature/Rooms/OwnerIntelligenceBootTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03). | open |  | 2026-11-16T23:24:50.355Z |  |
 
 ````json
 [
@@ -1163,6 +1165,32 @@ last_updated: 2026-11-16T20:08:39.613Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-16T20:08:39.613Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 83,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "app/Filament/Resources/Contacts/Schemas/ContactInfolist.php",
+    "line": null,
+    "description": "09-03 UAT (D-29, 09-UI-SPEC.md): a keyboard-only walk and a VoiceOver walk of the contact screen's Time to booked line and the dashboard's Owner intelligence section (label read with its value, the section read under its heading, focus order on the contact screen unchanged), and a phone-width check of both lines for sideways scroll. Never a pause.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-16T23:24:50.182Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 84,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "tests/Feature/Rooms/OwnerIntelligenceBootTest.php",
+    "line": null,
+    "description": "Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03).",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-16T23:24:50.355Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
