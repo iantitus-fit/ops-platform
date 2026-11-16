@@ -113,6 +113,81 @@ function gateExportDecisions(): array
 }
 
 /**
+ * The stored gate JSON of a fixed reply (no model words), shaped like the one SendCombinedReply writes: no inputs, only
+ * the reading of the customer's text. The error is the place a provider can echo the text it was sent.
+ *
+ * @return array<string, mixed>
+ */
+function gateExportFixedVerdict(?string $readingError = null): array
+{
+    return [
+        'version' => 1,
+        'fixed' => true,
+        'reason' => ['code' => 'fixed_reply', 'plain' => null],
+        'customer_reading' => ['ran' => true, 'failed' => false, 'missing' => false, 'error' => $readingError, 'model' => 'fake-jev', 'answers' => null, 'reading' => null],
+    ];
+}
+
+/**
+ * The code-assembled texts the export also holds, plus four kinds it leaves out, oldest first: an answering code_answer,
+ * the draft it answered, one sent text of each other code-assembled kind, then a holding, handoff, life-safety and booking
+ * text that must not appear. A separate helper from gateExportDecisions(), which keeps its five lines.
+ *
+ * @return array{answer: Message, answered: Message, others: array<string, Message>}
+ */
+function gateExportCodeAssembled(): array
+{
+    $answer = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CodeAnswer,
+        'gate_outcome' => GateOutcome::Send,
+        'gate_reason' => 'fixed_reply',
+        'gate' => gateExportFixedVerdict(),
+        'meta' => ['parts' => ['code_sentences']],
+        'body' => 'A tune-up is $89.',
+    ]);
+
+    $answered = Message::factory()->draft()->create([
+        'label' => 'price',
+        'gate_reason' => 'code:price',
+        'gate' => gateExportVerdict('How much is a tune-up?', 'Mike will text you about that.', 'code:price', 'price'),
+        'body' => 'Mike will text you about that.',
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'resolved_by' => null,
+        'resolved_at' => now(),
+        'meta' => ['answered_by' => $answer->id],
+    ]);
+
+    $others = [];
+
+    foreach (MessageKind::assembledByCode() as $kind) {
+        if ($kind === MessageKind::CodeAnswer) {
+            continue;
+        }
+
+        $others[$kind->value] = Message::factory()->outbound()->create([
+            'kind' => $kind,
+            'gate_outcome' => GateOutcome::Send,
+            'gate_reason' => 'fixed_reply',
+            'gate' => gateExportFixedVerdict(),
+            'meta' => ['parts' => ['code_sentences']],
+            'body' => 'A fixed line for '.$kind->value.'.',
+        ]);
+    }
+
+    foreach (['holding_reply', 'handoff_reply', 'life_safety', 'booking_text'] as $kind) {
+        Message::factory()->outbound()->create([
+            'kind' => $kind,
+            'gate_outcome' => GateOutcome::Send,
+            'gate' => gateExportFixedVerdict(),
+            'body' => 'Left out: '.$kind,
+        ]);
+    }
+
+    return compact('answer', 'answered', 'others');
+}
+
+/**
  * Run gate:export and return the lines it printed, decoded.
  *
  * @param  array<string, mixed>  $options
@@ -144,6 +219,7 @@ it('prints one JSON line per front-desk decision in message id order (D-07)', fu
         ->and(array_keys($lines[0]))->toBe([
             'message_id', 'conversation_id', 'decided_at', 'outcome', 'reason_code', 'reason_plain', 'label', 'verdict',
             'final_text', 'original_text', 'resolution', 'resolved_at', 'resolved_by', 'owner_edited', 'status',
+            'kind', 'has_model_words', 'answered_by_message_id',
         ]);
 });
 
@@ -188,6 +264,7 @@ it('exports a reply that went out on its own with no resolution', function () {
         ->and($line['resolved_by'])->toBeNull()
         ->and($line['owner_edited'])->toBeFalse()
         ->and($line['final_text'])->toBe('What is the system doing? - Dana (AI assistant)')
+        ->and($line['original_text'])->toBe('What is the system doing?')
         ->and($line['verdict']['thresholds'])->toBe(['intent_confidence' => 0.7]);
 });
 
@@ -296,6 +373,199 @@ it('carries no customer or reply words anywhere in a --without-text export, even
     expect($output)->not->toContain('Elm Street')
         ->and($output)->not->toContain('fence')
         ->and($output)->toContain('code:never_say');
+});
+
+it('gives original_text one meaning when body, original_body and agent_reply all differ (D-17)', function () {
+    Message::factory()->draft()->create([
+        'label' => 'promise',
+        'gate_reason' => 'code:promise',
+        'gate' => gateExportVerdict('Can you come today?', 'We can be there today.', 'code:promise', 'promise'),
+        'body' => 'Mike will check and text you back.',
+        'original_body' => 'We can be there today. - Dana (AI assistant)',
+        'status' => MessageStatus::Sent,
+        'resolution' => DraftResolution::Edited,
+        'resolved_by' => User::factory()->create()->id,
+        'resolved_at' => now(),
+    ]);
+
+    $line = gateExportLines()[0];
+
+    expect($line['original_text'])->toBe('We can be there today.')
+        ->and($line['final_text'])->toBe('Mike will check and text you back.');
+});
+
+it('has no original text when the model wrote nothing (D-17)', function () {
+    Message::factory()->draft()->create([
+        'gate' => gateExportVerdict('Can you come today?', '', 'code:promise', 'promise'),
+        'body' => 'Mike will text you back.',
+    ]);
+
+    $noInputs = gateExportVerdict('Can you come today?', 'unused', 'code:promise', 'promise');
+    unset($noInputs['inputs']);
+
+    Message::factory()->draft()->create(['gate' => $noInputs, 'body' => 'Mike will text you back too.']);
+
+    $lines = gateExportLines();
+
+    expect($lines)->toHaveCount(2)
+        ->and($lines[0]['original_text'])->toBeNull()
+        ->and($lines[1]['original_text'])->toBeNull();
+});
+
+it('exports each code-assembled kind with its kind and whether model words were in (D-18)', function (MessageKind $kind) {
+    gateExportCodeAssembled();
+
+    $matching = array_values(array_filter(gateExportLines(), fn (array $line): bool => $line['kind'] === $kind->value));
+
+    expect($matching)->toHaveCount(1)
+        ->and($matching[0])->toHaveKeys(['kind', 'has_model_words', 'status']);
+})->with(fn (): array => array_map(fn (MessageKind $kind): array => [$kind], MessageKind::assembledByCode()));
+
+it('leaves out holding, handoff, life-safety and booking texts (D-18)', function () {
+    gateExportCodeAssembled();
+
+    $kinds = array_column(gateExportLines(), 'kind');
+
+    expect($kinds)->not->toContain('holding_reply')
+        ->and($kinds)->not->toContain('handoff_reply')
+        ->and($kinds)->not->toContain('life_safety')
+        ->and($kinds)->not->toContain('booking_text');
+});
+
+it('reads model words the way the sender does (D-18)', function (MessageKind $kind, ?array $parts, bool $expected) {
+    Message::factory()->outbound()->create([
+        'kind' => $kind,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportFixedVerdict(),
+        'meta' => $parts === null ? null : ['parts' => $parts],
+        'body' => 'Some text.',
+    ]);
+
+    expect(gateExportLines()[0]['has_model_words'])->toBe($expected);
+})->with([
+    'agent_reply, no parts' => [MessageKind::AgentReply, null, true],
+    'code_answer, code sentences only' => [MessageKind::CodeAnswer, ['code_sentences'], false],
+    'code_answer, with model words' => [MessageKind::CodeAnswer, ['code_sentences', 'model_words'], true],
+    'code_answer, no parts' => [MessageKind::CodeAnswer, null, true],
+    'partial_holding, no parts' => [MessageKind::PartialHolding, null, true],
+    'check_in_reply, no parts' => [MessageKind::CheckInReply, null, true],
+    'added_info_reply, no parts' => [MessageKind::AddedInfoReply, null, true],
+    'complaint_holding, no parts' => [MessageKind::ComplaintHolding, null, false],
+    'discount_holding, no parts' => [MessageKind::DiscountHolding, null, false],
+]);
+
+it('keeps a fixed reply\'s original text empty and a combined one\'s as the model words (D-18)', function () {
+    $fixed = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CodeAnswer,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportFixedVerdict(),
+        'meta' => ['parts' => ['code_sentences']],
+        'body' => 'A tune-up is $89.',
+    ]);
+
+    $combined = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CodeAnswer,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportVerdict('How much, and can you come?', 'The model words.', null),
+        'meta' => ['parts' => ['code_sentences', 'model_words']],
+        'body' => 'A tune-up is $89. The model words.',
+    ]);
+
+    $lines = array_column(gateExportLines(), null, 'message_id');
+
+    expect($lines[$fixed->id]['original_text'])->toBeNull()
+        ->and($lines[$combined->id]['original_text'])->toBe('The model words.')
+        ->and($lines[$combined->id]['final_text'])->toBe('A tune-up is $89. The model words.');
+});
+
+it('names the text that answered a draft and keeps both lines (D-19)', function () {
+    $made = gateExportCodeAssembled();
+
+    $lines = array_column(gateExportLines(), null, 'message_id');
+
+    expect($lines[$made['answered']->id]['resolution'])->toBe('answered')
+        ->and($lines[$made['answered']->id]['final_text'])->toBeNull()
+        ->and($lines[$made['answered']->id]['status'])->toBe('withdrawn')
+        ->and($lines[$made['answered']->id]['answered_by_message_id'])->toBe($made['answer']->id)
+        ->and($lines[$made['answer']->id]['kind'])->toBe('code_answer')
+        ->and($lines[$made['answer']->id]['answered_by_message_id'])->toBeNull()
+        ->and($lines[$made['answer']->id]['final_text'])->toBe('A tune-up is $89.');
+
+    foreach ($lines as $id => $line) {
+        if ($id !== $made['answered']->id) {
+            expect($line['answered_by_message_id'])->toBeNull();
+        }
+    }
+});
+
+it('prints lines in message id order whatever their kind (GATE-05)', function () {
+    $first = Message::factory()->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportVerdict('One?', 'One.', null),
+    ]);
+    $middle = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CodeAnswer,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportFixedVerdict(),
+        'meta' => ['parts' => ['code_sentences']],
+    ]);
+    $last = Message::factory()->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportVerdict('Two?', 'Two.', null),
+    ]);
+
+    expect(array_column(gateExportLines(), 'message_id'))->toBe([$first->id, $middle->id, $last->id]);
+});
+
+it('keeps every word out with --without-text, new kinds included (D-20)', function () {
+    $words = 'Your guy broke my fence at 12 Elm Street';
+
+    $answer = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CodeAnswer,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => [...gateExportVerdict($words, 'Sorry about the fence at 12 Elm Street.', null), 'customer_reading' => gateExportFixedVerdict('HTTP 500 while reading: '.$words)['customer_reading']],
+        'meta' => ['parts' => ['code_sentences', 'model_words']],
+        'body' => 'Sorry about the fence at 12 Elm Street.',
+    ]);
+
+    $fixed = Message::factory()->outbound()->create([
+        'kind' => MessageKind::CheckInReply,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportFixedVerdict('Timeout for '.$words),
+        'meta' => ['parts' => ['code_sentences']],
+        'body' => 'Still on it, about 12 Elm Street.',
+    ]);
+
+    $answeredGate = gateExportVerdict($words, 'Sorry about the fence at 12 Elm Street.', 'code:never_say', 'complaint');
+    $answeredGate['customer_reading'] = gateExportFixedVerdict('Timeout for '.$words)['customer_reading'];
+
+    $answered = Message::factory()->draft()->create([
+        'gate' => $answeredGate,
+        'body' => 'Sorry about the fence at 12 Elm Street.',
+        'status' => MessageStatus::Withdrawn,
+        'resolution' => DraftResolution::Answered,
+        'meta' => ['answered_by' => $answer->id],
+    ]);
+
+    Artisan::call('gate:export', ['--without-text' => true]);
+    $output = Artisan::output();
+    $lines = array_column(gateExportLines(['--without-text' => true]), null, 'message_id');
+
+    expect($output)->not->toContain('Elm Street')
+        ->and($output)->not->toContain('fence')
+        ->and($lines[$fixed->id]['original_text_length'])->toBeNull()
+        ->and($lines[$fixed->id]['verdict'])->not->toHaveKey('inputs')
+        ->and($lines[$answer->id]['original_text_length'])->toBe(mb_strlen('Sorry about the fence at 12 Elm Street.'))
+        ->and($lines[$answer->id]['verdict']['customer_reading'])->not->toHaveKey('error')
+        ->and($lines[$answer->id]['verdict']['customer_reading']['error_length'])->toBe(mb_strlen('HTTP 500 while reading: '.$words))
+        ->and($lines[$answered->id]['answered_by_message_id'])->toBe($answer->id)
+        ->and($lines[$answered->id]['status'])->toBe('withdrawn');
+
+    foreach ($lines as $line) {
+        expect($line)->toHaveKeys(['status', 'kind', 'has_model_words', 'answered_by_message_id']);
+    }
 });
 
 it('prints nothing and succeeds when there are no decisions', function () {
