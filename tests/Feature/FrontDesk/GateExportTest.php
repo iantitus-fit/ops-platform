@@ -143,8 +143,34 @@ it('prints one JSON line per front-desk decision in message id order (D-07)', fu
         ])
         ->and(array_keys($lines[0]))->toBe([
             'message_id', 'conversation_id', 'decided_at', 'outcome', 'reason_code', 'reason_plain', 'label', 'verdict',
-            'final_text', 'original_text', 'resolution', 'resolved_at', 'resolved_by', 'owner_edited',
+            'final_text', 'original_text', 'resolution', 'resolved_at', 'resolved_by', 'owner_edited', 'status',
         ]);
+});
+
+it('exports final text only for a text that reached the customer (D-16)', function (MessageStatus $status, ?string $finalText) {
+    Message::factory()->outbound()->create([
+        'kind' => MessageKind::AgentReply,
+        'status' => $status,
+        'gate_outcome' => GateOutcome::Send,
+        'gate' => gateExportVerdict('My AC is blowing warm air', 'What is the system doing?', null),
+        'body' => 'What is the system doing?',
+    ]);
+
+    $line = gateExportLines()[0];
+
+    expect($line['final_text'])->toBe($finalText)
+        ->and($line['status'])->toBe($status->value);
+})->with([
+    'sent' => [MessageStatus::Sent, 'What is the system doing?'],
+    'delivered' => [MessageStatus::Delivered, 'What is the system doing?'],
+    'queued' => [MessageStatus::Queued, null],
+    'failed' => [MessageStatus::Failed, null],
+]);
+
+it('carries each line\'s status (D-16)', function () {
+    gateExportDecisions();
+
+    expect(array_column(gateExportLines(), 'status'))->toBe(['sent', 'sent', 'sent', 'withdrawn', 'withdrawn']);
 });
 
 it('exports a reply that went out on its own with no resolution', function () {
