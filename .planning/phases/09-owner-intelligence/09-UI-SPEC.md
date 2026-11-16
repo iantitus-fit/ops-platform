@@ -68,7 +68,7 @@ screen, the section and `time-to-booked.md` always read alike (D-06).
 |---------|------|
 | Label | "Time to booked" (D-05; not "Minutes to booked", because the value is not always minutes) |
 | Value format (D-06) | Up to 90 minutes: "42 minutes". Above 90 minutes: "3 hours 10 minutes". Past 48 hours: "2 days 4 hours". Singular forms: "1 minute", "1 hour", "1 day". Less than a minute: "under a minute" |
-| Summary line | Proposed wording, for Ian to read at plan review (D-07, Claude's Discretion): "Median time to booked: 42 minutes, across 12 customers in the last 30 days." One customer: "Median time to booked: 42 minutes, across 1 customer in the last 30 days." |
+| Summary line | Ian's wording (D-07, 2026-11-16). Two or more customers: "Half of your 12 new customers in the last 30 days booked within 42 minutes." One customer: "Your 1 new customer in the last 30 days booked within 42 minutes." The time is the median, formatted by `DurationText` (D-06); `records/time-to-booked.md` carries the same sentence |
 | Empty line | "No new customers booked in the last 30 days." (Ian's wording, D-07) |
 | Failure line | The shared line, "This section could not load. The rest of the dashboard is fine." (`RoomSection::FAILED_LINE`) |
 | Primary CTA, error state, destructive confirmation | none: both surfaces only read and have no button, form or write |
