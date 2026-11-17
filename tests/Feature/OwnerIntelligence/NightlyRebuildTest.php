@@ -79,7 +79,23 @@ it('schedules records:rebuild every minute, one at a time, on one server (D-10)'
         ->and($event->expression)->toBe('* * * * *')
         ->and($event->withoutOverlapping)->toBeTrue()
         ->and($event->onOneServer)->toBeTrue()
-        ->and($event->expiresAt)->toBe(120);
+        ->and($event->expiresAt)->toBe(30);
+});
+
+it('lets a tick retry inside the window after a killed run, once its 30-minute lock expires (WR-03)', function () {
+    activateExampleFolder();
+    $event = nightlyRebuildEvent();
+
+    // A run starts at 00:10 and is killed: its overlap lock is never released and no date marker is set.
+    test()->travelTo(nightlyRebuildChicago('2026-11-14', '00:10'));
+    expect($event->mutex->create($event))->toBeTrue();
+
+    test()->travelTo(nightlyRebuildChicago('2026-11-14', '00:39'));
+    expect($event->mutex->exists($event))->toBeTrue();
+
+    test()->travelTo(nightlyRebuildChicago('2026-11-14', '00:40'));
+    expect($event->mutex->exists($event))->toBeFalse()
+        ->and(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:40')))->toBe(0);
 });
 
 it('lets it through from 00:10 to before 01:00 in the business zone (D-10, WR-03)', function () {
