@@ -8,6 +8,7 @@ use App\Records\RecordsWriter;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
@@ -16,8 +17,10 @@ use Mockery\MockInterface;
 
 /**
  * RECS-02, D-09 and D-10: the platform's nightly records:rebuild is on the scheduler every minute, and a filter lets it
- * through only when the clock in the business's own zone reads 00:10. Every time is written as America/Chicago wall time.
- * Pest functions are global, so every helper here carries the nightlyRebuild prefix.
+ * through on any tick from 00:10 to before 01:00 in the business's own zone, once per business date: a marker for the
+ * date is set only after a run that succeeded, so a late tick still runs it and a failed run is tried again on the next
+ * tick (09-REVIEW WR-03, Ian, 2026-11-17). Every time is written as America/Chicago wall time. Pest functions are
+ * global, so every helper here carries the nightlyRebuild prefix.
  */
 
 /**
@@ -51,6 +54,24 @@ function nightlyRebuildPassesAt(CarbonImmutable $moment): bool
     return nightlyRebuildEvent()->filtersPass(app());
 }
 
+/**
+ * One scheduler tick at this moment, taken the way schedule:run takes it: the filters, then the command, then the
+ * event's after callbacks with the command's exit code. The command runs in this process through Artisan::call instead
+ * of a child process, so it sees the test's database and folder. Returns the exit code, or null when the filters held
+ * the rebuild back.
+ */
+function nightlyRebuildTick(CarbonImmutable $moment): ?int
+{
+    if (! nightlyRebuildPassesAt($moment)) {
+        return null;
+    }
+
+    $exitCode = Artisan::call('records:rebuild');
+    nightlyRebuildEvent()->finish(app(), $exitCode);
+
+    return $exitCode;
+}
+
 it('schedules records:rebuild every minute, one at a time, on one server (D-10)', function () {
     $event = nightlyRebuildEvent();
 
@@ -61,13 +82,47 @@ it('schedules records:rebuild every minute, one at a time, on one server (D-10)'
         ->and($event->expiresAt)->toBe(120);
 });
 
-it('lets it through only at 00:10 in the business zone (D-10)', function () {
+it('lets it through from 00:10 to before 01:00 in the business zone (D-10, WR-03)', function () {
     activateExampleFolder();
 
     expect(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '00:10')))->toBeTrue()
         ->and(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '00:09')))->toBeFalse()
-        ->and(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '00:11')))->toBeFalse()
+        ->and(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '00:11')))->toBeTrue()
+        ->and(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '00:59')))->toBeTrue()
+        ->and(nightlyRebuildPassesAt(nightlyRebuildChicago('2026-11-14', '01:00')))->toBeFalse()
         ->and(nightlyRebuildPassesAt(CarbonImmutable::parse('2026-11-14 00:10', 'UTC')))->toBeFalse();
+});
+
+it('runs it on a late tick at 00:25 when 00:10 was missed (WR-03)', function () {
+    activateExampleFolder();
+
+    $this->travelTo(nightlyRebuildChicago('2026-11-13', '20:00'));
+    app(RecordsWriter::class)->writeOwnerIntelligence();
+
+    expect(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:25')))->toBe(0)
+        ->and(Str::before(File::get(icmPath('records/today.md')), "\n"))->toBe('# Schedule for Saturday, November 14');
+});
+
+it('runs it once per business date: a second tick the same date does not (WR-03)', function () {
+    activateExampleFolder();
+
+    expect(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:10')))->toBe(0)
+        ->and(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:10')))->toBeNull()
+        ->and(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:30')))->toBeNull()
+        ->and(nightlyRebuildTick(nightlyRebuildChicago('2026-11-15', '00:10')))->toBe(0);
+});
+
+it('tries a failed run again on the next tick (WR-03)', function () {
+    activateExampleFolder();
+    $folder = icmPath();
+    File::moveDirectory($folder, $folder.'-away');
+
+    expect(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:10')))->toBe(1);
+
+    File::moveDirectory($folder.'-away', $folder);
+
+    expect(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:11')))->toBe(0)
+        ->and(nightlyRebuildTick(nightlyRebuildChicago('2026-11-14', '00:12')))->toBeNull();
 });
 
 it('turns today.md over to the new day (D-10)', function () {
@@ -104,18 +159,18 @@ it('follows a changed zone after a sync (D-10)', function () {
         ->and(nightlyRebuildPassesAt(CarbonImmutable::parse('2026-11-14 00:10', 'America/New_York')))->toBeTrue();
 });
 
-it('passes once on each daylight-saving day (D-10)', function (string $day, int $minutes) {
+it('runs once on each daylight-saving day (D-10, WR-03)', function (string $day, int $minutes) {
     activateExampleFolder();
 
     $start = nightlyRebuildChicago($day, '00:00')->utc();
-    $passes = 0;
+    $runs = 0;
 
     for ($minute = 0; $minute < $minutes; $minute++) {
-        $passes += nightlyRebuildPassesAt($start->addMinutes($minute)) ? 1 : 0;
+        $runs += nightlyRebuildTick($start->addMinutes($minute)) === 0 ? 1 : 0;
     }
 
     expect(nightlyRebuildChicago($day, '00:00')->addDay()->utc()->diffInMinutes($start, true))->toBe((float) $minutes)
-        ->and($passes)->toBe(1);
+        ->and($runs)->toBe(1);
 })->with([
     'the 25-hour fall-back day' => ['2026-11-01', 1500],
     'the 23-hour spring-forward day' => ['2026-03-08', 1380],
