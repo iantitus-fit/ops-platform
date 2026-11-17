@@ -11,7 +11,8 @@ use Illuminate\Queue\Attributes\UniqueFor;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 
 /**
- * Redraws records/today.md and records/time-to-booked.md from the database (D-14).
+ * Redraws records/today.md and records/time-to-booked.md from the database (D-14), and the router records/CLAUDE.md
+ * beside them, so the router follows the room at the next sync (D-25, 09-REVIEW WR-01).
  *
  * Two changes before the job starts queue one job, which reads the database inside the records lock. A change during a
  * redraw queues one more, because the lock is released as the job starts. Redraws never overlap. The unique lock lapses
@@ -62,7 +63,7 @@ class RedrawOwnerIntelligenceRecords implements ShouldBeUniqueUntilProcessing, S
 
     /**
      * The room's files are written fresh, so they show the database as it is now rather than as it was when the event
-     * fired. With the room off the same call deletes them (D-15).
+     * fired. With the room off the same call deletes them and the router stops naming them (D-15, D-25).
      */
     public function handle(RecordsWriter $recordsWriter): void
     {

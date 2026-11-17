@@ -132,7 +132,7 @@ class FolderSync
      *
      * Turning the owner intelligence room or the schedule and booking room off or on between two live versions also
      * redraws records/today.md and records/time-to-booked.md at once, so an off room's files are deleted and an on room's
-     * are written without waiting for midnight (D-15). The first sync of a new database has no room file to remove, so
+     * are written without waiting for midnight, and the router records/CLAUDE.md follows in the same step (D-15, D-25). The first sync of a new database has no room file to remove, so
      * the first booking change or the nightly run writes them.
      */
     private function queueCardsForRoomChanges(?IcmVersion $previous, IcmVersion $version): void

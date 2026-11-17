@@ -102,12 +102,16 @@ class RecordsWriter
 
     /**
      * Write records/today.md and records/time-to-booked.md while the owner intelligence room is live, and delete them
-     * while it is off, touching no other file (RECS-02, D-09, D-12, D-15, D-21, D-23).
+     * while it is off, and rewrite the router records/CLAUDE.md beside them (RECS-02, D-09, D-12, D-15, D-21, D-23).
      *
      * Both files cover everyone and are redrawn by several writers, so the database is read inside the lock, never
      * before it, and the last writer wrote what the database held when it got the lock (D-14). It is the same rule as
      * writeSummaries(), under its own lock so a customer card's redraw never waits on it. The room-off branch deletes
      * on every call, so a file left from while the room was live is never read as today's (D-15).
+     *
+     * The router is written in the same locked section, so a sync that turns the room off or on changes the router at
+     * the same moment as the two files and the router never names a file that is not there (D-25, Ian, 2026-11-17,
+     * 09-REVIEW WR-01). No other records file is touched.
      *
      * @throws IcmFolderMissing
      */
@@ -116,6 +120,8 @@ class RecordsWriter
         $this->ensureBusinessFolderExists();
 
         Cache::lock('records:owner-intelligence', 30)->block(10, function (): void {
+            $this->writeRouter();
+
             if (! $this->activeConfig->hasRoom('owner_intelligence')) {
                 File::delete([$this->root().'/today.md', $this->root().'/time-to-booked.md']);
 
@@ -175,9 +181,9 @@ class RecordsWriter
     }
 
     /**
-     * Regenerate everything from the database: the router, every card, both summaries and then the owner intelligence
-     * room's two files, which are written while the room is live and deleted while it is off (D-09, D-10, D-15). A card
-     * file that belongs to no contact is removed.
+     * Regenerate everything from the database: every card, both summaries and then the owner intelligence room's two
+     * files, which are written while the room is live and deleted while it is off, with the router written beside them
+     * (D-09, D-10, D-15, D-25). A card file that belongs to no contact is removed.
      *
      * @return int how many cards were written
      *
@@ -187,7 +193,6 @@ class RecordsWriter
     {
         $this->ensureBusinessFolderExists();
 
-        $this->writeRouter();
         File::ensureDirectoryExists($this->customersDirectory());
 
         $expected = [];
