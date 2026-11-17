@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\BookingSend;
@@ -40,7 +41,8 @@ class CancelAppointment
     /**
      * Cancel the visit, once. The row is read again under a lock through the scoped model: a block's id, which the kind
      * scope hides, or a row that is gone, finds nothing and changes nothing (A3). A visit that is already cancelled or
-     * done is left exactly as it is, so a second click adds no entry and moves no time.
+     * done is left exactly as it is, so a second click adds no entry and moves no time. A cancel fires ScheduleChanged
+     * after its write, so today.md is redrawn once it commits (D-14).
      *
      * @throws BookingRefused when the room is off.
      */
@@ -82,6 +84,8 @@ class CancelAppointment
                 'Cancelled by '.$user->name.': '.$visit->service_name.', '.BookingSettings::dayText($visit->starts_at, $zone).' at '.BookingSettings::timeText($visit->starts_at, $zone).'.',
                 $visit,
             );
+
+            ScheduleChanged::dispatch();
         });
     }
 }

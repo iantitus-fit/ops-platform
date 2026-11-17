@@ -212,7 +212,8 @@ class BookAppointment
 
     /**
      * The page booking, called inside the lock and a transaction: re-read the link, refuse a closed one, re-check the
-     * time with Availability::offers(), pick the job, write the row and its one timeline entry.
+     * time with Availability::offers(), pick the job, write the row and its one timeline entry. It fires ScheduleChanged
+     * after its write, so today.md is redrawn once the booking commits (D-14).
      */
     private function storeFromLink(BookingLink $link, CarbonImmutable $startsAt, CarbonImmutable $now): Appointment
     {
@@ -261,6 +262,8 @@ class BookAppointment
             'Booked by the customer on the booking page: '.$service['name'].', '.BookingSettings::dayText($startsAt, $zone).' at '.BookingSettings::timeText($startsAt, $zone).'.',
             $appointment,
         );
+
+        ScheduleChanged::dispatch();
 
         $this->writeSendRows($appointment, $startsAt, true);
 

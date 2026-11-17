@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\User;
@@ -28,7 +29,8 @@ class EditVisitNote
     /**
      * Keep the note. It is trimmed and an empty one clears it. The row is read again under a lock through the scoped
      * model: a block's id, which the kind scope hides, or a row that is gone, finds nothing and changes nothing (A3). The
-     * same note again writes nothing.
+     * same note again writes nothing. A changed note fires ScheduleChanged after its write, so today.md is redrawn once it
+     * commits (D-14).
      *
      * @throws BookingRefused when the room is off, the note is over 200 characters, or the visit is no longer booked.
      */
@@ -70,6 +72,8 @@ class EditVisitNote
                 $user->name.' changed the visit note.',
                 $visit,
             );
+
+            ScheduleChanged::dispatch();
         });
     }
 }

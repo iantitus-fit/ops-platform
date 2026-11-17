@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\AppointmentState;
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\User;
@@ -34,7 +35,8 @@ class MarkAppointmentDone
     /**
      * Mark the visit done, once. The row is read again under a lock through the scoped model: a block's id, which the kind
      * scope hides, or a row that is gone, finds nothing and changes nothing (A3). A visit that is already done or
-     * cancelled is left exactly as it is, so a second click adds no entry.
+     * cancelled is left exactly as it is, so a second click adds no entry. A done visit fires ScheduleChanged after its
+     * write, so today.md is redrawn once it commits (D-14).
      *
      * When $alsoCloseProject is true and no other appointment on the job is still booked, the job is closed by the owner.
      * That close is not undone if it is refused, for example because a new visit was booked a moment ago: the refusal
@@ -76,6 +78,8 @@ class MarkAppointmentDone
                 'Marked done by '.$user->name.': '.$visit->service_name.', '.BookingSettings::dayText($visit->starts_at, $zone).' at '.BookingSettings::timeText($visit->starts_at, $zone).'.',
                 $visit,
             );
+
+            ScheduleChanged::dispatch();
 
             return $visit;
         });
