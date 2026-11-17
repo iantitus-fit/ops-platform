@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Records\RecordsWriter;
 use Illuminate\Console\Attributes\Description;
@@ -16,7 +17,7 @@ class RecordsRebuild extends Command
     /**
      * Execute the console command.
      */
-    public function handle(RecordsWriter $recordsWriter): int
+    public function handle(RecordsWriter $recordsWriter, ActiveConfig $config): int
     {
         try {
             $count = $recordsWriter->rebuild();
@@ -28,7 +29,11 @@ class RecordsRebuild extends Command
 
         $cards = Str::plural('customer card', $count);
 
-        $this->info("Rebuilt {$count} {$cards}, customers/INDEX.md, open-leads.md and CLAUDE.md");
+        $files = $config->hasRoom('owner_intelligence')
+            ? 'customers/INDEX.md, open-leads.md, today.md, time-to-booked.md and CLAUDE.md'
+            : 'customers/INDEX.md, open-leads.md and CLAUDE.md';
+
+        $this->info("Rebuilt {$count} {$cards}, {$files}");
 
         return self::SUCCESS;
     }
