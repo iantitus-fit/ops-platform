@@ -122,6 +122,31 @@ it('records a STOP on the contact with no reply of our own and keeps the keyword
         ->and($entry->subject_id)->toBe($stop->id);
 });
 
+it('records the keyword decision on every inbound it records, null for an ordinary text or a form (WR-02)', function (string $body, bool $optedOut, ?string $keyword) {
+    Queue::fake();
+    activateExampleFolder();
+    Contact::factory()->create(['phone_e164' => OPT_OUT_CUSTOMER_PHONE, 'sms_opted_out_at' => $optedOut ? now() : null]);
+
+    test()->post(route('webhooks.text.fake'), fakeTextPayload(['Body' => $body]))->assertOk();
+
+    expect(Message::query()->where('body', $body)->sole()->meta)->toHaveKey('keyword', $keyword);
+})->with([
+    'STOP' => ['STOP', false, 'stop'],
+    'HELP' => ['HELP', false, 'help'],
+    'YES while opted out' => ['YES', true, 'start'],
+    'YES while not opted out' => ['YES', false, null],
+    'an ordinary text' => ['My AC is out', false, null],
+]);
+
+it('records no keyword on a web form, even one that reads STOP (WR-02)', function () {
+    Queue::fake();
+    activateExampleFolder();
+
+    app(RecordInbound::class)->handle(InboundData::fromLeadForm(['name' => 'Dana Whitfield', 'phone' => OPT_OUT_CUSTOMER_PHONE, 'message' => 'STOP']));
+
+    expect(Message::query()->sole()->meta)->toHaveKey('keyword', null)->toHaveKey('matched_by', 'new');
+});
+
 it('answers the STOP webhook with empty TwiML (D-39)', function () {
     optOutDanaIsAnswered();
 
