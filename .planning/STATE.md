@@ -330,6 +330,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-04: writeOwnerIntelligence() under the records:owner-intelligence lock writes or deletes today.md and time-to-booked.md by whether the room is live; the router and the records:rebuild sentence name them only while it is live; the tracked example router is the room-on text
 - [Phase 09]: 09-05: ScheduleChanged carries no payload and is held until commit, so the unique RedrawOwnerIntelligenceRecords job always reads the newest state; the sync redraw fires only between two live versions
 - [Phase 09]: 09-06: nightly records:rebuild is scheduled by the platform every minute with a when() filter reading the business zone lazily through ActiveConfig, passing only at 00:10; independent of the owner intelligence room (D-09, D-10, D-11)
+- [Phase 09, Ian 2026-11-17]: TDD gate override for 09-01: its GREEN commits are typed fix(09-01) because the plan fixed existing behavior (02 WR-09, 08 IN-13); the gate counts only feat(...) as GREEN. Test-first order holds for all three tasks (3e69fc5→7c35359, 9ebfb8f→ca63b61, 3844d36→0d61e5a); no history rewritten. Code review (09-REVIEW.md: 0 critical, 3 warnings, 3 info, all open in 09-REVIEW-DISPOSITION.md) is triaged after verification
 
 ### Pending Todos
 
