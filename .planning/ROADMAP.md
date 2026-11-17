@@ -345,7 +345,7 @@ Plans:
   3. `gate:export` counts only what went out (a failed or queued send is not counted as sent), gives `original_text` the same way on every path, and exports the `answered` resolution and the 02.1 fixed-reply kinds.
   4. The owner intelligence room meets the standard (folder, `CONTEXT.md` that says it writes `today.md`, example file, module, boot test).
 
-**Plans**: 4/6 plans executed
+**Plans**: 5/6 plans executed
 
 Plans:
 **Wave 1**
@@ -359,7 +359,7 @@ Plans:
 - [x] 09-04-PLAN.md — records/today.md (the D-13 day) and records/time-to-booked.md while the room is live, deleted when off; the router and records:rebuild follow the room; SPEC bridge list (RECS-02, D-12, D-13, D-15, D-23, D-25)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-05-PLAN.md — today.md redrawn after each of the six named actions commits and at once when a sync switches the room (RECS-02, D-14, D-15)
+- [x] 09-05-PLAN.md — today.md redrawn after each of the six named actions commits and at once when a sync switches the room (RECS-02, D-14, D-15)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 09-06-PLAN.md — The platform's nightly records:rebuild at 00:10 in the business zone, across zone changes and daylight-saving days; closes 08 IN-06 (RECS-02, D-09 to D-11)
@@ -453,7 +453,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
-| 9. Owner Intelligence | 4/6 | In Progress | - |
+| 9. Owner Intelligence | 5/6 | In Progress | - |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |

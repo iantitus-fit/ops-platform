@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 49
+open_count: 50
 waived_count: 1
 fixed_count: 35
-total_count: 85
-last_updated: 2026-11-17T00:26:12.221Z
+total_count: 86
+last_updated: 2026-11-17T02:23:04.737Z
 ---
 
 # Broken Windows Ledger
@@ -100,6 +100,7 @@ last_updated: 2026-11-17T00:26:12.221Z
 | 83 | 09 | unrun-verify | app/Filament/Resources/Contacts/Schemas/ContactInfolist.php |  | 09-03 UAT (D-29, 09-UI-SPEC.md): a keyboard-only walk and a VoiceOver walk of the contact screen's Time to booked line and the dashboard's Owner intelligence section (label read with its value, the section read under its heading, focus order on the contact screen unchanged), and a phone-width check of both lines for sideways scroll. Never a pause. | open |  | 2026-11-16T23:24:50.182Z |  |
 | 84 | 09 | unrun-verify | tests/Feature/Rooms/OwnerIntelligenceBootTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03). | open |  | 2026-11-16T23:24:50.355Z |  |
 | 85 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TodayRecordTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TodayRecordTest and TimeToBookedFileTest (day-bound timestamp comparisons). Not run locally (09-04). | open |  | 2026-11-17T00:26:12.221Z |  |
+| 86 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/RedrawTest.php |  | 09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5) | open |  | 2026-11-17T02:23:04.737Z |  |
 
 ````json
 [
@@ -1205,6 +1206,19 @@ last_updated: 2026-11-17T00:26:12.221Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-17T00:26:12.221Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 86,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "tests/Feature/OwnerIntelligence/RedrawTest.php",
+    "line": null,
+    "description": "09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-17T02:23:04.737Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
