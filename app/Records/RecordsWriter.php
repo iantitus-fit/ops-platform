@@ -10,7 +10,9 @@ use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Models\Message;
+use App\Rooms\OwnerIntelligence\TodayRecord;
 use App\Support\BookingLinkTokens;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -32,6 +34,7 @@ class RecordsWriter
         private readonly CustomerCard $customerCard,
         private readonly MarkdownText $markdown,
         private readonly ActiveConfig $activeConfig,
+        private readonly TodayRecord $todayRecord,
     ) {}
 
     /**
@@ -91,6 +94,32 @@ class RecordsWriter
 
             $this->write($this->customersDirectory().'/INDEX.md', $this->indexMarkdown());
             $this->write($this->root().'/open-leads.md', $this->openLeadsMarkdown());
+        });
+    }
+
+    /**
+     * Write records/today.md, the owner's AI's view of what is on today (RECS-02, D-12, D-13).
+     *
+     * The file is written only while the owner intelligence room is live (D-09, D-21). It covers everyone and is redrawn
+     * by several writers, so the database is read inside the lock, never before it, and the last writer wrote what the
+     * database held when it got the lock (D-14). It is the same rule as writeSummaries(), under its own lock so a
+     * customer card's redraw never waits on it.
+     *
+     * @throws IcmFolderMissing
+     */
+    public function writeOwnerIntelligence(): void
+    {
+        $this->ensureBusinessFolderExists();
+
+        Cache::lock('records:owner-intelligence', 30)->block(10, function (): void {
+            if (! $this->activeConfig->hasRoom('owner_intelligence')) {
+                return;
+            }
+
+            $now = CarbonImmutable::now();
+
+            File::ensureDirectoryExists($this->root());
+            $this->write($this->root().'/today.md', $this->document($this->todayRecord->title($now), $this->todayRecord->body($now)));
         });
     }
 
@@ -183,6 +212,14 @@ class RecordsWriter
     private function write(string $path, string $contents): void
     {
         File::replace($path, BookingLinkTokens::hide($contents));
+    }
+
+    /**
+     * A records file the room writes: title, the read-only note, then the body.
+     */
+    private function document(string $title, string $body): string
+    {
+        return "# {$title}\n\n".self::READ_ONLY_NOTE."\n\n{$body}\n";
     }
 
     private function customersDirectory(): string
