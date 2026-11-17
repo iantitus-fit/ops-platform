@@ -62,7 +62,7 @@ Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 
 ### Records
 
-- [ ] **RECS-02**: `records/today.md` (the schedule) is rendered from appointments on every booking change, and a nightly full rebuild of `records/` is scheduled to catch anything missed. *(derived: SPEC "The bridge" lists today.md and the nightly rebuild; Sprint 0 builds neither, and Sprint 2 introduces the scheduler)*
+- [x] **RECS-02**: `records/today.md` (the schedule) is rendered from appointments on every booking change, and a nightly full rebuild of `records/` is scheduled to catch anything missed. *(derived: SPEC "The bridge" lists today.md and the nightly rebuild; Sprint 0 builds neither, and Sprint 2 introduces the scheduler)*
 
 ### Alerts and Export
 
@@ -222,7 +222,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | WALK-01 | Phase 10 | Pending |
 | WALK-02 | Phase 10 | Pending |
 | WALK-03 | Phase 10 | Pending |
-| RECS-02 | Phase 9 | Pending |
+| RECS-02 | Phase 9 | Complete |
 | ALRT-01 | Phase 6 | Complete |
 | ALRT-02 | Phase 6 | Complete |
 | GATE-05 | Phase 9 | Complete |

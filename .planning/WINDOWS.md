@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 50
+open_count: 52
 waived_count: 1
 fixed_count: 35
-total_count: 86
-last_updated: 2026-11-17T02:23:04.737Z
+total_count: 88
+last_updated: 2026-11-17T16:28:12.631Z
 ---
 
 # Broken Windows Ledger
@@ -101,6 +101,8 @@ last_updated: 2026-11-17T02:23:04.737Z
 | 84 | 09 | unrun-verify | tests/Feature/Rooms/OwnerIntelligenceBootTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03). | open |  | 2026-11-16T23:24:50.355Z |  |
 | 85 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TodayRecordTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TodayRecordTest and TimeToBookedFileTest (day-bound timestamp comparisons). Not run locally (09-04). | open |  | 2026-11-17T00:26:12.221Z |  |
 | 86 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/RedrawTest.php |  | 09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5) | open |  | 2026-11-17T02:23:04.737Z |  |
+| 87 | 09 | unrun-verify | routes/console.php |  | CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check) | open |  | 2026-11-17T16:28:12.514Z |  |
+| 88 | 09 | unrun-verify | routes/console.php |  | At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check) | open |  | 2026-11-17T16:28:12.631Z |  |
 
 ````json
 [
@@ -1219,6 +1221,32 @@ last_updated: 2026-11-17T02:23:04.737Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-17T02:23:04.737Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 87,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "routes/console.php",
+    "line": null,
+    "description": "CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-17T16:28:12.514Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 88,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "routes/console.php",
+    "line": null,
+    "description": "At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-17T16:28:12.631Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

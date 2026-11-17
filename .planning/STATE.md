@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 09
 current_phase_name: Owner Intelligence
-status: executing
-stopped_at: Completed 09-05-PLAN.md
-last_updated: "2026-11-17T02:26:37.659Z"
+status: verifying
+stopped_at: Completed 09-06-PLAN.md
+last_updated: "2026-11-17T16:32:20.688Z"
 last_activity: 2026-11-17
-last_activity_desc: Completed 09-05 (today.md redrawn after each schedule change)
-state_head: 7503588e3cd381592a11c6f3adc99530f869407f
+last_activity_desc: Phase 09 execution started
+state_head: 146f9ea7614d4bf78da6bf79dead30015393af20
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 66
-  completed_plans: 65
+  completed_plans: 66
   percent: 56
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09 (Owner Intelligence) — EXECUTING
-Plan: 5 of 6 complete (09-05 done, 09-06 next)
-Status: Ready to execute 09-06
-Last activity: 2026-11-17 — Completed 09-05 (today.md redrawn after each schedule change)
+Plan: 6 of 6 (09-01 to 09-06 complete)
+Status: Phase complete — ready for verification
+Last activity: 2026-11-17 — Phase 09 wave 5 started (09-06)
 
 Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 
@@ -206,6 +206,7 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | Phase 09 P03 | 12 min | 3 tasks | 11 files |
 | Phase 09 P04 | 11 min | 3 tasks | 10 files |
 | Phase 09 P05 | 14 min | 3 tasks | 13 files |
+| Phase 09 P06 | 16 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -328,6 +329,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-04: today.md covers the business-zone day with all three visit states plus booked blocks, as bullets with a block note quoted under the card's label; the title carries the date so a stale file never reads as today
 - [Phase 09]: 09-04: writeOwnerIntelligence() under the records:owner-intelligence lock writes or deletes today.md and time-to-booked.md by whether the room is live; the router and the records:rebuild sentence name them only while it is live; the tracked example router is the room-on text
 - [Phase 09]: 09-05: ScheduleChanged carries no payload and is held until commit, so the unique RedrawOwnerIntelligenceRecords job always reads the newest state; the sync redraw fires only between two live versions
+- [Phase 09]: 09-06: nightly records:rebuild is scheduled by the platform every minute with a when() filter reading the business zone lazily through ActiveConfig, passing only at 00:10; independent of the owner intelligence room (D-09, D-10, D-11)
 
 ### Pending Todos
 
@@ -396,8 +398,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-17T02:26:37.561Z
-Stopped at: Completed 09-05-PLAN.md
+Last session: 2026-11-17T16:32:20.592Z
+Stopped at: Completed 09-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
