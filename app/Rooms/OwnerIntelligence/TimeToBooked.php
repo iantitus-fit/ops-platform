@@ -156,12 +156,20 @@ class TimeToBooked
     /**
      * Walk each contact's messages in order and time the first real one.
      *
-     * This mirrors RecordInbound::keywordIn(), which decided at record time whether a text was a keyword (D-01, 07 D-23):
-     * only an SMS is matched, by TextKeywords::actionFor() with the provider's own opt-out word, the body and whether the
-     * contact is opted out at that point. Each contact starts not opted out, a STOP opts them out and a START opts them
-     * back in, so YES is a keyword only while they are opted out. A web form is never a keyword, even one that reads
-     * STOP. The first message that is not a keyword starts the clock, and a contact whose every message was a keyword
-     * has no entry. The elapsed time is the difference of two Unix timestamps, and 0 or less gives no entry (A4).
+     * RecordInbound decides at record time whether a text is a keyword (D-01, 07 D-23) and stores the decision on the
+     * message as meta.keyword: stop, start or help, or null for an ordinary text or a form. A message that carries the
+     * key is trusted as it is, so a YES that opted back in a contact the carrier had opted out is a keyword here too
+     * (09-REVIEW WR-02, Ian, 2026-11-17).
+     *
+     * A message recorded before the key existed has no key, and only for those the decision is worked out again the way
+     * RecordInbound::keywordIn() made it: only an SMS is matched, by TextKeywords::actionFor() with the provider's own
+     * opt-out word, the body and whether the contact is opted out at that point. Each contact starts not opted out, a
+     * STOP opts them out and a START opts them back in, so YES is a keyword only while they are opted out. A web form is
+     * never a keyword, even one that reads STOP. This fallback cannot see a carrier opt-out, which is why new messages
+     * carry the decision.
+     *
+     * The first message that is not a keyword starts the clock, and a contact whose every message was a keyword has no
+     * entry. The elapsed time is the difference of two Unix timestamps, and 0 or less gives no entry (A4).
      *
      * @param  Collection<int, Message>  $rows  messages before each contact's first booking, in contact then time order
      * @return array<int, int> seconds by contact id
@@ -178,18 +186,16 @@ class TimeToBooked
                 continue;
             }
 
-            if ($row->channel === MessageChannel::Sms) {
-                $action = TextKeywords::actionFor($row->meta['opt_out_type'] ?? null, (string) $row->body, $optedOut[$contact] ?? false);
+            $action = $this->keywordOf($row, $optedOut[$contact] ?? false);
 
-                if ($action !== null) {
-                    $optedOut[$contact] = match ($action) {
-                        'stop' => true,
-                        'start' => false,
-                        default => $optedOut[$contact] ?? false,
-                    };
+            if ($action !== null) {
+                $optedOut[$contact] = match ($action) {
+                    'stop' => true,
+                    'start' => false,
+                    default => $optedOut[$contact] ?? false,
+                };
 
-                    continue;
-                }
+                continue;
             }
 
             $elapsed = CarbonImmutable::parse($row->first_booked_at, 'UTC')->getTimestamp() - $row->created_at->getTimestamp();
@@ -200,5 +206,24 @@ class TimeToBooked
         }
 
         return $seconds;
+    }
+
+    /**
+     * The keyword a message was: the decision recorded on it when it carries meta.keyword, or, for a message recorded
+     * before that key existed, the decision worked out again from its channel, words and the opt-out state so far.
+     */
+    private function keywordOf(Message $row, bool $optedOut): ?string
+    {
+        $meta = $row->meta ?? [];
+
+        if (array_key_exists('keyword', $meta)) {
+            return is_string($meta['keyword']) ? $meta['keyword'] : null;
+        }
+
+        if ($row->channel !== MessageChannel::Sms) {
+            return null;
+        }
+
+        return TextKeywords::actionFor($meta['opt_out_type'] ?? null, (string) $row->body, $optedOut);
     }
 }

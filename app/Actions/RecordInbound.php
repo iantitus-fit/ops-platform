@@ -126,6 +126,11 @@ class RecordInbound
      * A customer may paste their own link back, so the stored words are the customer's own except that a booking
      * address is written /book/[link] (D-12). The keyword check reads the data as it arrived, before that.
      *
+     * The keyword decision is stored on every message it records as meta.keyword: stop, start or help, or null for an
+     * ordinary text or a form. It is decided here with the contact's opt-out state at this moment, which a later reader
+     * cannot work out from the messages alone (a carrier block opts a contact out with no STOP), so time to booked reads
+     * the decision instead of guessing it again (09-REVIEW WR-02, Ian, 2026-11-17).
+     *
      * @return array{Message, ?string} the stored message and the keyword it turned out to be
      */
     private function record(InboundData $data): array
@@ -149,9 +154,11 @@ class RecordInbound
             'status' => MessageStatus::Received,
             'provider' => $data->provider,
             'provider_message_id' => $data->providerMessageId,
-            'meta' => $data->channel === MessageChannel::Web
-                ? [...$data->meta, 'matched_by' => $matchedBy]
-                : $data->meta,
+            'meta' => [
+                ...$data->meta,
+                ...($data->channel === MessageChannel::Web ? ['matched_by' => $matchedBy] : []),
+                'keyword' => $keyword,
+            ],
         ]);
         $message->setRelation('conversation', $conversation);
 
