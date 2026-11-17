@@ -10,7 +10,9 @@ use App\Icm\ActiveConfig;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Models\Contact;
 use App\Models\Message;
+use App\Rooms\OwnerIntelligence\TimeToBooked;
 use App\Rooms\OwnerIntelligence\TodayRecord;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
 use App\Support\BookingLinkTokens;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -35,6 +37,7 @@ class RecordsWriter
         private readonly MarkdownText $markdown,
         private readonly ActiveConfig $activeConfig,
         private readonly TodayRecord $todayRecord,
+        private readonly TimeToBooked $timeToBooked,
     ) {}
 
     /**
@@ -98,12 +101,13 @@ class RecordsWriter
     }
 
     /**
-     * Write records/today.md, the owner's AI's view of what is on today (RECS-02, D-12, D-13).
+     * Write records/today.md and records/time-to-booked.md while the owner intelligence room is live, and delete them
+     * while it is off, touching no other file (RECS-02, D-09, D-12, D-15, D-21, D-23).
      *
-     * The file is written only while the owner intelligence room is live (D-09, D-21). It covers everyone and is redrawn
-     * by several writers, so the database is read inside the lock, never before it, and the last writer wrote what the
-     * database held when it got the lock (D-14). It is the same rule as writeSummaries(), under its own lock so a
-     * customer card's redraw never waits on it.
+     * Both files cover everyone and are redrawn by several writers, so the database is read inside the lock, never
+     * before it, and the last writer wrote what the database held when it got the lock (D-14). It is the same rule as
+     * writeSummaries(), under its own lock so a customer card's redraw never waits on it. The room-off branch deletes
+     * on every call, so a file left from while the room was live is never read as today's (D-15).
      *
      * @throws IcmFolderMissing
      */
@@ -113,13 +117,21 @@ class RecordsWriter
 
         Cache::lock('records:owner-intelligence', 30)->block(10, function (): void {
             if (! $this->activeConfig->hasRoom('owner_intelligence')) {
+                File::delete([$this->root().'/today.md', $this->root().'/time-to-booked.md']);
+
                 return;
             }
 
             $now = CarbonImmutable::now();
+            $zone = BookingSettings::zoneName($this->activeConfig->displayTimezone());
 
             File::ensureDirectoryExists($this->root());
             $this->write($this->root().'/today.md', $this->document($this->todayRecord->title($now), $this->todayRecord->body($now)));
+            $this->write($this->root().'/time-to-booked.md', $this->document('Time to booked', implode("\n", [
+                $this->timeToBooked->summaryLine(),
+                '',
+                "Time to booked runs from a customer's first message to their first booking. The 30 days are counted in {$zone}.",
+            ])));
         });
     }
 
