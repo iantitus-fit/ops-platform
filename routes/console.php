@@ -30,8 +30,10 @@ Schedule::job(new PingSafetyCheck)->everyFiveMinutes()->withoutOverlapping();
 // scheduler asks, not when this file loads, so a changed zone takes effect on the next run (D-09, D-10). Any tick from
 // 00:10 to before 01:00 business time lets it through, once per business date: the date is worked out once, in the
 // filter, and marked done only after a run that exited 0, so a late tick still runs it and a failed run is tried again
-// on the next tick until 01:00 (09-REVIEW WR-03, Ian, 2026-11-17). The overlap lock lasts 30 minutes, so a run killed
-// before it could release the lock frees a later tick in the same window to try again.
+// on the next tick until 01:00 (09-REVIEW WR-03, Ian, 2026-11-17). The overlap lock lasts 30 minutes from when a run
+// starts. A normal stop releases it; only a hard kill (SIGKILL, a host crash) leaves it behind. A run that started
+// before about 00:29 and was hard-killed is tried again once the lock expires, inside the window; one that started at
+// about 00:29 or later loses that night (09-REVIEW WR-04). The lock assumes a rebuild finishes inside 30 minutes.
 $nightlyRebuildDate = null;
 
 Schedule::command('records:rebuild')

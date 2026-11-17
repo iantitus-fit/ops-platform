@@ -210,11 +210,15 @@ verify. Check these by hand for each business before it goes live.
   (a deploy, a restart, a busy host) still runs it on a later tick in that
   hour. A date is marked done only after a run that succeeded, so a failed
   run (for example the business folder not mounted) is tried again on the
-  next tick until 01:00. A run that is killed partway (the host restarts, the
-  process is stopped) holds the rebuild's lock for 30 minutes and marks
-  nothing done, so a run killed at 00:10 is tried again from the 00:40 tick.
-  A run killed after 00:30 holds the lock past 01:00, so that night has no
-  rebuild. If no tick in that hour gets a run through, that
+  next tick until 01:00. Each run holds the rebuild's lock for 30 minutes
+  from when it starts. A normal stop releases the lock; only a hard kill
+  (SIGKILL, a host crash) leaves it behind, and such a run marks nothing done.
+  A run that started before about 00:29 and was hard-killed is tried again
+  once its lock expires, inside the hour (a run started at 00:10 is tried
+  again at 00:40 or 00:41); one that started at about 00:29 or later still
+  holds the lock at the last tick, so that night has no rebuild. The 30-minute
+  lock assumes a rebuild finishes inside 30 minutes. If no tick in that hour
+  gets a run through, that
   night has no rebuild: `today.md`'s dated title shows it, a booking change
   still redraws `today.md`, and the next night catches up. In a few zones
   whose clocks jump at midnight (America/Havana, America/Santiago,
