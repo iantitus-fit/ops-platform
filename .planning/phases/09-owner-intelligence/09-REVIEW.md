@@ -47,9 +47,9 @@ files_reviewed_list:
   - tests/Unit/OwnerIntelligence/DurationTextTest.php
 findings:
   critical: 0
-  warning: 3
-  info: 3
-  total: 6
+  warning: 4
+  info: 8
+  total: 12
 status: issues_found
 ---
 
@@ -131,6 +131,63 @@ Use a marker that is set only after a successful run, or accept one run per date
 **File:** `app/Records/RecordsWriter.php:13-15`, `app/Filament/Resources/Contacts/Schemas/ContactInfolist.php:9-10`
 **Issue:** `OwnerIntelligenceServiceProvider` states "nothing depends on it" so the room can be absent (D-09). `RecordsWriter` takes `TodayRecord` and `TimeToBooked` in its constructor, and `ContactInfolist` imports `TimeToBooked` and `DurationText`. They are gated by `hasRoom()`, so behavior is correct, but the room's classes are always instantiated and the dependency runs from `app/Records` and `app/Filament` into `app/Rooms/OwnerIntelligence`, against the map's split between platform code and room code. This is a design note, not a defect.
 **Fix:** If the layering matters, move the shared pieces (`DurationText`, the two record builders) to a neutral namespace such as `app/Records/`, or resolve them lazily inside the `hasRoom()` branch so an absent room never builds them.
+
+
+## Triage fix review (commits 3a82ac4 to b4bc283)
+
+_Reviewed: 2026-11-17, standard depth, only the changes in the review-triage commits (WR-01 to WR-03, IN-01 and IN-02 fixes and the 30-minute lock follow-up). The rest of the phase was not re-reviewed._
+
+Each fix achieves its ruling, and no critical issue was found. Traced and held up: the per-tick `$nightlyRebuildDate` (fresh `schedule:run` process each minute, reset at the top of the filter), the marker written only on exit 0, `records:rebuild` returning 1 for a missing folder, the zone-local date key across daylight-saving days, `onOneServer`'s per-minute key not blocking a retry; `meta.keyword` spread after provider meta so it cannot be spoofed, `RecordInbound::record()` as the only creator of inbound messages in app code, `array_key_exists` separating a recorded null from a legacy row, still one SELECT; the router written inside the `records:owner-intelligence` lock with no nested lock; and each new test failing on the old code.
+
+### WR-04: SETUP's killed-run timing is measured from the kill, but the lock runs from the start
+
+**File:** `docs/SETUP.md:213-217` (also `routes/console.php:33-34`, `docs/BLUEPRINT.md:506`)
+
+**Issue:** `Event::run()` takes the overlap lock when the run starts (`shouldSkipDueToOverlapping()` → `mutex->create()`), and it lasts 30 minutes from then. SETUP says "a run killed at 00:10 is tried again from the 00:40 tick" and "a run killed after 00:30 holds the lock past 01:00". A run that starts at 00:10 and is killed at 00:35 frees its lock about 00:40, so that night is not lost. A run that starts at about 00:29 or later and is then killed (for example a retry after a failed first attempt) holds the lock past the 00:59 tick, so that night is lost. The retry comes on the first tick after the lock expires, which is 00:40 or 00:41 depending on how many seconds after the minute each tick runs. Only a hard kill leaves the lock: a SIGTERM or SIGINT releases it (`ensureMutexIsReleasedOnSignal()`), and SETUP does not say so. The new test asserts at exact minute boundaries, so it pins the 30-minute expiry, not this timing.
+
+**Fix:** Reword SETUP, the BLUEPRINT bullet and the code comment: the lock lasts 30 minutes from when the run started; only a hard kill (SIGKILL, host crash) leaves it; the retry comes on the first tick after it expires (00:40 or 00:41 for a run started at 00:10); a run that started at about 00:29 or later and was hard-killed leaves that night without a rebuild.
+
+## Info (triage fix review)
+
+### IN-04: The 30-minute lock assumes a rebuild finishes within 30 minutes
+
+**File:** `routes/console.php:64`
+
+**Issue:** If a live run passes 30 minutes, its lock expires, the `mutex->exists` skip check passes, and the next tick starts a second `records:rebuild` while the first is still running. Card writes use `File::replace` and the two summary files are written under their own locks, so the damage is bounded, and a rebuild should take seconds at this scale. The assumption is not written down anywhere.
+
+**Fix:** Say in the code comment and SETUP that a rebuild must finish within 30 minutes; or keep a longer lock and release it explicitly on failure.
+
+### IN-05: A folder that stays missing is retried and reported every minute until 01:00
+
+**File:** `routes/console.php:41-58`
+
+**Issue:** As ruled, a failed run is retried on the next tick. `ScheduleRunCommand::runEvent()` throws and reports an exception for every non-zero exit (`ScheduleRunCommand.php:210-216`), so a business folder that stays unmounted gives up to 50 runs and 50 reported exceptions a night.
+
+**Fix:** Accept it (it is loud on purpose), or cap retries with a failed-attempt counter in the cache, for example stop after 5.
+
+### IN-06: The walk-through log's 09-06 line still describes the old schedule
+
+**File:** `docs/sprints/sprint-1.1.md:201`
+
+**Issue:** The line says the filter lets the rebuild through "only when the clock in the business's zone reads 00:10" and that "`withoutOverlapping(120)` keeps two runs apart for at most two hours". Both are now false, and the WR-03 line added below it says otherwise. The log is history, but it is also where Ian learns each concept.
+
+**Fix:** Mark the line "(superseded by the WR-03 line below)", or correct it in place.
+
+### IN-07: An overlong line in FolderSync's docblock
+
+**File:** `app/Icm/FolderSync.php:135`
+
+**Issue:** The WR-01 edit made the line 184 characters, where the paragraph wraps near 120, and ran "The first sync of a new database..." on from the previous sentence.
+
+**Fix:** Rewrap the paragraph.
+
+### IN-08: A run that ends between a tick's filter and its lock can give one extra rebuild
+
+**File:** `routes/console.php:41-64`
+
+**Issue:** `filtersPass()` checks the date marker (the `when()` filter) and the overlap lock before `Event::run()` takes the lock. If an earlier run finishes in that gap, it has already set the marker and released the lock, so the tick takes the lock and runs a second, redundant rebuild. The rebuild is idempotent, so the cost is one extra run.
+
+**Fix:** None needed. Optionally check the marker again in a `before()` callback.
 
 ---
 
