@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\ScheduleBlock;
 use App\Models\User;
@@ -25,7 +26,8 @@ class RemoveBlock
     /**
      * Remove the block, once. The row is read again under a lock through the scoped model: an appointment's id, which
      * the kind scope hides, or a row that is gone, finds nothing and changes nothing (A3, T-08-59). A block that is
-     * already removed is left exactly as it is.
+     * already removed is left exactly as it is. A removal fires ScheduleChanged after its write, so today.md is redrawn
+     * once it commits (D-14).
      *
      * @throws BookingRefused when the room is off.
      */
@@ -48,6 +50,8 @@ class RemoveBlock
                 'cancelled_by_user_id' => $user->id,
                 'cancelled_at' => now()->utc(),
             ]);
+
+            ScheduleChanged::dispatch();
         });
     }
 }

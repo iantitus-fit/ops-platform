@@ -6,6 +6,7 @@ use App\Enums\IcmFileKind;
 use App\Enums\SyncOutcome;
 use App\Enums\VersionStatus;
 use App\Events\CustomerRecordChanged;
+use App\Events\ScheduleChanged;
 use App\Icm\Exceptions\NoActiveVersion;
 use App\Models\Activity;
 use App\Models\IcmVersion;
@@ -128,6 +129,11 @@ class FolderSync
      *
      * The version is already live by now, so a card that cannot be queued is reported and never fails the sync, and one
      * failed card does not stop the cards after it.
+     *
+     * Turning the owner intelligence room or the schedule and booking room off or on between two live versions also
+     * redraws records/today.md and records/time-to-booked.md at once, so an off room's files are deleted and an on room's
+     * are written without waiting for midnight (D-15). The first sync of a new database has no room file to remove, so
+     * the first booking change or the nightly run writes them.
      */
     private function queueCardsForRoomChanges(?IcmVersion $previous, IcmVersion $version): void
     {
@@ -137,6 +143,14 @@ class FolderSync
 
         if ($changed === []) {
             return;
+        }
+
+        if ($previous !== null && array_intersect($changed, ['owner_intelligence', 'schedule_and_booking']) !== []) {
+            try {
+                ScheduleChanged::dispatch();
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
 
         try {

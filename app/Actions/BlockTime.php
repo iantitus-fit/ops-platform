@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\ScheduleBlock;
@@ -78,7 +79,8 @@ class BlockTime
 
     /**
      * Refuse a span that overlaps a booked visit, then write the row. Called inside the lock and a transaction. A visit
-     * that ends exactly when the block starts, or starts exactly when it ends, does not overlap.
+     * that ends exactly when the block starts, or starts exactly when it ends, does not overlap. It fires ScheduleChanged
+     * after its write, so today.md is redrawn once the block commits (D-14).
      */
     private function store(User $user, CarbonImmutable $startsAt, CarbonImmutable $endsAt, ?string $note): ScheduleBlock
     {
@@ -101,7 +103,7 @@ class BlockTime
             );
         }
 
-        return ScheduleBlock::create([
+        $block = ScheduleBlock::create([
             'starts_at' => $startsAt->utc(),
             'ends_at' => $endsAt->utc(),
             'state' => AppointmentState::Booked,
@@ -110,5 +112,9 @@ class BlockTime
             'booked_at' => now(),
             'note' => $note,
         ]);
+
+        ScheduleChanged::dispatch();
+
+        return $block;
     }
 }
