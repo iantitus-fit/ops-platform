@@ -262,6 +262,30 @@ it('deletes the files at once when a sync turns the room off, and writes them wh
         ->and(File::exists(icmPath('records/time-to-booked.md')))->toBeTrue();
 });
 
+it('rewrites the router at once when a sync turns the room off, and again when it comes back (WR-01, D-15, D-25)', function () {
+    activateExampleFolder();
+    app(RecordsWriter::class)->writeOwnerIntelligence();
+
+    expect(File::get(icmPath('records/CLAUDE.md')))->toContain('today.md')->toContain('time-to-booked.md');
+
+    $context = File::get(icmPath('rooms/owner_intelligence/CONTEXT.md'));
+    File::deleteDirectory(icmPath('rooms/owner_intelligence'));
+    activateExampleFolder();
+
+    expect(File::get(icmPath('records/CLAUDE.md')))
+        ->not->toContain('today.md')
+        ->not->toContain('time-to-booked.md')
+        ->toBe(app(RecordsWriter::class)->routerMarkdown());
+
+    writeIcmFile('rooms/owner_intelligence/CONTEXT.md', $context);
+    activateExampleFolder();
+
+    expect(File::get(icmPath('records/CLAUDE.md')))
+        ->toContain('read today.md.')
+        ->toContain('read time-to-booked.md.')
+        ->toBe(File::get(base_path('examples/example-hvac/records/CLAUDE.md')));
+});
+
 it('redraws at once when the schedule room is turned off', function () {
     activateExampleFolder();
     $this->travelTo(redrawChicago('08:00'));
