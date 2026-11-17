@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 09
 current_phase_name: Owner Intelligence
 status: executing
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-11-16T23:32:57.788Z"
+stopped_at: Completed 09-04-PLAN.md
+last_updated: "2026-11-17T00:27:23.869Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 09 execution started
-state_head: da6ffa869deb9882c279f23d27e10ab1a7509cf6
+state_head: 4a8fc9af78ddd11cfed0aeb8f5087e30cbb68d47
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 66
-  completed_plans: 63
+  completed_plans: 64
   percent: 56
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09 (Owner Intelligence) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 09 execution started
 
@@ -204,6 +204,7 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | Phase 09 P01 | 15 min | 3 tasks | 6 files |
 | Phase 09 P02 | 24 min | 3 tasks | 6 files |
 | Phase 09 P03 | 12 min | 3 tasks | 11 files |
+| Phase 09 P04 | 11 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -323,6 +324,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-02: TimeToBooked mirrors RecordInbound::keywordIn() in a PHP walk (SMS only, opted-out flag per contact, YES a keyword only while opted out); keywords are never matched in SQL (D-01)
 - [Phase 09]: 09-02: a first message in the same second as the first booking gives no number (A4); the median is not rounded before DurationText formats it, so under a minute reads 'booked in under a minute' (A3)
 - [Phase 09]: 09-03: owner intelligence room section sets no sort and draws between money and schedule_and_booking; exampleFolderFileCount is 29; customer card untouched (D-05)
+- [Phase 09]: 09-04: today.md covers the business-zone day with all three visit states plus booked blocks, as bullets with a block note quoted under the card's label; the title carries the date so a stale file never reads as today
+- [Phase 09]: 09-04: writeOwnerIntelligence() under the records:owner-intelligence lock writes or deletes today.md and time-to-booked.md by whether the room is live; the router and the records:rebuild sentence name them only while it is live; the tracked example router is the room-on text
 
 ### Pending Todos
 
@@ -391,8 +394,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T23:32:57.688Z
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-11-17T00:27:23.756Z
+Stopped at: Completed 09-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

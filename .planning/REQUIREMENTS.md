@@ -38,7 +38,7 @@ Ten rooms. Every new room meets the room standard and nothing more, except where
 - [x] **ROOM-10**: Content generation room, to the room standard, with no connector.
 - [x] **ROOM-11**: Google Business Profile room, to the room standard, with its connector slot (interface and fake driver). It owns one file in `rooms/google_business_profile/` holding the primary category and up to 9 additional categories, and reads `business/profile.md`, `business/hours.md`, `business/services/*.md` and `business/offers/*.md`. Its slot is read-only (one method fetches the listing), and its connector file declares `owns: none` and `reads: none`. *(Phase 5 discuss, 2026-10-25, `05-CONTEXT.md` D-06 to D-11. Affects: marketing, knowledge, connectors and data.)*
 - [x] **ROOM-12**: Schedule and booking room, to the room standard; booking (BOOK-01 to BOOK-05) lives here.
-- [ ] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
+- [x] **ROOM-13**: Owner intelligence room, to the room standard; it carries RECS-02 and BOOK-06.
 - [x] **ROOM-14**: Money room, to the full room standard like every room: a module and a boot test, empty and with its example folder. No payment-link slot and no payment records (backlog 999.1).
 - [x] **ROOM-15**: Team room: today's owner alerts, approvals and "who acted" wrapped in the room standard with no behavior change; the existing suite passes unchanged on both databases. The one allowed test change is the example folder's file count (`exampleFolderFileCount()` in `tests/Pest.php`) when the room's folder joins the example business. Backlog 999.5 stays unchanged. *(Phase 4 discuss, 2026-10-22, `04-CONTEXT.md` D-16. Affects: team.)*
 
@@ -55,7 +55,7 @@ Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 - [x] **BOOK-03**: Appointments are stored as records and appear on the contact's timeline, as the next appointment on the customer card, and on a dashboard schedule screen (DEC-08: inbox, schedule, money).
 - [x] **BOOK-04**: The customer receives reminders before the appointment, sent by the scheduler. *(derived: SPEC says "reminders"; timing, send window, which conversation and exactly-once settled in `.planning/phases/08-schedule-and-booking/08-CONTEXT.md` D-26 and D-29 to D-31)*
 - [x] **BOOK-05**: The owner is alerted (per `owner_alert` in `rules/sending.md`) when an appointment is booked and when a conversation needs a human.
-- [ ] **BOOK-06**: The minutes from a contact's first inbound message to their booked appointment are recorded and visible on the contact and in a dashboard summary, so the headline metric can be read. *(derived from Principle 1; not an explicit Sprint 2 SPEC deliverable)*
+- [x] **BOOK-06**: The minutes from a contact's first inbound message to their booked appointment are recorded and visible on the contact and in a dashboard summary, so the headline metric can be read. *(derived from Principle 1; not an explicit Sprint 2 SPEC deliverable)*
 - [ ] **WALK-01**: Walk-test files (`tests/*.md`, type `walk_test`: persona, channel, script, expect) are validated by the sync with plain-words errors and compiled into the candidate version.
 - [ ] **WALK-02**: Every sync walk-tests the candidate version by running each scripted customer in `tests/` against it. Activation happens only if validation and every walk test pass; otherwise the previous version stays live, the message names the test and the check that failed, and the attempt is appended to `changelog.md` and shown on the Business Folder page.
 - [ ] **WALK-03**: "Dana end to end": a scripted customer texts in, answers the intake questions, picks a time from the booking link, and ends with a booked appointment, an owner alert, an updated card and records, and a reminder queued. It passes as a walk test and as a feature test.
@@ -209,7 +209,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | ROOM-10 | Phase 5 | Complete |
 | ROOM-11 | Phase 5 | Complete |
 | ROOM-12 | Phase 8 | Complete |
-| ROOM-13 | Phase 9 | Pending |
+| ROOM-13 | Phase 9 | Complete |
 | ROOM-14 | Phase 5 | Complete |
 | ROOM-15 | Phase 6 | Complete |
 | CONN-07 | Phase 4 | Complete |
@@ -218,7 +218,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | BOOK-03 | Phase 8 | Complete |
 | BOOK-04 | Phase 8 | Complete |
 | BOOK-05 | Phase 8 | Complete |
-| BOOK-06 | Phase 9 | Pending |
+| BOOK-06 | Phase 9 | Complete |
 | WALK-01 | Phase 10 | Pending |
 | WALK-02 | Phase 10 | Pending |
 | WALK-03 | Phase 10 | Pending |
