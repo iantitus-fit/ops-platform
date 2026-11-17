@@ -204,13 +204,20 @@ verify. Check these by hand for each business before it goes live.
 - **The scheduler runs every minute.** In production cron runs
   `php artisan schedule:run` every minute (locally `composer run dev` already
   runs `schedule:work`). Held owner alerts, booking confirmations and
-  reminders, and the nightly rebuild of `records/` at 00:10 in the business's
-  time zone depend on it. In a few zones whose clocks change at midnight
-  (America/Havana, America/Santiago, America/Coyhaique, America/Asuncion,
-  Africa/Cairo, Asia/Beirut, Atlantic/Azores) 00:10 is skipped one night a
-  year and that night has no rebuild; `today.md`'s dated title shows it and
-  the next night catches up. US and European zones are not affected (Phase 9
-  D-10; `09-RESEARCH.md` Pattern 1).
+  reminders, and the nightly rebuild of `records/` just after midnight in the
+  business's time zone depend on it. The rebuild runs once per business date,
+  on the first tick from 00:10 to before 01:00, so a cron that missed 00:10
+  (a deploy, a restart, a busy host) still runs it on a later tick in that
+  hour. A date is marked done only after a run that succeeded, so a failed
+  run (for example the business folder not mounted) is tried again on the
+  next tick until 01:00. If no tick in that hour gets a run through, that
+  night has no rebuild: `today.md`'s dated title shows it, a booking change
+  still redraws `today.md`, and the next night catches up. In a few zones
+  whose clocks jump at midnight (America/Havana, America/Santiago,
+  America/Coyhaique, America/Asuncion, Africa/Cairo, Asia/Beirut,
+  Atlantic/Azores) the hour from 00:10 can be missing one night a year, with
+  the same result. US and European zones are not affected (Phase 9 D-10;
+  `09-RESEARCH.md` Pattern 1; 09-REVIEW WR-03).
 
 ## 13. Upgrading a business folder
 
