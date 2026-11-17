@@ -435,6 +435,7 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - Hosting (Laravel Cloud or Forge) is chosen in this phase (PROJECT.md, Open decisions).
 - Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, recovery from disaster (backups, error tracking and a rollback plan, which took in the earlier error-tracking and backup items) (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
+  - Beside error tracking: cap or group the nightly rebuild's missing-folder reports, so a missing business folder cannot send about 50 error reports a night (the rebuild is retried every minute from 00:10 to before 01:00 and Laravel reports each failed run) (Ian, 2026-11-17, 09-REVIEW IN-05). Affects: safety and compliance, operations.
 - How a visitor tries the front desk on staging (`/dev/chat` is local-only today), and whether the text a visitor types is kept.
   - Dev chat shows the stored copy of each text, so a booking link sent through the front desk shows `/book/[link]` and cannot be clicked. That is D-12 working. A visitor needs a way to open the link that was sent, settled without storing working links (Phase 8 UAT check 4). Affects: customer communication, connectors and data, safety and compliance.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
