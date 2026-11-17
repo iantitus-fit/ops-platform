@@ -32,6 +32,11 @@ class EditVisitNote
      * same note again writes nothing. A changed note fires ScheduleChanged after its write, so today.md is redrawn once it
      * commits (D-14).
      *
+     * The dispatch is deliberate, not an omission to tidy away: today.md never prints a note (D-12) and time to booked
+     * does not read one, so today the redraw writes the same text, but D-14 names every visit change, a note included,
+     * as a redraw trigger, so a later file that does show the note is redrawn without anyone remembering to add the
+     * dispatch here (Ian, 2026-11-17, 09-REVIEW IN-01).
+     *
      * @throws BookingRefused when the room is off, the note is over 200 characters, or the visit is no longer booked.
      */
     public function handle(Appointment $appointment, User $user, ?string $note): void
