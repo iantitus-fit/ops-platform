@@ -1,9 +1,11 @@
 <?php
 
+use App\Actions\BlockTime;
 use App\Actions\BookAppointment;
 use App\Actions\CancelAppointment;
 use App\Actions\EditVisitNote;
 use App\Actions\MarkAppointmentDone;
+use App\Actions\RemoveBlock;
 use App\Enums\AppointmentState;
 use App\Events\ScheduleChanged;
 use App\Jobs\RedrawOwnerIntelligenceRecords;
@@ -13,6 +15,8 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\ScheduleBlock;
 use App\Models\User;
+use App\Records\RecordsWriter;
+use App\Rooms\OwnerIntelligence\TodayRecord;
 use App\Rooms\ScheduleAndBooking\BookingRefused;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
@@ -215,6 +219,69 @@ it('draws nothing for a factory row (prohibition)', function () {
 
     Appointment::factory()->create();
     ScheduleBlock::factory()->create();
+
+    Queue::assertNothingPushed();
+});
+
+it('redraws after a block is added and removed (D-14)', function () {
+    [, $owner] = redrawSetUp();
+
+    $block = app(BlockTime::class)->handle($owner, redrawChicago('11:00'), redrawChicago('12:00'), 'Truck in the shop');
+
+    expect(File::exists(icmPath('records/today.md')))->toBeTrue()
+        ->and(File::get(icmPath('records/today.md')))
+        ->toContain('11:00 AM to 12:00 PM: Blocked')
+        ->toContain('> Truck in the shop');
+
+    app(RemoveBlock::class)->handle($block, $owner);
+
+    expect(File::get(icmPath('records/today.md')))->toContain(TodayRecord::EMPTY_DAY);
+
+    Queue::fake([RedrawOwnerIntelligenceRecords::class]);
+
+    app(RemoveBlock::class)->handle($block, $owner);
+
+    Queue::assertNothingPushed();
+});
+
+it('deletes the files at once when a sync turns the room off, and writes them when it comes back (D-15)', function () {
+    activateExampleFolder();
+    app(RecordsWriter::class)->writeOwnerIntelligence();
+
+    $context = File::get(icmPath('rooms/owner_intelligence/CONTEXT.md'));
+    File::deleteDirectory(icmPath('rooms/owner_intelligence'));
+    activateExampleFolder();
+
+    expect(File::exists(icmPath('records/today.md')))->toBeFalse()
+        ->and(File::exists(icmPath('records/time-to-booked.md')))->toBeFalse();
+
+    writeIcmFile('rooms/owner_intelligence/CONTEXT.md', $context);
+    activateExampleFolder();
+
+    expect(File::exists(icmPath('records/today.md')))->toBeTrue()
+        ->and(File::exists(icmPath('records/time-to-booked.md')))->toBeTrue();
+});
+
+it('redraws at once when the schedule room is turned off', function () {
+    activateExampleFolder();
+    $this->travelTo(redrawChicago('08:00'));
+    app(RecordsWriter::class)->writeOwnerIntelligence();
+
+    File::deleteDirectory(icmPath('rooms/schedule_and_booking'));
+    activateExampleFolder();
+
+    expect(File::get(icmPath('records/today.md')))->toContain(TodayRecord::OUTSIDE_SYSTEM);
+});
+
+it('queues no redraw on the first sync, or for other rooms', function () {
+    Queue::fake([RedrawOwnerIntelligenceRecords::class]);
+
+    activateExampleFolder();
+
+    Queue::assertNothingPushed();
+
+    File::deleteDirectory(icmPath('rooms/leads'));
+    activateExampleFolder();
 
     Queue::assertNothingPushed();
 });
