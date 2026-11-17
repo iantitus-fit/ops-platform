@@ -86,6 +86,23 @@ it('draws the day so a reader can answer six questions (D-13)', function () {
     ]);
 });
 
+it('matches the sample in the room\'s CONTEXT.md, drawn from the D-13 day with a block note (IN-02, D-22)', function () {
+    $dana = Contact::factory()->create(['id' => 1, 'name' => 'Dana Whitfield']);
+    $marcus = Contact::factory()->create(['id' => 2, 'name' => 'Marcus Lee']);
+    $lee = Contact::factory()->create(['id' => 3, 'name' => 'Lee Park']);
+
+    Appointment::factory()->at(todayRecordAt('09:00'), 90)->done()->create(['contact_id' => $dana->id, 'service_name' => 'AC repair']);
+    ScheduleBlock::factory()->at(todayRecordAt('11:00'), 60)->create(['note' => 'Truck in the shop']);
+    Appointment::factory()->at(todayRecordAt('13:00'), 60)->create(['contact_id' => $marcus->id, 'service_name' => 'Furnace check']);
+    Appointment::factory()->at(todayRecordAt('15:30'), 60)->cancelled()->create(['contact_id' => $lee->id, 'service_name' => 'Tune-up']);
+
+    $context = File::get(base_path('examples/example-hvac/rooms/owner_intelligence/CONTEXT.md'));
+
+    // The first fenced block in the file is the today.md sample; the second is the time-to-booked.md line.
+    expect(preg_match('/^```\n(.*?)\n```$/ms', $context, $sample))->toBe(1)
+        ->and($sample[1]."\n")->toBe(todayRecordFile());
+});
+
 it('quotes a block\'s note under the card\'s label (D-12)', function () {
     ScheduleBlock::factory()->at(todayRecordAt('11:00'), 60)->create(['note' => 'Truck in the shop']);
 
