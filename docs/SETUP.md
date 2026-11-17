@@ -201,6 +201,17 @@ verify. Check these by hand for each business before it goes live.
   A business without a number the platform can text from is not a fit.
   (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
 
+- **The scheduler runs every minute.** In production cron runs
+  `php artisan schedule:run` every minute (locally `composer run dev` already
+  runs `schedule:work`). Held owner alerts, booking confirmations and
+  reminders, and the nightly rebuild of `records/` at 00:10 in the business's
+  time zone depend on it. In a few zones whose clocks change at midnight
+  (America/Havana, America/Santiago, America/Coyhaique, America/Asuncion,
+  Africa/Cairo, Asia/Beirut, Atlantic/Azores) 00:10 is skipped one night a
+  year and that night has no rebuild; `today.md`'s dated title shows it and
+  the next night catches up. US and European zones are not affected (Phase 9
+  D-10; `09-RESEARCH.md` Pattern 1).
+
 ## 13. Upgrading a business folder
 
 Some releases add a field the sync then requires. A folder synced before that
