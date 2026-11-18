@@ -3,7 +3,7 @@ status: complete
 phase: 09-owner-intelligence
 source: [09-VERIFICATION.md]
 started: 2026-11-18T19:00:00Z
-updated: 2026-11-18T20:55:30.315Z
+updated: 2026-11-18T20:56:10.089Z
 ---
 
 ## Current Test
@@ -25,7 +25,13 @@ notes: |
 ### 2. At first deploy (Phase 12): cron runs php artisan schedule:run every minute and records/today.md names the new day after 00:10 business time
 expected: Title date advances after 00:10 in the business zone; a late tick inside 00:10 to 01:00 still runs the rebuild once (WINDOWS.md row 88)
 result: skipped
-reason: "Deferred to Phase 12 at first deploy (WINDOWS.md row 88 stays open): needs a real scheduler and wall clock. Ian, 2026-11-18."
+reason: "Deferred follow-up: deferred to Phase 12 at first deploy (WINDOWS.md row 88 stays open); needs a real scheduler and wall clock. Ian, 2026-11-18."
+
+## Deferred Follow-Ups
+
+- test: 2
+  idea: "Deferred to Phase 12 at first deploy (WINDOWS.md row 88 stays open); needs a real scheduler and wall clock."
+  deferred_at: 2026-11-18
 
 ## Summary
 
