@@ -2,9 +2,9 @@
 phase: "09"
 slug: "owner-intelligence"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-# audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: true) (#2117)
+# audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
 status: validated
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: true
 created: "2026-11-14"
 ---
@@ -56,12 +56,16 @@ Task IDs are filled in by the planner; the requirement-to-test map below is the 
 | 09-04-T2 | 09-04 | 3 | RECS-02 | T-09-11 | owner text (block note, customer name) with `#`, `\|`, newline or instruction-like sentence stays inside its row or quote | feature | same | ✅ | ✅ green |
 | 09-04-T2 | 09-04 | 3 | RECS-02, BOOK-06 | T-09-13, T-09-14 | time-to-booked.md content; room off deletes both files; the lock is taken before any read | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TimeToBookedFileTest.php` | ✅ | ✅ green |
 | 09-05-T1, 09-05-T2, 09-05-T3 | 09-05 | 4 | RECS-02 | T-09-16, T-09-18 | each of the six actions redraws `today.md` after commit, queued and locked; no-ops and rollbacks do not; room-off deletes the files at the sync | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/RedrawTest.php` | ✅ | ✅ green |
-| 09-06-T1, 09-06-T2 | 09-06 | 5 | RECS-02 | T-09-20, T-09-21, T-09-22 | nightly event runs at 00:10 in the business zone, follows a changed zone, one pass across DST days; `records:rebuild` turns `today.md` over | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/NightlyRebuildTest.php tests/Feature/Records/RecordsRebuildTest.php` | ✅ | ✅ green |
+| 09-06-T1, 09-06-T2 | 09-06 | 5 | RECS-02 | T-09-20, T-09-21, T-09-22 | nightly event runs from 00:10 in the business zone (once per date since WR-03, row below), follows a changed zone, one pass across DST days; `records:rebuild` turns `today.md` over | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/NightlyRebuildTest.php tests/Feature/Records/RecordsRebuildTest.php` | ✅ | ✅ green |
 | 09-04-T3 | 09-04 | 3 | RECS-02 | T-09-13 | router text room on and off; tracked example equals room-on text; `records:rebuild` names what it wrote | feature | `php artisan test --compact tests/Feature/Records/RecordsRebuildTest.php` | ✅ | ✅ green |
 | 09-03-T1, 09-03-T3 | 09-03 | 2 | ROOM-13 | T-09-10 | boot, contract, folder holds only `CONTEXT.md`, optional, section position and lines | feature | `php artisan test --compact tests/Feature/Rooms/OwnerIntelligenceBootTest.php` | ✅ | ✅ green |
 | 09-03-T3 | 09-03 | 2 | ROOM-13 / A11Y-01 | T-09-08 | axe finds no violation in the section, with and without a qualifying contact | browser | same file | ✅ | ✅ green |
 | 09-01-T3 | 09-01 | 1 | D-26 | T-09-04 | owner notice reads "the line changed after it was shown" | feature | `php artisan test --compact tests/Feature/Booking/ApprovedDraftVisitLineTest.php` | ✅ | ✅ green |
 | 09-03-T1, 09-04-T1, 09-05-T1 | 09-03, 09-04, 09-05 | 2-4 | shared code | T-09-19 | arch scan lists only the six writers; File facade only in `RecordsWriter`; example count 29 | unit/feature | `php artisan test --compact tests/Unit tests/Feature/Icm tests/Feature/Rooms` | ✅ | ✅ green |
+| WR-01 (review) | 09-04, 09-05 | — | RECS-02 | T-09-13 | a sync that turns the room off or on rewrites the router in the same lock that writes or deletes both files | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/RedrawTest.php` | ✅ extend | ✅ green |
+| WR-02 (review) | 09-02 | — | BOOK-06 | T-09-06 | `RecordInbound` records the keyword decision as `meta.keyword`; `TimeToBooked` trusts a present key and reconstructs only for rows without it | feature | `php artisan test --compact tests/Feature/Inbound/OptOutTest.php tests/Feature/OwnerIntelligence/TimeToBookedTest.php` | ✅ extend | ✅ green |
+| WR-03 (review) | 09-06 | — | RECS-02 | T-09-20 | rebuild runs once per business-local date on any tick from 00:10 to before 01:00; a failed run is retried in the window; the 30-minute lock lets a hard-killed run be retried | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/NightlyRebuildTest.php` | ✅ extend | ✅ green |
+| IN-02 (review) | 09-03, 09-04 | — | RECS-02, ROOM-13 | — | the room's CONTEXT.md `today.md` sample equals what `TodayRecord` writes for the D-13 day | feature | `php artisan test --compact tests/Feature/OwnerIntelligence/TodayRecordTest.php` | ✅ extend | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -102,6 +106,8 @@ No framework install: Pest is in place. Create tests with `php artisan make:test
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** validated 2026-11-17 by /gsd-validate-phase 09 after 09-06: every mapped test file exists and is green (166 tests, 3748 assertions; shared-code scans 1190 green; full suite 3333 green on SQLite). The two manual-only checks stay for end-of-phase UAT.
+
+Re-validated 2026-11-18 by /gsd-validate-phase 09 after the review fixes (WR-01 to WR-04; IN-01, IN-02, IN-04, IN-06, IN-07): each tested fix (WR-01, WR-02, WR-03, IN-02) has its own row above, all in existing test files; WR-04, IN-01, IN-04, IN-06 and IN-07 changed wording or docblocks only. Every mapped test file is green (245 tests, 4135 assertions, `tests/Feature/Inbound/OptOutTest.php` included; shared-code scans 1190 green). `nyquist_compliant` corrected to `true`: the 2026-11-17 run ticked it above but left the frontmatter at `false`.
 
 ## Validation Audit 2026-11-17
 
