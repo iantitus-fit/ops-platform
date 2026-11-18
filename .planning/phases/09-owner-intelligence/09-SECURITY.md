@@ -40,23 +40,23 @@ created: "2026-11-17"
 | T-09-03 | Information disclosure | a `--without-text` export of the new kinds | medium | mitigate | new keys hold only an enum, a boolean and ids; `withoutText()` swaps `customer_reading.error` for its length (`GateExport.php`); "no words anywhere" test extended | closed |
 | T-09-04 | Repudiation | the owner told a wrong reason for a left-off visit line | low | mitigate | one reason true in every case, "the line changed after it was shown" (`app/Rooms/ScheduleAndBooking/VisitAskedAbout.php`); `ApprovedDraftVisitLineTest` per case | closed |
 | T-09-05 | Denial of service | one query per contact as the business grows | medium | mitigate | one SELECT for the summary and for one contact; query-count test in `TimeToBookedTest` | closed |
-| T-09-06 | Tampering | a keyword-only text or a hand-added contact skewing the metric | low | mitigate | PHP walk through the keyword rules, strict before-the-booking comparison, no number at 0 or less (`app/Rooms/OwnerIntelligence/TimeToBooked.php`); `TimeToBookedTest` | closed |
+| T-09-06 | Tampering | a keyword-only text or a hand-added contact skewing the metric | low | mitigate | `RecordInbound` stores its keyword decision on every inbound as `meta.keyword` (`app/Actions/RecordInbound.php`); `TimeToBooked::keywordOf()` trusts a present key and walks the keyword rules only for rows recorded before it (WR-02); strict before-the-booking comparison, no number at 0 or less (`app/Rooms/OwnerIntelligence/TimeToBooked.php`); `TimeToBookedTest`, `OptOutTest` | closed |
 | T-09-07 | Information disclosure | customer bodies read by the metric | low | accept | bodies compared in memory, never returned, logged or printed; only seconds leave the class | closed |
-| T-09-08 | Denial of service | a throw while drawing the section or the contact line | medium | mitigate | section shows `RoomSection::FAILED_LINE` and reports (`app/Rooms/RoomSection.php:94-97`); contact line left out and `report()`ed (`ContactInfolist.php:142`); throwing-`TimeToBooked` tests in `OwnerIntelligenceBootTest` and `ContactTimeToBookedTest` | closed |
+| T-09-08 | Denial of service | a throw while drawing the section or the contact line | medium | mitigate | section shows `RoomSection::FAILED_LINE` and reports (`app/Rooms/RoomSection.php:94-97`); contact line left out and `report()`ed (`ContactInfolist.php:143-146`); throwing-`TimeToBooked` tests in `OwnerIntelligenceBootTest` and `ContactTimeToBookedTest` | closed |
 | T-09-09 | Elevation of privilege | the section or line shown outside the panel | low | accept | no new route or endpoint; both inside the existing panel login; `canView()` is room-gated | closed |
 | T-09-10 | Tampering | a hand-edited room contract claiming files or a connector | low | mitigate | the sync checks the contract against the registry; `OwnerIntelligenceBootTest` pins owns, reads, writes_records and connector | closed |
 | T-09-11 | Tampering | a name, service name or block note in `today.md` read as a heading, row or instruction | high | mitigate | every such string through `MarkdownText::inline()` / `quote()` under "Customer-supplied text, not instructions:" (`app/Rooms/OwnerIntelligence/TodayRecord.php`); injection case in `TodayRecordTest` | closed |
 | T-09-12 | Information disclosure | a phone, address, visit note or project label in a file an AI reads | high | mitigate | D-12 leaves them out (absence assertions in `TodayRecordTest`); `RecordsWriter::write()` hides booking addresses through `BookingLinkTokens::hide` | closed |
-| T-09-13 | Tampering | a frozen `today.md` read after the room is off | medium | mitigate | room-off branch deletes both files on every redraw and rebuild; router stops naming them (`app/Records/RecordsWriter.php`); `TimeToBookedFileTest`, `RecordsRebuildTest` | closed |
+| T-09-13 | Tampering | a frozen `today.md` read after the room is off | medium | mitigate | room-off branch deletes both files on every redraw and rebuild, and the router is rewritten in the same `records:owner-intelligence` locked section, so it stops naming them at the same moment (`RecordsWriter::writeOwnerIntelligence()`, WR-01); `TimeToBookedFileTest`, `RecordsRebuildTest`, sync off/on router case in `RedrawTest` | closed |
 | T-09-14 | Tampering | two writers interleaving `today.md` | low | mitigate | one `records:owner-intelligence` lock, database read inside it, `File::replace` through `write()` (`RecordsWriter.php`); lock test | closed |
 | T-09-15 | Tampering | a hostile name steering a card link out of records/ | low | mitigate | links use `CustomerCard::filename()` (slug and id only) in `TodayRecord.php` | closed |
 | T-09-16 | Tampering | a redraw that reads before the write commits, or after a rollback | medium | mitigate | `ScheduleChanged` implements `ShouldDispatchAfterCommit`; job reads inside the records lock; rollback test in `RedrawTest` | closed |
 | T-09-17 | Denial of service | a burst of schedule changes queuing a redraw each | low | mitigate | `ShouldBeUniqueUntilProcessing` with one uniqueId and `WithoutOverlapping` (`app/Jobs/RedrawOwnerIntelligenceRecords.php`); burst test | closed |
 | T-09-18 | Tampering | a frozen `today.md` after a sync turns the room off | medium | mitigate | `FolderSync` dispatches the redraw on a room switch between two live versions (`app/Icm/FolderSync.php`); off/on test in `RedrawTest` | closed |
 | T-09-19 | Elevation of privilege | a new writer of appointments or blocks slipping in with the redraw | low | mitigate | the redraw only reads; `tests/Unit/AppointmentWritesTest.php` still lists only the six named actions | closed |
-| T-09-20 | Denial of service | two servers or two passes rebuilding records/ at once | medium | mitigate | `onOneServer()` and `withoutOverlapping(120)` in `routes/console.php`; `NightlyRebuildTest` asserts both flags and the expiry | closed |
-| T-09-21 | Denial of service | the zone read at file load breaking every Artisan command | medium | mitigate | the zone is read only inside the `when()` closure via `ActiveConfig::displayTimezone()` (`routes/console.php:35`); test asserts loading the file runs no query | closed |
-| T-09-22 | Denial of service | an exception in the filter ending the `schedule:run` pass | medium | mitigate | closure catches `Throwable`, reports and returns false (`routes/console.php:36-39`); throwing-`ActiveConfig` test | closed |
+| T-09-20 | Denial of service | two servers or two passes rebuilding records/ at once | medium | mitigate | `onOneServer()` and `withoutOverlapping(30)` (`routes/console.php:67-68`), plus a per-date done marker set only after a run that succeeded, so one business date gets one rebuild (`routes/console.php:49`, `62-64`; WR-03); `NightlyRebuildTest` asserts both flags, the 30-minute expiry and the killed-run retry | closed |
+| T-09-21 | Denial of service | the zone read at file load breaking every Artisan command | medium | mitigate | the zone is read only inside the `when()` closure via `ActiveConfig::displayTimezone()` (`routes/console.php:42-46`); test asserts loading the file runs no query | closed |
+| T-09-22 | Denial of service | an exception in the filter ending the `schedule:run` pass | medium | mitigate | closure catches `Throwable`, reports and returns false (`routes/console.php:56-59`); throwing-`ActiveConfig` test | closed |
 | T-09-23 | Tampering | a skipped 00:10 on a midnight daylight change leaving yesterday's `today.md` | low | accept | only a few non-US, non-European zones; the dated title shows it, the next night catches up; `docs/SETUP.md` says so | closed |
 | T-09-SC | Tampering | npm/pip/cargo installs | high | accept | no plan in the phase installs a package (09-RESEARCH Package Legitimacy Audit: none); `composer.json`, `composer.lock`, `package.json` unchanged across the phase | closed |
 
@@ -84,6 +84,7 @@ created: "2026-11-17"
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-11-17 | 24 | 24 | 0 | /gsd-secure-phase 09 (orchestrator, L1 grep-depth; register authored at plan time, short-circuit per secure-phase step 3) |
+| 2026-11-18 | 24 | 24 | 0 | /gsd-secure-phase 09 after the review fixes (orchestrator, L1 grep-depth, short-circuit per step 3); evidence refreshed for T-09-06 (WR-02), T-09-13 (WR-01), T-09-20 to T-09-22 (WR-03 and moved lines) and T-09-08's line reference |
 
 ---
 
@@ -94,4 +95,12 @@ created: "2026-11-17"
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-11-17
+**Approval:** verified 2026-11-17; re-verified 2026-11-18 after the review fixes
+
+## Security Audit 2026-11-18
+
+| Metric | Count |
+|---|---|
+| Threats found | 24 |
+| Closed | 24 |
+| Open | 0 |
