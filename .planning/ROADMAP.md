@@ -34,7 +34,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once (completed 2026-10-28)
 - [x] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard (completed 2026-11-01)
 - [x] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it (completed 2026-11-12)
-- [ ] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out
+- [x] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out (completed 2026-11-18)
 - [ ] **Phase 10: Walk Tests and the Gate** - No folder change goes live until scripted customers have walked through it, and Dana books end to end
 - [ ] **Phase 11: Phone Design Pass** - Every owner-facing screen works on a phone, including the dashboard, the Needs you card and the Business Folder page
 - [ ] **Phase 12: Tour Deploy** - A staging instance shows the fictional example business behind an invite-only login
@@ -345,7 +345,7 @@ Plans:
   3. `gate:export` counts only what went out (a failed or queued send is not counted as sent), gives `original_text` the same way on every path, and exports the `answered` resolution and the 02.1 fixed-reply kinds.
   4. The owner intelligence room meets the standard (folder, `CONTEXT.md` that says it writes `today.md`, example file, module, boot test).
 
-**Plans**: 6/6 plans executed
+**Plans**: 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -455,7 +455,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
-| 9. Owner Intelligence | 6/6 | In Progress | - |
+| 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
