@@ -2,12 +2,14 @@
 
 A work list for Ian, not a card and not part of the catalog's routing. One entry per deviation found by the inventory pass (checked 2026-10-12 @ be50284). Nothing here is fixed or removed; Ian decides on a separate track. Scope set by Ian's ruling 2026-10-12: these three entries only.
 
+Re-checked 2026-11-20 @ 57cfcfa (source inspection after Phases 3 to 9): all three are still open. No code has closed any of them; GATE-05 (Phase 9) changed what `gate:export` prints but not the `config/gate.php` comment in entry 3.
+
 ## 1. `agent_conversations` table
 - **What:** the laravel/ai SDK's conversation-memory table, created by the SDK's migration.
 - **Where:** `database/migrations/2026_10_10_191255_create_agent_conversations_table.php:17`
 - **Type:** orphan (leftover, no referrer)
 - **Expected:** a table in the schema has a writer or a reader in the app.
-- **Actual:** grep for `agent_conversation` and `AgentConversation` over `app/`, `config/`, `routes/`, `resources/`, `tests/`, `database/seeders` and `database/factories` finds no referrer. The front desk passes its own thread to the SDK (`app/Ai/FrontDeskPrompt.php:140`, `app/Ai/RunFrontDeskAgent.php:72`).
+- **Actual:** grep for `agent_conversation` and `AgentConversation` over `app/`, `config/`, `routes/`, `resources/`, `tests/`, `database/seeders` and `database/factories` finds no referrer. The front desk passes its own thread to the SDK (`app/Ai/FrontDeskPrompt.php:197`, `app/Ai/RunFrontDeskAgent.php:72`).
 - **Related card:** `objects/conversations/conversation-and-pause.md`
 
 ## 2. `agent_conversation_messages` table
@@ -23,5 +25,5 @@ A work list for Ian, not a card and not part of the catalog's routing. One entry
 - **Where:** `config/gate.php:41`
 - **Type:** ghost reference
 - **Expected:** a screen, table or log named "approval log" exists, or the comment names the real thing.
-- **Actual:** grep for "approval log" over `app/`, `resources/`, `config/` and `docs/` finds only this comment. The verdict is stored on `messages` (`gate_outcome`, `gate_reason`, `gate`) and printed by `gate:export` (`app/Console/Commands/GateExport.php:27`).
+- **Actual:** grep for "approval log" over `app/`, `resources/`, `config/` and `docs/` finds only this comment. The verdict is stored on `messages` (`gate_outcome`, `gate_reason`, `gate`) and printed by `gate:export` (`app/Console/Commands/GateExport.php:30`).
 - **Related card:** `objects/messages/message-and-verdict.md`
