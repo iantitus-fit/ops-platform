@@ -314,11 +314,11 @@ function resetRecordsToTrackedFiles(string $records): void
 
 /**
  * How many typed files examples/example-hvac holds. A plan that adds a typed file to the example
- * folder changes this one number (plans 02-02, 02-03, 02-06, 02.1-06 and 02.1-07 do), not every test that counts.
+ * folder changes this one number (plans 02-02, 02-03, 02-06, 02.1-06, 02.1-07 and 09-03 do), not every test that counts.
  */
 function exampleFolderFileCount(): int
 {
-    return 28;
+    return 29;
 }
 
 /**

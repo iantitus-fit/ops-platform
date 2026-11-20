@@ -9,6 +9,7 @@ use App\Rooms\OwnerIntelligence\DurationText;
 use App\Rooms\OwnerIntelligence\TimeToBooked;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 
 /**
  * BOOK-06: a contact's time to booked is worked out on read from two recorded facts, the first real inbound message and
@@ -93,6 +94,39 @@ it('treats YES as a keyword only while the contact is opted out', function () {
 
     expect(app(TimeToBooked::class)->forContact($optedOut->id))->toBe(2520)
         ->and(app(TimeToBooked::class)->forContact($notOptedOut->id))->toBe(2520);
+});
+
+it('does not start the clock on a YES from a contact the carrier opted out (WR-02, D-01)', function () {
+    Queue::fake();
+    $dana = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
+
+    // What OutboundSender::recordCarrierOptOut() and the status callback write on a carrier block: no STOP is on file.
+    $dana->update(['sms_opted_out_at' => timeToBookedAt('07:00')]);
+
+    $this->travelTo(timeToBookedAt('08:00'));
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('1', 32), 'Body' => 'YES']))->assertOk();
+    $this->travelTo(timeToBookedAt('09:00'));
+    $this->post(route('webhooks.text.fake'), fakeTextPayload(['MessageSid' => 'SM'.str_repeat('2', 32), 'Body' => 'My AC is blowing warm air']))->assertOk();
+    timeToBookedBooking($dana, '09:42');
+    $this->travelTo(timeToBookedAt('12:00'));
+
+    expect(app(TimeToBooked::class)->forContact($dana->id))->toBe(2520)
+        ->and($dana->refresh()->isOptedOut())->toBeFalse()
+        ->and(Message::query()->where('body', 'YES')->sole()->meta)->toHaveKey('keyword', 'start');
+});
+
+it('trusts the keyword decision recorded on the message over the words (WR-02)', function () {
+    $recordedPlain = Contact::factory()->create();
+    timeToBookedMessage($recordedPlain, 'STOP', '09:00', attributes: ['meta' => ['keyword' => null]]);
+    timeToBookedBooking($recordedPlain, '09:42');
+
+    $recordedKeyword = Contact::factory()->create();
+    timeToBookedMessage($recordedKeyword, 'Hi there', '08:00', attributes: ['meta' => ['keyword' => 'help']]);
+    timeToBookedMessage($recordedKeyword, 'Can you come out?', '09:00', attributes: ['meta' => ['keyword' => null]]);
+    timeToBookedBooking($recordedKeyword, '09:42');
+
+    expect(app(TimeToBooked::class)->forContact($recordedPlain->id))->toBe(2520)
+        ->and(app(TimeToBooked::class)->forContact($recordedKeyword->id))->toBe(2520);
 });
 
 it('starts on a sentence that holds a keyword word', function () {

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Enums\AlertReason;
 use App\Enums\AppointmentActor;
 use App\Enums\AppointmentState;
+use App\Events\ScheduleChanged;
 use App\Icm\ActiveConfig;
 use App\Models\Appointment;
 use App\Models\BookingLink;
@@ -162,7 +163,7 @@ class BookAppointment
 
     /**
      * Re-check the time, pick or open the job, write the row and its one timeline entry. Called inside the lock and a
-     * transaction.
+     * transaction. It fires ScheduleChanged after its write, so today.md is redrawn once the booking commits (D-14).
      *
      * @param  array<string, mixed>  $service
      */
@@ -202,6 +203,8 @@ class BookAppointment
             $appointment,
         );
 
+        ScheduleChanged::dispatch();
+
         $this->writeSendRows($appointment, $startsAt, false);
 
         return $appointment;
@@ -209,7 +212,8 @@ class BookAppointment
 
     /**
      * The page booking, called inside the lock and a transaction: re-read the link, refuse a closed one, re-check the
-     * time with Availability::offers(), pick the job, write the row and its one timeline entry.
+     * time with Availability::offers(), pick the job, write the row and its one timeline entry. It fires ScheduleChanged
+     * after its write, so today.md is redrawn once the booking commits (D-14).
      */
     private function storeFromLink(BookingLink $link, CarbonImmutable $startsAt, CarbonImmutable $now): Appointment
     {
@@ -258,6 +262,8 @@ class BookAppointment
             'Booked by the customer on the booking page: '.$service['name'].', '.BookingSettings::dayText($startsAt, $zone).' at '.BookingSettings::timeText($startsAt, $zone).'.',
             $appointment,
         );
+
+        ScheduleChanged::dispatch();
 
         $this->writeSendRows($appointment, $startsAt, true);
 

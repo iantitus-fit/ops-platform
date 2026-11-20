@@ -201,6 +201,32 @@ verify. Check these by hand for each business before it goes live.
   A business without a number the platform can text from is not a fit.
   (`08-UI-SPEC.md` U-12; BLUEPRINT, Customer communication.)
 
+- **The scheduler runs every minute.** In production cron runs
+  `php artisan schedule:run` every minute (locally `composer run dev` already
+  runs `schedule:work`). Held owner alerts, booking confirmations and
+  reminders, and the nightly rebuild of `records/` just after midnight in the
+  business's time zone depend on it. The rebuild runs once per business date,
+  on the first tick from 00:10 to before 01:00, so a cron that missed 00:10
+  (a deploy, a restart, a busy host) still runs it on a later tick in that
+  hour. A date is marked done only after a run that succeeded, so a failed
+  run (for example the business folder not mounted) is tried again on the
+  next tick until 01:00. Each run holds the rebuild's lock for 30 minutes
+  from when it starts. A normal stop releases the lock; only a hard kill
+  (SIGKILL, a host crash) leaves it behind, and such a run marks nothing done.
+  A run that started before about 00:29 and was hard-killed is tried again
+  once its lock expires, inside the hour (a run started at 00:10 is tried
+  again at 00:40 or 00:41); one that started at about 00:29 or later still
+  holds the lock at the last tick, so that night has no rebuild. The 30-minute
+  lock assumes a rebuild finishes inside 30 minutes. If no tick in that hour
+  gets a run through, that
+  night has no rebuild: `today.md`'s dated title shows it, a booking change
+  still redraws `today.md`, and the next night catches up. In a few zones
+  whose clocks jump at midnight (America/Havana, America/Santiago,
+  America/Coyhaique, America/Asuncion, Africa/Cairo, Asia/Beirut,
+  Atlantic/Azores) the hour from 00:10 can be missing one night a year, with
+  the same result. US and European zones are not affected (Phase 9 D-10;
+  `09-RESEARCH.md` Pattern 1; 09-REVIEW WR-03).
+
 ## 13. Upgrading a business folder
 
 Some releases add a field the sync then requires. A folder synced before that

@@ -34,7 +34,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 6: Front Desk and Team Rooms** - The two rooms that already work move in with no behavior change, and every owner alert is sent exactly once (completed 2026-10-28)
 - [x] **Phase 7: The Spine and Leads** - Every new lead opens a project in the business's own word, and the leads room joins at the standard (completed 2026-11-01)
 - [x] **Phase 8: Schedule and Booking** - A customer books a time from a link, and the owner sees it and is told about it (completed 2026-11-12)
-- [ ] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out
+- [x] **Phase 9: Owner Intelligence** - Minutes to booked, today's schedule and the nightly rebuild can be read, and `gate:export` reports only what went out (completed 2026-11-18)
 - [ ] **Phase 10: Walk Tests and the Gate** - No folder change goes live until scripted customers have walked through it, and Dana books end to end
 - [ ] **Phase 11: Phone Design Pass** - Every owner-facing screen works on a phone, including the dashboard, the Needs you card and the Business Folder page
 - [ ] **Phase 12: Tour Deploy** - A staging instance shows the fictional example business behind an invite-only login
@@ -345,7 +345,7 @@ Plans:
   3. `gate:export` counts only what went out (a failed or queued send is not counted as sent), gives `original_text` the same way on every path, and exports the `answered` resolution and the 02.1 fixed-reply kinds.
   4. The owner intelligence room meets the standard (folder, `CONTEXT.md` that says it writes `today.md`, example file, module, boot test).
 
-**Plans**: 2/6 plans executed
+**Plans**: 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -353,16 +353,16 @@ Plans:
 - [x] 09-02-PLAN.md — Time to booked worked out on read: DurationText, TimeToBooked per contact and the 30-day median line, one query (BOOK-06, D-01 to D-04, D-06, D-07)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09-03-PLAN.md — The owner intelligence room at the standard, its time-to-booked section and the contact screen's Time to booked line; exampleFolderFileCount() 28 to 29 (ROOM-13, BOOK-06, D-05, D-08, D-21, D-22, D-24, D-29)
+- [x] 09-03-PLAN.md — The owner intelligence room at the standard, its time-to-booked section and the contact screen's Time to booked line; exampleFolderFileCount() 28 to 29 (ROOM-13, BOOK-06, D-05, D-08, D-21, D-22, D-24, D-29)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09-04-PLAN.md — records/today.md (the D-13 day) and records/time-to-booked.md while the room is live, deleted when off; the router and records:rebuild follow the room; SPEC bridge list (RECS-02, D-12, D-13, D-15, D-23, D-25)
+- [x] 09-04-PLAN.md — records/today.md (the D-13 day) and records/time-to-booked.md while the room is live, deleted when off; the router and records:rebuild follow the room; SPEC bridge list (RECS-02, D-12, D-13, D-15, D-23, D-25)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-05-PLAN.md — today.md redrawn after each of the six named actions commits and at once when a sync switches the room (RECS-02, D-14, D-15)
+- [x] 09-05-PLAN.md — today.md redrawn after each of the six named actions commits and at once when a sync switches the room (RECS-02, D-14, D-15)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09-06-PLAN.md — The platform's nightly records:rebuild at 00:10 in the business zone, across zone changes and daylight-saving days; closes 08 IN-06 (RECS-02, D-09 to D-11)
+- [x] 09-06-PLAN.md — The platform's nightly records:rebuild at 00:10 in the business zone, across zone changes and daylight-saving days; closes 08 IN-06 (RECS-02, D-09 to D-11)
 
 **UI hint**: yes
 
@@ -417,6 +417,7 @@ Plans:
 - Settle in discuss-phase whether Phase 11 becomes the full visual pass (a design system for owner screens and customer pages; the tour deploy waits for it, per DEPL-02), or keeps only what survives a redesign (the urgency order, the wording and hold reasons, phone fit, accessibility semantics, the owner-screen VoiceOver walk) with the full visual pass after the tour deploy. Either way it reopens the 2026-10-21 phone design pass decision, and the first may touch DEPL-02: Ian's call. Until then the visual direction rule holds (CLAUDE.md, Rules; PROJECT.md Frontend, Ian, 2026-11-11). Affects: all ten areas (every screen), led by customer communication, operations and safety and compliance; connectors and data (the tour deploy).
 - Inputs from Phase 8 UAT check 7: the owner-screen VoiceOver walk (already success criterion 6); the Schedule table scrolls sideways at a normal laptop window width with the What column squeezed; the automatic-texts timeline badges show the raw type value (`automatic_texts_turned_on`, as D-46 specifies) while other entries show a plain label. The last two are on the todo too. Affects: operations, team, safety and compliance.
 - Consider showing on-the-hour times as "9 AM" on the booking page, so VoiceOver says "nine A M": Phase 8 UAT check 2 found VoiceOver in Chrome reads "9:00" as "nine zero zero" whatever the space character, with Read numbers as set to Words ([08-UAT.md](phases/08-schedule-and-booking/08-UAT.md) G-08-2, closed with no code change). It is a wording change touching the time format, label-in-name (WCAG 2.5.3, since the visible time and the spoken name must match) and the `{time}` in the confirmation and reminder texts, so Ian decides it here. Affects: customer communication, operations, safety and compliance.
+- Inputs from Phase 9 UAT test 1 for the owner-screen VoiceOver walk (success criterion 6), both found on the contact screen and older than Phase 9, recorded and not fixed (Ian, 2026-11-18, [09-UAT.md](phases/09-owner-intelligence/09-UAT.md)): VoiceOver in Chrome reads the contact's Phone value as one whole number ("thirteen billion..."), the raw-phone finding from Phase 7 UAT seen again; and it announces "empty term" before every label and value pair on the contact screen. Affects: safety and compliance, customer communication, sales, team, operations.
 
 ### Phase 12: Tour Deploy
 
@@ -435,6 +436,7 @@ Plans:
 **Planning notes** (settle these in discuss-phase):
 - Hosting (Laravel Cloud or Forge) is chosen in this phase (PROJECT.md, Open decisions).
 - Which other before-first-deploy items a tour needs: T-01-36, T-01-37, WR-08, WR-10 to WR-15, recovery from disaster (backups, error tracking and a rollback plan, which took in the earlier error-tracking and backup items) (STATE.md, Blockers/Concerns). Also which provider keys the instance carries, since live front-desk runs need one.
+  - Beside error tracking: cap or group the nightly rebuild's missing-folder reports, so a missing business folder cannot send about 50 error reports a night (the rebuild is retried every minute from 00:10 to before 01:00 and Laravel reports each failed run) (Ian, 2026-11-17, 09-REVIEW IN-05). Affects: safety and compliance, operations.
 - How a visitor tries the front desk on staging (`/dev/chat` is local-only today), and whether the text a visitor types is kept.
   - Dev chat shows the stored copy of each text, so a booking link sent through the front desk shows `/book/[link]` and cannot be clicked. That is D-12 working. A visitor needs a way to open the link that was sent, settled without storing working links (Phase 8 UAT check 4). Affects: customer communication, connectors and data, safety and compliance.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
@@ -453,7 +455,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 6. Front Desk and Team Rooms | 7/7 | Complete    | 2026-10-28 |
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
-| 9. Owner Intelligence | 2/6 | In Progress | - |
+| 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
 | 10. Walk Tests and the Gate | 0/TBD | Not started | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |

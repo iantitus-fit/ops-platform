@@ -1,6 +1,6 @@
 # Map: the text front desk
 
-Fence: the nouns a cold reader must understand before changing how an inbound text becomes a reply or a draft. Checked 2026-10-18 @ 1324f24. The source wins over any card.
+Fence: the nouns a cold reader must understand before changing how an inbound text becomes a reply or a draft. Checked 2026-11-20 @ 57cfcfa (source inspection after Phases 3 to 9). The source wins over any card.
 
 ## By task
 - Change when a reply sends or becomes a draft (checks, thresholds, Jev), how a draft is approved, replaced or closed as answered, or how price or offer sentences are put into a text (the pick itself is step 13 of the process card): open `objects/messages/message-and-verdict.md`. Not `rules/sending.md`, which only feeds the rule.
@@ -8,6 +8,7 @@ Fence: the nouns a cold reader must understand before changing how an inbound te
 - Stop texting someone, or change STOP and START handling: `objects/contacts/contact-opt-out.md`. Not the conversation's pause.
 - Change which model answers, what files it loads, or add a channel: `objects/folder/agent-file-and-version.md`. Not the verdict.
 - Change what the agent asks or remembers about a customer: `objects/intake/intake-answer.md`. Not the service file alone.
+- Change the booking link or visit line code adds to a reply, or the sender's checks on them: `objects/messages/message-and-verdict.md`; the step is 16 of the process card. The booking page, appointments and the schedule are outside this map.
 - Follow a text from webhook to reply, or reorder the steps: `processes/answer-inbound.md`.
 
 ## Nouns
@@ -17,8 +18,8 @@ Fence: the nouns a cold reader must understand before changing how an inbound te
 - Intake answer · live, two columns half-wired (parked) · one answer to one intake question · `objects/intake/intake-answer.md`
 - Contact opt-out · live · `contacts.sms_opted_out_at`, blocks every text · `objects/contacts/contact-opt-out.md`
 - Answer an inbound text (process) · live · record, claim, agent, send rule, send or draft · `processes/answer-inbound.md`
-- Contact (stub) · live · the customer record · `app/Models/Contact.php:24`
-- Owner alert (stub) · live · one text to the owner, about a conversation or about the whole business (`RaiseOwnerAlert::forBusiness()`, the safety_check_down alerts); card comes with the Owner Loop's map (backlog 999.5) · `app/Actions/RaiseOwnerAlert.php:39`, `:91`
+- Contact (stub) · live · the customer record · `app/Models/Contact.php:32`
+- Owner alert (stub) · live · one text to the owner, about a conversation or about the whole business (`RaiseOwnerAlert::forBusiness()`, the safety_check_down alerts); the `owner_alerts` table belongs to the team room (`app/Rooms/Team/TeamServiceProvider.php:15`); card comes with the Owner Loop's map (backlog 999.5) · `app/Actions/RaiseOwnerAlert.php:44`, `app/Actions/RaiseOwnerAlert.php:100`
 - Customer card (stub) · live · markdown rendered from the database for the agent; `records/` on disk is for the owner's AI, never loaded by the agent · `app/Records/CustomerCard.php`
 - Timeline entry (stub) · live · `activities` rows, written by every step · `app/Models/Activity.php`
 

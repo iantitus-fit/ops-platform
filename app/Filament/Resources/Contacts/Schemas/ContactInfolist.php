@@ -6,12 +6,15 @@ use App\Enums\ActivityType;
 use App\Icm\ActiveConfig;
 use App\Models\Activity;
 use App\Models\Contact;
+use App\Rooms\OwnerIntelligence\DurationText;
+use App\Rooms\OwnerIntelligence\TimeToBooked;
 use App\Rooms\RoomRegistry;
 use Carbon\CarbonImmutable;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Throwable;
 
 class ContactInfolist
 {
@@ -49,6 +52,10 @@ class ContactInfolist
                         TextEntry::make('next_appointment')
                             ->label('Next appointment')
                             ->state(fn (Contact $record): ?string => self::nextAppointmentLine($record, $timezone))
+                            ->visible(fn (?string $state): bool => filled($state)),
+                        TextEntry::make('time_to_booked')
+                            ->label('Time to booked')
+                            ->state(fn (Contact $record): ?string => self::timeToBookedLine($record))
                             ->visible(fn (?string $state): bool => filled($state)),
                         TextEntry::make('automatic_texts')
                             ->label('Automatic texts')
@@ -113,6 +120,29 @@ class ContactInfolist
             : $appointment->project->label(app(ActiveConfig::class)->projectWord(), (int) $appointment->project->number);
 
         return implode(', ', array_filter([$when, $appointment->service_name, $job]));
+    }
+
+    /**
+     * The contact's own time to booked in the business's words, such as "42 minutes" (D-05). Null, so the entry is left
+     * out, when the contact has no number (D-03), when the owner intelligence room is off (D-08), and when the number
+     * cannot be worked out: that last case is reported to the log and never breaks the screen (UI-SPEC, Ian 2026-11-14).
+     * TimeToBooked is resolved from the container so a test can swap it.
+     */
+    private static function timeToBookedLine(Contact $contact): ?string
+    {
+        try {
+            if (! app(ActiveConfig::class)->hasRoom('owner_intelligence')) {
+                return null;
+            }
+
+            $seconds = app(TimeToBooked::class)->forContact($contact->id);
+
+            return $seconds === null ? null : DurationText::format($seconds);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
     }
 
     /**

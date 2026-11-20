@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 46
+open_count: 44
 waived_count: 1
-fixed_count: 35
-total_count: 82
-last_updated: 2026-11-16T20:08:39.613Z
+fixed_count: 43
+total_count: 88
+last_updated: 2026-11-18T20:55:02.852Z
 ---
 
 # Broken Windows Ledger
@@ -94,9 +94,15 @@ last_updated: 2026-11-16T20:08:39.613Z
 | 77 | 08 | unrun-verify | tests/Feature/Booking/BookingSendOnceTest.php |  | 08-19: after Ian pushes the phase branch, the CI pgsql leg is green for BookingSendOnceTest (the meta->booking_send_id JSON read and the DB::beforeExecuting match on Postgres SQL) | fixed | Settled by CI run #65 at 6b762eb: sqlite and pgsql legs green for the whole suite (08-UAT.md check 10) | 2026-11-08T18:28:01.346Z | 2026-11-12T20:54:47.097Z |
 | 78 | 08 | unrun-verify | resources/views/livewire/booking-page.blade.php |  | 08-22: Phase 8 UAT, with the keyboard-only and VoiceOver walk of entries 55 and 61: after too many taps the page reads Please wait a moment, Tab reaches Try again, pressing it inside the minute keeps the notice, and after the minute the times come back with focus on their heading; CI's browser legs run BookingPageBrowserTest after Ian pushes | fixed | Settled in 08-UAT.md: checks 1 and 2 (keyboard-only walk at desktop and 375 px including Try again, and the VoiceOver walk) | 2026-11-08T21:49:34.898Z | 2026-11-12T20:54:47.227Z |
 | 79 | 08 | unrun-verify | app/Ai/FrontDeskPrompt.php |  | 08-26: Phase 8 UAT re-walk in Dev chat after php artisan icm:sync, so the live version carries visit_line, on fresh numbers: (1) D-05: after the last intake answer the offer comes back labeled scheduling with the owner's link line, and its own words neither ask the customer to pick a time nor say the owner will confirm (G-08-4b); (2) D-39 as amended: on a contact with a visit booked ahead, What time are you coming? sends on its own labeled scheduling with parts model_words and visit_line, the model's words give no day or time, and the owner gets one change_request alert (G-08-4); (3) the link-again case: Can you send the link again? gives a fresh link line or a held draft, never /book/[link] to the customer, and the words do not repeat the link line; (4) a held reply on a booked contact shows The visit line will be added with its box, and Send adds the line after the words (08-25) | fixed | Settled in 08-UAT.md check 8 (Dev chat re-walk, 2026-11-12): the code path and visit line held live; the remaining holds are a known limitation Ian routed to Phase 10 | 2026-11-11T21:23:19.850Z | 2026-11-12T20:54:47.363Z |
-| 80 | 09 | unrun-verify | tests/Feature/FrontDesk/GateExportTest.php |  | 09-01: after Ian pushes the phase branch, confirm the CI pgsql leg is green for GateExportTest (whereIn on kind, JSON meta reads); not run locally | open |  | 2026-11-16T19:57:48.961Z |  |
-| 81 | 09 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 09-01: 5 browser tests fail on this machine (target size 21px under 48px, footer hover border rgb(0,0,0)); no 09-01 file touches them; confirm they pass on CI before ship | open |  | 2026-11-16T19:57:49.065Z |  |
-| 82 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TimeToBookedTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TimeToBookedTest (the grouped sub-select with a having bound and the timestamp comparison, Assumption A9). Not run locally (09-02). | open |  | 2026-11-16T20:08:39.613Z |  |
+| 80 | 09 | unrun-verify | tests/Feature/FrontDesk/GateExportTest.php |  | 09-01: after Ian pushes the phase branch, confirm the CI pgsql leg is green for GateExportTest (whereIn on kind, JSON meta reads); not run locally | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-16T19:57:48.961Z | 2026-11-18T20:55:02.074Z |
+| 81 | 09 | unrun-verify | tests/Feature/Booking/BookingPageBrowserTest.php |  | 09-01: 5 browser tests fail on this machine (target size 21px under 48px, footer hover border rgb(0,0,0)); no 09-01 file touches them; confirm they pass on CI before ship | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-16T19:57:49.065Z | 2026-11-18T20:55:02.186Z |
+| 82 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TimeToBookedTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TimeToBookedTest (the grouped sub-select with a having bound and the timestamp comparison, Assumption A9). Not run locally (09-02). | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-16T20:08:39.613Z | 2026-11-18T20:55:02.298Z |
+| 83 | 09 | unrun-verify | app/Filament/Resources/Contacts/Schemas/ContactInfolist.php |  | 09-03 UAT (D-29, 09-UI-SPEC.md): a keyboard-only walk and a VoiceOver walk of the contact screen's Time to booked line and the dashboard's Owner intelligence section (label read with its value, the section read under its heading, focus order on the contact screen unchanged), and a phone-width check of both lines for sideways scroll. Never a pause. | fixed | Phase 9 UAT test 1 passed (Ian, 2026-11-18, 09-UAT.md) | 2026-11-16T23:24:50.182Z | 2026-11-18T20:55:02.852Z |
+| 84 | 09 | unrun-verify | tests/Feature/Rooms/OwnerIntelligenceBootTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03). | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-16T23:24:50.355Z | 2026-11-18T20:55:02.404Z |
+| 85 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/TodayRecordTest.php |  | Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TodayRecordTest and TimeToBookedFileTest (day-bound timestamp comparisons). Not run locally (09-04). | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T00:26:12.221Z | 2026-11-18T20:55:02.512Z |
+| 86 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/RedrawTest.php |  | 09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5) | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T02:23:04.737Z | 2026-11-18T20:55:02.625Z |
+| 87 | 09 | unrun-verify | routes/console.php |  | CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check) | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T16:28:12.514Z | 2026-11-18T20:55:02.754Z |
+| 88 | 09 | unrun-verify | routes/console.php |  | At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check) | open |  | 2026-11-17T16:28:12.631Z |  |
 
 ````json
 [
@@ -1134,10 +1140,10 @@ last_updated: 2026-11-16T20:08:39.613Z
     "file": "tests/Feature/FrontDesk/GateExportTest.php",
     "line": null,
     "description": "09-01: after Ian pushes the phase branch, confirm the CI pgsql leg is green for GateExportTest (whereIn on kind, JSON meta reads); not run locally",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
     "recorded_at": "2026-11-16T19:57:48.961Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-18T20:55:02.074Z",
     "milestone": "v2.0"
   },
   {
@@ -1147,10 +1153,10 @@ last_updated: 2026-11-16T20:08:39.613Z
     "file": "tests/Feature/Booking/BookingPageBrowserTest.php",
     "line": null,
     "description": "09-01: 5 browser tests fail on this machine (target size 21px under 48px, footer hover border rgb(0,0,0)); no 09-01 file touches them; confirm they pass on CI before ship",
-    "status": "open",
-    "reason": "",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
     "recorded_at": "2026-11-16T19:57:49.065Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-18T20:55:02.186Z",
     "milestone": "v2.0"
   },
   {
@@ -1160,9 +1166,87 @@ last_updated: 2026-11-16T20:08:39.613Z
     "file": "tests/Feature/OwnerIntelligence/TimeToBookedTest.php",
     "line": null,
     "description": "Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TimeToBookedTest (the grouped sub-select with a having bound and the timestamp comparison, Assumption A9). Not run locally (09-02).",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
+    "recorded_at": "2026-11-16T20:08:39.613Z",
+    "resolved_at": "2026-11-18T20:55:02.298Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 83,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "app/Filament/Resources/Contacts/Schemas/ContactInfolist.php",
+    "line": null,
+    "description": "09-03 UAT (D-29, 09-UI-SPEC.md): a keyboard-only walk and a VoiceOver walk of the contact screen's Time to booked line and the dashboard's Owner intelligence section (label read with its value, the section read under its heading, focus order on the contact screen unchanged), and a phone-width check of both lines for sideways scroll. Never a pause.",
+    "status": "fixed",
+    "reason": "Phase 9 UAT test 1 passed (Ian, 2026-11-18, 09-UAT.md)",
+    "recorded_at": "2026-11-16T23:24:50.182Z",
+    "resolved_at": "2026-11-18T20:55:02.852Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 84,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "tests/Feature/Rooms/OwnerIntelligenceBootTest.php",
+    "line": null,
+    "description": "Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for OwnerIntelligenceBootTest and ContactTimeToBookedTest. Not run locally (09-03).",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
+    "recorded_at": "2026-11-16T23:24:50.355Z",
+    "resolved_at": "2026-11-18T20:55:02.404Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 85,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "tests/Feature/OwnerIntelligence/TodayRecordTest.php",
+    "line": null,
+    "description": "Postgres: after Ian pushes the phase branch, the CI pgsql leg is green for TodayRecordTest and TimeToBookedFileTest (day-bound timestamp comparisons). Not run locally (09-04).",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
+    "recorded_at": "2026-11-17T00:26:12.221Z",
+    "resolved_at": "2026-11-18T20:55:02.512Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 86,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "tests/Feature/OwnerIntelligence/RedrawTest.php",
+    "line": null,
+    "description": "09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5)",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
+    "recorded_at": "2026-11-17T02:23:04.737Z",
+    "resolved_at": "2026-11-18T20:55:02.625Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 87,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "routes/console.php",
+    "line": null,
+    "description": "CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check)",
+    "status": "fixed",
+    "reason": "CI run 44374318071 at 0df383a, both legs green",
+    "recorded_at": "2026-11-17T16:28:12.514Z",
+    "resolved_at": "2026-11-18T20:55:02.754Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 88,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "routes/console.php",
+    "line": null,
+    "description": "At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check)",
     "status": "open",
     "reason": "",
-    "recorded_at": "2026-11-16T20:08:39.613Z",
+    "recorded_at": "2026-11-17T16:28:12.631Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

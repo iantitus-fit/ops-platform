@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Model Home
-current_phase: 09
-current_phase_name: Owner Intelligence
-status: executing
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-11-16T20:11:55.683Z"
-last_activity: 2026-11-16
-last_activity_desc: Phase 09 execution started
-state_head: 1f394599b3000b4986a585419169408825e96afe
+current_phase: 10
+current_phase_name: Walk Tests and the Gate
+status: planning
+stopped_at: Phase 09 complete, ready to plan Phase 10
+last_updated: "2026-11-19T00:44:10.231Z"
+last_activity: 2026-11-18
+last_activity_desc: Phase 09 complete, transitioned to Phase 10
+state_head: d9daf6247670fde65f6c5c250f5465da7479ea7c
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 66
-  completed_plans: 62
-  percent: 56
+  completed_plans: 66
+  percent: 67
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-12)
+See: .planning/PROJECT.md (updated 2026-11-18)
 
 **Core value:** Finish the customer conversation fast: minutes from first contact to a booked appointment, with the business running from a folder the owner controls and no change going live untested.
-**Current focus:** Phase 09 — Owner Intelligence
+**Current focus:** Phase 10 — Walk Tests and the Gate
 
 ## Current Position
 
-Phase: 09 (Owner Intelligence) — EXECUTING
-Plan: 3 of 6
-Status: Ready to execute
-Last activity: 2026-11-16 — Phase 09 execution started
+Phase: 10 — Walk Tests and the Gate
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-18 — Phase 09 complete, transitioned to Phase 10
 
-Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
+Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 136
+- Total plans completed: 142
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -55,6 +55,7 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | 06 | 7 | - | - |
 | 07 | 9 | - | - |
 | 08 | 26 | - | - |
+| 09 | 6 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -203,6 +204,10 @@ Progress: [██████░░░░] 56% (5 of 9 v2.0 phases complete)
 | Phase 08 P26 | 12 min | 2 tasks | 6 files |
 | Phase 09 P01 | 15 min | 3 tasks | 6 files |
 | Phase 09 P02 | 24 min | 3 tasks | 6 files |
+| Phase 09 P03 | 12 min | 3 tasks | 11 files |
+| Phase 09 P04 | 11 min | 3 tasks | 10 files |
+| Phase 09 P05 | 14 min | 3 tasks | 13 files |
+| Phase 09 P06 | 16 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -321,6 +326,13 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-01: the visit-line left-off reason is one sentence, 'the line changed after it was shown', for a moved visit, another visit and edited visit_line words (D-26, 08 IN-13)
 - [Phase 09]: 09-02: TimeToBooked mirrors RecordInbound::keywordIn() in a PHP walk (SMS only, opted-out flag per contact, YES a keyword only while opted out); keywords are never matched in SQL (D-01)
 - [Phase 09]: 09-02: a first message in the same second as the first booking gives no number (A4); the median is not rounded before DurationText formats it, so under a minute reads 'booked in under a minute' (A3)
+- [Phase 09]: 09-03: owner intelligence room section sets no sort and draws between money and schedule_and_booking; exampleFolderFileCount is 29; customer card untouched (D-05)
+- [Phase 09]: 09-04: today.md covers the business-zone day with all three visit states plus booked blocks, as bullets with a block note quoted under the card's label; the title carries the date so a stale file never reads as today
+- [Phase 09]: 09-04: writeOwnerIntelligence() under the records:owner-intelligence lock writes or deletes today.md and time-to-booked.md by whether the room is live; the router and the records:rebuild sentence name them only while it is live; the tracked example router is the room-on text
+- [Phase 09]: 09-05: ScheduleChanged carries no payload and is held until commit, so the unique RedrawOwnerIntelligenceRecords job always reads the newest state; the sync redraw fires only between two live versions
+- [Phase 09]: 09-06: nightly records:rebuild is scheduled by the platform every minute with a when() filter reading the business zone lazily through ActiveConfig, passing only at 00:10; independent of the owner intelligence room (D-09, D-10, D-11)
+- [Phase 09, Ian 2026-11-17]: TDD gate override for 09-01: its GREEN commits are typed fix(09-01) because the plan fixed existing behavior (02 WR-09, 08 IN-13); the gate counts only feat(...) as GREEN. Test-first order holds for all three tasks (3e69fc5→7c35359, 9ebfb8f→ca63b61, 3844d36→0d61e5a); no history rewritten. Code review (09-REVIEW.md: 0 critical, 3 warnings, 3 info, all open in 09-REVIEW-DISPOSITION.md) is triaged after verification
+- [Phase 09, close 2026-11-18]: review triaged by Ian, 12 findings, 0 open (9 fixed, IN-03 and IN-08 accepted with no change, IN-05 deferred to Phase 12's planning notes). UAT test 1 (keyboard and VoiceOver walk, phone width) passed; UAT test 2 (cron turns today.md over after 00:10) deferred by Ian to the Phase 12 first deploy, WINDOWS.md row 88 left open. Verification passed 4/4; CI green on both legs, run 44374318071 at 0df383a.
 
 ### Pending Todos
 
@@ -336,7 +348,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 2]: Before a real client goes live, every provider an agent file names needs a no-retained-copy (ZDR) route (D-37); the LLM fallback classifier on a ZDR route is in backlog 999.5 (Owner Loop).
 - [Phase 02.1]: Before a real client goes live, an attorney reviews the client agreement's safety and liability terms (Ian, 2026-10-14), and the text provider's own log of every sent text: Twilio keeps each body, booking links included, and the platform cannot hide it there (Ian, 2026-11-07; 08-VERIFICATION.md gap D-12).
 - [Phase 02.1]: GSD's `phase uat-passed 02.1` still lists UAT tests 1 and 2 as blocking, because it only credits a `resolved_by` plan inside the phase directory and the fix is quick task 261018-dxy in `.planning/quick/`. `phase.complete` gates only on 02.1-VERIFICATION.md (passed), so it did not refuse; that file explains the gap and points to 261018-dxy, and no files were moved.
-- [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05. ALRT-01 and ALRT-02 done in Phase 6 (2026-10-28); GATE-05 is in Phase 9.
+- [2026-10-19]: With the Owner Loop parked in 999.5, alerts sent exactly once (WR-03, WR-04, WR-22) and the `gate:export` fix (WR-09) need a home in the model home's requirements or the before-first-deploy list (PROJECT.md, "The model home is the next milestone"). Homed 2026-10-21: v2.0 requirements ALRT-01, ALRT-02 and GATE-05. ALRT-01 and ALRT-02 done in Phase 6 (2026-10-28); GATE-05 done in Phase 9 (2026-11-18).
 - [Before first deploy]: Replace the stock Laravel welcome page at "/" (redirect to /admin, or a plain page) before any instance is reachable (Ian, 2026-10-16).
 - [Before first deploy]: Continuous deployment, before the first client, next to the Phase 12 tour deploy: deploys run automatically from the branch, each followed by a smoke check that the site is up and a booking can be made on the example business (Ian, 2026-11-08; BLUEPRINT section 10). Affects: safety and compliance, connectors and data, operations, customer communication.
 - [Before first deploy]: Recovery from disaster, before the first client, next to the Phase 12 tour deploy: backups with one restore actually performed and timed, error tracking that alerts on production exceptions, and a written rollback plan for a bad deploy and a bad migration. The earlier error-tracking and backup items (ROADMAP Phase 12 planning notes, BLUEPRINT's security-layers idea) fold into this one (Ian, 2026-11-08; BLUEPRINT section 10). Affects: all ten areas, led by safety and compliance and connectors and data.
@@ -350,9 +362,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 6, re-verified again 2026-10-28]: those fixes made 06-VERIFICATION.md stale, so execute-phase re-ran the gates. Validation 0 gaps; security 19/19 closed (evidence refreshed for T-6-04, T-6-14, T-6-16, T-6-17); TDD gate 0 violations; full suite 2278 green on SQLite; verification passed (5/5). The third review (06-REVIEW.md, affa8d8) found 3 warnings and 2 info, all open for Ian's triage: WR-01 a mixed text-plus-form burst can get a second note and alert after a crash between the alert and the finished marker (close to the old WR-02, design kept); WR-02 a reporter that dies after claiming is not reported when failed() arrives inside the 2-minute lease (triage before Phase 8, BOOK-05); WR-03 a room can claim a widget another room adds in its sections (no shipped room has sections); IN-01 migration 000006 edited in place (not on main, harmless); IN-02 two tests tied to SQL text. The new review reused ids WR-01 to WR-03 and IN-01 and IN-02, so 06-REVIEW-DISPOSITION.md (90a7304) dropped the first review's decisions under those ids (WR-01 won't fix, WR-02 design kept, WR-03 and IN-01 fixed, IN-02 open); they are in a9f27a2's version of the file. Postgres not re-run after the lease fix; CI on the pushed branch confirms.
 - [Phase 6, carried]: the CI pgsql leg for 06-04 to 06-07 (.planning/WINDOWS.md entries 30 to 33) is confirmed after Ian pushes the phase branch. The verifier's local Postgres 17 run passed the full suite (2267 tests) on 2026-10-28.
 - [Phase 7, carried]: review info findings open for Ian's triage (07-REVIEW-DISPOSITION.md): IN-02, IN-03, IN-06 and IN-08 to IN-11; IN-08 (the focus wait catches every error, not only the timeout) is the one worth fixing before the next browser walk. WINDOWS rows 38 and 44 now belong to Phase 11. BLUEPRINT records three UAT follow-ups: phone numbers shown raw (Phase 11), VoiceOver "clickable" on plain text (Phase 11), and the example triage life_safety question counting a furnace as a plugged-in appliance (reword after Phase 7)
-- [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0.
-- [Phase 8, carried]: increment review triaged by Ian on 2026-11-12 (08-REVIEW-DISPOSITION.md): IN-13 (the visit-changed reason is also given when only the wording or zone changed) deferred to Phase 9 next to IN-06, fix a reason true in every case, "the line changed after it was shown", plus the BLUEPRINT line; IN-14 closed with no change (no folder can be in that state: the example folder is at version 2 with visit_line and every sync requires it); IN-15 fixed (docs/SETUP.md section 13, Upgrading a business folder). IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild).
+- [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0. Reminder timing settled in Phase 8, the BOOK-06 and RECS-02 scope in Phase 9; walk-test determinism is Phase 10's.
+- [Phase 8, carried]: increment review triaged by Ian on 2026-11-12 (08-REVIEW-DISPOSITION.md): IN-13 (the visit-changed reason is also given when only the wording or zone changed) deferred to Phase 9 next to IN-06, fix a reason true in every case, "the line changed after it was shown", plus the BLUEPRINT line; IN-14 closed with no change (no folder can be in that state: the example folder is at version 2 with visit_line and every sync requires it); IN-15 fixed (docs/SETUP.md section 13, Upgrading a business folder). IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild). IN-13 closed in 09-01 and IN-06 in 09-06 (Phase 9).
 - [Phase 8, carried to Phase 10]: the front desk's Booking section wording (BOOKING_ONLINE, BOOKING_VISIT_BOOKED) is measured and settled with the walk tests next to the bar calibration, so a booked customer's time question and a link resend send on their own (ROADMAP Phase 10 planning notes; 08-UAT.md check 8).
+- [Phase 9, carried]: WINDOWS.md row 88 (cron runs `schedule:run` every minute and `records/today.md` names the new day after 00:10 business time) stays open until the Phase 12 first deploy (09-UAT.md test 2). IN-05 (cap or group the missing-folder reports) is in Phase 12's planning notes. Two older contact-screen VoiceOver findings (the Phone value read as one number; "empty term" before each label and value) go to the Phase 11 walk (8c2d19e). Accepted as flagged in 09-04 and 09-05: a contact rename or a time-zone change redraws `today.md` only at the next schedule change or the nightly run.
 
 ### Quick Tasks Completed
 
@@ -389,11 +402,11 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T20:11:55.578Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-11-18
+Stopped at: Phase 09 complete, ready to plan Phase 10
 Resume file: None
 
 ## Operator Next Steps
 
-- Review, push and merge the Phase 8 branch (gsd/phase-08-schedule-and-booking); CI was green on both legs at 6b762eb (run #65); the commits after it are docs only
-- Discuss Phase 9 with /gsd-discuss-phase 9, then plan it with /gsd-plan-phase 9
+- Review, push and merge the Phase 9 branch (gsd/phase-09-owner-intelligence); CI was green on both legs at 0df383a (run 44374318071); the commits after it are docs only
+- Discuss Phase 10 with /gsd-discuss-phase 10, then plan it with /gsd-plan-phase 10
