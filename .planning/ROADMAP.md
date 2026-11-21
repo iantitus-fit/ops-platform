@@ -384,7 +384,38 @@ Plans:
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
 
-**Plans**: TBD
+**Plans**: 11 plans (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
+
+Plans:
+**Wave 1**
+- [ ] 10-02-PLAN.md — Walk files typed, validated in plain words (D-10 time needs a start) and compiled into the candidate (WALK-01, D-09, D-10)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 10-01-PLAN.md — Booking confirmations and reminders leave the reply cap; a cap pause still refuses a reminder; map card in the same commit (D-20, D-21)
+- [ ] 10-03-PLAN.md — The walk's world of its own (scratch SQLite) and the replay seams: recorded replies and Jev's raw scores under today's bars, frozen clock, fail closed (D-01, D-02, D-07, D-27)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 10-04-PLAN.md — The books step, every D-09 check with plain failure words, the script hash and the candidate fingerprint (D-04, D-05, D-09)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 10-05-PLAN.md — The gate in the sync: recordings table, owner and Ian forms, stale, unrecorded and needs-new-recording lines, changelog, agent card re-cited with FolderSync, BLUEPRINT (WALK-02, D-04 to D-06, D-11, D-27)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 10-06-PLAN.md — walks:record with recording decorators, re-record in place, Booking wording variants as data, export to fixtures (D-03, D-06, D-18)
+- [ ] 10-11-PLAN.md — The walk lines on the Business Folder page and in the notification (escaped, no command, stale shown as a pass), Ian's form and stale notes on the console, SPEC and the example guides (WALK-02, D-04, D-05, D-11; split from 10-05)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 10-07-PLAN.md — Dana end to end as a feature test and a walk test from one file; walk files stripped from test copies (WALK-03, D-08, T1)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 10-08-PLAN.md — The rest of the example walk set with placeholder fixtures, weekday-proof and judged by today's bars in CI (D-12, D-19)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 10-09-PLAN.md — The calibration set and walks:report: both sides per movable bar, D-13's stop, the Booking wording block; walks:record --calibration (D-13 to D-19)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 10-10-PLAN.md — Browser test for the walk lines (desktop and 375 px, contrast exempt for Phase 11), Ian's step in docs/SETUP.md, the STATE.md closing condition checked (recorded at plan time), map sentences, D-22 to D-26 verified (WALK-01, WALK-02, D-17)
+
 **UI hint**: yes
 
 **Planning notes** (settle these in discuss-phase):

@@ -4,16 +4,16 @@ milestone: v2.0
 milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
-status: planning
+status: executing
 stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-21T17:27:41.297Z"
+last_updated: "2026-11-21T23:49:15.565Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09 complete, transitioned to Phase 10
-state_head: 6faa903469182cc7f4076cd947a256d4c3a80bcf
+state_head: 16894f5f0e1f0045ce404013b4201eeb09fa5006
 progress:
   total_phases: 9
   completed_phases: 6
-  total_plans: 66
+  total_plans: 77
   completed_plans: 66
   percent: 67
 ---
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 
 ## Current Position
 
-Phase: 10 — Walk Tests and the Gate
+Phase: 10 (Walk Tests and the Gate) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-11-18 — Phase 09 complete, transitioned to Phase 10
 
 Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
@@ -365,6 +365,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 3]: Walk-test determinism, reminder timing and the BOOK-06 and RECS-02 scope are undefined in the SPEC. Now Phases 10, 8 and 9 of v2.0. Reminder timing settled in Phase 8, the BOOK-06 and RECS-02 scope in Phase 9; walk-test determinism is Phase 10's.
 - [Phase 8, carried]: increment review triaged by Ian on 2026-11-12 (08-REVIEW-DISPOSITION.md): IN-13 (the visit-changed reason is also given when only the wording or zone changed) deferred to Phase 9 next to IN-06, fix a reason true in every case, "the line changed after it was shown", plus the BLUEPRINT line; IN-14 closed with no change (no folder can be in that state: the example folder is at version 2 with visit_line and every sync requires it); IN-15 fixed (docs/SETUP.md section 13, Upgrading a business folder). IN-07 to IN-09 stay open; IN-06 deferred to Phase 9 (the nightly rebuild). IN-13 closed in 09-01 and IN-06 in 09-06 (Phase 9).
 - [Phase 8, carried to Phase 10]: the front desk's Booking section wording (BOOKING_ONLINE, BOOKING_VISIT_BOOKED) is measured and settled with the walk tests next to the bar calibration, so a booked customer's time question and a link resend send on their own (ROADMAP Phase 10 planning notes; 08-UAT.md check 8).
+- [Phase 10, close condition (Ian, 2026-11-21)]: Phase 10 cannot close until the follow-up approved-values plan is executed. That plan is not planned yet: it is planned only after Ian's live recording (`walks:record`, run by Ian, never by an executor) and his one decision on the bars (or a `rules/triage.md` reword where D-13's stop applies) together with the winning Booking wording, approved against one recording (10-CONTEXT.md D-17). The executed build plans 10-01 to 10-11 do not close the phase on their own.
 - [Phase 9, carried]: WINDOWS.md row 88 (cron runs `schedule:run` every minute and `records/today.md` names the new day after 00:10 business time) stays open until the Phase 12 first deploy (09-UAT.md test 2). IN-05 (cap or group the missing-folder reports) is in Phase 12's planning notes. Two older contact-screen VoiceOver findings (the Phone value read as one number; "empty term" before each label and value) go to the Phase 11 walk (8c2d19e). Accepted as flagged in 09-04 and 09-05: a contact rename or a time-zone change redraws `today.md` only at the next schedule change or the nightly run.
 
 ### Quick Tasks Completed
