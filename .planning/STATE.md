@@ -5,11 +5,11 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: planning
-stopped_at: Phase 10 context gathered
-last_updated: "2026-11-21T00:55:14.584Z"
+stopped_at: Phase 10 UI-SPEC approved
+last_updated: "2026-11-21T17:27:41.297Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09 complete, transitioned to Phase 10
-state_head: 62481ab24d9a43b8e63dbbd42054846f03f163c1
+state_head: 6faa903469182cc7f4076cd947a256d4c3a80bcf
 progress:
   total_phases: 9
   completed_phases: 6
@@ -402,9 +402,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-21T00:55:14.406Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-walk-tests-and-the-gate/10-CONTEXT.md
+Last session: 2026-11-21T17:27:41.133Z
+Stopped at: Phase 10 UI-SPEC approved
+Resume file: .planning/phases/10-walk-tests-and-the-gate/10-UI-SPEC.md
 
 ## Operator Next Steps
 

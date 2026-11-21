@@ -52,6 +52,8 @@ Ian's phone walk in Phase 02.1 UAT test 1 (2026-10-17): the screens work but the
 - The Schedule table scrolls sideways at a normal laptop window width, with the What column squeezed (`app/Filament/Pages/Schedule.php`).
 - The automatic-texts timeline badges show the raw type value (`automatic_texts_turned_on`, as 08 D-46 specifies), while other entries show a plain label (`app/Enums/ActivityType.php`).
 
+**Not a look item (2026-11-21):** the inline `#dc2626` on refusal, warning and error lines fails WCAG 2.2 AA contrast in dark mode; a Phase 11 must-fix, recorded in `.planning/ROADMAP.md`, Phase 11 planning notes.
+
 ## Solution
 
 Ian's layout call in the design pass.
