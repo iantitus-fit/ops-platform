@@ -474,6 +474,7 @@ Plans:
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
 - Deploy notes carry in from PROJECT.md: restart the worker after any `.env` or key change.
 - Before the first sync on any new instance, run `walks:record` for each business, or every walk refuses as unrecorded ([Phase 10 context](phases/10-walk-tests-and-the-gate/10-CONTEXT.md) D-05, D-06, D-26). Affects: knowledge, operations, safety and compliance.
+- Check as a first-deploy step that the deployed host has the `pdo_sqlite` PHP extension. Each walk runs in an in-memory SQLite database ([10-03 plan](phases/10-walk-tests-and-the-gate/10-03-PLAN.md) A3); without it every walk refuses with "stopped with an error" and no client's change can go live. Affects: operations, safety and compliance.
 - The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list, continuous deployment with its smoke check, recovery from disaster and performance budgets in CI (Ian, 2026-11-08). DEPL-01 is unchanged.
 
 ## Progress
