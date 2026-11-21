@@ -27,7 +27,7 @@ Fence: the nouns a cold reader must understand before changing how an inbound te
 - `agent_conversations`, `agent_conversation_messages` · leftover · the SDK's memory tables, no referrer · shadows the conversation and message cards
 - "approval log" · ghost · a comment at `config/gate.php:41`; the real things are `gate:export` and the stored verdict
 - `escalate_to` · half-wired, admitted-but-unrouted, parked for the Owner Loop (backlog 999.5) · agent file card
-- `intake_answers.icm_version_id` (parked for Phase 3), `.message_id` (parked, D-33) · writer-only · intake card
+- `intake_answers.icm_version_id` (parked on BLUEPRINT's before-first-client list, 10 D-23; Phase 3 shipped as Phase 8 without reading it), `.message_id` (parked, D-33) · writer-only · intake card
 - Deviations: `VERIFICATION.md`, a work list for Ian
 
 ## Collisions (Ian's rulings, 2026-10-12)
@@ -36,7 +36,7 @@ Fence: the nouns a cold reader must understand before changing how an inbound te
 - **Gate / gate**: Laravel's authorization facade, versus our stored `gate*` names. Prose says "verdict" and "send rule" (`app/SendRule/`, D-48).
 - **send rule / sending rules**: the code, versus the owner's file `rules/sending.md`.
 - **draft**: status `draft` only; `withdrawn` is a draft that never went out.
-- **handled / claimed / dispatched**: `dispatched_at` queued once; `handled_at` claimed into a run; "handled" for a draft the owner ended.
+- **handled / claimed / dispatched**: `dispatched_at` queued once; `handled_at` claimed into a run, with `claim_token` naming that run, written by the same update (`ClaimInboundBurst.php:43`, Phase 6); "handled" for a draft the owner ended.
 - **label / kind**: what the agent called its reply, versus what the system sent it as.
 - **paused / opted out**: per conversation, automated texts only, versus per contact, every text.
 - **version**: an `icm_versions` row, versus `gate.version` in a verdict.

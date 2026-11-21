@@ -224,7 +224,7 @@ Every file has exactly one owner: a room or the house (D-11). This is the map; t
 | `rules/sending.md` | front desk | team (reads `owner_alert`) |
 | `rules/replies.md` | front desk | team (reads `owner_name`) |
 | `rules/triage.md` | front desk | |
-| `agents/*.md` | the room the agent serves (`agents/front-desk.md`: front desk) | team (reads `escalate_to` in `agents/front-desk.md`) |
+| `agents/*.md` | the room the agent serves (`agents/front-desk.md`: front desk) | team (meant to read `escalate_to` in `agents/front-desk.md`; nothing reads it yet, parked with the Owner Loop, backlog 999.5) |
 | `connectors/*.md` | the room whose slot the file fills (the text channel's: front desk; Google Business Profile's: its room) | |
 | `rooms/*/CONTEXT.md` | the room whose folder it is | |
 | `rooms/content_generation/brief.md` | content generation | |

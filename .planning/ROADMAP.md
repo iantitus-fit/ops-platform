@@ -441,6 +441,7 @@ Plans:
   - Dev chat shows the stored copy of each text, so a booking link sent through the front desk shows `/book/[link]` and cannot be clicked. That is D-12 working. A visitor needs a way to open the link that was sent, settled without storing working links (Phase 8 UAT check 4). Affects: customer communication, connectors and data, safety and compliance.
 - What "/" shows instead of the stock page: a redirect to `/admin` or a plain page (Ian, 2026-10-16).
 - Deploy notes carry in from PROJECT.md: restart the worker after any `.env` or key change.
+- Before the first sync on any new instance, run `walks:record` for each business, or every walk refuses as unrecorded ([Phase 10 context](phases/10-walk-tests-and-the-gate/10-CONTEXT.md) D-05, D-06, D-26). Affects: knowledge, operations, safety and compliance.
 - The real-client items stay on the before-first-client list: ZDR routes, consent wording, A2P and Twilio go-live, the attorney list, continuous deployment with its smoke check, recovery from disaster and performance budgets in CI (Ian, 2026-11-08). DEPL-01 is unchanged.
 
 ## Progress

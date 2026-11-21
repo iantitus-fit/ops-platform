@@ -5,11 +5,11 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: planning
-stopped_at: Phase 09 complete, ready to plan Phase 10
-last_updated: "2026-11-19T00:44:10.231Z"
+stopped_at: Phase 10 context gathered
+last_updated: "2026-11-21T00:55:14.584Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09 complete, transitioned to Phase 10
-state_head: d9daf6247670fde65f6c5c250f5465da7479ea7c
+state_head: 62481ab24d9a43b8e63dbbd42054846f03f163c1
 progress:
   total_phases: 9
   completed_phases: 6
@@ -402,9 +402,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18
-Stopped at: Phase 09 complete, ready to plan Phase 10
-Resume file: None
+Last session: 2026-11-21T00:55:14.406Z
+Stopped at: Phase 10 context gathered
+Resume file: .planning/phases/10-walk-tests-and-the-gate/10-CONTEXT.md
 
 ## Operator Next Steps
 
