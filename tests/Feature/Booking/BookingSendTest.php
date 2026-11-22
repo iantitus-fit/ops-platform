@@ -163,6 +163,27 @@ it('notes and skips a refusal', function (string $case, string $sentence) {
     'paused' => ['paused', 'Reminder text not sent: the conversation is paused.'],
 ]);
 
+it('still refuses a reminder in a conversation the reply cap paused (D-21)', function () {
+    [$contact, $conversation, , $reminder] = bookingSendSetUp();
+
+    Conversation::query()->whereKey($conversation->id)->update([
+        'paused_at' => now()->utc(),
+        'paused_reason' => PausedReason::ReplyCap->value,
+    ]);
+
+    bookingSendSweep();
+
+    $row = $reminder->fresh();
+
+    expect(textsSentToCustomers())->toBeEmpty()
+        ->and($row->skipped_at)->not->toBeNull()
+        ->and($row->sent_at)->toBeNull()
+        ->and($row->failed_at)->toBeNull()
+        ->and(bookingSendNotes())->toBe(['Reminder text not sent: the conversation is paused.'])
+        ->and(OwnerAlert::query()->count())->toBe(0)
+        ->and(Conversation::query()->where('contact_id', $contact->id)->count())->toBe(1);
+});
+
 it('waits while a customer text is unread, then sends (D-26)', function () {
     [, $conversation, , $reminder] = bookingSendSetUp();
     Message::factory()->for($conversation)->create();
