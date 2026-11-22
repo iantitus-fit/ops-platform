@@ -36,7 +36,7 @@
     {
       "number": "10",
       "name": "Walk Tests and the Gate",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "11",
@@ -54,5 +54,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 10 of 9 · 67% · executing"
   },
-  "updated_at": "2026-11-22T16:59:13.361Z"
+  "updated_at": "2026-11-22T18:45:37.799Z"
 }

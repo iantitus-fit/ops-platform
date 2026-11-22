@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 44
+open_count: 45
 waived_count: 1
 fixed_count: 43
-total_count: 88
-last_updated: 2026-11-18T20:55:02.852Z
+total_count: 89
+last_updated: 2026-11-22T18:37:08.132Z
 ---
 
 # Broken Windows Ledger
@@ -103,6 +103,7 @@ last_updated: 2026-11-18T20:55:02.852Z
 | 86 | 09 | unrun-verify | tests/Feature/OwnerIntelligence/RedrawTest.php |  | 09-05: after Ian pushes the phase branch, the CI pgsql leg is green for RedrawTest and the Booking folder (after-commit dispatch inside the booking lock, research Pitfall 5) | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T02:23:04.737Z | 2026-11-18T20:55:02.625Z |
 | 87 | 09 | unrun-verify | routes/console.php |  | CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check) | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T16:28:12.514Z | 2026-11-18T20:55:02.754Z |
 | 88 | 09 | unrun-verify | routes/console.php |  | At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check) | open |  | 2026-11-17T16:28:12.631Z |  |
+| 89 | 10 | unrun-verify | tests/Feature/FrontDesk/ReplyCapTest.php |  | Plan 10-01 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for ReplyCapTest: orWhereNotIn with enum bindings on Postgres) not run by the executor; left for after the push | open |  | 2026-11-22T18:37:08.132Z |  |
 
 ````json
 [
@@ -1247,6 +1248,19 @@ last_updated: 2026-11-18T20:55:02.852Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-17T16:28:12.631Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 89,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "tests/Feature/FrontDesk/ReplyCapTest.php",
+    "line": null,
+    "description": "Plan 10-01 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for ReplyCapTest: orWhereNotIn with enum bindings on Postgres) not run by the executor; left for after the push",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-22T18:37:08.132Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }

@@ -384,14 +384,14 @@ Plans:
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
 
-**Plans**: 1/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
+**Plans**: 2/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
 
 Plans:
 **Wave 1**
 - [x] 10-02-PLAN.md — Walk files typed, validated in plain words (D-10 time needs a start) and compiled into the candidate (WALK-01, D-09, D-10)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 10-01-PLAN.md — Booking confirmations and reminders leave the reply cap; a cap pause still refuses a reminder; map card in the same commit (D-20, D-21)
+- [x] 10-01-PLAN.md — Booking confirmations and reminders leave the reply cap; a cap pause still refuses a reminder; map card in the same commit (D-20, D-21)
 - [ ] 10-03-PLAN.md — The walk's world of its own (scratch SQLite) and the replay seams: recorded replies and Jev's raw scores under today's bars, frozen clock, fail closed (D-01, D-02, D-07, D-27)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -490,7 +490,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
 | 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
-| 10. Walk Tests and the Gate | 1/11 | In Progress | - |
+| 10. Walk Tests and the Gate | 2/11 | In Progress | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
 

@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-11-22T16:59:21.086Z"
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-11-22T18:45:38.833Z"
 last_activity: 2026-11-22
 last_activity_desc: Phase 10 execution started
-state_head: 536f9c12799241a41fca597e3f6c03632ae79020
+state_head: 42507b7d44d2a44f76793a1e980bb150addaecaf
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 67
+  completed_plans: 68
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-11-22 — Phase 10 execution started
 
@@ -209,6 +209,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 09 P05 | 14 min | 3 tasks | 13 files |
 | Phase 09 P06 | 16 min | 2 tasks | 5 files |
 | Phase 10 P02 | 30 min | 2 tasks | 16 files |
+| Phase 10 P01 | 12 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -335,6 +336,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09, Ian 2026-11-17]: TDD gate override for 09-01: its GREEN commits are typed fix(09-01) because the plan fixed existing behavior (02 WR-09, 08 IN-13); the gate counts only feat(...) as GREEN. Test-first order holds for all three tasks (3e69fc5→7c35359, 9ebfb8f→ca63b61, 3844d36→0d61e5a); no history rewritten. Code review (09-REVIEW.md: 0 critical, 3 warnings, 3 info, all open in 09-REVIEW-DISPOSITION.md) is triaged after verification
 - [Phase 09, close 2026-11-18]: review triaged by Ian, 12 findings, 0 open (9 fixed, IN-03 and IN-08 accepted with no change, IN-05 deferred to Phase 12's planning notes). UAT test 1 (keyboard and VoiceOver walk, phone width) passed; UAT test 2 (cron turns today.md over after 00:10) deferred by Ian to the Phase 12 first deploy, WINDOWS.md row 88 left open. Verification passed 4/4; CI green on both legs, run 44374318071 at 0df383a.
 - [Phase 10]: 10-02: WalkFileChecks::errors takes array|Collection because the Validator holds a Collection; D-10 is checked before the must-be-one-of rule and only for phrases off the list, so a slug like sat-repair is never read as a day
+- [Phase 10]: 10-01: the reply cap's left-out kinds (safety line, booking text) live in MessageKind::notCountedByReplyCap(), so RunFrontDesk names neither and BookingTextKindTest keeps its three-file list
 
 ### Pending Todos
 
@@ -405,8 +407,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-22T16:59:20.985Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-11-22T18:45:38.728Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
