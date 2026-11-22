@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 45
+open_count: 47
 waived_count: 1
 fixed_count: 43
-total_count: 89
-last_updated: 2026-11-22T18:37:08.132Z
+total_count: 91
+last_updated: 2026-11-22T19:00:18.977Z
 ---
 
 # Broken Windows Ledger
@@ -104,6 +104,8 @@ last_updated: 2026-11-22T18:37:08.132Z
 | 87 | 09 | unrun-verify | routes/console.php |  | CI pgsql leg green for the whole suite after Ian pushes the phase branch (09-06 human-check) | fixed | CI run 44374318071 at 0df383a, both legs green | 2026-11-17T16:28:12.514Z | 2026-11-18T20:55:02.754Z |
 | 88 | 09 | unrun-verify | routes/console.php |  | At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check) | open |  | 2026-11-17T16:28:12.631Z |  |
 | 89 | 10 | unrun-verify | tests/Feature/FrontDesk/ReplyCapTest.php |  | Plan 10-01 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for ReplyCapTest: orWhereNotIn with enum bindings on Postgres) not run by the executor; left for after the push | open |  | 2026-11-22T18:37:08.132Z |  |
+| 90 | 10 | unrun-verify | tests/Feature/Walks/ScratchWorldTest.php |  | Plan 10-03 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for tests/Feature/Walks: the live connection is Postgres, the walk's is in-memory SQLite, so the default-connection swap is exercised across two engines) not run by the executor; left for after the push | open |  | 2026-11-22T18:59:58.481Z |  |
+| 91 | 10 | stub | app/Icm/Walks/WalkRunner.php | 68 | WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended) | open |  | 2026-11-22T19:00:18.977Z |  |
 
 ````json
 [
@@ -1261,6 +1263,32 @@ last_updated: 2026-11-22T18:37:08.132Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-22T18:37:08.132Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 90,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "tests/Feature/Walks/ScratchWorldTest.php",
+    "line": null,
+    "description": "Plan 10-03 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for tests/Feature/Walks: the live connection is Postgres, the walk's is in-memory SQLite, so the default-connection swap is exercised across two engines) not run by the executor; left for after the push",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-22T18:59:58.481Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 91,
+    "kind": "stub",
+    "phase": "10",
+    "file": "app/Icm/Walks/WalkRunner.php",
+    "line": 68,
+    "description": "WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-22T19:00:18.977Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
