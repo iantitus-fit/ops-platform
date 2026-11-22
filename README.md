@@ -26,6 +26,20 @@ If you'd rather point an AI assistant at it, `CLAUDE.md` at the root and `map/CL
 
 I'm Ian Titus and I build with Claude Code. Each phase starts with a written discussion where I make the calls, then a plan, then test-first work in small commits that get checked before I push them. It's slower than letting an agent run on its own. What I get for that is a repo where every decision sits next to the reason for it.
 
+## What I'd clean up before production
+
+This isn't finished, and a few things here wouldn't pass my own review for a system with paying clients on it.
+
+Two files are too big. `app/Actions/RunFrontDesk.php` is about 1,960 lines and `app/Icm/Validator.php` about 1,580. They grew a phase at a time and the tests pin down what they do, so splitting them is a safe refactor that I've left until the current phase is merged.
+
+There are no authorization policies. Each business gets its own instance with one owner, so every signed-in user is that owner (`User::canAccessPanel()` says so). The day a second person with a different job logs in, that needs roles and policies, and I'd add them before any client had staff on it.
+
+The business folder and the "rooms" sit on top of Laravel's conventions. That was a choice: I wanted an owner, or the owner's own AI, to change how the business runs by editing plain files, with the platform checking each change before it goes live. `docs/SPEC.md` has the reasoning. Underneath it's ordinary Laravel: jobs, Filament resources, Livewire and factories.
+
+`.planning/` is large. That's the cost of how I work. I direct and review this code and Claude Code writes it, so the written decisions and the tests are how I keep control of what gets built. A team of engineers reviewing each other's work would need less of it.
+
+`docs/BLUEPRINT.md` lists the rest under "before the first client goes live": deployment with a smoke check, a restore I've actually performed, error tracking and some missing database indexes.
+
 ## Stack and running it
 
 Laravel 13, Filament 5, Livewire 4, laravel/ai and Pest, on PostgreSQL or SQLite. `docs/SETUP.md` covers a first run on a Mac. With the app running, `/dev/chat` lets you text the front desk as a customer without a phone.
