@@ -77,7 +77,7 @@ it('refuses a claim of a file the claiming room does not handle, naming the room
 dataset('files that are not a room\'s to claim', [
     'a router' => ['CLAUDE.md', null, null, 'rooms/pretend/CONTEXT.md: CLAUDE.md belongs to the house (routers and walk tests); pretend can read it'],
     'a router in the folder root' => ['START-HERE.md', null, null, 'rooms/pretend/CONTEXT.md: START-HERE.md belongs to the house (routers and walk tests); pretend can read it'],
-    'a walk test' => ['tests/walk.md', 'tests/walk.md', "---\ntype: walk_test\n---\nA walk through the front desk.", 'rooms/pretend/CONTEXT.md: tests/walk.md belongs to the house (routers and walk tests); pretend can read it'],
+    'a walk test' => ['tests/walk.md', 'tests/walk.md', minimalWalkFile(), 'rooms/pretend/CONTEXT.md: tests/walk.md belongs to the house (routers and walk tests); pretend can read it'],
     'a connector file' => ['connectors/feed.md', 'connectors/feed.md', "---\ntype: connector\nslot: pretend_feed\nowns: []\nreads: []\n---\nThe feed.", 'rooms/pretend/CONTEXT.md: connectors/feed.md is a connector file; a room owns its connector through its slot, so leave it out of owns'],
 ]);
 

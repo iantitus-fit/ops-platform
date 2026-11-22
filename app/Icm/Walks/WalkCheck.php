@@ -57,4 +57,31 @@ readonly class WalkCheck
 
         return array_values(array_map(fn (WalkCheckKind $kind) => $kind->phrase(), $kinds));
     }
+
+    /**
+     * The first day, date or clock time a piece of text names, as written, or null when it names none. A day is a
+     * weekday spelled out or in three letters ("Friday", "fri"), a date is year-month-day, and a clock time is "3pm",
+     * "3 pm", "3:30pm" or "15:00". A walk that names one needs a start to anchor it (D-10).
+     */
+    public static function namedTime(string $text): ?string
+    {
+        $patterns = [
+            '/\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/i',
+            '/\b\d{4}-\d{2}-\d{2}\b/',
+            '/\b\d{1,2}(?::\d{2})?\s?(?:am|pm)\b/i',
+            '/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/',
+        ];
+
+        $found = null;
+        $foundAt = PHP_INT_MAX;
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === 1 && $matches[0][1] < $foundAt) {
+                $found = $matches[0][0];
+                $foundAt = $matches[0][1];
+            }
+        }
+
+        return $found;
+    }
 }

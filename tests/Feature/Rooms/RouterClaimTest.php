@@ -53,7 +53,7 @@ it('still refuses a router the contract names exactly', function () {
 it('still refuses a walk test a pattern matches', function () {
     enablePretendRoom();
     layPretendRoomFolder('rooms/pretend/CONTEXT.md', 'rooms/pretend/notes/first-note.md');
-    writeIcmFile('tests/walk.md', "---\ntype: walk_test\n---\nA walk through the front desk.");
+    writeIcmFile('tests/walk.md', minimalWalkFile());
     writeIcmFile('rooms/pretend/CONTEXT.md', routerClaimContract('[rooms/pretend/notes/*.md, tests/*.md]'));
 
     expect(routerClaimRefusal())->toBe(['rooms/pretend/CONTEXT.md: tests/walk.md belongs to the house (routers and walk tests); pretend can read it']);
