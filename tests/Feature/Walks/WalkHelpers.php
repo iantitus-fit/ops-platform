@@ -1,0 +1,158 @@
+<?php
+
+use App\Ai\AgentReply;
+use App\Icm\Loader;
+use App\Icm\Walks\WalkFile;
+use App\Icm\Walks\WalkTape;
+use App\Models\Activity;
+use App\Models\Appointment;
+use App\Models\BookingLink;
+use App\Models\BookingSend;
+use App\Models\Contact;
+use App\Models\Conversation;
+use App\Models\Message;
+use App\Models\OwnerAlert;
+use App\SendRule\ClassifierResult;
+use App\SendRule\TriageQuestions;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
+/*
+| Helpers the walk tests share. Each walk test file loads this file itself with require_once, so any one of them runs
+| alone (the BookingPageHelpers precedent). Nothing here syncs a folder, so a later gate plan does not change these tests.
+*/
+
+/**
+ * A walk file's contents turned into the value the runner plays. The walk is written alone into a fresh temporary
+ * folder and read with the Loader, the way the sync would read it, then the folder is deleted.
+ */
+function walkFileFrom(string $contents, string $path = 'tests/walk.md'): WalkFile
+{
+    $folder = sys_get_temp_dir().'/walk-file-'.Str::uuid();
+
+    File::ensureDirectoryExists($folder.'/'.dirname($path));
+    File::put($folder.'/'.$path, $contents);
+
+    try {
+        $loaded = collect(app(Loader::class)->load($folder)->files)->firstWhere('path', $path);
+    } finally {
+        File::deleteDirectory($folder);
+    }
+
+    return WalkFile::fromCompiled([...$loaded->frontMatter, 'body' => $loaded->body, 'path' => $loaded->path]);
+}
+
+/**
+ * One front desk model reply as the tape stores it: AgentReply's own toArray() shape, with the same harmless defaults
+ * scriptFrontDeskReplies() uses for any field a test leaves out.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function walkReply(array $overrides = []): array
+{
+    return AgentReply::fromStructured([
+        'reply' => 'Thanks for texting. What can we help with?',
+        'label' => 'faq_answer',
+        'wants_person' => false,
+        'service_slug' => null,
+        'intake_answers' => [],
+        'customer_name' => null,
+        'price_services' => [],
+        'asks_discount' => false,
+        'touches_waiting' => null,
+        'waiting_note' => null,
+        'easy_reply' => null,
+        'easy_label' => null,
+        'possible_danger' => false,
+        ...$overrides,
+    ])->toArray();
+}
+
+/**
+ * The example business's triage questions, read once from its rules/triage.md the way the sync reads it.
+ */
+function walkTriageQuestions(): TriageQuestions
+{
+    static $questions = null;
+
+    if ($questions === null) {
+        $loaded = collect(app(Loader::class)->load(base_path('examples/example-hvac'))->files)->firstWhere('path', 'rules/triage.md');
+        $questions = TriageQuestions::fromConfig($loaded->frontMatter);
+    }
+
+    return $questions;
+}
+
+/**
+ * Jev's raw scores for one call as the tape stores them: ClassifierResult::toArray() over the example triage's intents
+ * and its six yes or no questions, every question at 0.01 unless overridden. These are scores, never a verdict.
+ *
+ * @param  array<string, float>  $yesNo
+ * @return array{model: string, intent: string, intent_confidence: float, intent_probabilities: array<string, float>, yes_no: array<string, float>}
+ */
+function walkScores(string $intent = 'intake', float $confidence = 0.97, array $yesNo = []): array
+{
+    $questions = walkTriageQuestions();
+    $others = array_diff(array_map('strval', array_keys($questions->intents)), [$intent]);
+    $share = $others === [] ? 0.0 : (1 - $confidence) / count($others);
+    $probabilities = [$intent => $confidence];
+
+    foreach ($others as $other) {
+        $probabilities[$other] = $share;
+    }
+
+    return (new ClassifierResult(
+        model: 'recorded-jev',
+        intent: $intent,
+        intentConfidence: $confidence,
+        intentProbabilities: $probabilities,
+        yesNo: array_merge(array_map(fn () => 0.01, $questions->yesNo), $yesNo),
+    ))->toArray();
+}
+
+/**
+ * A tape from the turns a test lists, keyed by the customer turn's number in the walk's script (counting from 1).
+ * Each turn is ['agent' => list of walkReply() arrays, 'readings' => list of walkScores() arrays for the reading of the
+ * customer's text, 'words' => list of walkScores() arrays for the checks of the model's words]. A scores array is
+ * wrapped the way the recording does it; an entry that already has a 'result' key is kept as it is.
+ *
+ * @param  array<int, array{agent?: list<array<string, mixed>>, readings?: list<array<string, mixed>>, words?: list<array<string, mixed>>}>  $turns
+ */
+function walkTape(array $turns): WalkTape
+{
+    $payload = ['version' => 1, 'turns' => []];
+
+    foreach ($turns as $turn => $entries) {
+        $payload['turns'][(string) $turn] = [
+            'agent' => array_values($entries['agent'] ?? []),
+            'readings' => array_map(
+                fn (array $entry): array => isset($entry['result']) ? $entry : ['customer_message' => '', 'result' => $entry],
+                array_values($entries['readings'] ?? []),
+            ),
+            'words' => array_map(
+                fn (array $entry): array => isset($entry['result']) ? $entry : ['customer_message' => '', 'draft_reply' => '', 'result' => $entry],
+                array_values($entries['words'] ?? []),
+            ),
+        ];
+    }
+
+    return WalkTape::fromPayload($payload);
+}
+
+/**
+ * How many rows the live connection holds in each table a walk might touch. A walk that never reads or writes a live
+ * row leaves every count as it was.
+ *
+ * @return array<string, int>
+ */
+function liveRowCounts(): array
+{
+    $counts = [];
+
+    foreach ([Message::class, Contact::class, Conversation::class, OwnerAlert::class, Activity::class, Appointment::class, BookingLink::class, BookingSend::class] as $model) {
+        $counts[$model] = $model::query()->count();
+    }
+
+    return $counts;
+}
