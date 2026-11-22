@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * A world of its own for one walk: an empty database, an empty records folder, a fake text carrier and a clock that only
@@ -66,7 +67,8 @@ class ScratchWorld
     private function __construct() {}
 
     /**
-     * Open a world holding the candidate as its one live version.
+     * Open a world holding the candidate as its one live version. If opening fails part way, whatever was already swapped
+     * is put back before the failure is rethrown, so a half-opened world never leaks into the app.
      *
      * @param  array<string, mixed>  $compiled  The candidate's compiled copy, as IcmVersion::compiled holds it.
      * @param  bool  $allowHttp  Leave HTTP open, for the one caller that must reach a real model (recording). Every replay leaves it shut.
@@ -75,20 +77,27 @@ class ScratchWorld
     {
         $world = new self;
 
-        $world->restoreClockLater();
-        $world->swapDatabase();
-        $world->swapRecordsFolder();
-        $world->swapTextChannel();
-        $world->swapQueueAndCache();
+        try {
+            $world->restoreClockLater();
+            $world->swapDatabase();
+            $world->swapRecordsFolder();
+            $world->swapTextChannel();
+            $world->swapQueueAndCache();
 
-        if (! $allowHttp) {
-            $world->shutHttp();
+            if (! $allowHttp) {
+                $world->shutHttp();
+            }
+
+            $world->restores[] = fn () => app()->forgetInstance(ActiveConfig::class);
+            app()->forgetInstance(ActiveConfig::class);
+
+            $world->seed($compiled);
+        } catch (Throwable $exception) {
+            // Each swap noted its own restore the moment it was made, so closing puts back exactly what was swapped.
+            $world->close();
+
+            throw $exception;
         }
-
-        $world->restores[] = fn () => app()->forgetInstance(ActiveConfig::class);
-        app()->forgetInstance(ActiveConfig::class);
-
-        $world->seed($compiled);
 
         return $world;
     }
