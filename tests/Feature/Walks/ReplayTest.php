@@ -44,7 +44,7 @@ it('replays one customer turn in a world of its own (D-01)', function () {
         $inside = [
             'versions' => IcmVersion::query()->where('status', VersionStatus::Active->value)->count(),
             'allVersions' => IcmVersion::query()->count(),
-            'contacts' => Contact::query()->where('phone', WalkRunner::PERSONA_PHONE)->count(),
+            'contacts' => Contact::query()->where('phone_e164', WalkRunner::PERSONA_PHONE)->count(),
             'allContacts' => Contact::query()->count(),
             'sentStatuses' => $sent->pluck('status')->all(),
             'sentBody' => (string) $sent->first()?->body,
