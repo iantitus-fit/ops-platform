@@ -166,3 +166,40 @@ it('does not count texts older than 24 hours, drafts, failed sends or the safety
     expect(replyCapTextsToDana())->toHaveCount(1)
         ->and($conversation->fresh()->isPaused())->toBeFalse();
 });
+
+it('does not count booking confirmations or reminders in the hour (D-20)', function () {
+    $conversation = replyCapDanaTexts();
+    replyCapAgentTextsSent($conversation, [5, 10, 15, 20, 25, 30, 35], MessageKind::BookingText);
+    scriptFrontDeskReplies(['reply' => 'Yes, he is on the way.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(replyCapTextsToDana())->toHaveCount(1)
+        ->and(replyCapTextsToDana()[0]['body'])->toContain('Yes, he is on the way.')
+        ->and($conversation->fresh()->isPaused())->toBeFalse()
+        ->and(OwnerAlert::query()->where('reason', AlertReason::ReplyCap)->exists())->toBeFalse();
+});
+
+it('does not count booking texts in the day (D-20)', function () {
+    $conversation = replyCapDanaTexts();
+    replyCapAgentTextsSent($conversation, array_map(fn (int $i): int => 90 + $i * 60, range(0, 19)), MessageKind::BookingText);
+    scriptFrontDeskReplies(['reply' => 'Yes, he is on the way.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    expect(replyCapTextsToDana())->toHaveCount(1)
+        ->and(replyCapTextsToDana()[0]['body'])->toContain('Yes, he is on the way.')
+        ->and($conversation->fresh()->isPaused())->toBeFalse()
+        ->and(OwnerAlert::query()->where('reason', AlertReason::ReplyCap)->exists())->toBeFalse();
+});
+
+it('still counts holding replies beside booking texts (D-20)', function () {
+    $conversation = replyCapDanaTexts();
+    replyCapAgentTextsSent($conversation, [4, 8, 12], MessageKind::BookingText);
+    replyCapAgentTextsSent($conversation, [5, 10, 20, 30, 40, 55], MessageKind::HoldingReply);
+    scriptFrontDeskReplies(['reply' => 'Yes, he is on the way.', 'label' => 'faq_answer']);
+
+    runQueuedFrontDeskJobs();
+
+    replyCapAssertStopped($conversation, 9);
+});
