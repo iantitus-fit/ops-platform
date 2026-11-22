@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-21T23:49:15.565Z"
-last_activity: 2026-11-18
-last_activity_desc: Phase 09 complete, transitioned to Phase 10
-state_head: 16894f5f0e1f0045ce404013b4201eeb09fa5006
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-11-22T16:59:21.086Z"
+last_activity: 2026-11-22
+last_activity_desc: Phase 10 execution started
+state_head: 536f9c12799241a41fca597e3f6c03632ae79020
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 66
+  completed_plans: 67
   percent: 67
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 
 ## Current Position
 
-Phase: 10 (Walk Tests and the Gate) — READY TO EXECUTE
-Plan: Not started
+Phase: 10 (Walk Tests and the Gate) — EXECUTING
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-11-18 — Phase 09 complete, transitioned to Phase 10
+Last activity: 2026-11-22 — Phase 10 execution started
 
 Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 
@@ -208,6 +208,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 09 P04 | 11 min | 3 tasks | 10 files |
 | Phase 09 P05 | 14 min | 3 tasks | 13 files |
 | Phase 09 P06 | 16 min | 2 tasks | 5 files |
+| Phase 10 P02 | 30 min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -333,6 +334,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 09]: 09-06: nightly records:rebuild is scheduled by the platform every minute with a when() filter reading the business zone lazily through ActiveConfig, passing only at 00:10; independent of the owner intelligence room (D-09, D-10, D-11)
 - [Phase 09, Ian 2026-11-17]: TDD gate override for 09-01: its GREEN commits are typed fix(09-01) because the plan fixed existing behavior (02 WR-09, 08 IN-13); the gate counts only feat(...) as GREEN. Test-first order holds for all three tasks (3e69fc5→7c35359, 9ebfb8f→ca63b61, 3844d36→0d61e5a); no history rewritten. Code review (09-REVIEW.md: 0 critical, 3 warnings, 3 info, all open in 09-REVIEW-DISPOSITION.md) is triaged after verification
 - [Phase 09, close 2026-11-18]: review triaged by Ian, 12 findings, 0 open (9 fixed, IN-03 and IN-08 accepted with no change, IN-05 deferred to Phase 12's planning notes). UAT test 1 (keyboard and VoiceOver walk, phone width) passed; UAT test 2 (cron turns today.md over after 00:10) deferred by Ian to the Phase 12 first deploy, WINDOWS.md row 88 left open. Verification passed 4/4; CI green on both legs, run 44374318071 at 0df383a.
+- [Phase 10]: 10-02: WalkFileChecks::errors takes array|Collection because the Validator holds a Collection; D-10 is checked before the must-be-one-of rule and only for phrases off the list, so a slug like sat-repair is never read as a day
 
 ### Pending Todos
 
@@ -403,9 +405,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-21T17:27:41.133Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-walk-tests-and-the-gate/10-UI-SPEC.md
+Last session: 2026-11-22T16:59:20.985Z
+Stopped at: Completed 10-02-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
