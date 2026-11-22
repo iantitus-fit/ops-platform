@@ -629,3 +629,24 @@ JS);
         'violations' => $report['violations'] ?? [],
     ];
 }
+
+/**
+ * The smallest valid walk file: one customer text and one check. It is a plain string built with no part of the app, so
+ * a dataset can call it while the test file loads, and a test can write it to tests/ in the temporary folder and
+ * change one line to break it.
+ */
+function minimalWalkFile(): string
+{
+    return <<<'MD'
+---
+type: walk_test
+name: A short walk
+persona: A customer who texts once
+channel: sms
+script:
+  - says: "Hi, is anyone there?"
+    expect: [sent on its own]
+---
+A walk through the front desk.
+MD;
+}
