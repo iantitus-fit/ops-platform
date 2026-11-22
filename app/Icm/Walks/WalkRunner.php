@@ -10,7 +10,9 @@ use App\Ai\ReplayFrontDeskAgent;
 use App\Ai\RunFrontDeskAgent;
 use App\Enums\MessageChannel;
 use App\Icm\ActiveConfig;
+use App\Icm\BusinessClock;
 use App\Jobs\ProcessInbound;
+use App\Records\RecordsWriter;
 use App\SendRule\Classifier;
 use App\SendRule\ReplayClassifier;
 use Carbon\CarbonImmutable;
@@ -54,15 +56,16 @@ class WalkRunner
             $world->bind(RunFrontDeskAgent::class, fn (Application $app): RunFrontDeskAgent => new ReplayFrontDeskAgent($app->make(FrontDeskPrompt::class), $tape));
             $world->instance(DispatchInbound::class, $capture);
 
-            $world->freezeAt($this->startOf($walk, $began));
+            $world->freezeAt(app(WalkClock::class)->startFor($walk, app(BusinessClock::class), app(ActiveConfig::class)->timezone(), $began));
 
             $outcome = WalkOutcome::Passed;
 
             foreach ($walk->steps as $step) {
                 match ($step->kind) {
                     WalkStepKind::Says => $this->customerSays($step, $tape, $capture),
-                    // A wait and a booking are played in later work (waits in this plan's clock task, bookings in 10-04).
-                    WalkStepKind::Wait, WalkStepKind::Books => null,
+                    WalkStepKind::Wait => $this->timePasses($step, $world),
+                    // A booking is played by plan 10-04.
+                    WalkStepKind::Books => null,
                 };
 
                 if ($tape->exhausted() !== null) {
@@ -83,15 +86,19 @@ class WalkRunner
     }
 
     /**
-     * The moment the walk starts: its named start in the business's zone, or the moment the run began.
+     * Time passes: the frozen clock moves by the wait and by nothing else. When the wait carries the walk into a new
+     * business-zone day, today.md is redrawn once, as the nightly run would redraw it (10 D-07).
      */
-    private function startOf(WalkFile $walk, CarbonImmutable $began): CarbonImmutable
+    private function timePasses(WalkStep $step, ScratchWorld $world): void
     {
-        if ($walk->start === null) {
-            return $began;
-        }
+        $zone = app(ActiveConfig::class)->timezone();
+        $dayBefore = $world->now()->setTimezone($zone)->toDateString();
 
-        return CarbonImmutable::createFromFormat('Y-m-d H:i', $walk->start, app(ActiveConfig::class)->timezone());
+        $world->advance((int) $step->waitMinutes);
+
+        if ($world->now()->setTimezone($zone)->toDateString() !== $dayBefore) {
+            app(RecordsWriter::class)->writeOwnerIntelligence();
+        }
     }
 
     /**
