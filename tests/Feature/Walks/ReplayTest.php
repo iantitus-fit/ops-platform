@@ -1,15 +1,25 @@
 <?php
 
+use App\Ai\AgentFile;
+use App\Ai\FrontDeskPrompt;
+use App\Ai\FrontDeskUnavailable;
+use App\Ai\ReplayFrontDeskAgent;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\VersionStatus;
+use App\Icm\ActiveConfig;
 use App\Icm\Walks\ScratchWorld;
+use App\Icm\Walks\WalkFile;
 use App\Icm\Walks\WalkOutcome;
 use App\Icm\Walks\WalkRunner;
+use App\Icm\Walks\WalkTape;
 use App\Models\Contact;
+use App\Models\Conversation;
 use App\Models\IcmVersion;
 use App\Models\Message;
 use App\SendRule\Classifier;
+use App\SendRule\ClassifierFailed;
 use App\SendRule\ReplayClassifier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
@@ -102,4 +112,127 @@ it('replays raw scores, never verdicts (D-02)', function () {
     $result = (new ReplayClassifier($tape))->classify('My AC stopped', '', walkTriageQuestions());
 
     expect($result->toArray())->toBe($stored);
+});
+
+/**
+ * A walk that names a Tuesday morning start, so every case runs while the shop is open, with the customer texting once
+ * for each text given.
+ *
+ * @param  list<string>  $texts
+ */
+function replayWalk(array $texts): WalkFile
+{
+    $items = implode("\n", array_map(fn (string $text): string => "  - says: \"{$text}\"", $texts));
+
+    return walkFileFrom("---\ntype: walk_test\nname: A recorded walk\npersona: A customer who texts\nchannel: sms\nstart: \"2026-12-01 10:00\"\nscript:\n{$items}\nexpect: [sent on its own]\n---\nA recorded walk.\n");
+}
+
+/**
+ * One recorded turn that asks an intake question, with Jev's scores for the reading and the words check.
+ *
+ * @param  array<string, float>  $yesNo
+ * @return array{agent: list<array<string, mixed>>, readings: list<array<string, mixed>>, words: list<array<string, mixed>>}
+ */
+function replayTurn(string $words = 'Thanks for texting. What is the AC doing?', array $yesNo = []): array
+{
+    return [
+        'agent' => [walkReply(['reply' => $words, 'label' => 'intake_question', 'service_slug' => 'ac-repair'])],
+        'readings' => [walkScores('intake', 0.97, $yesNo)],
+        'words' => [walkScores('intake', 0.97, $yesNo)],
+    ];
+}
+
+it('applies the current bars to recorded scores (D-02)', function () {
+    $compiled = activateExampleFolder()->compiled;
+    $payload = walkTape([1 => replayTurn(yesNo: ['complaint' => 0.10])])->toPayload();
+    $sentAgentReplies = [];
+
+    foreach (['shipped bars' => 0.15, 'tightened bar' => 0.05] as $label => $bar) {
+        config(['gate.classifier.complaint_max_yes' => $bar]);
+
+        app(WalkRunner::class)->replay(replayWalk(['My AC stopped working']), $compiled, WalkTape::fromPayload($payload), function () use (&$sentAgentReplies, $label): void {
+            $sentAgentReplies[$label] = Message::query()->where('kind', MessageKind::AgentReply)->where('status', MessageStatus::Sent)->count();
+        });
+    }
+
+    expect($sentAgentReplies)->toBe(['shipped bars' => 1, 'tightened bar' => 0]);
+});
+
+it('refuses as needing a new recording when a model reply is missing (D-27)', function () {
+    $compiled = activateExampleFolder()->compiled;
+    $tape = walkTape([
+        1 => replayTurn('Thanks for texting. What is the AC doing?'),
+        2 => ['readings' => [walkScores()], 'words' => [walkScores()]],
+    ]);
+    $inside = [];
+
+    $result = app(WalkRunner::class)->replay(replayWalk(['My AC stopped working', 'It is blowing warm air']), $compiled, $tape, function () use (&$inside): void {
+        $inside = Message::query()->where('direction', MessageDirection::Out)->pluck('body')->all();
+    });
+
+    expect($result->outcome)->toBe(WalkOutcome::NeedsRecording)
+        ->and($result->exhausted)->toBe(['turn' => 2, 'needed' => 'model reply'])
+        ->and(collect($inside)->filter(fn (string $body) => str_contains($body, 'What is the AC doing?')))->toHaveCount(1);
+});
+
+it('refuses as needing a new recording when a Jev reading is missing (D-27)', function () {
+    $compiled = activateExampleFolder()->compiled;
+    $tape = walkTape([
+        1 => ['agent' => [walkReply(['reply' => 'Words recorded for turn one.', 'label' => 'intake_question'])]],
+        2 => replayTurn('Words recorded for turn two.'),
+    ]);
+    $inside = [];
+    $agentRepliesSent = null;
+
+    $result = app(WalkRunner::class)->replay(replayWalk(['My AC stopped working', 'It is blowing warm air']), $compiled, $tape, function () use (&$inside, &$agentRepliesSent): void {
+        $inside = Message::query()->where('direction', MessageDirection::Out)->pluck('body')->all();
+        $agentRepliesSent = Message::query()->where('kind', MessageKind::AgentReply)->where('status', MessageStatus::Sent)->count();
+    });
+
+    expect($result->outcome)->toBe(WalkOutcome::NeedsRecording)
+        ->and($result->exhausted)->toBe(['turn' => 1, 'needed' => 'Jev reading'])
+        ->and(collect($inside)->filter(fn (string $body) => str_contains($body, 'turn two')))->toHaveCount(0)
+        ->and($agentRepliesSent)->toBe(0);
+});
+
+it('refuses to guess a model reply the tape does not hold, and never reuses another turn (D-27)', function () {
+    activateExampleFolder();
+    $tape = walkTape([1 => ['agent' => [walkReply(['reply' => 'Words recorded for turn one.'])]]]);
+    $model = new ReplayFrontDeskAgent(app(FrontDeskPrompt::class), $tape);
+    $agent = AgentFile::forChannel(app(ActiveConfig::class), 'sms');
+    $ask = fn () => $model->handle($agent, new Conversation, collect());
+    $refusal = 'the recording holds no model reply for this turn';
+
+    $tape->startTurn(1);
+    $first = $ask();
+
+    expect($first->reply->reply)->toBe('Words recorded for turn one.')
+        ->and($first->provider)->toBe('recorded')
+        ->and($ask)->toThrow(FrontDeskUnavailable::class, $refusal)
+        ->and($tape->exhausted())->toBe(['turn' => 1, 'needed' => 'model reply']);
+
+    $tape->startTurn(2);
+
+    expect($ask)->toThrow(FrontDeskUnavailable::class, $refusal);
+});
+
+it('refuses to guess a Jev reading the tape does not hold, and never reuses another turn (D-27)', function () {
+    $tape = walkTape([1 => ['readings' => [walkScores('faq', 0.9)], 'words' => [walkScores('intake', 0.97)]]]);
+    $jev = new ReplayClassifier($tape);
+    $questions = walkTriageQuestions();
+    $reading = fn () => $jev->classify('Hi', '', $questions);
+    $wordsCheck = fn () => $jev->classify('Hi', 'Hello there', $questions);
+    $refusal = 'the recording holds no Jev reading for this turn';
+
+    $tape->startTurn(1);
+
+    expect($reading()->intent)->toBe('faq')
+        ->and($wordsCheck()->intent)->toBe('intake')
+        ->and($reading)->toThrow(ClassifierFailed::class, $refusal)
+        ->and($tape->exhausted())->toBe(['turn' => 1, 'needed' => 'Jev reading']);
+
+    $tape->startTurn(2);
+
+    expect($reading)->toThrow(ClassifierFailed::class, $refusal)
+        ->and($wordsCheck)->toThrow(ClassifierFailed::class, $refusal);
 });
