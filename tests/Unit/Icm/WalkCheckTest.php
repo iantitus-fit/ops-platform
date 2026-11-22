@@ -60,3 +60,25 @@ it('lists the phrases an owner may write after a booking, a wait or at the end',
 
     expect($list)->toBe(['owner alerted', 'booked', 'reminder queued', 'card updated', 'records updated']);
 });
+
+it('finds a day, a date or a clock time named in a phrase', function (string $phrase, string $found) {
+    expect(WalkCheck::namedTime($phrase))->toBe($found);
+})->with([
+    'a clock time' => ['booked by 3pm', '3pm'],
+    'a clock time with a space' => ['booked at 3 pm', '3 pm'],
+    'a clock time with minutes' => ['booked at 3:30pm', '3:30pm'],
+    'a 24-hour time' => ['booked at 15:00', '15:00'],
+    'a weekday' => ['booked on Friday', 'Friday'],
+    'a short weekday' => ['booked on fri', 'fri'],
+    'a date' => ['booked on 2026-12-02', '2026-12-02'],
+    'the first one when there are two' => ['booked monday at 3pm', 'monday'],
+]);
+
+it('finds no time in a phrase from the list', function (string $phrase) {
+    expect(WalkCheck::namedTime($phrase))->toBeNull();
+})->with([
+    'sent on its own',
+    'booked',
+    'the earliest time offered',
+    'sunshine and satisfied customers',
+]);
