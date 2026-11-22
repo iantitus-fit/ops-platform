@@ -21,14 +21,14 @@ class Loader
      *
      * @var list<string>
      */
-    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer', 'room', 'connector'];
+    public const TYPED = ['business', 'hours', 'lead_sources', 'knowledge', 'service', 'voice', 'sending_rules', 'agent', 'set_replies', 'triage', 'offer', 'room', 'connector', 'walk_test'];
 
     /**
      * Front matter types that arrive in a later sprint. They are skipped with a notice.
      *
      * @var list<string>
      */
-    private const LATER_SPRINT = ['automation', 'walk_test'];
+    private const LATER_SPRINT = ['automation'];
 
     /**
      * Files that only point at other files. They are kept as raw text and never validated.
