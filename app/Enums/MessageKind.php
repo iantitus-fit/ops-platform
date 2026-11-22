@@ -66,4 +66,16 @@ enum MessageKind: string
             self::CodeAnswer,
         ];
     }
+
+    /**
+     * The kinds the reply cap leaves out. The cap counts texts that answer a customer text (02 D-52 as amended by 10
+     * D-20). The safety line never counts, so it can neither use up the cap nor be stopped; booking confirmations and
+     * reminders do not, because a booking or the clock starts them and they cannot ping-pong with a customer.
+     *
+     * @return list<self>
+     */
+    public static function notCountedByReplyCap(): array
+    {
+        return [self::LifeSafety, self::BookingText];
+    }
 }
