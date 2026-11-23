@@ -389,15 +389,19 @@ it('lists walk lines in path order on every sync (edge: ordering, adjacency)', f
 });
 
 it('reads the live version after a refusal (Pitfall 6)', function () {
+    IcmVersion::factory()->count(2)->create();
     $live = activateExampleFolder();
 
     expect(app(ActiveConfig::class)->version()->id)->toBe($live->id);
 
-    layWalk('tests/price.md', gatePriceWalkText());
+    seedRecording(layWalk('tests/b-held.md', gateHeldWalkText()), walkTape([1 => ['agent' => [walkReply()], 'readings' => [walkScores()], 'words' => [walkScores()]]]));
 
-    app(FolderSync::class)->run();
+    $result = app(FolderSync::class)->run();
 
-    expect(app(ActiveConfig::class)->version()->id)->toBe($live->id)
+    expect($result->outcome)->toBe(SyncOutcome::Rejected)
+        ->and($result->errors)->toBe(["tests/b-held.md, turn 1: the reply was sent on its own, not held for the owner. {$live->label()} stays live."])
+        ->and(app(ActiveConfig::class)->version()->id)->toBe($live->id)
+        ->and(app(ActiveConfig::class)->version()->fingerprint)->toBe($live->fingerprint)
         ->and(app(ActiveConfig::class)->filesOfType('walk_test'))->toBe([]);
 });
 
