@@ -151,7 +151,9 @@ readonly class WalkCheck
 
     /**
      * The check holds when the text sent that turn holds one of the service's own price sentences, compared exactly. The
-     * sentences are the candidate's, so a price the folder no longer holds fails whatever words were recorded.
+     * sentences are the candidate's, so a price the folder no longer holds fails whatever words were recorded. The
+     * service's default sentence counts too, because code sends it as the owner's own sentence when no keyed sentence
+     * fits the customer's answers (PriceSentencePicker::pickDefault; Ian's ruling, 2026-11-23).
      *
      * @param  array<string, array<string, mixed>>  $services
      */
@@ -169,6 +171,12 @@ readonly class WalkCheck
             if ($sentence !== '' && str_contains($seen->sentText, $sentence)) {
                 return null;
             }
+        }
+
+        $default = $services[$slug]['price_default']['sentence'] ?? null;
+
+        if (is_string($default) && $default !== '' && str_contains($seen->sentText, $default)) {
+            return null;
         }
 
         return 'the reply did not carry the price sentence for '.($services[$slug]['name'] ?? $slug);

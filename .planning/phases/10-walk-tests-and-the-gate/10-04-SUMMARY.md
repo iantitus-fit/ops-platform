@@ -260,9 +260,12 @@ See `key-decisions` above. The two most worth Ian's eye: the refusal of a hand-o
 
 **9. [Note] `grep` on `$` lines uses `grep -F`** for the plan's acceptance greps (the BSD grep quirk noted in 10-02 and 10-03; the `evaluate(` signature grep fails as a regex and passes as `-F`).
 
+**10. [Ruling by Ian, 2026-11-23, after the plan] The price check accepts the owner's default sentence (reverses deviation 5)**
+- Code sends a service's `price_default` sentence as the owner's own sentence when no keyed option fits (`PriceSentencePicker::pickDefault`). The example's `system-replacement` has one, so a walk where the customer answers "Not sure" failed the check although the owner's words went out. `WalkCheck::whyPriceSentenceFailed()` now also accepts `$services[$slug]['price_default']['sentence']` when it is a non-empty string, compared exactly, after the keyed sentences. `ActiveConfig::services()` already carried `price_default`, so nothing else changed. Tested in `WalkCheckTest` (`price checks with a default sentence`) and `WalkStepsTest` (the check reads the candidate's own default).
+
 ---
 
-**Total deviations:** 1 auto-fixed (own test), 1 instruction conflict (pint), 1 plan-wording difference, 5 interpretations flagged.
+**Total deviations:** 1 auto-fixed (own test), 1 instruction conflict (pint), 1 plan-wording difference, 5 interpretations flagged, 1 later ruling by Ian (10).
 **Impact on plan:** None on scope. No existing test was edited; `WalkCheckTest.php` and `WalkHelpers.php` changed by additions only; `AppointmentWritesTest.php` is byte-identical to main.
 
 ## Issues Encountered
