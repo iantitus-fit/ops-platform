@@ -156,3 +156,56 @@ function liveRowCounts(): array
 
     return $counts;
 }
+
+/**
+ * A walk where the customer texts three times about a warm air conditioner and is sent a booking link, then books. The
+ * checks given are the walk's end checks. A named start is written as given; null leaves the walk with no start.
+ *
+ * @param  string  $books  "2026-12-02 11:00", or "the earliest time offered".
+ * @param  list<string>  $endChecks  Check phrases for the end of the walk.
+ * @param  string|null  $wait  A wait such as "1 day", played after the booking.
+ */
+function bookingWalk(string $books, array $endChecks, ?string $start = '2026-12-01 10:00', ?string $wait = null): WalkFile
+{
+    $startLine = $start === null ? '' : "start: \"{$start}\"\n";
+    $booksLine = str_contains($books, 'earliest') ? $books : "\"{$books}\"";
+    $waitLine = $wait === null ? '' : "\n  - wait: \"{$wait}\"";
+    $endLine = $endChecks === [] ? '' : 'expect: ['.implode(', ', $endChecks)."]\n";
+
+    return walkFileFrom(<<<MD
+---
+type: walk_test
+name: Dana books a visit
+persona: A homeowner whose air conditioner stopped
+channel: sms
+{$startLine}script:
+  - says: "My AC is blowing warm air"
+    expect: [sent on its own]
+  - says: "Not cooling"
+    expect: [sent on its own]
+  - says: "Over 10 years"
+    expect: [sent on its own, labeled scheduling, carries the booking link]
+  - books: {$booksLine}{$waitLine}
+{$endLine}---
+Dana texts three times and books the time offered.
+MD);
+}
+
+/**
+ * The recording for bookingWalk(): the front desk asks the two AC repair intake questions, then offers a visit with the
+ * booking link. Every reading and every words check is clean.
+ */
+function bookingTape(): WalkTape
+{
+    $turn = fn (string $words, string $label): array => [
+        'agent' => [walkReply(['reply' => $words, 'label' => $label, 'service_slug' => 'ac-repair'])],
+        'readings' => [walkScores()],
+        'words' => [walkScores()],
+    ];
+
+    return walkTape([
+        1 => $turn('Thanks for texting. What is the system doing?', 'intake_question'),
+        2 => $turn('Thanks. About how old is the system?', 'intake_question'),
+        3 => $turn('We can get a technician out this week.', 'scheduling'),
+    ]);
+}
