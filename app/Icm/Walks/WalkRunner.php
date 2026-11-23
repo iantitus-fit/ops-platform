@@ -59,12 +59,18 @@ class WalkRunner
             $world->freezeAt(app(WalkClock::class)->startFor($walk, app(BusinessClock::class), app(ActiveConfig::class)->timezone(), $began));
 
             $outcome = WalkOutcome::Passed;
+            $reader = new WalkWorldReader;
+            $services = collect(app(ActiveConfig::class)->services())->keyBy('slug')->all();
+            $turns = [];
+            $failure = null;
 
             foreach ($walk->steps as $step) {
+                $before = $reader->mark();
+
                 match ($step->kind) {
                     WalkStepKind::Says => $this->customerSays($step, $tape, $capture),
                     WalkStepKind::Wait => $this->timePasses($step, $world),
-                    // A booking is played by plan 10-04.
+                    // A booking is played by plan 10-04's next task.
                     WalkStepKind::Books => null,
                 };
 
@@ -73,16 +79,56 @@ class WalkRunner
 
                     break;
                 }
+
+                $persona = $reader->persona();
+                $seen = $reader->turn($step->turn, $step->kind, $before, $persona);
+                $turns[] = $seen;
+
+                $failure = $this->firstFailure($step->checks, $seen, $reader->world($persona), $services, $step->turn);
+
+                if ($failure !== null) {
+                    $outcome = WalkOutcome::Failed;
+
+                    break;
+                }
+            }
+
+            if ($outcome === WalkOutcome::Passed && $walk->endChecks !== []) {
+                $end = $reader->world($reader->persona());
+                $atTheEnd = WalkTurnObservation::quiet(count($walk->steps), WalkStepKind::Wait, $end->ownerAlertedInWalk);
+
+                $failure = $this->firstFailure($walk->endChecks, $atTheEnd, $end, $services, null);
+                $outcome = $failure === null ? $outcome : WalkOutcome::Failed;
             }
 
             if ($inspect !== null) {
                 $inspect($world);
             }
 
-            return new WalkResult($walk->path, $outcome, $tape->exhausted(), $tape);
+            return new WalkResult($walk->path, $outcome, $tape->exhausted(), $tape, $failure, $turns);
         } finally {
             $world->close();
         }
+    }
+
+    /**
+     * The first of a step's checks that does not hold, judged in the order the walk states them, or null when all hold.
+     * Later checks are not looked at once one has failed (10 UI-SPEC ruling 2).
+     *
+     * @param  list<WalkCheck>  $checks
+     * @param  array<string, array<string, mixed>>  $services
+     */
+    private function firstFailure(array $checks, WalkTurnObservation $seen, WalkWorldState $world, array $services, ?int $turn): ?WalkFailure
+    {
+        foreach ($checks as $check) {
+            $words = $check->evaluate($seen, $world, $services);
+
+            if ($words !== null) {
+                return new WalkFailure($turn, $words);
+            }
+        }
+
+        return null;
     }
 
     /**

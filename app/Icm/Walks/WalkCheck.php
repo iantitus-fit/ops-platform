@@ -84,4 +84,93 @@ readonly class WalkCheck
 
         return $found;
     }
+
+    /**
+     * Judge this check against what the candidate's code did in the walk's world. Null when it holds, otherwise the check
+     * in plain words (10 D-09). Nothing is read here: the observation, the world and the folder's services come in as
+     * values, so the words can be pinned with no app running.
+     *
+     * @param  array<string, array<string, mixed>>  $services  The folder's services, keyed by slug.
+     */
+    public function evaluate(WalkTurnObservation $seen, WalkWorldState $world, array $services): ?string
+    {
+        return match ($this->kind) {
+            WalkCheckKind::SentOnItsOwn => $this->whySentOnItsOwnFailed($seen),
+            WalkCheckKind::HeldForTheOwner => $this->whyHeldForTheOwnerFailed($seen),
+            WalkCheckKind::HandedToTheOwner => $seen->handedToOwner ? null : 'the conversation was not handed to the owner',
+            WalkCheckKind::Labeled => $this->whyLabeledFailed($seen),
+            WalkCheckKind::CarriesPriceSentence => $this->whyPriceSentenceFailed($seen, $services),
+            WalkCheckKind::CarriesBookingLink => in_array('booking_link', $seen->parts, true) ? null : 'the reply did not carry the booking link',
+            WalkCheckKind::CarriesVisitLine => in_array('visit_line', $seen->parts, true) ? null : 'the reply did not carry the visit line',
+            WalkCheckKind::OwnerAlerted => $seen->ownerAlerted ? null : 'the owner was not alerted',
+            WalkCheckKind::Booked => $world->booked ? null : 'no visit was booked',
+            WalkCheckKind::ReminderQueued => $world->reminderQueued ? null : 'no reminder was queued for the visit',
+            WalkCheckKind::CardUpdated => $world->cardShowsVisit ? null : "the customer's card does not show the visit",
+            WalkCheckKind::RecordsUpdated => $world->todayListsVisit ? null : 'records/today.md does not list the visit',
+        };
+    }
+
+    private function whySentOnItsOwnFailed(WalkTurnObservation $seen): ?string
+    {
+        return match (true) {
+            $seen->sentOnItsOwn => null,
+            $seen->heldForOwner => 'the reply was held for the owner, not sent on its own',
+            $seen->handedToOwner => 'the conversation was handed to the owner, not answered on its own',
+            default => 'no reply was sent',
+        };
+    }
+
+    /**
+     * The sent case and the first two of the other cases are the plan's words; the last two are Ian's, ruled 2026-11-23.
+     */
+    private function whyHeldForTheOwnerFailed(WalkTurnObservation $seen): ?string
+    {
+        return match (true) {
+            $seen->heldForOwner => null,
+            $seen->sentOnItsOwn => 'the reply was sent on its own, not held for the owner',
+            $seen->handedToOwner => 'the conversation was handed to the owner, not held for the owner',
+            default => 'no reply was held for the owner',
+        };
+    }
+
+    /**
+     * A wrong label is the plan's words; no label to read, because no reply was sent and no draft was made, is Ian's,
+     * ruled 2026-11-23, told apart by whether the conversation was handed to the owner.
+     */
+    private function whyLabeledFailed(WalkTurnObservation $seen): ?string
+    {
+        $expected = (string) $this->argument;
+
+        return match (true) {
+            $seen->label === $expected => null,
+            $seen->label !== null => "the reply was labeled {$seen->label}, not {$expected}",
+            $seen->handedToOwner => "the conversation was handed to the owner, so no reply was labeled {$expected}",
+            default => "no reply was made, so none was labeled {$expected}",
+        };
+    }
+
+    /**
+     * The check holds when the text sent that turn holds one of the service's own price sentences, compared exactly. The
+     * sentences are the candidate's, so a price the folder no longer holds fails whatever words were recorded.
+     *
+     * @param  array<string, array<string, mixed>>  $services
+     */
+    private function whyPriceSentenceFailed(WalkTurnObservation $seen, array $services): ?string
+    {
+        $slug = (string) $this->argument;
+
+        if (! isset($services[$slug])) {
+            return "the folder has no service {$slug} for the price sentence check";
+        }
+
+        foreach ((array) ($services[$slug]['price_sentences'] ?? []) as $entry) {
+            $sentence = is_array($entry) ? (string) ($entry['sentence'] ?? '') : '';
+
+            if ($sentence !== '' && str_contains($seen->sentText, $sentence)) {
+                return null;
+            }
+        }
+
+        return 'the reply did not carry the price sentence for '.($services[$slug]['name'] ?? $slug);
+    }
 }
