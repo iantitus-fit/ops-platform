@@ -7,10 +7,16 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Enums\MessageStatus;
 use App\Enums\PausedReason;
+use App\Icm\ActiveConfig;
 use App\Models\BookingSend;
 use App\Models\Contact;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\Records\CustomerCard;
+use App\Records\MarkdownText;
+use App\Records\RecordsWriter;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 
 /**
@@ -101,20 +107,71 @@ class WalkWorldReader
     }
 
     /**
-     * What the world holds now, for the outcome checks: the booked visit, its reminder still waiting to go, and any alert
-     * the owner has been sent.
+     * What the world holds now, for the outcome checks: the booked visit, its reminder still waiting to go, the customer's
+     * card and records/today.md as the walk's own records folder holds them, and any alert the owner has been sent.
      */
     public function world(?Contact $persona): WalkWorldState
     {
-        $visitIds = $persona === null ? [] : $persona->appointments()->booked()->pluck('id')->all();
+        $visits = $persona === null ? new Collection : $persona->appointments()->booked()->get();
 
         return new WalkWorldState(
-            booked: $visitIds !== [],
-            reminderQueued: $visitIds !== [] && $this->reminderWaits($visitIds),
-            cardShowsVisit: false,
-            todayListsVisit: false,
+            booked: $visits->isNotEmpty(),
+            reminderQueued: $visits->isNotEmpty() && $this->reminderWaits($visits->pluck('id')->all()),
+            cardShowsVisit: $persona !== null && $this->cardShowsAVisit($persona, $visits),
+            todayListsVisit: $this->todayListsAVisit($visits),
             ownerAlertedInWalk: OwnerAlert::query()->exists(),
         );
+    }
+
+    /**
+     * Whether the customer's card file holds the line CustomerCard writes for one of the booked visits: the day, the time
+     * and the service, as the card words them.
+     *
+     * @param  Collection<int, mixed>  $visits
+     */
+    private function cardShowsAVisit(Contact $persona, Collection $visits): bool
+    {
+        $card = $this->fileText(app(RecordsWriter::class)->root().'/customers/'.app(CustomerCard::class)->filename($persona));
+        $zone = app(ActiveConfig::class)->displayTimezone();
+
+        foreach ($visits as $visit) {
+            $line = $visit->starts_at->clone()->setTimezone($zone)->format('l, F j, Y \a\t g:i A').', '.app(MarkdownText::class)->inline($visit->service_name);
+
+            if ($card !== null && str_contains($card, $line)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether records/today.md holds the line TodayRecord writes for one of the booked visits: the span of the visit and
+     * the service, as the file words them.
+     *
+     * @param  Collection<int, mixed>  $visits
+     */
+    private function todayListsAVisit(Collection $visits): bool
+    {
+        $today = $this->fileText(app(RecordsWriter::class)->root().'/today.md');
+        $zone = app(ActiveConfig::class)->displayTimezone();
+
+        foreach ($visits as $visit) {
+            $line = BookingSettings::spanText($visit->starts_at, $visit->ends_at, $zone).': '.app(MarkdownText::class)->inline($visit->service_name);
+
+            if ($today !== null && str_contains($today, $line)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function fileText(string $path): ?string
+    {
+        $files = new Filesystem;
+
+        return $files->exists($path) ? $files->get($path) : null;
     }
 
     /**

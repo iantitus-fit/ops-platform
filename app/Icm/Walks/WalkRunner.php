@@ -2,6 +2,7 @@
 
 namespace App\Icm\Walks;
 
+use App\Actions\BookAppointment;
 use App\Actions\DispatchInbound;
 use App\Actions\InboundData;
 use App\Actions\RecordInbound;
@@ -12,7 +13,11 @@ use App\Enums\MessageChannel;
 use App\Icm\ActiveConfig;
 use App\Icm\BusinessClock;
 use App\Jobs\ProcessInbound;
+use App\Models\BookingLink;
 use App\Records\RecordsWriter;
+use App\Rooms\ScheduleAndBooking\Availability;
+use App\Rooms\ScheduleAndBooking\BookingRefused;
+use App\Rooms\ScheduleAndBooking\BookingSettings;
 use App\SendRule\Classifier;
 use App\SendRule\ReplayClassifier;
 use Carbon\CarbonImmutable;
@@ -67,11 +72,12 @@ class WalkRunner
             foreach ($walk->steps as $step) {
                 $before = $reader->mark();
 
+                $refusal = null;
+
                 match ($step->kind) {
                     WalkStepKind::Says => $this->customerSays($step, $tape, $capture),
                     WalkStepKind::Wait => $this->timePasses($step, $world),
-                    // A booking is played by plan 10-04's next task.
-                    WalkStepKind::Books => null,
+                    WalkStepKind::Books => $refusal = $this->customerBooks($step, $reader),
                 };
 
                 if ($tape->exhausted() !== null) {
@@ -83,6 +89,13 @@ class WalkRunner
                 $persona = $reader->persona();
                 $seen = $reader->turn($step->turn, $step->kind, $before, $persona);
                 $turns[] = $seen;
+
+                if ($refusal !== null) {
+                    $failure = new WalkFailure($step->turn, $refusal);
+                    $outcome = WalkOutcome::Failed;
+
+                    break;
+                }
 
                 $failure = $this->firstFailure($step->checks, $seen, $reader->world($persona), $services, $step->turn);
 
@@ -109,6 +122,66 @@ class WalkRunner
         } finally {
             $world->close();
         }
+    }
+
+    /**
+     * The customer books through the link the front desk texted, exactly as the booking page does: the persona's newest
+     * link that is still open, a time Availability offers, and BookAppointment::fromLink() (10 D-09). A walk that names a
+     * time doubles as the check that the time is still offered. Returns the failure in plain words, or null once booked.
+     */
+    private function customerBooks(WalkStep $step, WalkWorldReader $reader): ?string
+    {
+        $persona = $reader->persona();
+
+        $link = $persona === null ? null : BookingLink::query()
+            ->where('contact_id', $persona->id)
+            ->whereNull('superseded_at')
+            ->whereNull('revoked_at')
+            ->whereDoesntHave('appointment')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($link === null) {
+            return 'no booking link had been sent to book with';
+        }
+
+        $config = app(ActiveConfig::class);
+        $service = $config->service($link->service_slug);
+
+        if ($service === null) {
+            return $this->refusalWords(BookingRefused::noSuchService());
+        }
+
+        $zone = $config->timezone();
+        $now = CarbonImmutable::now();
+        $availability = app(Availability::class);
+
+        if ($step->booksAt === null) {
+            $start = array_values($availability->openStarts($service, $now))[0][0] ?? null;
+
+            if ($start === null) {
+                return 'no time was offered';
+            }
+        } else {
+            $start = CarbonImmutable::parse($step->booksAt, $zone);
+
+            if (! $availability->offers($service, $start, $now)) {
+                return BookingSettings::dayText($start, $zone).' at '.BookingSettings::timeText($start, $zone).' was not offered';
+            }
+        }
+
+        try {
+            app(BookAppointment::class)->fromLink($link, $start, $now);
+        } catch (BookingRefused $refused) {
+            return $this->refusalWords($refused);
+        }
+
+        return null;
+    }
+
+    private function refusalWords(BookingRefused $refused): string
+    {
+        return 'the booking was refused: '.rtrim($refused->getMessage(), '.');
     }
 
     /**
