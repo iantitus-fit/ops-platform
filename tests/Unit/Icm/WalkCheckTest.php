@@ -3,6 +3,9 @@
 use App\Enums\ReplyLabel;
 use App\Icm\Walks\WalkCheck;
 use App\Icm\Walks\WalkCheckKind;
+use App\Icm\Walks\WalkStepKind;
+use App\Icm\Walks\WalkTurnObservation;
+use App\Icm\Walks\WalkWorldState;
 
 dataset('fixed check phrases', fn () => [
     'sent on its own' => ['sent on its own', WalkCheckKind::SentOnItsOwn, null],
@@ -88,11 +91,11 @@ it('finds no time in a phrase from the list', function (string $phrase) {
  *
  * @param  array<string, mixed>  $with
  */
-function evaluateSeen(array $with = []): \App\Icm\Walks\WalkTurnObservation
+function evaluateSeen(array $with = []): WalkTurnObservation
 {
-    return new \App\Icm\Walks\WalkTurnObservation(...[
+    return new WalkTurnObservation(...[
         'turn' => 1,
-        'kind' => \App\Icm\Walks\WalkStepKind::Says,
+        'kind' => WalkStepKind::Says,
         'sentOnItsOwn' => false,
         'heldForOwner' => false,
         'handedToOwner' => false,
@@ -109,9 +112,9 @@ function evaluateSeen(array $with = []): \App\Icm\Walks\WalkTurnObservation
  *
  * @param  array<string, bool>  $with
  */
-function evaluateWorld(array $with = []): \App\Icm\Walks\WalkWorldState
+function evaluateWorld(array $with = []): WalkWorldState
 {
-    return new \App\Icm\Walks\WalkWorldState(...[
+    return new WalkWorldState(...[
         'booked' => false,
         'reminderQueued' => false,
         'cardShowsVisit' => false,
@@ -222,3 +225,64 @@ it('never writes an exclamation point or a dash in a failure line (D-09)', funct
 it('refuses to hold a turn that both handed over and made a draft (D-09)', function () {
     expect(fn () => evaluateSeen(['heldForOwner' => true, 'handedToOwner' => true]))->toThrow(LogicException::class);
 });
+
+/*
+| Ian's ruling of 2026-11-23: the price sentence check also takes the service's default sentence, because code sends it
+| as the owner's own sentence when no keyed sentence fits the customer's answers (PriceSentencePicker::pickDefault).
+*/
+
+/**
+ * The folder's services with a keyed service that has a default sentence beside the one that has none.
+ *
+ * @param  array<string, mixed>|null  $default  The replacement service's price_default, or null for none.
+ * @return array<string, array<string, mixed>>
+ */
+function evaluateServicesWithDefault(?array $default): array
+{
+    $replacement = [
+        'name' => 'Replacement system',
+        'price_sentences' => [
+            ['answers' => ['unit_size' => 'Small (under 3 tons)'], 'sentence' => evaluateKeyedPriceSentence()],
+        ],
+    ];
+
+    if ($default !== null) {
+        $replacement['price_default'] = $default;
+    }
+
+    return [...evaluateServices(), 'system-replacement' => $replacement];
+}
+
+/**
+ * The example business's keyed sentence for a smaller replacement system, as its service file holds it.
+ */
+function evaluateKeyedPriceSentence(): string
+{
+    return 'For a smaller system, under 3 tons, a replacement system typically runs $2,000 to $5,000 installed.';
+}
+
+/**
+ * The example business's default replacement sentence, as its service file holds it.
+ */
+function evaluateDefaultPriceSentence(): string
+{
+    return "That's fine if you're not sure what you have. A replacement system typically runs \$2,000 to \$5,000 installed for a smaller unit and \$5,000 to \$10,000 for a larger one. We'll lock in an accurate quote once we see your setup.";
+}
+
+dataset('price checks with a default sentence', fn () => [
+    'the default sentence, and it was carried' => ['system-replacement', 'Thanks. '.evaluateDefaultPriceSentence(), evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), null],
+    'a keyed sentence, beside a default' => ['system-replacement', evaluateKeyedPriceSentence(), evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), null],
+    'neither a keyed sentence nor the default' => ['system-replacement', 'It runs a few thousand dollars.', evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), 'the reply did not carry the price sentence for Replacement system'],
+    'the default reworded, not carried exactly' => ['system-replacement', str_replace('$2,000', '$2000', evaluateDefaultPriceSentence()), evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), 'the reply did not carry the price sentence for Replacement system'],
+    'an empty default sentence' => ['system-replacement', 'Hello.', evaluateServicesWithDefault(['sentence' => '']), 'the reply did not carry the price sentence for Replacement system'],
+    'a default sentence that is not words' => ['system-replacement', 'Hello.', evaluateServicesWithDefault(['sentence' => ['nope']]), 'the reply did not carry the price sentence for Replacement system'],
+    'no default, and no keyed sentence carried' => ['system-replacement', evaluateDefaultPriceSentence(), evaluateServicesWithDefault(null), 'the reply did not carry the price sentence for Replacement system'],
+    'a service with no default, carrying its keyed sentence' => ['ac-repair', evaluatePriceSentence(), evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), null],
+    "a service with no default, carrying another service's default" => ['ac-repair', evaluateDefaultPriceSentence(), evaluateServicesWithDefault(['sentence' => evaluateDefaultPriceSentence()]), 'the reply did not carry the price sentence for AC repair'],
+]);
+
+it("accepts the owner's default price sentence where no keyed sentence fits (D-09, Ian's ruling 2026-11-23)", function (string $slug, string $sentText, array $services, ?string $words) {
+    $seen = evaluateSeen(['sentOnItsOwn' => true, 'sentText' => $sentText]);
+
+    expect(WalkCheck::parse("carries the owner's price sentence for {$slug}")->evaluate($seen, evaluateWorld(), $services))->toBe($words);
+})->with('price checks with a default sentence');

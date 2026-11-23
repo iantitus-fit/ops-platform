@@ -1,10 +1,15 @@
 <?php
 
+use App\Icm\ActiveConfig;
 use App\Icm\Walks\ScratchWorld;
+use App\Icm\Walks\WalkCheck;
 use App\Icm\Walks\WalkFile;
 use App\Icm\Walks\WalkOutcome;
 use App\Icm\Walks\WalkRunner;
+use App\Icm\Walks\WalkStepKind;
 use App\Icm\Walks\WalkTape;
+use App\Icm\Walks\WalkTurnObservation;
+use App\Icm\Walks\WalkWorldState;
 use App\Models\Appointment;
 use App\Models\BookingSend;
 use Carbon\CarbonImmutable;
@@ -219,6 +224,17 @@ it('passes a price sentence the candidate only reworded, because code sends its 
 
     expect($result->outcome)->toBe(WalkOutcome::Passed)
         ->and($result->turns[0]->sentText)->toContain('An AC repair visit begins at $89 for the diagnostic');
+});
+
+it("reads the candidate's own default price sentence for the check (D-09, Ian's ruling 2026-11-23)", function () {
+    activateExampleFolder();
+    $services = collect(app(ActiveConfig::class)->services())->keyBy('slug')->all();
+    $default = $services['system-replacement']['price_default']['sentence'] ?? null;
+    $seen = new WalkTurnObservation(turn: 1, kind: WalkStepKind::Says, sentOnItsOwn: true, heldForOwner: false, handedToOwner: false, label: 'faq_answer', parts: [], sentText: (string) $default, ownerAlerted: false);
+    $world = new WalkWorldState(booked: false, reminderQueued: false, cardShowsVisit: false, todayListsVisit: false, ownerAlertedInWalk: false);
+
+    expect($default)->toStartWith("That's fine if you're not sure what you have.")
+        ->and(WalkCheck::parse("carries the owner's price sentence for system-replacement")->evaluate($seen, $world, $services))->toBeNull();
 });
 
 it('shows the visit on the card and in records after a wait (D-09)', function () {
