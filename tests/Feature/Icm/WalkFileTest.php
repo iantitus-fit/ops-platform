@@ -10,11 +10,16 @@ use App\Icm\Walks\WalkFile;
 use App\Icm\Walks\WalkStepKind;
 use App\Models\IcmVersion;
 
+require_once __DIR__.'/../Walks/WalkHelpers.php';
+
 it('compiles every walk file into the candidate (WALK-01)', function () {
     activateExampleFolder();
 
     writeIcmFile('tests/first.md', minimalWalkFile());
     writeIcmFile('tests/second.md', str_replace('Hi, is anyone there?', 'Are you open today?', minimalWalkFile()));
+
+    seedRecording(walkFileFrom(minimalWalkFile(), 'tests/first.md'), walkTape([1 => ['agent' => [walkReply()], 'readings' => [walkScores()], 'words' => [walkScores()]]]));
+    seedRecording(walkFileFrom(str_replace('Hi, is anyone there?', 'Are you open today?', minimalWalkFile()), 'tests/second.md'), walkTape([1 => ['agent' => [walkReply()], 'readings' => [walkScores()], 'words' => [walkScores()]]]));
 
     $this->artisan('icm:sync')->assertExitCode(0);
 

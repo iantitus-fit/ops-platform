@@ -3,6 +3,7 @@
 use App\Ai\AgentReply;
 use App\Icm\Loader;
 use App\Icm\Walks\WalkFile;
+use App\Icm\Walks\WalkFingerprint;
 use App\Icm\Walks\WalkTape;
 use App\Models\Activity;
 use App\Models\Appointment;
@@ -12,6 +13,7 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\OwnerAlert;
+use App\Models\WalkRecording;
 use App\SendRule\ClassifierResult;
 use App\SendRule\TriageQuestions;
 use Illuminate\Support\Facades\File;
@@ -208,4 +210,32 @@ function bookingTape(): WalkTape
         2 => $turn('Thanks. About how old is the system?', 'intake_question'),
         3 => $turn('We can get a technician out this week.', 'scheduling'),
     ]);
+}
+
+/**
+ * A recording stored the way the gate reads it: the walk's path and script hash, the tape's payload and a fingerprint.
+ * The fingerprint defaults to the live version's, so a test that activated the example folder first seeds a fresh
+ * recording; a test with nothing live, or one that wants a stale recording, passes a fingerprint.
+ */
+function seedRecording(WalkFile $walk, WalkTape $tape, ?string $fingerprint = null, string $variant = WalkRecording::AS_BUILT): WalkRecording
+{
+    return WalkRecording::create([
+        'walk_path' => $walk->path,
+        'script_hash' => WalkFingerprint::scriptHash($walk),
+        'variant' => $variant,
+        'fingerprint' => $fingerprint ?? WalkFingerprint::forActiveConfig(),
+        'payload' => $tape->toPayload(),
+        'recorded_at' => now(),
+    ]);
+}
+
+/**
+ * Write a walk file into the temporary folder and return it as the value the runner plays, so a test can seed its
+ * recording from the same text it laid.
+ */
+function layWalk(string $path, string $contents): WalkFile
+{
+    writeIcmFile($path, $contents);
+
+    return walkFileFrom($contents, $path);
 }
