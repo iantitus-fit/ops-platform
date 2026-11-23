@@ -82,3 +82,143 @@ it('finds no time in a phrase from the list', function (string $phrase) {
     'the earliest time offered',
     'sunshine and satisfied customers',
 ]);
+
+/**
+ * What the walk saw in one turn, with every fact false or empty unless a case says otherwise.
+ *
+ * @param  array<string, mixed>  $with
+ */
+function evaluateSeen(array $with = []): \App\Icm\Walks\WalkTurnObservation
+{
+    return new \App\Icm\Walks\WalkTurnObservation(...[
+        'turn' => 1,
+        'kind' => \App\Icm\Walks\WalkStepKind::Says,
+        'sentOnItsOwn' => false,
+        'heldForOwner' => false,
+        'handedToOwner' => false,
+        'label' => null,
+        'parts' => [],
+        'sentText' => '',
+        'ownerAlerted' => false,
+        ...$with,
+    ]);
+}
+
+/**
+ * What the walk's world held at the point of the check, with every fact false unless a case says otherwise.
+ *
+ * @param  array<string, bool>  $with
+ */
+function evaluateWorld(array $with = []): \App\Icm\Walks\WalkWorldState
+{
+    return new \App\Icm\Walks\WalkWorldState(...[
+        'booked' => false,
+        'reminderQueued' => false,
+        'cardShowsVisit' => false,
+        'todayListsVisit' => false,
+        'ownerAlertedInWalk' => false,
+        ...$with,
+    ]);
+}
+
+/**
+ * The folder's services as the runner hands them over, keyed by slug.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function evaluateServices(): array
+{
+    return [
+        'ac-repair' => [
+            'name' => 'AC repair',
+            'price_sentences' => [['sentence' => evaluatePriceSentence()]],
+        ],
+    ];
+}
+
+/**
+ * The example business's one AC repair price sentence, as its service file holds it.
+ */
+function evaluatePriceSentence(): string
+{
+    return 'AC repair starts with an $89 diagnostic visit, and we take the $89 off if you go ahead with the repair that visit.';
+}
+
+dataset('check evaluations', fn () => [
+    'sent on its own, and it was' => ['sent on its own', ['sentOnItsOwn' => true], [], null],
+    'sent on its own, but it was held' => ['sent on its own', ['heldForOwner' => true], [], 'the reply was held for the owner, not sent on its own'],
+    'sent on its own, but the conversation was handed over' => ['sent on its own', ['handedToOwner' => true], [], 'the conversation was handed to the owner, not answered on its own'],
+    'sent on its own, but nothing was sent' => ['sent on its own', [], [], 'no reply was sent'],
+    'held for the owner, and it was' => ['held for the owner', ['heldForOwner' => true], [], null],
+    'held for the owner, but it was sent' => ['held for the owner', ['sentOnItsOwn' => true], [], 'the reply was sent on its own, not held for the owner'],
+    'handed to the owner, and it was' => ['handed to the owner', ['handedToOwner' => true], [], null],
+    'handed to the owner, but it was not' => ['handed to the owner', ['sentOnItsOwn' => true], [], 'the conversation was not handed to the owner'],
+    'labeled promise, and it was' => ['labeled promise', ['label' => 'promise'], [], null],
+    'labeled promise, but the label was faq_answer' => ['labeled promise', ['sentOnItsOwn' => true, 'label' => 'faq_answer'], [], 'the reply was labeled faq_answer, not promise'],
+    'the owner price sentence, and it was carried' => ["carries the owner's price sentence for ac-repair", ['sentOnItsOwn' => true, 'sentText' => 'Hello. '.evaluatePriceSentence().' Thanks.'], [], null],
+    'the owner price sentence, but it was not carried' => ["carries the owner's price sentence for ac-repair", ['sentOnItsOwn' => true, 'sentText' => 'It starts at $89.'], [], 'the reply did not carry the price sentence for AC repair'],
+    'the owner price sentence for a service the folder has not' => ["carries the owner's price sentence for duct-cleaning", ['sentOnItsOwn' => true, 'sentText' => 'Hello.'], [], 'the folder has no service duct-cleaning for the price sentence check'],
+    'the booking link, and it was carried' => ['carries the booking link', ['parts' => ['model_words', 'booking_link']], [], null],
+    'the booking link, but it was not carried' => ['carries the booking link', ['parts' => ['model_words']], [], 'the reply did not carry the booking link'],
+    'the visit line, and it was carried' => ['carries the visit line', ['parts' => ['visit_line']], [], null],
+    'the visit line, but it was not carried' => ['carries the visit line', ['parts' => ['model_words']], [], 'the reply did not carry the visit line'],
+    'owner alerted, and the owner was' => ['owner alerted', ['ownerAlerted' => true], [], null],
+    'owner alerted, but the owner was not' => ['owner alerted', [], [], 'the owner was not alerted'],
+    'booked, and it was' => ['booked', [], ['booked' => true], null],
+    'booked, but it was not' => ['booked', [], [], 'no visit was booked'],
+    'reminder queued, and it was' => ['reminder queued', [], ['reminderQueued' => true], null],
+    'reminder queued, but it was not' => ['reminder queued', [], [], 'no reminder was queued for the visit'],
+    'card updated, and it was' => ['card updated', [], ['cardShowsVisit' => true], null],
+    'card updated, but it was not' => ['card updated', [], [], "the customer's card does not show the visit"],
+    'records updated, and they were' => ['records updated', [], ['todayListsVisit' => true], null],
+    'records updated, but they were not' => ['records updated', [], [], 'records/today.md does not list the visit'],
+]);
+
+it('judges each check against what the walk saw, and says so in plain words (D-09)', function (string $phrase, array $seen, array $world, ?string $words) {
+    $check = WalkCheck::parse($phrase);
+
+    expect($check->evaluate(evaluateSeen($seen), evaluateWorld($world), evaluateServices()))->toBe($words);
+})->with('check evaluations');
+
+/*
+| Ian's ruling of 2026-11-23: the words for the two checks that read a reply when no reply was sent on its own and no
+| draft was made. The case is told apart by what happened in the turn, the way the plan's own line for a sent reply is.
+*/
+dataset('rulings by Ian on a turn with no reply', fn () => [
+    'held for the owner, when the conversation was handed over' => ['held for the owner', ['handedToOwner' => true], 'the conversation was handed to the owner, not held for the owner'],
+    'held for the owner, when nothing was sent and no draft was made' => ['held for the owner', [], 'no reply was held for the owner'],
+    'labeled promise, when the conversation was handed over' => ['labeled promise', ['handedToOwner' => true], 'the conversation was handed to the owner, so no reply was labeled promise'],
+    'labeled promise, when nothing was sent and no draft was made' => ['labeled promise', [], 'no reply was made, so none was labeled promise'],
+    'labeled scheduling, when nothing was sent and no draft was made' => ['labeled scheduling', [], 'no reply was made, so none was labeled scheduling'],
+]);
+
+it('uses the words Ian ruled when a turn has no reply to read (D-09)', function (string $phrase, array $seen, string $words) {
+    expect(WalkCheck::parse($phrase)->evaluate(evaluateSeen($seen), evaluateWorld(), evaluateServices()))->toBe($words);
+})->with('rulings by Ian on a turn with no reply');
+
+it('reads the label of a held draft when no reply was sent (D-09)', function () {
+    $seen = evaluateSeen(['heldForOwner' => true, 'label' => 'promise']);
+
+    expect(WalkCheck::parse('labeled promise')->evaluate($seen, evaluateWorld(), evaluateServices()))->toBeNull();
+});
+
+it('never writes an exclamation point or a dash in a failure line (D-09)', function () {
+    $lines = [];
+
+    foreach (['sent on its own', 'held for the owner', 'handed to the owner', 'labeled promise', "carries the owner's price sentence for ac-repair", "carries the owner's price sentence for duct-cleaning", 'carries the booking link', 'carries the visit line', 'owner alerted', 'booked', 'reminder queued', 'card updated', 'records updated'] as $phrase) {
+        foreach ([[], ['handedToOwner' => true], ['heldForOwner' => true], ['sentOnItsOwn' => true, 'label' => 'faq_answer', 'sentText' => 'Hello.']] as $seen) {
+            $lines[] = WalkCheck::parse($phrase)->evaluate(evaluateSeen($seen), evaluateWorld(), evaluateServices());
+        }
+    }
+
+    $words = implode("\n", array_filter($lines));
+
+    expect($words)->not->toBe('')
+        ->and($words)->not->toContain('!')
+        ->and($words)->not->toContain("\u{2014}")
+        ->and($words)->not->toContain("\u{2013}");
+});
+
+it('refuses to hold a turn that both handed over and made a draft (D-09)', function () {
+    expect(fn () => evaluateSeen(['heldForOwner' => true, 'handedToOwner' => true]))->toThrow(LogicException::class);
+});
