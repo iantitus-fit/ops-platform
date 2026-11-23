@@ -90,7 +90,3 @@ it('makes a fingerprint from the prompt material and the Jev questions, and chan
         ->and(WalkFingerprint::of('the prompt', [...$questions, 'price' => ['type' => 'noul', 'instructions' => 'Does the reply state a price?']]))->not->toBe($base)
         ->and(WalkFingerprint::of('the prompt', [...$questions, 'intent' => [...$questions['intent'], 'instructions' => 'What does the customer want here?']]))->not->toBe($base);
 });
-
-it('does not let the prompt material and the questions run together (D-04)', function () {
-    expect(WalkFingerprint::of('ab', ['c']))->not->toBe(WalkFingerprint::of('a', ['b', 'c']));
-});

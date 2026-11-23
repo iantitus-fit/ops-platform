@@ -118,7 +118,7 @@ class WalkRunner
                 $inspect($world);
             }
 
-            return new WalkResult($walk->path, $outcome, $tape->exhausted(), $tape, $failure, $turns);
+            return new WalkResult($walk->path, $outcome, $tape->exhausted(), $tape, $failure, $turns, WalkFingerprint::forActiveConfig());
         } finally {
             $world->close();
         }

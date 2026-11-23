@@ -1,5 +1,7 @@
 <?php
 
+use App\Ai\AgentFile;
+use App\Ai\FrontDeskPrompt;
 use App\Icm\ActiveConfig;
 use App\Icm\Walks\ScratchWorld;
 use App\Icm\Walks\WalkFingerprint;
@@ -72,4 +74,22 @@ it('returns the candidate fingerprint on the result, not the live one (D-04)', f
         ->and($other->fingerprint)->not->toBe($live)
         ->and($other->fingerprint)->toBe($inside['candidate'])
         ->and(WalkFingerprint::forActiveConfig())->toBe($live);
+});
+
+it('builds its material from the rules, the agent body, each loaded file and the two Booking texts, and never the customer card (D-04)', function () {
+    activateExampleFolder();
+    $agent = AgentFile::forChannel(app(ActiveConfig::class), 'sms');
+    $contact = Contact::factory()->create(['name' => 'Dana Whitfield', 'phone_e164' => '+12025550123']);
+
+    $material = app(FrontDeskPrompt::class)->walkFingerprintMaterial($agent);
+
+    expect($material)->toContain(FrontDeskPrompt::RULES)
+        ->and($material)->toContain($agent->body)
+        ->and($material)->toContain('business/services/ac-repair.md')
+        ->and($material)->toContain('AC repair starts with an $89 diagnostic visit')
+        ->and($material)->toContain(FrontDeskPrompt::BOOKING_VISIT_BOOKED)
+        ->and($material)->toContain(FrontDeskPrompt::BOOKING_ONLINE)
+        ->and($material)->not->toContain('Dana Whitfield')
+        ->and($material)->not->toContain('Right now')
+        ->and($material)->not->toContain('Customer card');
 });

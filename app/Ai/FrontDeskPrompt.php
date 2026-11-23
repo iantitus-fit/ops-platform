@@ -466,4 +466,31 @@ TEXT;
             ? '(The customer sent a picture with no text.)'
             : '(The customer sent an empty text.)';
     }
+
+    /**
+     * What a walk recording depends on: the part of the prompt that is the same for every customer and every run, so a
+     * change to any of it marks the recordings stale (10 D-04). It is the fixed rules, the agent file's body, each loaded
+     * file's path, front matter and body in the order the agent loads them, and the two texts of the "Booking" section.
+     * Never instructions() whole: that ends with the customer card and "Right now", which change every run. The provider
+     * chain stays out, so swapping a model does not mark a recording stale. The parts are joined with a NUL byte, which
+     * an owner's text does not hold, so one part cannot run into the next.
+     */
+    public function walkFingerprintMaterial(AgentFile $agent): string
+    {
+        $parts = [self::RULES, $agent->body];
+
+        foreach ($this->loadedPaths($agent) as $path) {
+            $file = $this->activeConfig->file($path);
+
+            if ($file === null) {
+                continue;
+            }
+
+            $parts[] = implode("\0", [$path, json_encode($file['front_matter'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $file['body']]);
+        }
+
+        array_push($parts, "## Booking\n\n".self::BOOKING_VISIT_BOOKED, "## Booking\n\n".self::BOOKING_ONLINE);
+
+        return implode("\0", $parts);
+    }
 }
