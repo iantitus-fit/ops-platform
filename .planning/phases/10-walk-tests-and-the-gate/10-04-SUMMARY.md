@@ -239,6 +239,7 @@ See `key-decisions` above. The two most worth Ian's eye: the refusal of a hand-o
 
 **2. [Conflict between two instructions] Pint wants the added test code in `WalkCheckTest.php` to import its classes**
 - `vendor/bin/pint --dirty` rewrote the appended code to short names and added three `use` lines to the file's import block (hunk `@@ -5,0 +6,3 @@`). Ian's rule 3 says no `use` added to that block, only fully qualified names in the appended code. I undid pint's change and kept the fully qualified names. As a result `vendor/bin/pint --test` reports exactly one file, `tests/Unit/Icm/WalkCheckTest.php`, with the `fully_qualified_strict_types` fixer. No other file is flagged. There is no pint step in CI (`.github` holds none). `WalkHelpers.php` needed none of this (its appended code uses only classes the file already imports); pint's only change there was one `single_quote` on a line I wrote.
+- Superseded on 2026-11-23 (Ian): pint's imports were committed in `f7155c1`, and `vendor/bin/pint --test` no longer flags the file.
 
 **3. [Plan wording] `WalkWorldReader` does not import the appointment model**
 - The plan expected it to; it reads visits through `$persona->appointments()->booked()` instead. The write scan therefore has nothing to match, and the reader still holds no write call.
