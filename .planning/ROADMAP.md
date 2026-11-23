@@ -384,7 +384,7 @@ Plans:
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
 
-**Plans**: 3/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
+**Plans**: 4/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
 
 Plans:
 **Wave 1**
@@ -395,7 +395,7 @@ Plans:
 - [x] 10-03-PLAN.md — The walk's world of its own (scratch SQLite) and the replay seams: recorded replies and Jev's raw scores under today's bars, frozen clock, fail closed (D-01, D-02, D-07, D-27)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 10-04-PLAN.md — The books step, every D-09 check with plain failure words, the script hash and the candidate fingerprint (D-04, D-05, D-09)
+- [x] 10-04-PLAN.md — The books step, every D-09 check with plain failure words, the script hash and the candidate fingerprint (D-04, D-05, D-09)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 10-05-PLAN.md — The gate in the sync: recordings table, owner and Ian forms, stale, unrecorded and needs-new-recording lines, changelog, agent card re-cited with FolderSync, BLUEPRINT (WALK-02, D-04 to D-06, D-11, D-27)
@@ -490,7 +490,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
 | 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
-| 10. Walk Tests and the Gate | 3/11 | In Progress | - |
+| 10. Walk Tests and the Gate | 4/11 | In Progress | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
 

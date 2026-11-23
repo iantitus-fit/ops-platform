@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-03-PLAN.md
-last_updated: "2026-11-22T19:02:18.752Z"
-last_activity: 2026-11-22
+stopped_at: Completed 10-04-PLAN.md
+last_updated: "2026-11-23T16:58:30.823Z"
+last_activity: 2026-11-23
 last_activity_desc: Phase 10 execution started
-state_head: 13f95ee4ddc341b937f81eb2dbd45af34e938b97
+state_head: bfa8078dddf91f29742e81e2b1a9e3f29a43bc77
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 69
+  completed_plans: 70
   percent: 67
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 4 of 11
+Plan: 5 of 11
 Status: Ready to execute
-Last activity: 2026-11-22 — Phase 10 execution started
+Last activity: 2026-11-23 — Phase 10 execution started
 
 Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 
@@ -211,6 +211,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 10 P02 | 30 min | 2 tasks | 16 files |
 | Phase 10 P01 | 12 min | 2 tasks | 8 files |
 | Phase 10 P03 | 15 min | 3 tasks | 15 files |
+| Phase 10 P04 | 16 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -340,6 +341,10 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 10]: 10-01: the reply cap's left-out kinds (safety line, booking text) live in MessageKind::notCountedByReplyCap(), so RunFrontDesk names neither and BookingTextKindTest keeps its three-file list
 - [Phase 10]: 10-03: a walk's isolation is a scratch in-memory SQLite database named walk, not a rolled-back transaction; ScratchWorld keeps a restore stack so close() undoes exactly what open() swapped, in reverse, and a failed open() closes itself
 - [Phase 10]: 10-03: the tape notes the first call it could not answer; the model seam and the Jev seam each refuse on their own as well, so a walk never guesses (D-27)
+- [Phase 10]: A step that both handed over and made a draft cannot be built as an observation (the hand-over makes no draft); a walk never words that case
+- [Phase 10]: The price check compares price_sentences only, exactly; price_default is not counted
+- [Phase 10]: End checks are evaluated as written against an observation that carries the walk-wide owner-alerted flag
+- [Phase 10]: WalkWorldReader reads visits through the contact relation and the send rows and never imports the appointment model
 
 ### Pending Todos
 
@@ -410,8 +415,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-22T19:02:18.645Z
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-11-23T16:58:30.716Z
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

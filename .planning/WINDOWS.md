@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 47
+open_count: 46
 waived_count: 1
-fixed_count: 43
+fixed_count: 44
 total_count: 91
-last_updated: 2026-11-22T19:00:18.977Z
+last_updated: 2026-11-23T16:54:24.303Z
 ---
 
 # Broken Windows Ledger
@@ -105,7 +105,7 @@ last_updated: 2026-11-22T19:00:18.977Z
 | 88 | 09 | unrun-verify | routes/console.php |  | At first deploy (Phase 12) cron runs php artisan schedule:run every minute and records/today.md title names the new day after 00:10 business time (09-06 human-check) | open |  | 2026-11-17T16:28:12.631Z |  |
 | 89 | 10 | unrun-verify | tests/Feature/FrontDesk/ReplyCapTest.php |  | Plan 10-01 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for ReplyCapTest: orWhereNotIn with enum bindings on Postgres) not run by the executor; left for after the push | open |  | 2026-11-22T18:37:08.132Z |  |
 | 90 | 10 | unrun-verify | tests/Feature/Walks/ScratchWorldTest.php |  | Plan 10-03 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for tests/Feature/Walks: the live connection is Postgres, the walk's is in-memory SQLite, so the default-connection swap is exercised across two engines) not run by the executor; left for after the push | open |  | 2026-11-22T18:59:58.481Z |  |
-| 91 | 10 | stub | app/Icm/Walks/WalkRunner.php | 68 | WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended) | open |  | 2026-11-22T19:00:18.977Z |  |
+| 91 | 10 | stub | app/Icm/Walks/WalkRunner.php | 68 | WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended) | fixed |  | 2026-11-22T19:00:18.977Z | 2026-11-23T16:54:24.303Z |
 
 ````json
 [
@@ -1286,10 +1286,10 @@ last_updated: 2026-11-22T19:00:18.977Z
     "file": "app/Icm/Walks/WalkRunner.php",
     "line": 68,
     "description": "WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-11-22T19:00:18.977Z",
-    "resolved_at": null,
+    "resolved_at": "2026-11-23T16:54:24.303Z",
     "milestone": "v2.0"
   }
 ]
