@@ -8,6 +8,8 @@ use App\Enums\VersionStatus;
 use App\Events\CustomerRecordChanged;
 use App\Events\ScheduleChanged;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Icm\Walks\WalkGate;
+use App\Icm\Walks\WalkGateResult;
 use App\Models\Activity;
 use App\Models\IcmVersion;
 use App\Rooms\RoomRegistry;
@@ -89,6 +91,12 @@ class FolderSync
             ), $folder, $report);
         }
 
+        $walks = $this->walks($compiledFiles->all(), $active);
+
+        if ($walks->refused()) {
+            return $this->rejectedByWalks($folder, $report, $walks, $fileCount, $fingerprint, $active, $root);
+        }
+
         $version = DB::transaction(function () use ($compiledFiles, $fileCount, $fingerprint, $folder, $root) {
             IcmVersion::query()
                 ->where('status', VersionStatus::Active->value)
@@ -118,6 +126,7 @@ class FolderSync
             $folder->notices,
             $fileCount,
             "Live as {$version->label()} ({$fileCount} files)",
+            staleNotes: $walks->staleNotes(),
         ), $folder, $report);
     }
 
@@ -221,6 +230,8 @@ class FolderSync
                 [...$result->notices, "changelog.md could not be updated: {$exception->getMessage()}"],
                 $result->fileCount,
                 $result->message,
+                $result->changelogErrors,
+                $result->staleNotes,
             );
         }
 
@@ -322,5 +333,52 @@ class FolderSync
         $result = Process::path($root)->run(['git', 'rev-parse', 'HEAD']);
 
         return $result->successful() ? trim($result->output()) : null;
+    }
+
+    /**
+     * Replay every walk of the candidate against it, before anything is activated (10 WALK-02). The candidate is compiled
+     * here for the walks to read; the copy that is stored is still compiled inside the activation transaction.
+     *
+     * @param  list<IcmFile>  $files  Already sorted by path.
+     */
+    private function walks(array $files, ?IcmVersion $active): WalkGateResult
+    {
+        return app(WalkGate::class)->run($this->compile($files), $active);
+    }
+
+    /**
+     * Store the candidate as a rejected version because a walk failed, had no recording, needs a new one or stopped with an
+     * error, and leave the live version alone. It mirrors reject(): the stored errors and the sync's errors are the owner's
+     * lines, which the Business Folder page and the Sync Now notification already print, and changelog.md gets Ian's lines
+     * and the stale notes.
+     */
+    private function rejectedByWalks(LoadedFolder $folder, ValidationReport $report, WalkGateResult $walks, int $fileCount, string $fingerprint, ?IcmVersion $active, string $root): SyncResult
+    {
+        $lines = $walks->ownerLines($active?->label());
+
+        $rejected = IcmVersion::create([
+            'fingerprint' => $fingerprint,
+            'git_sha' => $this->gitSha($root),
+            'compiled' => null,
+            'errors' => $lines,
+            'notices' => $folder->notices,
+            'file_count' => $fileCount,
+            'status' => VersionStatus::Rejected,
+            'last_checked_at' => now(),
+            'last_result' => SyncOutcome::Rejected,
+        ]);
+
+        $message = $active === null ? 'Rejected. Nothing is live yet.' : "Rejected. {$active->label()} stays live.";
+
+        return $this->recorded(new SyncResult(
+            SyncOutcome::Rejected,
+            $rejected,
+            $lines,
+            $folder->notices,
+            $fileCount,
+            $message,
+            $walks->ianLines($active?->label()),
+            $walks->staleNotes(),
+        ), $folder, $report);
     }
 }

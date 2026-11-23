@@ -109,8 +109,7 @@ it('refuses a price the folder no longer has and keeps the live version live (cr
     expect(app(ActiveConfig::class)->version()->id)->toBe($live->id)
         ->and(rejectedErrors())->toBe([$line])
         ->and(IcmVersion::query()->where('status', VersionStatus::Active->value)->sole()->id)->toBe($live->id)
-        ->and(gateNewestEntry())->toContain("Rejected\n- {$line}\n")
-        ->and(gateNewestEntry())->toEndWith("- {$live->label()} stays live");
+        ->and(gateNewestEntry())->toBe("Rejected\n- {$line}\n- tests/price.md is stale: its recording is older than the front desk prompt or the triage questions. Run `walks:record tests/price.md` to refresh it.\n- {$live->label()} stays live");
 });
 
 it('refuses a time the candidate no longer offers (criterion 2)', function () {

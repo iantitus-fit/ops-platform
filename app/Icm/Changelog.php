@@ -37,10 +37,10 @@ class Changelog
         $time = now($timezone)->format('Y-m-d H:i');
 
         [$title, $bullets] = match ($result->outcome) {
-            SyncOutcome::Rejected => ['Rejected', [...$result->errors, $this->liveBullet()]],
+            SyncOutcome::Rejected => ['Rejected', [...($result->changelogErrors ?: $result->errors), ...$result->staleNotes, $this->liveBullet()]],
             SyncOutcome::Activated => [
                 "Live as {$result->version->label()} ({$result->fileCount} files)",
-                array_map($this->noticeBullet(...), $result->notices),
+                [...array_map($this->noticeBullet(...), $result->notices), ...$result->staleNotes],
             ],
             SyncOutcome::Unchanged => ['No changes', ["Already active: {$result->version->label()}"]],
             SyncOutcome::Busy => throw new LogicException('A sync that did not run is never recorded.'),
