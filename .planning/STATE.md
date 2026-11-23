@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-11-23T16:58:30.823Z"
+stopped_at: Completed 10-05-PLAN.md
+last_updated: "2026-11-23T23:22:42.720Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 10 execution started
-state_head: bfa8078dddf91f29742e81e2b1a9e3f29a43bc77
+state_head: 41a25b1a9b096d504e64afc22b564710824de381
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 70
+  completed_plans: 71
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 5 of 11
+Plan: 6 of 11
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 10 execution started
 
@@ -212,6 +212,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 10 P01 | 12 min | 2 tasks | 8 files |
 | Phase 10 P03 | 15 min | 3 tasks | 15 files |
 | Phase 10 P04 | 16 min | 3 tasks | 17 files |
+| Phase 10 P05 | 15 min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -345,6 +346,9 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 10]: The price check compares price_sentences only, exactly; price_default is not counted
 - [Phase 10]: End checks are evaluated as written against an observation that carries the walk-wide owner-alerted flag
 - [Phase 10]: WalkWorldReader reads visits through the contact relation and the send rows and never imports the appointment model
+- [Phase 10]: WALK-02, D-05: a walk is matched to its recording by file path, a hash of its customer turns and the as_built variant; a changed customer turn finds none and the walk is refused as unrecorded
+- [Phase 10]: WALK-02, D-04, D-27: a stale walk is replayed and never refused; one that failed or needs a new recording gets a shorter stale note, one that passed says it still passed its checks
+- [Phase 10]: WALK-02, rule 10: WalkGateResult scrubs every finished line, deleting exclamation points and turning an em dash into a hyphen, whatever an error message or an owner-written name holds
 
 ### Pending Todos
 
@@ -415,8 +419,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-23T16:58:30.716Z
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-11-23T23:22:42.621Z
+Stopped at: Completed 10-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
