@@ -58,7 +58,7 @@ Carried from v1.0 with their IDs and wording (seed SEED-261020-v30).
 - [x] **BOOK-06**: The minutes from a contact's first inbound message to their booked appointment are recorded and visible on the contact and in a dashboard summary, so the headline metric can be read. *(derived from Principle 1; not an explicit Sprint 2 SPEC deliverable)*
 - [ ] **WALK-01**: Walk-test files (`tests/*.md`, type `walk_test`: persona, channel, script, expect) are validated by the sync with plain-words errors and compiled into the candidate version.
 - [ ] **WALK-02**: Every sync walk-tests the candidate version by running each scripted customer in `tests/` against it. Activation happens only if validation and every walk test pass; otherwise the previous version stays live, the message names the test and the check that failed, and the attempt is appended to `changelog.md` and shown on the Business Folder page.
-- [ ] **WALK-03**: "Dana end to end": a scripted customer texts in, answers the intake questions, picks a time from the booking link, and ends with a booked appointment, an owner alert, an updated card and records, and a reminder queued. It passes as a walk test and as a feature test.
+- [x] **WALK-03**: "Dana end to end": a scripted customer texts in, answers the intake questions, picks a time from the booking link, and ends with a booked appointment, an owner alert, an updated card and records, and a reminder queued. It passes as a walk test and as a feature test.
 
 ### Records
 
@@ -221,7 +221,7 @@ Which phases cover which requirements. Filled in by the roadmap.
 | BOOK-06 | Phase 9 | Complete |
 | WALK-01 | Phase 10 | Pending |
 | WALK-02 | Phase 10 | Pending |
-| WALK-03 | Phase 10 | Pending |
+| WALK-03 | Phase 10 | Complete |
 | RECS-02 | Phase 9 | Complete |
 | ALRT-01 | Phase 6 | Complete |
 | ALRT-02 | Phase 6 | Complete |

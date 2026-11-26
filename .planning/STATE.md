@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-11-PLAN.md
-last_updated: "2026-11-26T20:16:24.674Z"
+stopped_at: Completed 10-07-PLAN.md
+last_updated: "2026-11-26T23:37:09.745Z"
 last_activity: 2026-11-26
 last_activity_desc: Phase 10 execution started
-state_head: 21ccd0625f81bdeb508f191b34cfbd8a748a7d1f
+state_head: 4a206d5c00efe9051dacf9bc2d11d4971ec09a0b
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 73
+  completed_plans: 74
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 8 of 11
+Plan: 9 of 11
 Status: Ready to execute
 Last activity: 2026-11-26 — Phase 10 execution started
 
@@ -215,6 +215,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 10 P05 | 15 min | 3 tasks | 15 files |
 | Phase 10 P06 | 20 min | 3 tasks | 16 files |
 | Phase 10 P11 | 15 min | 3 tasks | 8 files |
+| Phase 10 P07 | 20 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -354,6 +355,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 10]: 10-06: walks:record keeps a recording even when its checks did not pass (the sync decides) and stores nothing for a walk where the model or Jev did not answer; the console count 'Jev readings' counts every Jev result kept (readings plus words checks)
 - [Phase 10]: 10-06: the Booking wording is supplied as data (BookingSectionWording) and bound only in the walk world; FrontDeskPrompt reads its two texts through two private methods and the constants are unchanged
 - [Phase 10]: 10-11: the price walk's text and tape for page cases live in tests/Feature/Walks/WalkHelpers.php (pricingWalkText, pricingWalkTape) so BusinessFolderPageTest gains only its require_once line and new cases
+- [Phase 10]: 10-07: Dana's feature case asserts the booking, owner alert, card, today.md and reminder before the runner's outcome, so each break reads as its own failure
+- [Phase 10]: 10-07: danaFakes() gives turn 1's reading complaint 0.04 (under the shipped 0.15 bar); the 0.005 lowered bar is under every fake score, so the case does not isolate that one score
 
 ### Pending Todos
 
@@ -424,8 +427,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-26T20:16:24.573Z
-Stopped at: Completed 10-11-PLAN.md
+Last session: 2026-11-26T23:37:09.636Z
+Stopped at: Completed 10-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
