@@ -244,8 +244,8 @@ it('records every walk in path order with no argument, with nothing live yet (D-
 
     expect($exit)->toBe(0)
         ->and($lines)->toBe([
-            'Recorded tests/hello.md: 1 model replies, 2 Jev readings. Its checks passed.',
-            'Recorded tests/price.md: 1 model replies, 2 Jev readings. Its checks passed.',
+            'Recorded tests/hello.md: 1 model reply, 1 Jev reading, 1 Jev reply check. Its checks passed.',
+            'Recorded tests/price.md: 1 model reply, 1 Jev reading, 1 Jev reply check. Its checks passed.',
         ])
         ->and(WalkRecording::query()->orderBy('walk_path')->pluck('walk_path')->all())->toBe(['tests/hello.md', 'tests/price.md'])
         ->and(IcmVersion::query()->count())->toBe(0);
@@ -275,7 +275,7 @@ it('keeps a recording whose checks did not pass and says so (D-17)', function ()
 
     expect($exit)->toBe(0)
         ->and($lines)->toHaveCount(1)
-        ->and($lines[0])->toStartWith('Recorded tests/price.md: 1 model replies, 2 Jev readings. Its checks did not pass: ')
+        ->and($lines[0])->toStartWith('Recorded tests/price.md: 1 model reply, 1 Jev reading, 1 Jev reply check. Its checks did not pass: ')
         ->and($lines[0])->toEndWith('.')->not->toEndWith('..')
         ->and(WalkRecording::query()->count())->toBe(1);
 });
@@ -506,4 +506,33 @@ it('writes no export file for a walk it did not record (D-02)', function () {
 
     expect($exit)->toBe(1)
         ->and($written)->toBe([]);
+});
+
+it('names each count apart, in the plural past one (Ian, 2026-11-26)', function () {
+    activateExampleFolder();
+    layWalk('tests/booking.md', recordBookingWalkText());
+
+    scriptFrontDeskReplies(...recordBookingReplies());
+
+    [$exit, $lines] = recordRun(['walk' => ['tests/booking.md']]);
+
+    $turns = WalkRecording::query()->sole()->payload['turns'];
+
+    expect($exit)->toBe(0)
+        ->and(array_sum(array_map(fn (array $turn): int => count($turn['agent']), $turns)))->toBe(3)
+        ->and(array_sum(array_map(fn (array $turn): int => count($turn['readings']), $turns)))->toBe(3)
+        ->and(array_sum(array_map(fn (array $turn): int => count($turn['words']), $turns)))->toBe(3)
+        ->and($lines)->toHaveCount(1)
+        ->and($lines[0])->toStartWith('Recorded tests/booking.md: 3 model replies, 3 Jev readings, 3 Jev reply checks. Its checks ');
+});
+
+it('still prints a count of 0 (Ian, 2026-11-26)', function () {
+    activateExampleFolder();
+    layWalk('tests/person.md', "---\ntype: walk_test\nname: Dana asks for a person\npersona: A homeowner who wants to talk to someone\nchannel: sms\nscript:\n  - says: \"Can I talk to a real person please?\"\n    expect: [handed to the owner]\n---\nA walk.\n");
+
+    [$exit, $lines] = recordRun(['walk' => ['tests/person.md']]);
+
+    expect($exit)->toBe(0)
+        ->and($lines)->toHaveCount(1)
+        ->and($lines[0])->toStartWith('Recorded tests/person.md: 0 model replies, 1 Jev reading, 0 Jev reply checks. Its checks ');
 });
