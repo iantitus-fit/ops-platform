@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 48
+open_count: 49
 waived_count: 1
 fixed_count: 44
-total_count: 93
-last_updated: 2026-11-26T19:58:07.587Z
+total_count: 94
+last_updated: 2026-11-26T20:10:01.553Z
 ---
 
 # Broken Windows Ledger
@@ -108,6 +108,7 @@ last_updated: 2026-11-26T19:58:07.587Z
 | 91 | 10 | stub | app/Icm/Walks/WalkRunner.php | 68 | WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended) | fixed |  | 2026-11-22T19:00:18.977Z | 2026-11-23T16:54:24.303Z |
 | 92 | 10 | unrun-verify | database/migrations/2026_11_21_000001_create_walk_recordings_table.php |  | CI pgsql leg for WalkGateTest and the walk_recordings migration is not run locally; check after Ian pushes the branch (10-05 hand check) | open |  | 2026-11-23T23:22:52.911Z |  |
 | 93 | 10 | unrun-verify | app/Console/Commands/WalksRecord.php |  | walks:record has never run against the live model and Jev; every test uses the suite's fakes, so Ian's first live recording (and a live --variant and --export run) is the check of the real providers (10-06 hand check) | open |  | 2026-11-26T19:58:07.587Z |  |
+| 94 | 10 | unrun-verify | resources/views/filament/pages/business-folder.blade.php |  | Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line (10-11 hand check, UI-SPEC accessibility backstop) not run by the executor; left for end-of-phase UAT | open |  | 2026-11-26T20:10:01.553Z |  |
 
 ````json
 [
@@ -1317,6 +1318,19 @@ last_updated: 2026-11-26T19:58:07.587Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-26T19:58:07.587Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 94,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "resources/views/filament/pages/business-folder.blade.php",
+    "line": null,
+    "description": "Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line (10-11 hand check, UI-SPEC accessibility backstop) not run by the executor; left for end-of-phase UAT",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-26T20:10:01.553Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
