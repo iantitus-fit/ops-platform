@@ -1,4 +1,4 @@
 # Tests
 
-Scripted customers (`type: walk_test`) arrive in Sprint 2. Each one plays a customer conversation against a new version before it goes live.
-The sync skips them until then.
+Each file here is a scripted customer (`type: walk_test`). The sync plays every one of them against a change before it goes live, using Ian's recording of the conversation.
+A broken file, a walk with no recording or a failed check keeps the version that is live now, and the Business Folder page says which file and check.

@@ -10,7 +10,7 @@ This file only points. It holds no facts. One fact lives in one file; read the f
 - Outside systems that work with the business: `connectors/`
 - Who answers customers on each channel: `agents/`
 - Follow-up sequences (not live yet): `automations/`
-- Scripted customers that test a change (not live yet): `tests/`
+- Scripted customers that walk through every change before it goes live: `tests/`
 - What happened with each customer (generated, read-only): `records/CLAUDE.md`
 
 To change the business, edit the file that owns the fact, then run the sync. Never edit anything in `records/`.

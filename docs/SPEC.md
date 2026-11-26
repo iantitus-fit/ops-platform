@@ -86,8 +86,8 @@ channels write at once.
    the fix, in plain words an owner can act on.
 4. Fingerprint the candidate version (content hash, plus the git commit if the
    folder is a repo).
-5. Walk-test the candidate (from Sprint 2): run every scripted customer in
-   `tests/` against it.
+5. Walk-test the candidate: run every scripted customer in
+   `tests/` against it. Each walk replays Ian's recording of the conversation, and a walk with no recording, or one that fails a check, keeps the previous version live.
 6. Activate only if steps 3 and 5 pass. Otherwise the previous version stays
    live and the owner gets a plain message saying what broke. Every attempt,
    pass or fail, is appended to the folder's `changelog.md`.
@@ -192,7 +192,7 @@ index is rebuilt from the files on sync, never edited directly.
 ├── agents/              type: agent (Sprint 1)
 ├── automations/         type: automation (Sprint 5)
 ├── connectors/          type: connector (checked from Phase 4: slot, owns, reads)
-├── tests/               type: walk_test (Sprint 2)
+├── tests/               type: walk_test
 ├── rooms/
 │   └── <room>/
 │       └── CONTEXT.md   type: room (the room's contract)
