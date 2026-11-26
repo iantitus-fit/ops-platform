@@ -30,6 +30,10 @@ class IcmSync extends Command
             $this->warn($notice);
         }
 
+        foreach ($result->staleNotes as $staleNote) {
+            $this->warn($staleNote);
+        }
+
         if ($result->outcome === SyncOutcome::Busy) {
             $this->error($result->message);
 
