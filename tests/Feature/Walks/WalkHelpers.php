@@ -259,3 +259,60 @@ function pricingWalkTape(): WalkTape
         'words' => [walkScores()],
     ]]);
 }
+
+/**
+ * Lay the example business's own walk files into this test's folder, one per name given. The beforeEach folder copy leaves
+ * the example's walk files out (T1), so a test that wants one lays it in on purpose, from the file the example ships.
+ */
+function layExampleWalks(string ...$names): void
+{
+    foreach ($names as $name) {
+        $source = base_path("examples/example-hvac/tests/{$name}.md");
+
+        expect($source)->toBeFile();
+
+        writeIcmFile("tests/{$name}.md", File::get($source));
+    }
+}
+
+/**
+ * The suite's own fakes, scripted for "Dana end to end": the front desk model's three replies (the symptom question, the
+ * system age question and the offer with the booking link) and Jev's raw scores for the three turns. Turn 1's reading
+ * gives complaint a small score, above 0.005 and under the shipped bar (config/gate.php), so a test that lowers the bar
+ * trips on a real recorded score; every other score is clean under the shipped bars.
+ */
+function danaFakes(): void
+{
+    scriptFrontDeskReplies(
+        [
+            'reply' => 'Sorry to hear that. What is the system doing?',
+            'label' => 'intake_question',
+            'service_slug' => 'ac-repair',
+            'customer_name' => 'Dana Whitfield',
+        ],
+        [
+            'reply' => 'Thanks. About how old is the system?',
+            'label' => 'intake_question',
+            'service_slug' => 'ac-repair',
+            'intake_answers' => [['question_key' => 'symptom', 'option' => 'Not cooling', 'raw_text' => 'Not cooling']],
+        ],
+        [
+            'reply' => 'We can get a technician out this week.',
+            'label' => 'scheduling',
+            'service_slug' => 'ac-repair',
+            'intake_answers' => [['question_key' => 'system_age', 'option' => 'Over 10 years', 'raw_text' => 'Over 10 years']],
+        ],
+    );
+
+    fakeClassifier()
+        ->queueReadings(
+            ['intent' => 'intake', 'confidence' => 0.97, 'yes_no' => ['complaint' => 0.04]],
+            ['intent' => 'intake', 'confidence' => 0.97],
+            ['intent' => 'intake', 'confidence' => 0.97],
+        )
+        ->queueAnswers(
+            ['intent' => 'intake', 'confidence' => 0.93],
+            ['intent' => 'intake', 'confidence' => 0.93],
+            ['intent' => 'intake', 'confidence' => 0.93],
+        );
+}
