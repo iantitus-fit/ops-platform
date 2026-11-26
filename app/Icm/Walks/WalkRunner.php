@@ -6,6 +6,7 @@ use App\Actions\BookAppointment;
 use App\Actions\DispatchInbound;
 use App\Actions\InboundData;
 use App\Actions\RecordInbound;
+use App\Ai\BookingSectionWording;
 use App\Ai\FrontDeskPrompt;
 use App\Ai\RecordingFrontDeskAgent;
 use App\Ai\ReplayFrontDeskAgent;
@@ -75,10 +76,13 @@ class WalkRunner
      * sent and nothing live is written. The returned result's tape holds the recording, and its fingerprint is the
      * candidate's.
      *
+     * With a variant, the Booking section's two texts come from it for this walk only (10 D-18): it is bound in the world
+     * before the first step and gone when the world closes.
+     *
      * @param  array<string, mixed>  $compiled  The candidate's compiled copy.
      * @param  Closure(ScratchWorld): void|null  $inspect  Called with the open world once the steps have run.
      */
-    public function record(WalkFile $walk, array $compiled, ?Closure $inspect = null): WalkResult
+    public function record(WalkFile $walk, array $compiled, ?Closure $inspect = null, ?BookingSectionWording $variant = null): WalkResult
     {
         $began = CarbonImmutable::now();
         $world = ScratchWorld::open($compiled, allowHttp: true);
@@ -92,6 +96,10 @@ class WalkRunner
 
             $world->instance(Classifier::class, new RecordingClassifier($classifier, $tape));
             $world->bind(RunFrontDeskAgent::class, fn (Application $app): RunFrontDeskAgent => new RecordingFrontDeskAgent($app->make(FrontDeskPrompt::class), $agent, $tape));
+
+            if ($variant !== null) {
+                $world->instance(BookingSectionWording::class, $variant);
+            }
 
             return $this->play($walk, $world, $tape, $began, $inspect);
         } finally {

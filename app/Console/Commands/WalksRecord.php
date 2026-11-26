@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Ai\BookingSectionWording;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Icm\FolderSync;
 use App\Icm\HiddenCharacters;
@@ -14,6 +15,9 @@ use App\Models\WalkRecording;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+use InvalidArgumentException;
+use JsonException;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -30,19 +34,32 @@ use Symfony\Component\Console\Output\OutputInterface;
  * ends with a failure after the rest have been recorded. A recording is kept even when the walk's checks did not pass under
  * today's bars, because the bars are approved from these recordings; the sync decides.
  *
+ * --variant records with the Booking section's two texts taken from a JSON wording file instead of the prompt as built, and
+ * stores the row under that wording's name, which the sync never replays (D-18). --export also writes each stored recording
+ * as one JSON file, the form the committed fixtures use, so a live run can refresh them. Both are given by Ian, never by a test
+ * against a provider.
+ *
  * It does not take the sync lock and it never calls a provider outside a run Ian starts. Lines that hold a file name, a
  * check's words or a provider's error text are printed raw, with hidden characters marked, so none is read as console
  * formatting or forges a line.
  */
-#[Signature('walks:record {walk?* : Walk files to record, such as tests/dana.md; every walk in the folder when none is named}')]
+#[Signature('walks:record {walk?* : Walk files to record, such as tests/dana.md; every walk in the folder when none is named} {--variant= : A Booking wording file (JSON) to record with instead of the prompt as built} {--export= : A folder to write each recording to as JSON}')]
 #[Description('Play each walk once against the folder as it is now, with the live model and Jev, keep their replies and raw scores, and send nothing')]
 class WalksRecord extends Command
 {
     /**
      * Execute the console command.
      */
-    public function handle(FolderSync $folderSync, WalkRunner $runner): int
+    public function handle(FolderSync $folderSync, WalkRunner $runner, Filesystem $files): int
     {
+        try {
+            $variant = $this->wording($files);
+        } catch (InvalidArgumentException $exception) {
+            $this->say($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
         try {
             $candidate = $folderSync->candidateForWalks();
         } catch (IcmFolderMissing $exception) {
@@ -83,7 +100,7 @@ class WalksRecord extends Command
             $file = (array) ($compiled['files'][$path] ?? []);
             $walk = WalkFile::fromCompiled([...(array) ($file['front_matter'] ?? []), 'body' => (string) ($file['body'] ?? ''), 'path' => $path]);
 
-            $result = $runner->record($walk, $compiled);
+            $result = $runner->record($walk, $compiled, null, $variant);
             $unanswered = $result->tape->recordingFailures()[0] ?? null;
 
             if ($unanswered !== null) {
@@ -94,15 +111,71 @@ class WalksRecord extends Command
                 continue;
             }
 
-            WalkRecording::query()->updateOrCreate(
-                ['walk_path' => $path, 'script_hash' => WalkFingerprint::scriptHash($walk), 'variant' => WalkRecording::AS_BUILT],
+            $recording = WalkRecording::query()->updateOrCreate(
+                ['walk_path' => $path, 'script_hash' => WalkFingerprint::scriptHash($walk), 'variant' => $variant->name ?? WalkRecording::AS_BUILT],
                 ['fingerprint' => (string) $result->fingerprint, 'payload' => $result->tape->toPayload(), 'recorded_at' => now()],
             );
+
+            if ($this->option('export') !== null) {
+                $this->export($files, (string) $this->option('export'), $recording);
+            }
 
             $this->say($this->recordedLine($path, $result));
         }
 
         return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * The wording --variant names, or null when none is named.
+     *
+     * @throws InvalidArgumentException in plain words when the file is missing, is not JSON or holds a wording that cannot be used
+     */
+    private function wording(Filesystem $files): ?BookingSectionWording
+    {
+        if ($this->option('variant') === null) {
+            return null;
+        }
+
+        $given = (string) $this->option('variant');
+        $path = $files->exists($given) ? $given : base_path($given);
+
+        if (! $files->isFile($path)) {
+            throw new InvalidArgumentException("The wording file {$given} was not found.");
+        }
+
+        try {
+            $data = json_decode($files->get($path), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new InvalidArgumentException('The wording file could not be read as JSON.');
+        }
+
+        if (! is_array($data)) {
+            throw new InvalidArgumentException('The wording file could not be read as JSON.');
+        }
+
+        return BookingSectionWording::fromArray($data);
+    }
+
+    /**
+     * Write one recording as <folder>/<walk file name without .md>.json, with .<variant> before .json for a variant: the
+     * form the committed fixtures use, so a live run can refresh them.
+     */
+    private function export(Filesystem $files, string $folder, WalkRecording $recording): void
+    {
+        $name = basename($recording->walk_path, '.md');
+        $suffix = $recording->variant === WalkRecording::AS_BUILT ? '' : ".{$recording->variant}";
+
+        $files->ensureDirectoryExists($folder);
+        $files->put("{$folder}/{$name}{$suffix}.json", json_encode([
+            'walk_path' => $recording->walk_path,
+            'script_hash' => $recording->script_hash,
+            'variant' => $recording->variant,
+            'fingerprint' => $recording->fingerprint,
+            'recorded_at' => $recording->recorded_at->toIso8601String(),
+            'source' => 'live',
+            'payload' => $recording->payload,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL);
     }
 
     /**

@@ -293,7 +293,7 @@ TEXT;
     private function bookingSection(Contact $contact): ?string
     {
         if ($this->serviceToBook->visitBookedAhead($contact)) {
-            return $this->visitAskedAbout->whyNoLine($contact) === null ? "## Booking\n\n".self::BOOKING_VISIT_BOOKED : null;
+            return $this->visitAskedAbout->whyNoLine($contact) === null ? "## Booking\n\n".$this->bookingVisitBookedText() : null;
         }
 
         $slugs = $this->serviceToBook->onlineServiceSlugs();
@@ -302,7 +302,7 @@ TEXT;
             return null;
         }
 
-        return "## Booking\n\n".str_replace('{services}', $this->listed($slugs), self::BOOKING_ONLINE);
+        return "## Booking\n\n".str_replace('{services}', $this->listed($slugs), $this->bookingOnlineText());
     }
 
     /**
@@ -489,8 +489,26 @@ TEXT;
             $parts[] = implode("\0", [$path, json_encode($file['front_matter'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $file['body']]);
         }
 
-        array_push($parts, "## Booking\n\n".self::BOOKING_VISIT_BOOKED, "## Booking\n\n".self::BOOKING_ONLINE);
+        array_push($parts, "## Booking\n\n".$this->bookingVisitBookedText(), "## Booking\n\n".$this->bookingOnlineText());
 
         return implode("\0", $parts);
+    }
+
+    /**
+     * The Booking section's text for a customer with a visit booked: the wording walks:record has bound for a measured
+     * recording (10 D-18), else the shipped constant. Nothing binds one outside a recording walk.
+     */
+    private function bookingVisitBookedText(): string
+    {
+        return app()->bound(BookingSectionWording::class) ? app(BookingSectionWording::class)->visitBooked : self::BOOKING_VISIT_BOOKED;
+    }
+
+    /**
+     * The Booking section's text for a customer with no visit ahead, with {services} still in it: the bound wording's, else
+     * the shipped constant.
+     */
+    private function bookingOnlineText(): string
+    {
+        return app()->bound(BookingSectionWording::class) ? app(BookingSectionWording::class)->online : self::BOOKING_ONLINE;
     }
 }

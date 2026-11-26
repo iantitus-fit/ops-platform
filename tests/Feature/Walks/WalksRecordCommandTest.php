@@ -276,7 +276,7 @@ it('keeps a recording whose checks did not pass and says so (D-17)', function ()
     expect($exit)->toBe(0)
         ->and($lines)->toHaveCount(1)
         ->and($lines[0])->toStartWith('Recorded tests/price.md: 1 model replies, 2 Jev readings. Its checks did not pass: ')
-        ->and($lines[0])->toEndWith('.')
+        ->and($lines[0])->toEndWith('.')->not->toEndWith('..')
         ->and(WalkRecording::query()->count())->toBe(1);
 });
 
@@ -349,22 +349,18 @@ it('records a Booking wording variant as data (D-18)', function () {
     scriptFrontDeskReplies(...recordBookingReplies());
     expect(recordRun()[0])->toBe(0);
 
-    $asBuilt = null;
-    FrontDeskAgent::assertPrompted(function ($prompt) use (&$asBuilt): bool {
-        $asBuilt = (string) $prompt->agent->instructions();
-
-        return true;
-    });
-
     scriptFrontDeskReplies(...recordBookingReplies());
     [$exit, $lines] = recordRun(['--variant' => 'tests/Fixtures/booking-wording/test-variant.json']);
 
-    $variant = null;
-    FrontDeskAgent::assertPrompted(function ($prompt) use (&$variant): bool {
-        $variant = (string) $prompt->agent->instructions();
+    // The fake keeps the prompts of both runs, so the six instructions are read together: three as built, then three with the wording.
+    $instructions = [];
+    FrontDeskAgent::assertPrompted(function ($prompt) use (&$instructions): bool {
+        $instructions[] = (string) $prompt->agent->instructions();
 
-        return true;
+        return count($instructions) === 6;
     });
+
+    [$asBuilt, $variant] = [array_slice($instructions, 0, 3), array_slice($instructions, 3, 3)];
 
     $rows = WalkRecording::query()->orderBy('variant')->get()->keyBy('variant');
 
@@ -374,8 +370,8 @@ it('records a Booking wording variant as data (D-18)', function () {
 
     expect($exit)->toBe(0)
         ->and($lines)->toHaveCount(1)
-        ->and($asBuilt)->toContain($shipped)->not->toContain('TEST WORDING')
-        ->and($variant)->toContain("TEST WORDING ONLINE. These services book online: {$services}.")->not->toContain($shipped)
+        ->and(collect($asBuilt)->every(fn (string $text): bool => str_contains($text, $shipped) && ! str_contains($text, 'TEST WORDING')))->toBeTrue()
+        ->and(collect($variant)->every(fn (string $text): bool => str_contains($text, "TEST WORDING ONLINE. These services book online: {$services}.") && ! str_contains($text, $shipped)))->toBeTrue()
         ->and($rows->keys()->all())->toBe(['as_built', 'test-variant'])
         ->and($rows['test-variant']->fingerprint)->not->toBe($rows['as_built']->fingerprint)
         ->and($rows['test-variant']->script_hash)->toBe($rows['as_built']->script_hash)
