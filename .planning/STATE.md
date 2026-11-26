@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-06-PLAN.md
-last_updated: "2026-11-26T20:04:49.610Z"
+stopped_at: Completed 10-11-PLAN.md
+last_updated: "2026-11-26T20:16:24.674Z"
 last_activity: 2026-11-26
 last_activity_desc: Phase 10 execution started
-state_head: 34d49bd66d16ea68bc05b9f4e44d2bbe4420ba1b
+state_head: 21ccd0625f81bdeb508f191b34cfbd8a748a7d1f
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 72
+  completed_plans: 73
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 7 of 11
+Plan: 8 of 11
 Status: Ready to execute
 Last activity: 2026-11-26 — Phase 10 execution started
 
@@ -214,6 +214,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 10 P04 | 16 min | 3 tasks | 17 files |
 | Phase 10 P05 | 15 min | 3 tasks | 15 files |
 | Phase 10 P06 | 20 min | 3 tasks | 16 files |
+| Phase 10 P11 | 15 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -352,6 +353,7 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 10]: WALK-02, rule 10: WalkGateResult scrubs every finished line, deleting exclamation points and turning an em dash into a hyphen, whatever an error message or an owner-written name holds
 - [Phase 10]: 10-06: walks:record keeps a recording even when its checks did not pass (the sync decides) and stores nothing for a walk where the model or Jev did not answer; the console count 'Jev readings' counts every Jev result kept (readings plus words checks)
 - [Phase 10]: 10-06: the Booking wording is supplied as data (BookingSectionWording) and bound only in the walk world; FrontDeskPrompt reads its two texts through two private methods and the constants are unchanged
+- [Phase 10]: 10-11: the price walk's text and tape for page cases live in tests/Feature/Walks/WalkHelpers.php (pricingWalkText, pricingWalkTape) so BusinessFolderPageTest gains only its require_once line and new cases
 
 ### Pending Todos
 
@@ -422,8 +424,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-26T20:04:49.515Z
-Stopped at: Completed 10-06-PLAN.md
+Last session: 2026-11-26T20:16:24.573Z
+Stopped at: Completed 10-11-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -384,7 +384,7 @@ Plans:
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
 
-**Plans**: 6/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
+**Plans**: 7/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
 
 Plans:
 **Wave 1**
@@ -402,7 +402,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 10-06-PLAN.md — walks:record with recording decorators, re-record in place, Booking wording variants as data, export to fixtures (D-03, D-06, D-18)
-- [ ] 10-11-PLAN.md — The walk lines on the Business Folder page and in the notification (escaped, no command, stale shown as a pass), Ian's form and stale notes on the console, SPEC and the example guides (WALK-02, D-04, D-05, D-11; split from 10-05)
+- [x] 10-11-PLAN.md — The walk lines on the Business Folder page and in the notification (escaped, no command, stale shown as a pass), Ian's form and stale notes on the console, SPEC and the example guides (WALK-02, D-04, D-05, D-11; split from 10-05)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 10-07-PLAN.md — Dana end to end as a feature test and a walk test from one file; walk files stripped from test copies (WALK-03, D-08, T1)
@@ -490,7 +490,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
 | 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
-| 10. Walk Tests and the Gate | 6/11 | In Progress | - |
+| 10. Walk Tests and the Gate | 7/11 | In Progress | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
 
