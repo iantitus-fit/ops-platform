@@ -12,7 +12,12 @@ namespace App\Icm\Walks;
  *
  * The stored shape is {version: 1, turns: {"<n>": {agent, readings, words}}}: agent holds AgentReply::toArray() arrays,
  * readings holds {customer_message, result} and words holds {customer_message, draft_reply, result}, where result is a
- * ClassifierResult::toArray() of Jev's raw scores. Plan 10-06 adds the recording side to this same class.
+ * ClassifierResult::toArray() of Jev's raw scores.
+ *
+ * The same class is the recording side (10 D-03). A walk played with the real model and Jev keeps each reply and each
+ * result here, in the order they were asked for, under the customer turn under way; a provider that did not answer is
+ * noted instead, so the command can refuse to store a half-made recording. The stored shape then also holds
+ * recorded_with: the provider and model that wrote the first reply and the Jev model that scored the first call.
  */
 class WalkTape
 {
@@ -36,6 +41,16 @@ class WalkTape
      * @var array{turn: int, needed: string}|null
      */
     private ?array $exhausted = null;
+
+    /**
+     * @var list<array{turn: int, what: string, message: string}>
+     */
+    private array $recordingFailures = [];
+
+    /**
+     * @var array{agent: array{provider: string, model: string}|null, jev: string|null}
+     */
+    private array $recordedWith = ['agent' => null, 'jev' => null];
 
     /**
      * @param  array<int, array{agent: list<array<string, mixed>>, readings: list<array<string, mixed>>, words: list<array<string, mixed>>}>  $turns
@@ -70,7 +85,7 @@ class WalkTape
     /**
      * The stored shape of the tape.
      *
-     * @return array{version: int, turns: array<string, array{agent: list<array<string, mixed>>, readings: list<array<string, mixed>>, words: list<array<string, mixed>>}>}
+     * @return array{version: int, turns: array<string, array{agent: list<array<string, mixed>>, readings: list<array<string, mixed>>, words: list<array<string, mixed>>}>, recorded_with?: array{agent: array{provider: string, model: string}|null, jev: string|null}}
      */
     public function toPayload(): array
     {
@@ -80,7 +95,13 @@ class WalkTape
             $turns[(string) $turn] = $entries;
         }
 
-        return ['version' => self::VERSION, 'turns' => $turns];
+        $payload = ['version' => self::VERSION, 'turns' => $turns];
+
+        if ($this->recordedWith['agent'] !== null || $this->recordedWith['jev'] !== null) {
+            $payload['recorded_with'] = $this->recordedWith;
+        }
+
+        return $payload;
     }
 
     /**
@@ -131,6 +152,70 @@ class WalkTape
     public function exhausted(): ?array
     {
         return $this->exhausted;
+    }
+
+    /**
+     * Keep the front desk model's reply for the turn under way, with the provider and model that wrote it.
+     *
+     * @param  array<string, mixed>  $reply  AgentReply::toArray().
+     */
+    public function recordAgentReply(array $reply, string $provider, string $model): void
+    {
+        $this->openTurn();
+        $this->turns[$this->turn]['agent'][] = $reply;
+        $this->recordedWith['agent'] ??= ['provider' => $provider, 'model' => $model];
+    }
+
+    /**
+     * Keep Jev's reading of the customer's text, as the raw scores it gave.
+     *
+     * @param  array<string, mixed>  $result  ClassifierResult::toArray().
+     */
+    public function recordReading(string $customerMessage, array $result): void
+    {
+        $this->openTurn();
+        $this->turns[$this->turn]['readings'][] = ['customer_message' => $customerMessage, 'result' => $result];
+        $this->recordedWith['jev'] ??= (string) ($result['model'] ?? '');
+    }
+
+    /**
+     * Keep Jev's check of the model's words, as the raw scores it gave.
+     *
+     * @param  array<string, mixed>  $result  ClassifierResult::toArray().
+     */
+    public function recordWordsCheck(string $customerMessage, string $draftReply, array $result): void
+    {
+        $this->openTurn();
+        $this->turns[$this->turn]['words'][] = ['customer_message' => $customerMessage, 'draft_reply' => $draftReply, 'result' => $result];
+        $this->recordedWith['jev'] ??= (string) ($result['model'] ?? '');
+    }
+
+    /**
+     * Note that the model or Jev did not answer in the turn under way. A tape that holds one is not stored.
+     *
+     * @param  string  $what  "the model" or "Jev".
+     */
+    public function noteRecordingFailure(string $what, string $message): void
+    {
+        $this->recordingFailures[] = ['turn' => $this->turn, 'what' => $what, 'message' => $message];
+    }
+
+    /**
+     * Every call the model or Jev did not answer while this tape was being made, in the order they happened.
+     *
+     * @return list<array{turn: int, what: string, message: string}>
+     */
+    public function recordingFailures(): array
+    {
+        return $this->recordingFailures;
+    }
+
+    /**
+     * Make the lists of the turn under way when the turn first records something.
+     */
+    private function openTurn(): void
+    {
+        $this->turns[$this->turn] ??= ['agent' => [], 'readings' => [], 'words' => []];
     }
 
     /**

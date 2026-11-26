@@ -8,6 +8,7 @@ use App\Enums\VersionStatus;
 use App\Events\CustomerRecordChanged;
 use App\Events\ScheduleChanged;
 use App\Icm\Exceptions\NoActiveVersion;
+use App\Icm\Walks\WalkCandidate;
 use App\Icm\Walks\WalkGate;
 use App\Icm\Walks\WalkGateResult;
 use App\Models\Activity;
@@ -380,5 +381,35 @@ class FolderSync
             $walks->ianLines($active?->label()),
             $walks->staleNotes(),
         ), $folder, $report);
+    }
+
+    /**
+     * The folder as it is on disk, read for the walks and never made live: the same load, the same validation and room drop
+     * checks and the same compile as a sync, so a walk recorded against it is played against exactly what a sync would
+     * activate. It writes no version and runs no walk, and it does not take the sync lock.
+     */
+    public function candidateForWalks(): WalkCandidate
+    {
+        $folder = $this->loader->load(config('icm.path'));
+
+        $compiledFiles = collect($folder->files)
+            ->filter(fn (IcmFile $file) => in_array($file->kind, [IcmFileKind::Typed, IcmFileKind::Router], true))
+            ->sortBy('path', SORT_STRING)
+            ->values();
+
+        $active = IcmVersion::query()->where('status', VersionStatus::Active->value)->latest('id')->first();
+
+        $report = $this->validator->validate($folder);
+        $dropErrors = (new RoomDropChecks($this->rooms, new RoomChecks($this->rooms)))->errors($folder, $active);
+
+        if ($dropErrors !== []) {
+            $report = new ValidationReport([...$report->errors, ...$dropErrors]);
+        }
+
+        if ($report->hasErrors()) {
+            return new WalkCandidate(null, $report->lines(), $active);
+        }
+
+        return new WalkCandidate($this->compile($compiledFiles->all()), [], $active);
     }
 }

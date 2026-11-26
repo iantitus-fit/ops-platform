@@ -8,7 +8,8 @@ namespace App\SendRule;
  * It tells the two kinds of call apart by the draft reply, as Jev does. A reading asks about the customer's text alone
  * and sends an empty draft; a words check sends the model's words as well. `answer()` scripts the words checks and
  * `answerReading()` the readings. Until a test scripts either, it reads everything as a clear, sendable one: intent
- * faq at 0.95 with every yes or no question at 0.01.
+ * faq at 0.95 with every yes or no question at 0.01. `queueReadings()` and `queueAnswers()` give each call its own scores,
+ * so a recording test can show that every call's raw scores reach the tape (10-RESEARCH Open Question 7).
  */
 class FakeClassifier implements Classifier
 {
@@ -33,6 +34,20 @@ class FakeClassifier implements Classifier
     private ?string $failure = null;
 
     private ?string $readingFailure = null;
+
+    /**
+     * Scores queued for the readings, handed out one per call before the fixed reading answer.
+     *
+     * @var list<array{intent?: string, confidence?: float, yes_no?: array<string, float>}>
+     */
+    private array $queuedReadings = [];
+
+    /**
+     * Scores queued for the words checks, handed out one per call before the fixed answer.
+     *
+     * @var list<array{intent?: string, confidence?: float, yes_no?: array<string, float>}>
+     */
+    private array $queuedAnswers = [];
 
     /**
      * @var list<array{customer_message: string, draft_reply: string}>
@@ -65,6 +80,32 @@ class FakeClassifier implements Classifier
         $this->readingConfidence = $confidence;
         $this->readingYesNoOverrides = $yesNo;
         $this->readingFailure = null;
+
+        return $this;
+    }
+
+    /**
+     * Queue scores for the next readings of the customer's text alone, one entry per call, so a recording test can give
+     * each call its own raw scores. An entry leaves out what it does not care about and gets the fixed reading answer's
+     * intent, confidence and yes or no overrides for it. Once the queue is empty the fixed reading answer applies again.
+     *
+     * @param  array{intent?: string, confidence?: float, yes_no?: array<string, float>}  ...$readings
+     */
+    public function queueReadings(array ...$readings): self
+    {
+        array_push($this->queuedReadings, ...$readings);
+
+        return $this;
+    }
+
+    /**
+     * Queue scores for the next words checks, one entry per call, in the same way queueReadings() does for readings.
+     *
+     * @param  array{intent?: string, confidence?: float, yes_no?: array<string, float>}  ...$answers
+     */
+    public function queueAnswers(array ...$answers): self
+    {
+        array_push($this->queuedAnswers, ...$answers);
 
         return $this;
     }
@@ -130,9 +171,11 @@ class FakeClassifier implements Classifier
             throw new ClassifierFailed($failure);
         }
 
-        $intent = $isReading ? $this->readingIntent : $this->intent;
-        $confidence = $isReading ? $this->readingConfidence : $this->confidence;
-        $overrides = $isReading ? $this->readingYesNoOverrides : $this->yesNoOverrides;
+        $queued = $isReading ? array_shift($this->queuedReadings) : array_shift($this->queuedAnswers);
+
+        $intent = $queued['intent'] ?? ($isReading ? $this->readingIntent : $this->intent);
+        $confidence = $queued['confidence'] ?? ($isReading ? $this->readingConfidence : $this->confidence);
+        $overrides = $queued['yes_no'] ?? ($isReading ? $this->readingYesNoOverrides : $this->yesNoOverrides);
 
         $others = array_diff(array_map('strval', array_keys($questions->intents)), [$intent]);
         $share = $others === [] ? 0.0 : (1 - $confidence) / count($others);
