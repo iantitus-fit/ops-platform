@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 47
+open_count: 48
 waived_count: 1
 fixed_count: 44
-total_count: 92
-last_updated: 2026-11-23T23:22:52.911Z
+total_count: 93
+last_updated: 2026-11-26T19:58:07.587Z
 ---
 
 # Broken Windows Ledger
@@ -107,6 +107,7 @@ last_updated: 2026-11-23T23:22:52.911Z
 | 90 | 10 | unrun-verify | tests/Feature/Walks/ScratchWorldTest.php |  | Plan 10-03 human-check (after Ian pushes the phase branch, the CI pgsql leg is green for tests/Feature/Walks: the live connection is Postgres, the walk's is in-memory SQLite, so the default-connection swap is exercised across two engines) not run by the executor; left for after the push | open |  | 2026-11-22T18:59:58.481Z |  |
 | 91 | 10 | stub | app/Icm/Walks/WalkRunner.php | 68 | WalkRunner plays a books step as a no-op until plan 10-04 adds the booking step and the checks; WalkResult's failure, turns and fingerprint stay empty until 10-04 fills them (plan 10-03, intended) | fixed |  | 2026-11-22T19:00:18.977Z | 2026-11-23T16:54:24.303Z |
 | 92 | 10 | unrun-verify | database/migrations/2026_11_21_000001_create_walk_recordings_table.php |  | CI pgsql leg for WalkGateTest and the walk_recordings migration is not run locally; check after Ian pushes the branch (10-05 hand check) | open |  | 2026-11-23T23:22:52.911Z |  |
+| 93 | 10 | unrun-verify | app/Console/Commands/WalksRecord.php |  | walks:record has never run against the live model and Jev; every test uses the suite's fakes, so Ian's first live recording (and a live --variant and --export run) is the check of the real providers (10-06 hand check) | open |  | 2026-11-26T19:58:07.587Z |  |
 
 ````json
 [
@@ -1303,6 +1304,19 @@ last_updated: 2026-11-23T23:22:52.911Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-23T23:22:52.911Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 93,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "app/Console/Commands/WalksRecord.php",
+    "line": null,
+    "description": "walks:record has never run against the live model and Jev; every test uses the suite's fakes, so Ian's first live recording (and a live --variant and --export run) is the check of the real providers (10-06 hand check)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-26T19:58:07.587Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
