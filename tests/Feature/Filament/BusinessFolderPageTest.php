@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 
+require_once __DIR__.'/../Walks/WalkHelpers.php';
+
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
 });
@@ -358,4 +360,25 @@ it('still lets the folder go live while the forgotten-offer warning shows (D-16)
 
     $page->assertNotified("Live as {$label} (".exampleFolderFileCount().' files)')
         ->assertSee(BUSINESS_FOLDER_STALE_OFFER_WARNING);
+});
+
+it('lists an unrecorded walk under the last sync with no command (D-05, D-11)', function () {
+    $version = activateExampleFolder();
+    layWalk('tests/price.md', pricingWalkText());
+
+    $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
+
+    $notifications = new Notifications;
+    $notifications->mount();
+    $sent = $notifications->notifications->sole();
+
+    expect($sent->getTitle())->toBe("Rejected. {$version->label()} stays live.")
+        ->and($sent->getStatus())->toBe('danger')
+        ->and($sent->getBody())->toContain('this walk has no recording yet')
+        ->not->toContain('walks:record');
+
+    $page->assertSee("tests/price.md: this walk has no recording yet. Recording it is Ian's step. {$version->label()} stays live.")
+        ->assertDontSee('walks:record');
+
+    expect(IcmVersion::query()->where('status', VersionStatus::Active->value)->sole()->id)->toBe($version->id);
 });

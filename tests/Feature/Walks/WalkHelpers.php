@@ -239,3 +239,23 @@ function layWalk(string $path, string $contents): WalkFile
 
     return walkFileFrom($contents, $path);
 }
+
+/**
+ * A walk where the customer asks the price of an AC repair and the owner expects the owner's own price sentence for it.
+ */
+function pricingWalkText(): string
+{
+    return "---\ntype: walk_test\nname: Dana asks the price\npersona: A homeowner asking about cost\nchannel: sms\nscript:\n  - says: \"How much is an AC repair?\"\n    expect: [carries the owner's price sentence for ac-repair]\n---\nA walk.\n";
+}
+
+/**
+ * The one recorded reply for pricingWalkText(): the model's own words and a flag that the customer asked the price.
+ */
+function pricingWalkTape(): WalkTape
+{
+    return walkTape([1 => [
+        'agent' => [walkReply(['reply' => 'Happy to help with that.', 'label' => 'faq_answer', 'service_slug' => 'ac-repair', 'price_services' => ['ac-repair']])],
+        'readings' => [walkScores()],
+        'words' => [walkScores()],
+    ]]);
+}
