@@ -382,3 +382,48 @@ it('lists an unrecorded walk under the last sync with no command (D-05, D-11)', 
 
     expect(IcmVersion::query()->where('status', VersionStatus::Active->value)->sole()->id)->toBe($version->id);
 });
+
+it('escapes a walk line on the page and in the notification (T-10-39)', function () {
+    activateExampleFolder();
+    seedRecording(layWalk('tests/price.md', pricingWalkText()), pricingWalkTape());
+    breakFile('business/services/ac-repair.md', fn (string $text) => preg_replace(
+        ['/^name: AC repair$/m', '/^price_policy: .*$/m', '/^price_cents: .*\n/m', '/^price_sentences:\n  - sentence: .*\n/m'],
+        ['name: AC <i>sneaky</i> repair', 'price_policy: none', '', ''],
+        $text,
+    ));
+
+    $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
+
+    $notifications = new Notifications;
+    $notifications->mount();
+    $body = $notifications->notifications->map(fn (Notification $notification) => $notification->getBody())->implode(' ');
+
+    expect($body)->toContain('the reply did not carry the price sentence for AC &lt;i&gt;sneaky&lt;/i&gt; repair')
+        ->not->toContain('<i>sneaky</i>');
+
+    $page->assertSee('the reply did not carry the price sentence for AC &lt;i&gt;sneaky&lt;/i&gt; repair', false)
+        ->assertDontSeeHtml('<i>sneaky</i>');
+});
+
+it('shows a stale walk exactly as a passing sync (D-04, rulings 1 and 4)', function () {
+    activateExampleFolder();
+    seedRecording(layWalk('tests/price.md', pricingWalkText()), pricingWalkTape(), str_repeat('0', 64));
+
+    $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
+
+    $live = IcmVersion::query()->where('status', VersionStatus::Active->value)->sole();
+
+    $notifications = new Notifications;
+    $notifications->mount();
+    $sent = $notifications->notifications->sole();
+
+    expect($live->label())->toBe('v2')
+        ->and($sent->getTitle())->toBe('Live as v2 ('.(exampleFolderFileCount() + 1).' files)')
+        ->and($sent->getStatus())->toBe('success')
+        ->and($sent->getBody())->toBeNull();
+
+    $page->assertSee('Live')
+        ->assertDontSee('stale')
+        ->assertDontSee('walks:record')
+        ->assertDontSee('Rejected');
+});

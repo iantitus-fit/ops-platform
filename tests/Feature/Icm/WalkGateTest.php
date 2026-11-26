@@ -454,3 +454,13 @@ it("prints Ian's line on the console (D-05)", function () {
         ->expectsOutputToContain("tests/price.md: no recording. Run `walks:record tests/price.md`. {$live->label()} stays live.")
         ->assertExitCode(1);
 });
+
+it('prints the stale notes on the console as warnings (D-04)', function () {
+    activateExampleFolder();
+
+    seedRecording(layWalk('tests/price.md', gatePriceWalkText()), gatePriceTape(), gateStaleFingerprint());
+
+    $this->artisan('icm:sync')
+        ->expectsOutputToContain('tests/price.md is stale: its recording is older than the front desk prompt or the triage questions. It still ran and passed its checks. Run `walks:record tests/price.md` to refresh it.')
+        ->assertExitCode(0);
+});
