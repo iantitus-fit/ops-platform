@@ -1,0 +1,5 @@
+{
+    "name": "test-variant",
+    "booking_online": "TEST WORDING ONLINE. These services book online: {services}.",
+    "booking_visit_booked": "TEST WORDING BOOKED. This customer has a visit booked."
+}
