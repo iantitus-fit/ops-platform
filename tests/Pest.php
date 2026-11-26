@@ -84,6 +84,7 @@ pest()->extend(TestCase::class)
 
         File::copyDirectory(base_path('examples/example-hvac'), $folder);
         File::delete($folder.'/changelog.md');
+        stripWalkFiles($folder.'/tests');
         resetRecordsToTrackedFiles($folder.'/records');
         config(['icm.path' => $folder]);
     })
@@ -313,8 +314,23 @@ function resetRecordsToTrackedFiles(string $records): void
 }
 
 /**
+ * Leave the example's walk files out of a copied tests/ folder, so an ordinary sync in a test is not walked: every file in
+ * it goes except README.md. A test that wants a walk lays it in on purpose (layExampleWalks(), layWalk()).
+ */
+function stripWalkFiles(string $tests): void
+{
+    foreach (File::files($tests, true) as $file) {
+        if ($file->getFilename() !== 'README.md') {
+            File::delete($file->getPathname());
+        }
+    }
+}
+
+/**
  * How many typed files examples/example-hvac holds. A plan that adds a typed file to the example
  * folder changes this one number (plans 02-02, 02-03, 02-06, 02.1-06, 02.1-07 and 09-03 do), not every test that counts.
+ * Walk files are stripped from every test's copy of the folder (stripWalkFiles()), so they do not count here, and a test
+ * that gates on walks lays them in on purpose.
  */
 function exampleFolderFileCount(): int
 {

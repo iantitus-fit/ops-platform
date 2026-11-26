@@ -68,14 +68,14 @@ it('Dana goes from her first text to a booked visit (WALK-03 as a feature test, 
         ];
     });
 
-    expect($result->outcome)->toBe(WalkOutcome::Passed)
-        ->and($seen['appointments'])->toBe([
-            ['contact' => $seen['persona'], 'service' => 'ac-repair', 'starts' => '2026-12-02 11:00', 'state' => AppointmentState::Booked],
-        ])
+    expect($seen['appointments'])->toBe([
+        ['contact' => $seen['persona'], 'service' => 'ac-repair', 'starts' => '2026-12-02 11:00', 'state' => AppointmentState::Booked],
+    ])
         ->and($seen['alerts'])->toBe([AlertReason::AppointmentBooked])
         ->and($seen['card'])->toContain('AC repair')->toContain('Wednesday, December 2, 2026')
+        ->and($seen['reminders'])->toBe([1440])
         ->and($seen['today'])->toContain('11:00')->toContain('AC repair')
-        ->and($seen['reminders'])->toBe([1440]);
+        ->and($result->outcome)->toBe(WalkOutcome::Passed);
 });
 
 it('leaves walk files out of every test copy of the example folder (T1)', function () {
