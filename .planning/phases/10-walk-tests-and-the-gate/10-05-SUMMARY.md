@@ -12,7 +12,7 @@ requires:
 provides:
   - "walk_recordings table, WalkRecording model (AS_BUILT) and factory (stale(), variant())"
   - "WalkGate::run(): replays each walk of the candidate in path order against its as_built recording before the activation transaction; fails closed on any Throwable"
-  - "WalkGateEntry and WalkGateResult: refused(), ownerLines(), ianLines(), staleNotes(); every line through HiddenCharacters::marked, no exclamation point, no em dash"
+  - "WalkGateEntry and WalkGateResult: refused(), ownerLines(), ianLines(), staleNotes(); every line through HiddenCharacters::marked; the gate's own copy holds no exclamation point or em dash, and owner values and error text are shown as written, marked"
   - "FolderSync hook: a refused gate stores a Rejected version whose errors are the owner lines, keeps the live version, and gives changelog.md Ian's lines and the stale notes"
   - "SyncResult changelogErrors and staleNotes; Changelog Rejected and Activated arms"
   - "seedRecording() and layWalk() test helpers"
@@ -52,7 +52,7 @@ key-files:
 key-decisions:
   - "A stale note is written for every stale walk whose recording was replayed; it drops 'It still ran and passed its checks.' for a walk that failed or needs a new recording"
   - "An unrecorded walk and a walk that errored are never stale (no recording to compare, no result fingerprint)"
-  - "WalkGateResult scrubs every finished line: hidden characters marked, '!' removed, an em dash turned into a hyphen, whatever an error message or an owner-written name holds (Rule 2, Ian's rule 10)"
+  - "WalkGateResult marks hidden characters in every finished line; the gate's own copy holds no '!' or '—', and owner values and error text are shown as written, marked (Ian, 2026-11-26: the Rule 2 scrub of '!' and '—' was removed)"
   - "WalkGate::run keeps the plan's ?IcmVersion $live parameter but does not read it: the lines take the live label from the caller"
   - "Test expectations build the live version's label from the live row ($live->label()), never the literal v1, so the cases hold on PostgreSQL where sequences continue"
 
@@ -71,11 +71,11 @@ coverage:
         status: pass
     human_judgment: false
   - id: D2
-    description: "The owner form never holds a command, console wording or the word stale; Ian's form in changelog.md carries walks:record and the file name; no line holds an exclamation point or an em dash; every line marks hidden characters"
+    description: "The owner form never holds a command, console wording or the word stale; Ian's form in changelog.md carries walks:record and the file name; the gate's own copy holds no exclamation point or em dash, and owner values and error text are shown as written; every line marks hidden characters"
     requirement: WALK-02
     verification:
       - kind: unit
-        ref: "tests/Unit/Icm/WalkWordsTest.php (every line form with and without a live version; owner lines free of command and stale; no exclamation point or em dash; hidden characters marked)"
+        ref: "tests/Unit/Icm/WalkWordsTest.php (every line form with and without a live version; owner lines free of command and stale; the gate's own copy free of exclamation point and em dash; owner values and error text as written; hidden characters marked)"
         status: pass
     human_judgment: false
   - id: D3
@@ -189,7 +189,7 @@ Task 2: every new case was killed by at least one of 35 mutants. The ones that m
 | path order | M19 reversed (WalkGate) | 2 cases red |
 | as_built only (D-06) | M18 variant ignored (WalkGate) | 1 case red |
 | lines kept when changelog.md cannot be written | M28, M30 `recorded()` drops a field (FolderSync) | 2 and 1 cases red |
-| no exclamation point or em dash; hidden characters | M9, M10, M11 (WalkGateResult) | 1 case red each |
+| no exclamation point or em dash; hidden characters | M9, M10, M11 (WalkGateResult), run against the scrub, which was removed 2026-11-26 (Ian); they describe code that no longer exists | 1 case red each |
 | WalkWordsTest refuses / unrefused | M33 `refused()` false, M34 true | 17 and 22 cases red |
 | Pitfall 6 | M35 `ScratchWorld` stops forgetting `ActiveConfig` on close | first draft SURVIVED (no world opened, the walk was unrecorded, and ids matched); case rewritten in `4db6bf1` to seed a recording and compare fingerprints; then `Failed asserting that 1 is identical to 3.` |
 
@@ -223,7 +223,7 @@ The card cites `FolderSync.php:312` (agent arm) and `:310` (offer arm). They wer
 
 ## Decisions Made
 
-See `key-decisions`. The two most worth Ian's eye: the scrub in `WalkGateResult::plain()` (Deviations 3) and the stale note on a refused walk (the shorter sentence).
+See `key-decisions`. The two most worth Ian's eye: the scrub in `WalkGateResult::plain()` (Deviations 3; Ian removed it 2026-11-26, so owner values and error text are shown as written, marked) and the stale note on a refused walk (the shorter sentence).
 
 ## Deviations from Plan
 
@@ -265,7 +265,7 @@ None.
 
 ## Threat Flags
 
-None. The gate reads one new table on the live connection and writes nothing but the Rejected version row it was already allowed to write. T-10-14 to T-10-19 hold: the gate sits before `DB::transaction` (mutants M23 and M24 prove its place), owner and Ian lines are built apart (M3), lines are scrubbed (M9 to M11), the world forgets `ActiveConfig` (M35), and a walk that errors refuses (M16).
+None. The gate reads one new table on the live connection and writes nothing but the Rejected version row it was already allowed to write. T-10-14 to T-10-19 hold: the gate sits before `DB::transaction` (mutants M23 and M24 prove its place), owner and Ian lines are built apart (M3), lines mark hidden characters (the scrub M9 to M11 pinned was removed 2026-11-26 by Ian; owner values and error text are shown as written), the world forgets `ActiveConfig` (M35), and a walk that errors refuses (M16).
 
 ## Hand checks for end-of-phase UAT
 
