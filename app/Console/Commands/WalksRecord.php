@@ -185,14 +185,27 @@ class WalksRecord extends Command
     {
         $turns = $result->tape->toPayload()['turns'];
         $replies = array_sum(array_map(fn (array $turn): int => count($turn['agent']), $turns));
-        $readings = array_sum(array_map(fn (array $turn): int => count($turn['readings']) + count($turn['words']), $turns));
-        $kept = "Recorded {$path}: {$replies} model replies, {$readings} Jev readings.";
+        $readings = array_sum(array_map(fn (array $turn): int => count($turn['readings']), $turns));
+        $checks = array_sum(array_map(fn (array $turn): int => count($turn['words']), $turns));
+        $kept = "Recorded {$path}: ".implode(', ', [
+            $this->counted($replies, 'model reply', 'model replies'),
+            $this->counted($readings, 'Jev reading', 'Jev readings'),
+            $this->counted($checks, 'Jev reply check', 'Jev reply checks'),
+        ]).'.';
 
         if ($result->outcome === WalkOutcome::Passed) {
             return "{$kept} Its checks passed.";
         }
 
         return "{$kept} Its checks did not pass: ".rtrim($result->failure?->words ?? 'a check did not hold', '.').'.';
+    }
+
+    /**
+     * A count with its noun, singular for exactly one and plural otherwise, 0 included (Ian, 2026-11-26).
+     */
+    private function counted(int $count, string $one, string $many): string
+    {
+        return $count === 1 ? "1 {$one}" : "{$count} {$many}";
     }
 
     /**
