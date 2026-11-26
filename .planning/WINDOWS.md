@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 49
+open_count: 51
 waived_count: 1
 fixed_count: 44
-total_count: 94
-last_updated: 2026-11-26T20:10:01.553Z
+total_count: 96
+last_updated: 2026-11-26T23:30:27.849Z
 ---
 
 # Broken Windows Ledger
@@ -109,6 +109,8 @@ last_updated: 2026-11-26T20:10:01.553Z
 | 92 | 10 | unrun-verify | database/migrations/2026_11_21_000001_create_walk_recordings_table.php |  | CI pgsql leg for WalkGateTest and the walk_recordings migration is not run locally; check after Ian pushes the branch (10-05 hand check) | open |  | 2026-11-23T23:22:52.911Z |  |
 | 93 | 10 | unrun-verify | app/Console/Commands/WalksRecord.php |  | walks:record has never run against the live model and Jev; every test uses the suite's fakes, so Ian's first live recording (and a live --variant and --export run) is the check of the real providers (10-06 hand check) | open |  | 2026-11-26T19:58:07.587Z |  |
 | 94 | 10 | unrun-verify | resources/views/filament/pages/business-folder.blade.php |  | Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line (10-11 hand check, UI-SPEC accessibility backstop) not run by the executor; left for end-of-phase UAT | open |  | 2026-11-26T20:10:01.553Z |  |
+| 95 | 10 | unrun-verify | tests/Feature/Walks/DanaEndToEndTest.php |  | Plan 10-07 human-check: after Ian pushes the phase branch, the CI pgsql leg is green for DanaEndToEndTest and the full suite (the walk world is in-memory SQLite while the live connection is Postgres; the folder-copy strip in tests/Pest.php touches every Feature test) | open |  | 2026-11-26T23:30:27.748Z |  |
+| 96 | 10 | stub | tests/Fixtures/walks/dana.json |  | Dana's committed recording is a placeholder made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-07, 10 D-17) | open |  | 2026-11-26T23:30:27.849Z |  |
 
 ````json
 [
@@ -1331,6 +1333,32 @@ last_updated: 2026-11-26T20:10:01.553Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-26T20:10:01.553Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 95,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "tests/Feature/Walks/DanaEndToEndTest.php",
+    "line": null,
+    "description": "Plan 10-07 human-check: after Ian pushes the phase branch, the CI pgsql leg is green for DanaEndToEndTest and the full suite (the walk world is in-memory SQLite while the live connection is Postgres; the folder-copy strip in tests/Pest.php touches every Feature test)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-26T23:30:27.748Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 96,
+    "kind": "stub",
+    "phase": "10",
+    "file": "tests/Fixtures/walks/dana.json",
+    "line": null,
+    "description": "Dana's committed recording is a placeholder made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-07, 10 D-17)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-26T23:30:27.849Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
