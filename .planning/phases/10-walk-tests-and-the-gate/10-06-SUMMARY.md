@@ -216,8 +216,9 @@ Two mutants survived, both equivalent: removing `rtrim(..., '.')` on a failed wa
 
 Console lines (Ian's, not the owner's; the plan's words exactly):
 
-- `Recorded <path>: <n> model replies, <m> Jev readings. Its checks passed.`
-- `Recorded <path>: <n> model replies, <m> Jev readings. Its checks did not pass: <the walk's failure words>.`
+- `Recorded <path>: <n> model replies, <m> Jev readings, <k> Jev reply checks. Its checks passed.`
+- `Recorded <path>: <n> model replies, <m> Jev readings, <k> Jev reply checks. Its checks did not pass: <the walk's failure words>.`
+- Each count is singular for exactly one (`1 model reply, 1 Jev reading, 1 Jev reply check`) and plural otherwise, 0 included (Ian, 2026-11-26; superseded the single `Jev readings` count, commits `84c1631` and `4e92265`).
 - `<path>, turn <n>: <the model|Jev> did not answer (<message>). Nothing was recorded for this walk.`
 - `The folder does not pass its checks, so nothing was recorded.`
 - `<path> is not a walk test in the folder.`
@@ -259,7 +260,7 @@ No existing line in any test file changed or was removed. `tests/Feature/Walks/W
 
 ## Decisions Made
 
-See `key-decisions`. The one most worth Ian's eye: `<m> Jev readings` counts every Jev result kept for the walk (readings of the customer's text plus checks of the model's words), so a one-turn walk with a price reply prints `2`.
+See `key-decisions`. Superseded (Ian, 2026-11-26): the executor first counted every Jev result as `<m> Jev readings` (a one-turn price walk printed `2`). Ian ruled that the line names the kinds apart, singular and plural right, with a count of 0 still printed: `Recorded tests/price.md: 1 model reply, 1 Jev reading, 1 Jev reply check. Its checks passed.` Test commit `84c1631` (only the expected strings of this plan's own cases that print the line changed, plus two new cases for the plural and the 0 forms, both red first), fix commit `4e92265`.
 
 ## Deviations from Plan
 
@@ -274,7 +275,7 @@ See `key-decisions`. The one most worth Ian's eye: `<m> Jev readings` counts eve
 **3. [Interpretation] Two corrections to my own test file in the Task 2 GREEN commit**
 - The variant case read the model's instructions with `FrontDeskAgent::assertPrompted`, but the SDK fake keeps the recorded prompts of every `fake()` call in the test, so the first draft read the as-built prompt twice. It now reads all six instructions together (three as built, then three with the wording). A `not->toEndWith('..')` was added to the checks-did-not-pass case. Both are in `WalksRecordCommandTest.php`, a file this plan created; no pre-existing test line changed.
 
-**4. [Interpretation] Edge choices where the plan was silent**
+**4. [Interpretation] Edge choices where the plan was silent** (made without asking; Ian kept all of them, 2026-11-26)
 - An exception from a world that cannot open is not caught; it stops the command with Laravel's own error. A named path is matched exactly as written (`tests/price.md`). Named paths that are not walks are all refused before any walk runs. `--variant` is read before the folder is looked at, so a bad wording file stops the run before anything is played. A relative wording path is tried as given, then from the project root. Hidden characters in any line are marked, so a provider's multi-line error is one line.
 
 **Total deviations:** 1 plan conflict (resolved by the run's own map rule), 1 order difference, 2 interpretations. **Impact on plan:** none on scope; the shipped constants, `config/gate.php` and every earlier test are untouched.
