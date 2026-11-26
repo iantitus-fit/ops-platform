@@ -316,3 +316,22 @@ function danaFakes(): void
             ['intent' => 'intake', 'confidence' => 0.93],
         );
 }
+
+/**
+ * A committed recording fixture (tests/Fixtures/walks/<name>.json, the form walks:record --export writes) stored the way
+ * the gate reads it. A fixture whose fingerprint is null is a placeholder, so it takes the live version's fingerprint and
+ * is fresh; a fixture with one keeps it, so a stale one stays stale.
+ */
+function seedRecordingFromFixture(string $name): WalkRecording
+{
+    $fixture = json_decode(File::get(base_path("tests/Fixtures/walks/{$name}.json")), true, 512, JSON_THROW_ON_ERROR);
+
+    return WalkRecording::create([
+        'walk_path' => $fixture['walk_path'],
+        'script_hash' => $fixture['script_hash'],
+        'variant' => $fixture['variant'],
+        'fingerprint' => $fixture['fingerprint'] ?? WalkFingerprint::forActiveConfig(),
+        'payload' => $fixture['payload'],
+        'recorded_at' => $fixture['recorded_at'],
+    ]);
+}

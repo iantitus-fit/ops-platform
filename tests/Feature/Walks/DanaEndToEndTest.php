@@ -2,9 +2,12 @@
 
 use App\Enums\AlertReason;
 use App\Enums\AppointmentState;
+use App\Enums\VersionStatus;
+use App\Icm\ActiveConfig;
 use App\Icm\FolderSync;
 use App\Icm\Walks\ScratchWorld;
 use App\Icm\Walks\WalkFile;
+use App\Icm\Walks\WalkFingerprint;
 use App\Icm\Walks\WalkOutcome;
 use App\Icm\Walks\WalkRunner;
 use App\Models\Appointment;
@@ -99,4 +102,90 @@ it('keeps Dana fictional and plain (D-12)', function () {
         ->not->toContain('—')
         ->not->toContain('555')
         ->not->toMatch('/\d{3}[\s.-]\d{4}/');
+});
+
+/**
+ * The newest changelog entry of this test's folder without its time, so a test can read it as "Live as v2 (30 files)" or
+ * "Rejected\n- line".
+ */
+function danaNewestChangelogEntry(): string
+{
+    $entries = preg_split('/^(?=## )/m', File::get(icmPath('changelog.md'))) ?: [];
+    $entries = array_values(array_filter(array_map(rtrim(...), $entries), fn (string $entry): bool => str_starts_with($entry, '## ')));
+
+    return preg_replace('/^## \S+ \S+ · /', '', $entries[0]);
+}
+
+/**
+ * Dana's committed recording fixture as decoded JSON.
+ *
+ * @return array<string, mixed>
+ */
+function danaFixture(): array
+{
+    return json_decode(File::get(base_path('tests/Fixtures/walks/dana.json')), true, 512, JSON_THROW_ON_ERROR);
+}
+
+it('Dana passes at the gate after walks:record (WALK-03 as a walk test)', function () {
+    $live = activateExampleFolder();
+    layExampleWalks('dana');
+    danaFakes();
+
+    $this->artisan('walks:record', ['walk' => ['tests/dana.md']])->assertExitCode(0);
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    $active = IcmVersion::query()->where('status', VersionStatus::Active->value)->sole();
+    $entry = danaNewestChangelogEntry();
+
+    expect($active->id)->not->toBe($live->id)
+        ->and($entry)->toStartWith("Live as {$active->label()} (".(exampleFolderFileCount() + 1).' files)')
+        ->and($entry)->not->toContain('is stale');
+});
+
+it("replays Dana's committed fixture and goes live (Ian's D-02 ruling)", function () {
+    $live = activateExampleFolder();
+    layExampleWalks('dana');
+    seedRecordingFromFixture('dana');
+
+    $this->artisan('icm:sync')->assertExitCode(0);
+
+    $active = IcmVersion::query()->where('status', VersionStatus::Active->value)->sole();
+
+    expect($active->id)->not->toBe($live->id)
+        ->and(danaNewestChangelogEntry())->toStartWith("Live as {$active->label()} (".(exampleFolderFileCount() + 1).' files)');
+});
+
+it("matches the fixture to Dana's customer turns, so a changed turn fails the suite (D-05 in CI)", function () {
+    $walk = walkFileFrom(File::get(base_path('examples/example-hvac/tests/dana.md')), 'tests/dana.md');
+    $fixture = danaFixture();
+
+    expect($fixture['walk_path'])->toBe('tests/dana.md')
+        ->and($fixture['script_hash'])->toBe(WalkFingerprint::scriptHash($walk))
+        ->and($fixture['source'])->toBeIn(['placeholder', 'live']);
+});
+
+it("applies today's bars to the fixture (Ian's D-02 ruling)", function () {
+    $live = activateExampleFolder();
+    layExampleWalks('dana');
+    seedRecordingFromFixture('dana');
+
+    config(['gate.classifier.complaint_max_yes' => 0.005]);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["tests/dana.md, turn 1: the reply was held for the owner, not sent on its own. {$live->label()} stays live."])
+        ->and(app(ActiveConfig::class)->version()->id)->toBe($live->id);
+});
+
+it('refuses Dana when the folder has no Wednesday opening and keeps the live version live (criterion 2)', function () {
+    $live = activateExampleFolder();
+    layExampleWalks('dana');
+    seedRecordingFromFixture('dana');
+
+    breakFile('business/hours.md', fn (string $text) => str_replace('wed: {open: "08:00", close: "17:00"}', 'wed: closed', $text));
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toBe(["tests/dana.md, turn 4: Wednesday, December 2 at 11:00 AM was not offered. {$live->label()} stays live."])
+        ->and(app(ActiveConfig::class)->version()->id)->toBe($live->id);
 });
