@@ -120,16 +120,46 @@ it('keeps the owner lines free of any command, console wording and the word stal
     }
 });
 
-it('puts no exclamation point and no em dash in any line, whatever an error or a name holds', function () {
+it('shows a name, an error and failure words as written, exclamation point and em dash kept (ruling 2026-11-26)', function () {
+    $refusals = array_map(fn (array $row) => $row[0], array_values(wordsRefusals()));
     $entries = [
-        ...array_map(fn (array $row) => $row[0], array_values(wordsRefusals())),
+        ...$refusals,
         wordsEntry(['path' => 'tests/ben!.md', 'outcome' => WalkOutcome::Errored, 'error' => 'out of room! — retry later', 'stale' => true]),
         wordsEntry(['path' => 'tests/cara.md', 'outcome' => WalkOutcome::Failed, 'failure' => new WalkFailure(1, 'the reply held a word! and a dash — here'), 'stale' => true]),
     ];
 
     $result = new WalkGateResult($entries);
+    $carried = count($refusals);
 
-    foreach ([...$result->ownerLines('v3'), ...$result->ownerLines(null), ...$result->ianLines('v3'), ...$result->ianLines(null), ...$result->staleNotes()] as $line) {
+    expect(array_slice($result->ownerLines('v3'), $carried))->toBe([
+        'tests/ben!.md: this walk stopped with an error before it finished. v3 stays live.',
+        'tests/cara.md, turn 1: the reply held a word! and a dash — here. v3 stays live.',
+    ])
+        ->and(array_slice($result->ianLines('v3'), $carried))->toBe([
+            'tests/ben!.md: the walk stopped with an error (out of room! — retry later). v3 stays live.',
+            'tests/cara.md, turn 1: the reply held a word! and a dash — here. v3 stays live.',
+        ])
+        ->and($result->staleNotes())->toBe([
+            'tests/ben!.md is stale: its recording is older than the front desk prompt or the triage questions. Run `walks:record tests/ben!.md` to refresh it.',
+            'tests/cara.md is stale: its recording is older than the front desk prompt or the triage questions. Run `walks:record tests/cara.md` to refresh it.',
+        ]);
+});
+
+it('puts no exclamation point and no em dash in any line form built from plain values (the gate\'s own copy)', function () {
+    $entries = [
+        ...array_map(fn (array $row) => $row[0], array_values(wordsRefusals())),
+        wordsEntry(['path' => 'tests/ben.md', 'outcome' => WalkOutcome::Failed, 'failure' => null]),
+        wordsEntry(['path' => 'tests/cara.md', 'outcome' => WalkOutcome::NeedsRecording, 'exhausted' => null]),
+        wordsEntry(['path' => 'tests/eli.md', 'stale' => true]),
+        wordsEntry(['path' => 'tests/fay.md', 'outcome' => WalkOutcome::Failed, 'failure' => new WalkFailure(2, 'the owner was not alerted'), 'stale' => true]),
+    ];
+
+    $result = new WalkGateResult($entries);
+    $lines = [...$result->ownerLines('v3'), ...$result->ownerLines(null), ...$result->ianLines('v3'), ...$result->ianLines(null), ...$result->staleNotes()];
+
+    expect($lines)->toHaveCount(4 * (count($entries) - 1) + 2);
+
+    foreach ($lines as $line) {
         expect($line)->not->toContain('!')->not->toContain('—');
     }
 });
