@@ -406,7 +406,7 @@ it('escapes a walk line on the page and in the notification (T-10-39)', function
 });
 
 it('shows a stale walk exactly as a passing sync (D-04, rulings 1 and 4)', function () {
-    activateExampleFolder();
+    $previous = activateExampleFolder();
     seedRecording(layWalk('tests/price.md', pricingWalkText()), pricingWalkTape(), str_repeat('0', 64));
 
     $page = Livewire::test(BusinessFolder::class)->callAction('syncNow');
@@ -417,8 +417,9 @@ it('shows a stale walk exactly as a passing sync (D-04, rulings 1 and 4)', funct
     $notifications->mount();
     $sent = $notifications->notifications->sole();
 
-    expect($live->label())->toBe('v2')
-        ->and($sent->getTitle())->toBe('Live as v2 ('.(exampleFolderFileCount() + 1).' files)')
+    expect($live->id)->not->toBe($previous->id)
+        ->and($previous->fresh()->status)->toBe(VersionStatus::Superseded)
+        ->and($sent->getTitle())->toBe('Live as '.$live->label().' ('.(exampleFolderFileCount() + 1).' files)')
         ->and($sent->getStatus())->toBe('success')
         ->and($sent->getBody())->toBeNull();
 
