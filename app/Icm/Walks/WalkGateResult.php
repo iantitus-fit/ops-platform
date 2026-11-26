@@ -13,7 +13,8 @@ use App\Icm\HiddenCharacters;
  * carries the command and the file name. A stale walk has no owner form at all: it is reported to Ian and never refused.
  *
  * Every line passes through HiddenCharacters::marked(), so a path or a service name from the owner's folder can never
- * print a line break or an invisible mark, and no line holds an exclamation point or an em dash.
+ * print a line break or an invisible mark. The gate's own words hold no exclamation point or em dash; owner values and
+ * error text are shown as written.
  */
 readonly class WalkGateResult
 {
@@ -172,11 +173,11 @@ readonly class WalkGateResult
     }
 
     /**
-     * A finished line made safe to print: hidden characters marked, no exclamation point and no em dash, whatever the
-     * folder or an error message put in it.
+     * A finished line made safe to print: hidden characters marked. The gate's own copy holds no exclamation point and no
+     * em dash; a value from the owner's folder or an error message is shown as written, marked (Ian, 2026-11-26).
      */
     private function plain(string $line): string
     {
-        return str_replace(['!', '—'], ['', '-'], HiddenCharacters::marked($line));
+        return HiddenCharacters::marked($line);
     }
 }

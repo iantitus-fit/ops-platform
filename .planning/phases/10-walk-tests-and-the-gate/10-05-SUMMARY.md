@@ -239,6 +239,7 @@ See `key-decisions`. The two most worth Ian's eye: the scrub in `WalkGateResult:
 - **Fix:** `WalkGateResult::plain()` marks hidden characters, deletes `!` and turns an em dash into a hyphen in every finished line. Pinned by `WalkWordsTest` (names, error text and failure words holding both) and mutants M9 and M10.
 - **Files modified:** `app/Icm/Walks/WalkGateResult.php`. **Committed in:** `ffd9d88`.
 - Flagged for Ian: it changes an owner's own character in a path, which the Loader already refuses for hidden characters but not for `!`.
+- Superseded 2026-11-26 (Ian): the scrub was removed. `plain()` only marks hidden characters; owner values and error text are shown as written.
 
 **4. [Interpretation] The rejected price case also carries a stale line**
 - The plan's second case says the changelog entry holds the failure line and `- v1 stays live`. The front desk agent loads `business/services/` and `business/hours.md`, so breaking `ac-repair.md` or `hours.md` changes the fingerprint and the seeded recording is stale (ruling 5). The case asserts the whole entry exactly: failure line, the short stale line, then the live bullet. Both the failure line and the live bullet are as planned.
