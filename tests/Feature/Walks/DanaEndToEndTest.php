@@ -169,7 +169,7 @@ it("applies today's bars to the fixture (Ian's D-02 ruling)", function () {
     layExampleWalks('dana');
     seedRecordingFromFixture('dana');
 
-    config(['gate.classifier.complaint_max_yes' => 0.005]);
+    config(['gate.classifier.complaint_max_yes' => 0.02]);
 
     $this->artisan('icm:sync')->assertExitCode(1);
 
