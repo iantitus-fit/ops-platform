@@ -39,7 +39,7 @@ class IcmSync extends Command
         if ($result->outcome === SyncOutcome::Rejected) {
             $this->error($result->message);
 
-            foreach ($result->errors as $error) {
+            foreach ($result->changelogErrors ?: $result->errors as $error) {
                 $this->error($error);
             }
 
