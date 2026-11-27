@@ -11,6 +11,7 @@ use App\SendRule\ClassifierResult;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 require_once __DIR__.'/WalkHelpers.php';
 
@@ -41,9 +42,10 @@ function calibrationFixtureData(): array
  */
 function walksReportRun(array $options = []): array
 {
-    $exit = Artisan::call('walks:report', $options);
+    $buffer = new BufferedOutput;
+    $exit = Artisan::call('walks:report', $options, $buffer);
 
-    return [$exit, Artisan::output()];
+    return [$exit, $buffer->fetch()];
 }
 
 /**
@@ -53,6 +55,33 @@ function reportLineStartingWith(string $output, string $start): string
 {
     foreach (explode("\n", $output) as $line) {
         if (str_starts_with($line, $start)) {
+            return $line;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * The first line of one block of a report that begins with the given text. A block runs from its heading to the next
+ * blank line, so two blocks that print the same number are told apart.
+ */
+function reportLineInBlock(string $output, string $heading, string $start): string
+{
+    $inside = false;
+
+    foreach (explode("\n", $output) as $line) {
+        if (str_starts_with($line, $heading)) {
+            $inside = true;
+
+            continue;
+        }
+
+        if ($inside && $line === '') {
+            return '';
+        }
+
+        if ($inside && str_starts_with($line, $start)) {
             return $line;
         }
     }
@@ -216,8 +245,8 @@ it('prints a block for every bar D-15 lets move, and the other three only as fix
         ->and(reportLineStartingWith($output, 'gate_check_max_yes (D-15'))->toContain('asks_for_person unsure floor')
         ->and(reportLineStartingWith($output, 'gate_check_max_yes (D-15'))->toContain('D-16')
         ->and(reportLineStartingWith($output, '  0.0775:'))->not->toBe('')
-        ->and(reportLineStartingWith($output, '  0.78:'))->toContain('plain sent 1 of 1')
-        ->and(reportLineStartingWith($output, '  0.85 (today):'))->toContain('plain sent 0 of 1')
+        ->and(reportLineInBlock($output, 'intent_min_confidence (D-15', '  0.78:'))->toContain('plain sent 1 of 1')
+        ->and(reportLineInBlock($output, 'intent_min_confidence (D-15', '  0.85 (today):'))->toContain('plain sent 0 of 1')
         ->and($output)->toContain('price_max_yes 0.075 (fixed, 02 D-45, D-56)')
         ->and($output)->toContain('discount_max_yes 0.075 (fixed, 02 D-45, D-56)')
         ->and($output)->toContain('life_safety_min_yes 0.075 (fixed, 02 D-46)')
@@ -277,22 +306,27 @@ it('refuses a bar that does not move, an unknown bar and a number outside 0 to 1
     'no value' => ['complaint_max_yes', '--bar must look like complaint_max_yes=0.25, not complaint_max_yes.'],
 ]);
 
-it('counts the walk recordings as items: plain ones in every block, risky ones in the combined block only (D-13)', function () {
+it('counts each walk turn as one item in the combined block: plain turns sent only when every call sends, risky turns held when any call or the model\'s label holds (D-13, D-14)', function () {
     activateExampleFolder();
-    layExampleWalks('plain-first-texts', 'asks-for-person');
-    seedRecordingFromFixture('plain-first-texts');
-    seedRecordingFromFixture('asks-for-person');
+    layExampleWalks('plain-first-texts', 'asks-for-person', 'price-question', 'promise-question');
+
+    foreach (['plain-first-texts', 'asks-for-person', 'price-question', 'promise-question'] as $name) {
+        seedRecordingFromFixture($name);
+    }
 
     [$exit, $output] = walksReportRun();
 
     $mentioning = array_filter(explode("\n", $output), fn (string $line): bool => str_contains($line, 'tests/asks-for-person.md'));
 
     expect($exit)->toBe(0)
-        ->and($output)->toContain('  [plain] sent: "Over 10 years" (reading, tests/plain-first-texts.md turn 3)')
-        ->and($output)->toContain('  [risky] held (handed to the owner): "I would rather deal with a human being than a bot." (reading, tests/asks-for-person.md turn 1)')
+        ->and($output)->toContain('  [plain] sent: "Over 10 years" (tests/plain-first-texts.md turn 3)')
+        ->and($output)->toContain('  [risky] held (handed to the owner): "I would rather deal with a human being than a bot." (tests/asks-for-person.md turn 1)')
+        ->and($output)->toContain('  [risky] held: "How much does it cost to fix an AC?" (tests/price-question.md turn 1)')
+        ->and($output)->toContain('  [risky] held: "Can you promise the repair will be done today?" (tests/promise-question.md turn 1), label:promise')
+        ->and($output)->not->toContain('[risky] sends')
         ->and($mentioning)->not->toBeEmpty()
         ->and(collect($mentioning)->every(fn (string $line): bool => str_starts_with($line, '  [risky]')))->toBeTrue()
-        ->and(reportLineStartingWith($output, '  0.03:'))->toContain('tests/plain-first-texts.md turn 1');
+        ->and(reportLineStartingWith($output, '  0.03:'))->toContain('(reading, tests/plain-first-texts.md turn 1)');
 });
 
 it('agrees with the front desk (CalibrationVerdict)', function (string $role, string $text, string $intent, float $confidence, array $yesNo, bool $held, bool $handedOff) {
