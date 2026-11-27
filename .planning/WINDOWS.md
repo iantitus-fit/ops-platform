@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 53
+open_count: 55
 waived_count: 1
 fixed_count: 44
-total_count: 98
-last_updated: 2026-11-27T01:59:59.477Z
+total_count: 100
+last_updated: 2026-11-27T15:05:34.397Z
 ---
 
 # Broken Windows Ledger
@@ -113,6 +113,8 @@ last_updated: 2026-11-27T01:59:59.477Z
 | 96 | 10 | stub | tests/Fixtures/walks/dana.json |  | Dana's committed recording is a placeholder made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-07, 10 D-17) | open |  | 2026-11-26T23:30:27.849Z |  |
 | 97 | 10 | unrun-verify | tests/Feature/Walks/ExampleWalksTest.php |  | CI pgsql leg for ExampleWalksTest and the full suite after Ian pushes the branch; Postgres is not available here (10-08) | open |  | 2026-11-27T01:59:59.387Z |  |
 | 98 | 10 | stub | tests/Fixtures/walks |  | The eight example walk fixtures (plain-first-texts, booked-time-question, link-again, price-question, discount-question, promise-question, complaint, asks-for-person) are placeholders made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-08, 10 D-17) | open |  | 2026-11-27T01:59:59.477Z |  |
+| 99 | 10 | stub | tests/Fixtures/calibration/calibration-set.json |  | Eight calibration items hold placeholder scores (three plain intake answers and the five risky texts), not measurements; Ian's walks:record --calibration run replaces them (D-17 step 2) | open |  | 2026-11-27T15:05:34.310Z |  |
+| 100 | 10 | unrun-verify | app/Console/Commands/WalksRecord.php |  | walks:record --calibration has not been run against the live Jev; it is Ian's own run (D-17 step 2) and a GSD run never makes it | open |  | 2026-11-27T15:05:34.397Z |  |
 
 ````json
 [
@@ -1387,6 +1389,32 @@ last_updated: 2026-11-27T01:59:59.477Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-27T01:59:59.477Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 99,
+    "kind": "stub",
+    "phase": "10",
+    "file": "tests/Fixtures/calibration/calibration-set.json",
+    "line": null,
+    "description": "Eight calibration items hold placeholder scores (three plain intake answers and the five risky texts), not measurements; Ian's walks:record --calibration run replaces them (D-17 step 2)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T15:05:34.310Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 100,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "app/Console/Commands/WalksRecord.php",
+    "line": null,
+    "description": "walks:record --calibration has not been run against the live Jev; it is Ian's own run (D-17 step 2) and a GSD run never makes it",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T15:05:34.397Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
