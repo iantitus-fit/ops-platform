@@ -228,14 +228,15 @@ Recorded in WINDOWS.md as unrun-verify entries 101 to 105 (commit `c7d82c1`):
 
 Run everything from the repository root, with `ICM_PATH` on the example folder or unset. The full text, with what each command does, is `docs/SETUP.md` section 14. In order:
 
-1. Write the two D-18 Booking wording files, outside the business folder: `tests/Fixtures/booking-wording/say-what-the-words-are-for.json` (name `say-what-the-words-are-for`) and `tests/Fixtures/booking-wording/drop-the-mechanics.json` (name `drop-the-mechanics`). Each is JSON with `name`, `booking_online` (holding `{services}` exactly once) and `booking_visit_booked`; `tests/Fixtures/booking-wording/test-variant.json` shows the shape.
-2. `php artisan walks:record` (today's Booking text, the baseline).
-3. `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json` and the same with `--variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`.
-4. `php artisan walks:record --calibration=tests/Fixtures/calibration/calibration-set.json --runs=3` (writes Jev's live scores into the committed calibration fixture).
-5. `php artisan walks:record --export=tests/Fixtures/walks`, then `php artisan walks:record --export=tests/Fixtures/walks --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json`, then the same with `drop-the-mechanics.json`. This records again and replaces the rows from steps 2 and 3, so the report reads the same recording the exported fixtures hold.
-6. `php artisan walks:report`, then again with `--bar` for each number under consideration, for example `php artisan walks:report --bar=complaint_max_yes=0.25`.
-7. Decide, together, against this one recording: the bars (or a `rules/triage.md` reword for any check where the report prints D-13's stop) and the winning Booking wording.
-8. Then plan and execute the follow-up approved-values plan (test-first, commits the refreshed fixtures with the values and the wording, asserts D-14). Phase 10 closes after it, and not before. Do not commit the exported fixtures or the calibration set on their own: under today's bars the plain walks may fail and CI would go red.
+1. Write the two D-18 Booking wording files, "say what the words are for" and "drop the mechanics", outside the business folder: `tests/Fixtures/booking-wording/say-what-the-words-are-for.json` (name `say-what-the-words-are-for`) and `tests/Fixtures/booking-wording/drop-the-mechanics.json` (name `drop-the-mechanics`).
+2. Record and export every walk in one pass: `php artisan walks:record --export=tests/Fixtures/walks` (today's Booking text, the baseline).
+3. Record and export the three booking walks once with each wording: `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json --export=tests/Fixtures/walks` and `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json --export=tests/Fixtures/walks`.
+4. Record the calibration set: `php artisan walks:record --calibration=tests/Fixtures/calibration/calibration-set.json --runs=3`.
+5. `php artisan walks:report`, then again with `--bar` for each number under consideration, for example `php artisan walks:report --bar=complaint_max_yes=0.25`.
+6. Decide, in one sitting, together, against this one recording: the bars (or a `rules/triage.md` reword for any check where the report prints D-13's stop) and the winning Booking wording.
+7. Only then is the follow-up approved-values plan planned. It writes the approved values and the chosen wording test-first, commits the refreshed fixtures with them, and asserts D-14 against them. Phase 10 closes after that plan is executed, and not before.
+
+Do not commit the exported fixtures, or the calibration set with its live scores, on their own: under today's bars the plain walks may fail against a real recording, and CI would go red.
 
 End-of-phase UAT hand checks: the four listed under "Hand checks" above (keyboard and VoiceOver walk, Sync Now timing, phone walk, both CI legs).
 
