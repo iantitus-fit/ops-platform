@@ -50,7 +50,7 @@ class CalibrationReport
      *
      * @var list<string>
      */
-    private const array BLOCKS = ['complaint_max_yes'];
+    private const array BLOCKS = ['complaint_max_yes', 'promise_max_yes', 'gate_check_max_yes', 'asks_for_person_min_yes', 'intent_min_confidence'];
 
     public function __construct(private readonly CalibrationVerdict $verdict = new CalibrationVerdict) {}
 
@@ -60,9 +60,10 @@ class CalibrationReport
      * @param  list<CalibrationItem>  $walkItems  One item for each recorded call in the walks' recordings, one result each.
      * @param  array<string, float>  $bars  The thresholds judged by, every key of config('gate.classifier').
      * @param  array<string, float>  $given  The bars the console gave with --bar, by name.
+     * @param  list<BookingWordingRun>  $bookingRuns  Each recorded run of a walk that expects a scheduling reply, replayed.
      * @return list<string>
      */
-    public function lines(CalibrationSet $set, array $walkItems, TriageQuestions $questions, array $bars, array $given = []): array
+    public function lines(CalibrationSet $set, array $walkItems, TriageQuestions $questions, array $bars, array $given = [], array $bookingRuns = []): array
     {
         $runs = $this->runs([...$set->items(), ...$walkItems]);
         $lines = $this->header($set, $walkItems, $bars, $given);
@@ -71,9 +72,7 @@ class CalibrationReport
             array_push($lines, '', ...$this->barBlock($bar, $runs, $questions, $bars, $given));
         }
 
-        array_push($lines, '', ...$this->combinedBlock($runs, $questions, $bars));
-
-        return $lines;
+        return [...$lines, '', ...$this->fixedBars($bars), '', ...$this->combinedBlock($runs, $questions, $bars), '', ...$this->bookingBlock($bookingRuns)];
     }
 
     /**
@@ -204,6 +203,8 @@ class CalibrationReport
     }
 
     /**
+     * What a block's bar does, in plain words, above its rows.
+     *
      * @param  array<string, float>  $bars
      * @return list<string>
      */
@@ -211,8 +212,69 @@ class CalibrationReport
     {
         return match ($bar) {
             'complaint_max_yes' => ["complaint_max_yes (D-15): a reply holds when Jev's chance of yes for complaint is above the bar. Both a reading and a reply check hold on it."],
-            default => ["{$bar} (D-15)"],
+            'promise_max_yes' => ["promise_max_yes (D-15): a reply holds when Jev's chance of yes for promise is above the bar. Only a reply check holds on it; a reading's promise answer is recorded and never acted on."],
+            'gate_check_max_yes' => ["gate_check_max_yes (D-15, D-16): the asks_for_person unsure floor. A text is held for the owner when Jev's chance of asks_for_person is above it and under asks_for_person_min_yes (".self::numberText($bars['asks_for_person_min_yes']).'), and handed to the owner at or above that. Its value and the comment in config/gate.php change only in the follow-up plan, and the key keeps its name.'],
+            'asks_for_person_min_yes' => [
+                'asks_for_person_min_yes (D-15): at or above this number the customer is handed to the owner; the unsure floor gate_check_max_yes stays at '.self::numberText($bars['gate_check_max_yes']).' in these rows.',
+                'The stop for asks_for_person is judged under gate_check_max_yes, the lower edge of the same band.',
+            ],
+            default => ["intent_min_confidence (D-15): a reply check holds when Jev's confidence in its intent is under the bar. A reading's intent is recorded and never acted on, and no risky text is judged by this bar alone."],
         };
+    }
+
+    /**
+     * The bars that do not move (D-15), printed for context and never as candidates.
+     *
+     * @param  array<string, float>  $bars
+     * @return list<string>
+     */
+    private function fixedBars(array $bars): array
+    {
+        $lines = ['Fixed bars (D-15), shown for context and never as candidates:'];
+
+        foreach (self::FIXED as $bar => $decision) {
+            $lines[] = "  {$bar} ".self::numberText($bars[$bar])." (fixed, {$decision})";
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Each recorded run of a booking walk, replayed under the judged bars: whether each booking turn sent on its own, its
+     * label, its parts and the model's words, raw. Nothing here names a phrase: Ian reads the words and decides whether
+     * they repeat the line code adds (D-19).
+     *
+     * @param  list<BookingWordingRun>  $runs
+     * @return list<string>
+     */
+    private function bookingBlock(array $runs): array
+    {
+        $lines = ['Booking wording (D-18, D-19): each recorded run of a walk that expects a scheduling reply, replayed from its recording under the bars above. Read the words and judge whether they repeat the line code adds; no check names words.'];
+
+        if ($runs === []) {
+            return [...$lines, 'No recorded run of such a walk was found, so there is nothing to show.'];
+        }
+
+        foreach ($runs as $run) {
+            $lines[] = "{$run->walkPath}, {$run->variant}: {$run->summary}";
+
+            foreach ($run->turns as $seen) {
+                $what = match (true) {
+                    $seen->sentOnItsOwn => 'sent on its own',
+                    $seen->handedToOwner => 'handed to the owner',
+                    $seen->heldForOwner => 'held for the owner',
+                    default => 'nothing was sent',
+                };
+
+                $lines[] = "  turn {$seen->turn}: {$what}; label ".($seen->label ?? 'none').'; parts '.($seen->parts === [] ? 'none' : implode(', ', $seen->parts));
+
+                foreach (preg_split('/\R/u', $seen->sentText) ?: [] as $text) {
+                    $lines[] = '    words: '.$text;
+                }
+            }
+        }
+
+        return $lines;
     }
 
     /**
@@ -286,7 +348,9 @@ class CalibrationReport
     }
 
     /**
-     * Every item judged as the front desk would judge it under the bars: one line for each, then the D-14 summary line.
+     * Every text judged as the front desk would judge it under the bars: one line for each, then the D-14 summary line. A
+     * walk's turn is one text however many Jev calls it made: it sends only when every call sends and nothing else holds
+     * it, and it holds, or hands off, when any call or the model's never-on-its-own label does.
      *
      * @param  list<array{item: CalibrationItem, result: ClassifierResult, label: string}>  $runs
      * @param  array<string, float>  $bars
@@ -300,26 +364,38 @@ class CalibrationReport
         $riskyHeld = 0;
         $risky = 0;
 
-        foreach ($runs as $run) {
-            $verdict = $this->verdict->judge($run['result'], $questions, $bars, $run['item']->role, $run['item']->customerMessage);
-            $isPlain = $run['item']->side === CalibrationItem::PLAIN;
-            $why = $verdict['reasons'] === [] ? '' : ', '.implode(', ', $verdict['reasons']);
+        foreach ($this->texts($runs) as $text) {
+            $held = $text['item']->vetoes !== [];
+            $handedOff = false;
+            $reasons = $text['item']->vetoes;
+
+            foreach ($text['runs'] as $run) {
+                $verdict = $this->verdict->judge($run['result'], $questions, $bars, $run['item']->role, $run['item']->customerMessage);
+
+                if ($verdict['held']) {
+                    $held = true;
+                    $handedOff = $handedOff || $verdict['handedOff'];
+                    $reasons = [...$reasons, ...$verdict['reasons']];
+                }
+            }
+
+            $isPlain = $text['item']->side === CalibrationItem::PLAIN;
 
             if ($isPlain) {
                 $plain++;
-                $plainHeld += $verdict['held'] ? 1 : 0;
+                $plainHeld += $held ? 1 : 0;
             } else {
                 $risky++;
-                $riskyHeld += $verdict['held'] ? 1 : 0;
+                $riskyHeld += $held ? 1 : 0;
             }
 
             $what = match (true) {
-                ! $verdict['held'] => $isPlain ? 'sent' : 'sends',
-                $verdict['handedOff'] => 'held (handed to the owner)',
+                ! $held => $isPlain ? 'sent' : 'sends',
+                $handedOff => 'held (handed to the owner)',
                 default => 'held',
             };
 
-            $lines[] = '  ['.($isPlain ? 'plain' : 'risky').'] '.$what.': '.$run['label'].($verdict['held'] ? $why : '');
+            $lines[] = '  ['.($isPlain ? 'plain' : 'risky').'] '.$what.': '.$text['label'].($held ? ', '.implode(', ', array_values(array_unique($reasons))) : '');
         }
 
         $lines[] = 'Plain sent on their own: '.($plain - $plainHeld)." of {$plain}. Risky held or handed off: {$riskyHeld} of {$risky}.";
@@ -328,5 +404,29 @@ class CalibrationReport
             : "D-14: not met under these bars. Plain texts held: {$plainHeld} of {$plain}. Risky texts that would send: ".($risky - $riskyHeld)." of {$risky}.";
 
         return $lines;
+    }
+
+    /**
+     * The runs as texts: each run of a calibration item is a text of its own, and every call of one walk turn is one text.
+     *
+     * @param  list<array{item: CalibrationItem, result: ClassifierResult, label: string}>  $runs
+     * @return list<array{item: CalibrationItem, label: string, runs: list<array{item: CalibrationItem, result: ClassifierResult, label: string}>}>
+     */
+    private function texts(array $runs): array
+    {
+        $texts = [];
+
+        foreach ($runs as $run) {
+            $fromWalk = $run['item']->source === CalibrationItem::WALK;
+            $key = $fromWalk ? $run['item']->id : (string) count($texts);
+
+            if (! isset($texts[$key])) {
+                $texts[$key] = ['item' => $run['item'], 'label' => $fromWalk ? '"'.$run['item']->customerMessage.'" ('.$run['item']->id.')' : $run['label'], 'runs' => []];
+            }
+
+            $texts[$key]['runs'][] = $run;
+        }
+
+        return array_values($texts);
     }
 }

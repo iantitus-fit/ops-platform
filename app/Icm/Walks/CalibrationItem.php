@@ -48,6 +48,7 @@ readonly class CalibrationItem
     /**
      * @param  list<string>  $measured  The score keys that were measured; empty for a placeholder.
      * @param  list<ClassifierResult>  $results  One for each time Jev was asked.
+     * @param  list<string>  $vetoes  What holds the text whatever Jev scored, such as label:promise; only a walk's turn has any.
      */
     public function __construct(
         public string $id,
@@ -59,6 +60,7 @@ readonly class CalibrationItem
         public string $source,
         public array $measured,
         public array $results,
+        public array $vetoes = [],
     ) {}
 
     /**
@@ -68,7 +70,7 @@ readonly class CalibrationItem
      */
     public function withResults(array $results, string $source): self
     {
-        return new self($this->id, $this->side, $this->check, $this->role, $this->customerMessage, $this->draftReply, $source, self::SCORE_KEYS, $results);
+        return new self($this->id, $this->side, $this->check, $this->role, $this->customerMessage, $this->draftReply, $source, self::SCORE_KEYS, $results, $this->vetoes);
     }
 
     /**

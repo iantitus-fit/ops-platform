@@ -140,6 +140,18 @@ readonly class CalibrationSet
     }
 
     /**
+     * One recorded result, such as a walk recording holds, read the same way a result of the set is.
+     *
+     * @param  array<array-key, mixed>  $result
+     *
+     * @throws InvalidArgumentException in plain words when the result cannot be used
+     */
+    public static function resultFromArray(array $result): ClassifierResult
+    {
+        return self::result($result, fn (string $field, string $what): InvalidArgumentException => new InvalidArgumentException("A recorded result: {$field} {$what}."), 'result');
+    }
+
+    /**
      * @param  array<array-key, mixed>  $item
      */
     private static function item(array $item, int $position): CalibrationItem

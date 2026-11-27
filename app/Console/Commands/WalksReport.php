@@ -7,6 +7,7 @@ use App\Icm\FolderSync;
 use App\Icm\HiddenCharacters;
 use App\Icm\Walks\CalibrationReport;
 use App\Icm\Walks\CalibrationSet;
+use App\Icm\Walks\CalibrationWalkSource;
 use App\SendRule\TriageQuestions;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -30,18 +31,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 class WalksReport extends Command
 {
     /**
-     * Why each bar that does not move is kept, by the decision that keeps it.
+     * Why each bar that does not move is kept, in the words of the refusal, by the decision that keeps it (D-15).
      */
     private const array KEPT_BY = [
-        'price_max_yes' => '02 D-45, D-56',
-        'discount_max_yes' => '02 D-45, D-56',
-        'life_safety_min_yes' => '02 D-46',
+        'price_max_yes' => 'does not move (02 D-45, D-56)',
+        'discount_max_yes' => 'does not move (02 D-45, D-56)',
+        'life_safety_min_yes' => 'does not move (02 D-46)',
     ];
 
     /**
      * Execute the console command.
      */
-    public function handle(FolderSync $folderSync, Filesystem $files, CalibrationReport $report): int
+    public function handle(FolderSync $folderSync, Filesystem $files, CalibrationReport $report, CalibrationWalkSource $walks): int
     {
         $shipped = array_map(floatval(...), (array) config('gate.classifier'));
 
@@ -77,7 +78,9 @@ class WalksReport extends Command
         $triage = (array) ($compiled['files'][(string) ($compiled['index']['triage'] ?? '')] ?? []);
         $questions = TriageQuestions::fromConfig((array) ($triage['front_matter'] ?? []));
 
-        foreach ($report->lines($set, [], $questions, [...$shipped, ...$given], $given) as $line) {
+        $bars = [...$shipped, ...$given];
+
+        foreach ($report->lines($set, $walks->items($compiled), $questions, $bars, $given, $walks->bookingRuns($compiled, $bars)) as $line) {
             $this->say($line);
         }
 
@@ -106,7 +109,7 @@ class WalksReport extends Command
             [$name, $text] = [trim($parts[0]), trim($parts[1])];
 
             if (isset(self::KEPT_BY[$name])) {
-                throw new InvalidArgumentException("{$name} does not move (".self::KEPT_BY[$name].'); the report judges it at '.CalibrationReport::numberText($shipped[$name]).'.');
+                throw new InvalidArgumentException("{$name} ".self::KEPT_BY[$name].'; the report judges it at '.CalibrationReport::numberText($shipped[$name]).'.');
             }
 
             if (! array_key_exists($name, $shipped)) {
