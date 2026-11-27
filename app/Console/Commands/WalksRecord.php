@@ -6,12 +6,19 @@ use App\Ai\BookingSectionWording;
 use App\Icm\Exceptions\IcmFolderMissing;
 use App\Icm\FolderSync;
 use App\Icm\HiddenCharacters;
+use App\Icm\Walks\CalibrationItem;
+use App\Icm\Walks\CalibrationSet;
+use App\Icm\Walks\ScratchWorld;
 use App\Icm\Walks\WalkFile;
 use App\Icm\Walks\WalkFingerprint;
 use App\Icm\Walks\WalkOutcome;
 use App\Icm\Walks\WalkResult;
 use App\Icm\Walks\WalkRunner;
 use App\Models\WalkRecording;
+use App\SendRule\Classifier;
+use App\SendRule\ClassifierFailed;
+use App\SendRule\ClassifierResult;
+use App\SendRule\TriageQuestions;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -39,11 +46,15 @@ use Symfony\Component\Console\Output\OutputInterface;
  * as one JSON file, the form the committed fixtures use, so a live run can refresh them. Both are given by Ian, never by a test
  * against a provider.
  *
+ * --calibration records no walk. It asks the container's Classifier, which is the live Jev in Ian's run, about each text of the
+ * calibration set, --runs times, and writes the raw scores back into the set only when every call answered (10 D-13, D-17 step 2).
+ * A test passes it a temporary copy, never the committed set.
+ *
  * It does not take the sync lock and it never calls a provider outside a run Ian starts. Lines that hold a file name, a
  * check's words or a provider's error text are printed raw, with hidden characters marked, so none is read as console
  * formatting or forges a line.
  */
-#[Signature('walks:record {walk?* : Walk files to record, such as tests/dana.md; every walk in the folder when none is named} {--variant= : A Booking wording file (JSON) to record with instead of the prompt as built} {--export= : A folder to write each recording to as JSON}')]
+#[Signature('walks:record {walk?* : Walk files to record, such as tests/dana.md; every walk in the folder when none is named} {--variant= : A Booking wording file (JSON) to record with instead of the prompt as built} {--export= : A folder to write each recording to as JSON} {--calibration= : Record the calibration set at this path instead of the walks} {--runs=1 : How many times to ask Jev about each calibration text, 1 to 10}')]
 #[Description('Play each walk once against the folder as it is now, with the live model and Jev, keep their replies and raw scores, and send nothing')]
 class WalksRecord extends Command
 {
@@ -52,6 +63,16 @@ class WalksRecord extends Command
      */
     public function handle(FolderSync $folderSync, WalkRunner $runner, Filesystem $files): int
     {
+        if ($this->option('calibration') !== null) {
+            return $this->recordCalibration($folderSync, $files);
+        }
+
+        if ($this->input->hasParameterOption('--runs')) {
+            $this->say('--runs only applies with --calibration.');
+
+            return self::FAILURE;
+        }
+
         try {
             $variant = $this->wording($files);
         } catch (InvalidArgumentException $exception) {
@@ -124,6 +145,125 @@ class WalksRecord extends Command
         }
 
         return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Ask the container's Classifier about each text of the calibration set and keep what it answered, in place.
+     *
+     * The folder is opened as a scratch world with HTTP allowed, the way a walk is recorded, so nothing live is written and
+     * only the Classifier's own call leaves the app. A reading asks about the customer's text alone (an empty draft), a words
+     * check about the text and the item's reply. The file is written once, after every call has answered; a call that did not
+     * answer ends the run with nothing written.
+     */
+    private function recordCalibration(FolderSync $folderSync, Filesystem $files): int
+    {
+        $runs = (string) $this->option('runs');
+
+        if (preg_match('/^\d+$/', $runs) !== 1 || (int) $runs < 1 || (int) $runs > 10) {
+            $this->say('--runs must be a whole number from 1 to 10.');
+
+            return self::FAILURE;
+        }
+
+        $given = (string) $this->option('calibration');
+        $path = $files->exists($given) ? $given : base_path($given);
+
+        try {
+            $set = $this->calibrationSet($files, $path, $given);
+            $candidate = $folderSync->candidateForWalks();
+        } catch (InvalidArgumentException|IcmFolderMissing $exception) {
+            $this->say($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
+        if ($candidate->errors !== [] || $candidate->compiled === null) {
+            foreach ($candidate->errors as $error) {
+                $this->say($error);
+            }
+
+            $this->say('The folder does not pass its checks, so nothing was recorded.');
+
+            return self::FAILURE;
+        }
+
+        $compiled = $candidate->compiled;
+        $triage = (array) ($compiled['files'][(string) ($compiled['index']['triage'] ?? '')] ?? []);
+        $questions = TriageQuestions::fromConfig((array) ($triage['front_matter'] ?? []));
+        $world = ScratchWorld::open($compiled, allowHttp: true);
+
+        try {
+            $classifier = app(Classifier::class);
+            $answered = [];
+
+            foreach ($set->items() as $item) {
+                $results = [];
+
+                for ($run = 0; $run < (int) $runs; $run++) {
+                    try {
+                        $results[] = $classifier->classify($item->customerMessage, $item->draftReply, $questions);
+                    } catch (ClassifierFailed $failed) {
+                        $this->say("{$item->id}: Jev did not answer ({$failed->getMessage()}). Nothing was written.");
+
+                        return self::FAILURE;
+                    }
+                }
+
+                $answered[$item->id] = $results;
+            }
+        } finally {
+            $world->close();
+        }
+
+        $recorded = $set;
+        $model = '';
+
+        foreach ($answered as $id => $results) {
+            $recorded = $recorded->withResults($id, $results, CalibrationItem::LIVE);
+            $model = $model === '' ? $this->modelOf($results) : $model;
+
+            $this->say("Recorded {$id}: ".count($results).(count($results) === 1 ? ' run.' : ' runs.'));
+        }
+
+        $files->put($path, json_encode($recorded->recorded($model, now()->toIso8601String())->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL);
+
+        $this->say("Wrote the scores of {$set->itemCount()} items to {$path}. Every score is now a measurement from the classifier that answered.");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * The calibration set at a path.
+     *
+     * @throws InvalidArgumentException in plain words when the file is missing, is not JSON or holds an item that cannot be used
+     */
+    private function calibrationSet(Filesystem $files, string $path, string $given): CalibrationSet
+    {
+        if (! $files->isFile($path)) {
+            throw new InvalidArgumentException("The calibration set {$given} was not found.");
+        }
+
+        try {
+            $data = json_decode($files->get($path), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new InvalidArgumentException("The calibration set {$given} could not be read as JSON.");
+        }
+
+        if (! is_array($data)) {
+            throw new InvalidArgumentException("The calibration set {$given} could not be read as JSON.");
+        }
+
+        return CalibrationSet::fromArray($data);
+    }
+
+    /**
+     * The model that answered the first call of a list of results.
+     *
+     * @param  list<ClassifierResult>  $results
+     */
+    private function modelOf(array $results): string
+    {
+        return $results[0]->model ?? '';
     }
 
     /**

@@ -79,6 +79,14 @@ readonly class CalibrationSet
     }
 
     /**
+     * How many items the set holds.
+     */
+    public function itemCount(): int
+    {
+        return count($this->items);
+    }
+
+    /**
      * How many items still hold placeholder scores.
      */
     public function placeholderCount(): int
