@@ -334,32 +334,23 @@ recording. These are the steps, in order.
    name `say-what-the-words-are-for`, and
    `tests/Fixtures/booking-wording/drop-the-mechanics.json` with the name
    `drop-the-mechanics`.
-2. With `ICM_PATH` on the example folder, or unset, run
-   `php artisan walks:record`. Today's Booking text is the baseline.
-3. Record the three walks whose scheduling replies D-19 judges with each wording:
-   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json`
+2. With `ICM_PATH` on the example folder, or unset, record and export every
+   walk in one pass: `php artisan walks:record --export=tests/Fixtures/walks`.
+   Today's Booking text is the baseline.
+3. Record and export the three booking walks once with each wording:
+   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json --export=tests/Fixtures/walks`
    and
-   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`
+   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json --export=tests/Fixtures/walks`
 4. Record the calibration set:
    `php artisan walks:record --calibration=tests/Fixtures/calibration/calibration-set.json --runs=3`
-5. Export the recordings as fixtures:
-   `php artisan walks:record --export=tests/Fixtures/walks`
-   and the same with each wording:
-   `php artisan walks:record --export=tests/Fixtures/walks --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json`
-   and
-   `php artisan walks:record --export=tests/Fixtures/walks --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`
-   Export plays every walk again, so this step records again and replaces the
-   rows from steps 2 and 3. With no walk named, each of the last two commands
-   plays every walk in the folder with that wording. The report in step 6 then
-   reads the same recording the exported fixtures hold.
-6. Read the report: `php artisan walks:report`. Then run it again with
+5. Read the report: `php artisan walks:report`. Then run it again with
    `--bar` for each number under consideration, for example
    `php artisan walks:report --bar=complaint_max_yes=0.25`.
-7. Decide, in one sitting: the bars, or a `rules/triage.md` reword for any
+6. Decide, in one sitting: the bars, or a `rules/triage.md` reword for any
    check where the report says no number separates plain from real (D-13's
    stop), and the winning Booking wording, together, against this one
    recording.
-8. Only then is the follow-up approved-values plan planned. It writes the
+7. Only then is the follow-up approved-values plan planned. It writes the
    approved values and the chosen wording test-first, commits the refreshed
    fixtures with them, and asserts D-14 against them. Phase 10 closes after that
    plan is executed, and not before.
