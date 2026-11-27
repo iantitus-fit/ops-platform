@@ -5,16 +5,16 @@ milestone_name: Model Home
 current_phase: 10
 current_phase_name: Walk Tests and the Gate
 status: executing
-stopped_at: Completed 10-07-PLAN.md
-last_updated: "2026-11-26T23:37:09.745Z"
+stopped_at: Completed 10-08-PLAN.md
+last_updated: "2026-11-27T02:07:19.551Z"
 last_activity: 2026-11-26
 last_activity_desc: Phase 10 execution started
-state_head: 4a206d5c00efe9051dacf9bc2d11d4971ec09a0b
+state_head: 0a7f8969ab89e637861ea3365ef1d26a5319115c
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 77
-  completed_plans: 74
+  completed_plans: 75
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-18)
 ## Current Position
 
 Phase: 10 (Walk Tests and the Gate) — EXECUTING
-Plan: 9 of 11
+Plan: 2 of 11
 Status: Ready to execute
 Last activity: 2026-11-26 — Phase 10 execution started
 
@@ -216,6 +216,7 @@ Progress: [███████░░░] 67% (6 of 9 v2.0 phases complete)
 | Phase 10 P06 | 20 min | 3 tasks | 16 files |
 | Phase 10 P11 | 15 min | 3 tasks | 8 files |
 | Phase 10 P07 | 20 min | 2 tasks | 7 files |
+| Phase 10 P08 | 40 min | 2 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -357,6 +358,8 @@ Full log in PROJECT.md Key Decisions (DEC-01 to DEC-14 locked; do not reopen). M
 - [Phase 10]: 10-11: the price walk's text and tape for page cases live in tests/Feature/Walks/WalkHelpers.php (pricingWalkText, pricingWalkTape) so BusinessFolderPageTest gains only its require_once line and new cases
 - [Phase 10]: 10-07: Dana's feature case asserts the booking, owner alert, card, today.md and reminder before the runner's outcome, so each break reads as its own failure
 - [Phase 10]: 10-07: danaFakes() gives turn 1's reading complaint 0.04 (under the shipped 0.15 bar); the 0.005 lowered bar is under every fake score, so the case does not isolate that one score
+- [Phase 10]: 10-08: the plain walk's turn 1 reading carries complaint 0.05 at confidence 0.97, so the lowered complaint bar case (0.03) trips on the walk's own recorded score (Ian, 2026-11-26)
+- [Phase 10]: 10-08: the person walk's customer sentence avoids the AsksForPerson keyword list so Jev's reading decides; the person-bar case asserts the NeedsRecording line because a recording that hands off before the model is asked holds no turn-1 model reply (Ian, 2026-11-26)
 
 ### Pending Todos
 
@@ -427,8 +430,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-26T23:37:09.636Z
-Stopped at: Completed 10-07-PLAN.md
+Last session: 2026-11-27T02:07:19.455Z
+Stopped at: Completed 10-08-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
