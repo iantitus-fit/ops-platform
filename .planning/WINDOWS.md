@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 55
+open_count: 60
 waived_count: 1
 fixed_count: 44
-total_count: 100
-last_updated: 2026-11-27T15:05:34.397Z
+total_count: 105
+last_updated: 2026-11-27T19:37:59.751Z
 ---
 
 # Broken Windows Ledger
@@ -115,6 +115,11 @@ last_updated: 2026-11-27T15:05:34.397Z
 | 98 | 10 | stub | tests/Fixtures/walks |  | The eight example walk fixtures (plain-first-texts, booked-time-question, link-again, price-question, discount-question, promise-question, complaint, asks-for-person) are placeholders made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-08, 10 D-17) | open |  | 2026-11-27T01:59:59.477Z |  |
 | 99 | 10 | stub | tests/Fixtures/calibration/calibration-set.json |  | Eight calibration items hold placeholder scores (three plain intake answers and the five risky texts), not measurements; Ian's walks:record --calibration run replaces them (D-17 step 2) | open |  | 2026-11-27T15:05:34.310Z |  |
 | 100 | 10 | unrun-verify | app/Console/Commands/WalksRecord.php |  | walks:record --calibration has not been run against the live Jev; it is Ian's own run (D-17 step 2) and a GSD run never makes it | open |  | 2026-11-27T15:05:34.397Z |  |
+| 101 | 10 | unrun-verify | resources/views/filament/pages/business-folder.blade.php |  | Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line, at end-of-phase UAT (10-10; automated axe checks catch only part of WCAG) | open |  | 2026-11-27T19:37:59.382Z |  |
+| 102 | 10 | unrun-verify | app/Icm/FolderSync.php |  | Sync Now on the example folder after Ian's recording: time the gate with the shipped walk set and confirm the page shows Filament's loading state and no timeout, at UAT (10-10) | open |  | 2026-11-27T19:37:59.480Z |  |
+| 103 | 10 | unrun-verify | resources/views/filament/pages/business-folder.blade.php |  | Phone walk of the Business Folder page with walk lines: no sideways scroll on a real phone; looks-only findings go to .planning/todos/pending/2026-10-17-phone-design-pass.md (10-10) | open |  | 2026-11-27T19:37:59.571Z |  |
+| 104 | 10 | unrun-verify | tests/Feature/Filament/BusinessFolderWalkLinesBrowserTest.php |  | After Ian pushes the phase branch, both CI legs (sqlite and pgsql) green with the browser tests included; Postgres is not available here (10-10) | open |  | 2026-11-27T19:37:59.662Z |  |
+| 105 | 10 | unrun-verify | docs/SETUP.md |  | Section 14's recording and decision commands are written from the source of walks:record and walks:report and have not been run against the live model and Jev; the run is Ian's own (D-17, 10-10) | open |  | 2026-11-27T19:37:59.751Z |  |
 
 ````json
 [
@@ -1415,6 +1420,71 @@ last_updated: 2026-11-27T15:05:34.397Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-27T15:05:34.397Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 101,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "resources/views/filament/pages/business-folder.blade.php",
+    "line": null,
+    "description": "Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line, at end-of-phase UAT (10-10; automated axe checks catch only part of WCAG)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T19:37:59.382Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 102,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "app/Icm/FolderSync.php",
+    "line": null,
+    "description": "Sync Now on the example folder after Ian's recording: time the gate with the shipped walk set and confirm the page shows Filament's loading state and no timeout, at UAT (10-10)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T19:37:59.480Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 103,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "resources/views/filament/pages/business-folder.blade.php",
+    "line": null,
+    "description": "Phone walk of the Business Folder page with walk lines: no sideways scroll on a real phone; looks-only findings go to .planning/todos/pending/2026-10-17-phone-design-pass.md (10-10)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T19:37:59.571Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 104,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "tests/Feature/Filament/BusinessFolderWalkLinesBrowserTest.php",
+    "line": null,
+    "description": "After Ian pushes the phase branch, both CI legs (sqlite and pgsql) green with the browser tests included; Postgres is not available here (10-10)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T19:37:59.662Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 105,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "docs/SETUP.md",
+    "line": null,
+    "description": "Section 14's recording and decision commands are written from the source of walks:record and walks:report and have not been run against the live model and Jev; the run is Ian's own (D-17, 10-10)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T19:37:59.751Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
