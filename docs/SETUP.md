@@ -237,3 +237,133 @@ version stays live. Add each field below before the next sync.
   written before the visit line needs it added; without it the sync refuses
   the whole folder (`08-REVIEW.md` IN-10). The line holds `{day}` and `{time}`
   once each, and `{service}` at most once.
+
+## 14. Recording the walks and settling the bars (Ian)
+
+A walk is a walk test file in a business folder, under `tests/`: a made-up
+customer, the texts that customer sends one after another, and what the owner
+expects to happen after each. Every sync that would make a change live replays
+each walk from a recording of what the front desk model and Jev answered when
+Ian ran it, and refuses the change if a walk fails. A walk with no recording is
+refused too, so the version that is live stays live.
+
+`walks:record` makes the recording. It plays each walk once with the live model
+and the live Jev, against the business folder as it is on disk. It sends no
+text, writes no contact, message, booking or alert, never changes the folder
+and never makes a version. It keeps the model's replies and Jev's raw scores in
+this instance's database, one row for each walk, stored by the walk's path, the
+hash of its script and the wording it was recorded with. Recording a walk again
+replaces its row. A recording is kept even when the walk's checks did not pass
+under today's bars, because the bars are approved from these recordings. If the
+model or Jev does not answer for a walk, nothing is kept for that walk, the
+rest are still recorded, and the command ends with a failure.
+
+Run every command in this section from the repository root. The business is the
+folder `ICM_PATH` points at, which must be an absolute path when it is set. When
+it is not set, the commands use the example business in `examples/example-hvac`.
+The model and Jev keys come from `.env`, so these commands cost real calls.
+
+Run `walks:record` for a business:
+
+- before a new walk goes into that business's folder;
+- when `changelog.md` names a walk as stale or as needing a new recording;
+- at the first deploy, and on any new instance, before the first sync. A fresh
+  install or a new instance has no recordings, so until `walks:record` has run
+  for a business every one of its walks is refused as unrecorded (10 D-26, the
+  same note sits in `ROADMAP.md` as a Phase 12 input).
+
+The same is true on a developer machine: after Phase 10, the developer's own
+`php artisan icm:sync` of the example folder refuses until
+`php artisan walks:record` has run once.
+
+The commands, as they work today:
+
+- `php artisan walks:record` records every walk in the folder.
+- `php artisan walks:record tests/dana.md` records only the walk named. A walk
+  is named by its path in the folder, and a path that is not a walk test in the
+  folder is refused. More than one path can be given.
+- `php artisan walks:record tests/dana.md --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`
+  records with the Booking section's two texts taken from a wording file in
+  place of the front desk prompt as built, and stores the row under that
+  wording's name. The sync never replays a wording row. The path is used as
+  given when the file exists from where you are, and otherwise is read from the
+  repository root.
+- `php artisan walks:record --export=tests/Fixtures/walks` plays each walk again
+  with the live model and Jev, replaces the stored row, and writes the
+  recording as one JSON file in that folder named after the walk file, such as
+  `tests/Fixtures/walks/dana.json`, or `dana.drop-the-mechanics.json` for a
+  recording made with that wording. It does not export the rows already stored,
+  and the folder is used exactly as given from where you are.
+- `php artisan walks:record --calibration=tests/Fixtures/calibration/calibration-set.json --runs=3`
+  records no walk. It asks Jev about each text in the calibration set three
+  times and writes Jev's live scores into that file, only when every call
+  answered. `--runs` is a whole number from 1 to 10 and is refused without
+  `--calibration=`. The path is given with the option, never alone, and
+  `--variant` and `--export` do not apply to it. This writes Jev's live scores
+  into the committed calibration fixture. That file, like the exported walk
+  fixtures, is committed only with the follow-up approved-values plan below,
+  never on its own.
+- `php artisan walks:report` only reads. For each bar Phase 10 lets move, it
+  prints which plain texts would be held and which risky texts would send, at
+  each candidate number, and the Booking wording results. With no
+  `--calibration=` it reads `tests/Fixtures/calibration/calibration-set.json`.
+- `php artisan walks:report --bar=complaint_max_yes=0.25` judges by a number you
+  give in place of the one in `config/gate.php`. The name must be a bar in the
+  `classifier` block of `config/gate.php`, and the value a number from 0 to 1.
+  `price_max_yes`, `discount_max_yes` and `life_safety_min_yes` do not move and
+  are refused. Give `--bar` more than once to try several at the same time.
+
+A wording file is JSON with three fields. `name` uses only lowercase letters,
+digits and dashes, and is never `as_built`. `booking_online` is the Booking
+section's text for a customer with no visit ahead, and holds `{services}`
+exactly once, where the list of services goes. `booking_visit_booked` is the text
+for a customer with a visit booked ahead.
+`tests/Fixtures/booking-wording/test-variant.json` shows the shape. A wording
+holds no owner line and no booking address.
+
+### The Phase 10 decision run (D-17)
+
+Phase 10 builds the recording, the report and the gate, and stops there. The
+bars and the Booking wording are approved together, by Ian, against one
+recording. These are the steps, in order.
+
+1. Write the two Booking wording files that D-18 describes, "say what the words
+   are for" and "drop the mechanics". No plan wrote them, by Ian's instruction
+   not to guess Booking wording. Put them outside the business folder:
+   `tests/Fixtures/booking-wording/say-what-the-words-are-for.json` with the
+   name `say-what-the-words-are-for`, and
+   `tests/Fixtures/booking-wording/drop-the-mechanics.json` with the name
+   `drop-the-mechanics`.
+2. With `ICM_PATH` on the example folder, or unset, run
+   `php artisan walks:record`. Today's Booking text is the baseline.
+3. Record the three walks whose scheduling replies D-19 judges with each wording:
+   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json`
+   and
+   `php artisan walks:record tests/booked-time-question.md tests/link-again.md tests/dana.md --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`
+4. Record the calibration set:
+   `php artisan walks:record --calibration=tests/Fixtures/calibration/calibration-set.json --runs=3`
+5. Export the recordings as fixtures:
+   `php artisan walks:record --export=tests/Fixtures/walks`
+   and the same with each wording:
+   `php artisan walks:record --export=tests/Fixtures/walks --variant=tests/Fixtures/booking-wording/say-what-the-words-are-for.json`
+   and
+   `php artisan walks:record --export=tests/Fixtures/walks --variant=tests/Fixtures/booking-wording/drop-the-mechanics.json`
+   Export plays every walk again, so this step records again and replaces the
+   rows from steps 2 and 3. With no walk named, each of the last two commands
+   plays every walk in the folder with that wording. The report in step 6 then
+   reads the same recording the exported fixtures hold.
+6. Read the report: `php artisan walks:report`. Then run it again with
+   `--bar` for each number under consideration, for example
+   `php artisan walks:report --bar=complaint_max_yes=0.25`.
+7. Decide, in one sitting: the bars, or a `rules/triage.md` reword for any
+   check where the report says no number separates plain from real (D-13's
+   stop), and the winning Booking wording, together, against this one
+   recording.
+8. Only then is the follow-up approved-values plan planned. It writes the
+   approved values and the chosen wording test-first, commits the refreshed
+   fixtures with them, and asserts D-14 against them. Phase 10 closes after that
+   plan is executed, and not before.
+
+Do not commit the exported fixtures, or the calibration set with its live
+scores, on their own. Under today's bars the plain walks may fail against a
+real recording, and CI would go red.
