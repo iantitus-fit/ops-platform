@@ -335,3 +335,24 @@ function seedRecordingFromFixture(string $name): WalkRecording
         'recorded_at' => $fixture['recorded_at'],
     ]);
 }
+
+/**
+ * The example business's nine walk names, in path order: Dana and the eight walks 10-08 ships beside her (D-12). A test
+ * that wants every one of them laid in, replayed or checked walks this list.
+ *
+ * @return list<string>
+ */
+function exampleWalkNames(): array
+{
+    return [
+        'asks-for-person',
+        'booked-time-question',
+        'complaint',
+        'dana',
+        'discount-question',
+        'link-again',
+        'plain-first-texts',
+        'price-question',
+        'promise-question',
+    ];
+}
