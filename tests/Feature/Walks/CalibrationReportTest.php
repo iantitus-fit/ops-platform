@@ -414,3 +414,163 @@ it('ends the combined block with the D-14 summary line and asserts nothing about
     expect($exit)->toBe(0)
         ->and($output)->toContain('D-14: ');
 });
+
+/**
+ * A temporary copy of the committed calibration set, so a test that refreshes the scores never writes the committed file.
+ */
+function calibrationCopy(): string
+{
+    $path = sys_get_temp_dir().'/calibration-copy-'.Str::uuid().'.json';
+
+    File::copy(calibrationFixturePath(), $path);
+
+    return $path;
+}
+
+/**
+ * Run walks:record in the example folder this test made live and return its exit code and everything it printed.
+ *
+ * @param  array<string, mixed>  $options
+ * @return array{0: int, 1: string}
+ */
+function walksRecordRun(array $options): array
+{
+    $buffer = new BufferedOutput;
+    $exit = Artisan::call('walks:record', $options, $buffer);
+
+    return [$exit, $buffer->fetch()];
+}
+
+/**
+ * Queue distinct scores for the 15 items of the committed set asked twice each: the readings and the words checks each get
+ * a confidence of their own, so a result can be traced to the call that made it. The set holds 11 readings and 4 words checks.
+ *
+ * @return array{readings: list<float>, words: list<float>}
+ */
+function queueCalibrationScores(int $runs): array
+{
+    $readings = [];
+    $words = [];
+
+    foreach (calibrationFixtureData()['items'] as $item) {
+        for ($run = 0; $run < $runs; $run++) {
+            if ($item['role'] === 'reading') {
+                $readings[] = round(0.5 + count($readings) * 0.01, 2);
+            } else {
+                $words[] = round(0.3 + count($words) * 0.01, 2);
+            }
+        }
+    }
+
+    fakeClassifier()
+        ->queueReadings(...array_map(fn (float $confidence): array => ['intent' => 'intake', 'confidence' => $confidence], $readings))
+        ->queueAnswers(...array_map(fn (float $confidence): array => ['intent' => 'faq', 'confidence' => $confidence], $words));
+
+    return ['readings' => $readings, 'words' => $words];
+}
+
+it("refreshes a copy of the calibration set with the classifier's raw scores (D-13, Ian's D-02 ruling)", function () {
+    activateExampleFolder();
+
+    $queued = queueCalibrationScores(2);
+    $path = calibrationCopy();
+
+    try {
+        [$exit, $output] = walksRecordRun(['--calibration' => $path, '--runs' => 2]);
+        $written = json_decode(File::get($path), true, 512, JSON_THROW_ON_ERROR);
+    } finally {
+        File::delete($path);
+    }
+
+    $original = calibrationFixtureData();
+    $readings = $queued['readings'];
+    $words = $queued['words'];
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('Recorded first-text-reading')
+        ->and($output)->toContain($path)
+        ->and($written['recorded_with']['source'])->toBe('live')
+        ->and($written['recorded_with']['jev_model'])->toBe('fake-jev')
+        ->and($written['recorded_with']['recorded_at'])->not->toBeNull()
+        ->and($written['items'])->toHaveCount(count($original['items']));
+
+    foreach ($written['items'] as $index => $item) {
+        $was = $original['items'][$index];
+        $expected = $item['role'] === 'reading' ? [array_shift($readings), array_shift($readings)] : [array_shift($words), array_shift($words)];
+
+        expect(array_map(fn (array $result): float => $result['intent_confidence'], $item['results']))->toBe($expected)
+            ->and($item['results'][0]['yes_no']['complaint'])->toBe(0.01)
+            ->and($item['source'])->toBe('live')
+            ->and($item['measured'])->toBe(CalibrationItem::SCORE_KEYS)
+            ->and([$item['id'], $item['side'], $item['check'], $item['role'], $item['customer_message'], $item['draft_reply']])
+            ->toBe([$was['id'], $was['side'], $was['check'], $was['role'], $was['customer_message'], $was['draft_reply']]);
+    }
+});
+
+it('never touches the committed calibration set in a test (T-10-34)', function () {
+    activateExampleFolder();
+    queueCalibrationScores(1);
+
+    $before = hash_file('sha256', calibrationFixturePath());
+    $path = calibrationCopy();
+
+    try {
+        walksRecordRun(['--calibration' => $path]);
+    } finally {
+        File::delete($path);
+    }
+
+    expect(hash_file('sha256', calibrationFixturePath()))->toBe($before);
+});
+
+it('keeps nothing when Jev fails (D-13)', function () {
+    activateExampleFolder();
+    fakeClassifier()->failWith('down');
+
+    $path = calibrationCopy();
+    $before = hash_file('sha256', $path);
+
+    try {
+        [$exit, $output] = walksRecordRun(['--calibration' => $path]);
+        $after = hash_file('sha256', $path);
+    } finally {
+        File::delete($path);
+    }
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('first-text-reading')
+        ->and($output)->toContain('down')
+        ->and($output)->toContain('Nothing was written')
+        ->and($after)->toBe($before);
+});
+
+it('refuses --runs outside 1 to 10 in plain words and writes nothing', function (string $runs) {
+    activateExampleFolder();
+
+    $path = calibrationCopy();
+    $before = hash_file('sha256', $path);
+
+    try {
+        [$exit, $output] = walksRecordRun(['--calibration' => $path, '--runs' => $runs]);
+        $after = hash_file('sha256', $path);
+    } finally {
+        File::delete($path);
+    }
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('--runs must be a whole number from 1 to 10.')
+        ->and($after)->toBe($before)
+        ->and(fakeClassifier()->allCalls())->toBe([]);
+})->with(['zero' => '0', 'eleven' => '11', 'a word' => 'many', 'a fraction' => '2.5']);
+
+it('refuses --runs without --calibration, and a calibration file that is not there, in plain words', function () {
+    activateExampleFolder();
+
+    [$runsExit, $runsOutput] = walksRecordRun(['--runs' => 2]);
+    [$missingExit, $missingOutput] = walksRecordRun(['--calibration' => '/no/such/calibration.json']);
+
+    expect($runsExit)->toBe(1)
+        ->and($runsOutput)->toContain('--runs only applies with --calibration.')
+        ->and($missingExit)->toBe(1)
+        ->and($missingOutput)->toContain('The calibration set /no/such/calibration.json was not found.');
+});
