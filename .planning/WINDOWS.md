@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 51
+open_count: 53
 waived_count: 1
 fixed_count: 44
-total_count: 96
-last_updated: 2026-11-26T23:30:27.849Z
+total_count: 98
+last_updated: 2026-11-27T01:59:59.477Z
 ---
 
 # Broken Windows Ledger
@@ -111,6 +111,8 @@ last_updated: 2026-11-26T23:30:27.849Z
 | 94 | 10 | unrun-verify | resources/views/filament/pages/business-folder.blade.php |  | Keyboard-only and VoiceOver walk of the Business Folder page over a rejected sync with a failed walk line and an unrecorded line (10-11 hand check, UI-SPEC accessibility backstop) not run by the executor; left for end-of-phase UAT | open |  | 2026-11-26T20:10:01.553Z |  |
 | 95 | 10 | unrun-verify | tests/Feature/Walks/DanaEndToEndTest.php |  | Plan 10-07 human-check: after Ian pushes the phase branch, the CI pgsql leg is green for DanaEndToEndTest and the full suite (the walk world is in-memory SQLite while the live connection is Postgres; the folder-copy strip in tests/Pest.php touches every Feature test) | open |  | 2026-11-26T23:30:27.748Z |  |
 | 96 | 10 | stub | tests/Fixtures/walks/dana.json |  | Dana's committed recording is a placeholder made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-07, 10 D-17) | open |  | 2026-11-26T23:30:27.849Z |  |
+| 97 | 10 | unrun-verify | tests/Feature/Walks/ExampleWalksTest.php |  | CI pgsql leg for ExampleWalksTest and the full suite after Ian pushes the branch; Postgres is not available here (10-08) | open |  | 2026-11-27T01:59:59.387Z |  |
+| 98 | 10 | stub | tests/Fixtures/walks |  | The eight example walk fixtures (plain-first-texts, booked-time-question, link-again, price-question, discount-question, promise-question, complaint, asks-for-person) are placeholders made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-08, 10 D-17) | open |  | 2026-11-27T01:59:59.477Z |  |
 
 ````json
 [
@@ -1359,6 +1361,32 @@ last_updated: 2026-11-26T23:30:27.849Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-11-26T23:30:27.849Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 97,
+    "kind": "unrun-verify",
+    "phase": "10",
+    "file": "tests/Feature/Walks/ExampleWalksTest.php",
+    "line": null,
+    "description": "CI pgsql leg for ExampleWalksTest and the full suite after Ian pushes the branch; Postgres is not available here (10-08)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T01:59:59.387Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 98,
+    "kind": "stub",
+    "phase": "10",
+    "file": "tests/Fixtures/walks",
+    "line": null,
+    "description": "The eight example walk fixtures (plain-first-texts, booked-time-question, link-again, price-question, discount-question, promise-question, complaint, asks-for-person) are placeholders made with the suite's scripted model and classifier (source placeholder, fingerprint null); intended, replaced by Ian's walks:record --export live run (10-08, 10 D-17)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-27T01:59:59.477Z",
     "resolved_at": null,
     "milestone": "v2.0"
   }
