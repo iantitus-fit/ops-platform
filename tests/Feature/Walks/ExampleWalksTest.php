@@ -1,14 +1,17 @@
 <?php
 
 use App\Enums\VersionStatus;
+use App\Icm\ActiveConfig;
 use App\Icm\FolderSync;
 use App\Icm\Walks\WalkFile;
+use App\Icm\Walks\WalkFingerprint;
 use App\Icm\Walks\WalkOutcome;
 use App\Icm\Walks\WalkResult;
 use App\Icm\Walks\WalkRunner;
 use App\Icm\Walks\WalkTape;
 use App\Icm\Walks\WalkTurnObservation;
 use App\Models\IcmVersion;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 
 require_once __DIR__.'/WalkHelpers.php';
@@ -157,4 +160,101 @@ it('the person walk hands the conversation to the owner and alerts them (D-12)',
         ->and($asked->heldForOwner)->toBeFalse()
         ->and($asked->ownerAlerted)->toBeTrue()
         ->and($result->outcome)->toBe(WalkOutcome::Passed);
+});
+
+/**
+ * A shipped walk file as the runner plays it, read the way the sync reads it.
+ */
+function exampleWalksFile(string $name): WalkFile
+{
+    return walkFileFrom(File::get(base_path("examples/example-hvac/tests/{$name}.md")), "tests/{$name}.md");
+}
+
+it('every walk with no start passes on each weekday (Pitfall 5)', function (string $date) {
+    test()->travelTo(Carbon::parse("{$date} 07:00", 'America/Chicago'));
+
+    activateExampleFolder();
+
+    $names = array_values(array_filter(exampleWalkNames(), fn (string $name): bool => exampleWalksFile($name)->start === null));
+
+    layExampleWalks(...$names);
+
+    $outcomes = [];
+
+    foreach ($names as $name) {
+        $outcomes[$name] = exampleWalksReplay($name)->outcome;
+    }
+
+    expect($names)->toHaveCount(7)
+        ->and($outcomes)->toBe(array_fill_keys($names, WalkOutcome::Passed));
+})->with(['2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-05', '2026-12-06']);
+
+it('names a start only in the walk that depends on a dated offer (Pitfall 12)', function () {
+    $starts = [];
+
+    foreach (exampleWalkNames() as $name) {
+        $starts[$name] = exampleWalksFile($name)->start;
+    }
+
+    expect(array_filter($starts))->toBe(['dana' => '2026-12-01 10:00', 'discount-question' => '2026-12-01 10:00']);
+});
+
+it('matches every fixture to its walk\'s customer turns (D-05 in CI)', function (string $name) {
+    $fixture = json_decode(File::get(base_path("tests/Fixtures/walks/{$name}.json")), true, 512, JSON_THROW_ON_ERROR);
+
+    expect($fixture['walk_path'])->toBe("tests/{$name}.md")
+        ->and($fixture['script_hash'])->toBe(WalkFingerprint::scriptHash(exampleWalksFile($name)))
+        ->and($fixture['source'])->toBeIn(['placeholder', 'live']);
+})->with(exampleWalkNames());
+
+it('judges the person walk by today\'s asks_for_person bar (Ian\'s D-02 ruling)', function () {
+    $live = activateExampleFolder();
+    layExampleWalks(...exampleWalkNames());
+
+    foreach (exampleWalkNames() as $name) {
+        seedRecordingFromFixture($name);
+    }
+
+    // The recording handed the customer off on the reading, so the tape holds no model reply for turn 1. A bar above the
+    // recorded 0.95 makes the replay ask the model, and the walk needs a new recording instead of reaching its check.
+    config(['gate.classifier.asks_for_person_min_yes' => 0.99]);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toContain("tests/asks-for-person.md: this walk needs a new recording. Recording it is Ian's step. {$live->label()} stays live.")
+        ->and(app(ActiveConfig::class)->version()->id)->toBe($live->id);
+});
+
+it('judges a plain walk by today\'s complaint bar (Ian\'s D-02 ruling)', function () {
+    $live = activateExampleFolder();
+    layExampleWalks(...exampleWalkNames());
+
+    foreach (exampleWalkNames() as $name) {
+        seedRecordingFromFixture($name);
+    }
+
+    config(['gate.classifier.complaint_max_yes' => 0.03]);
+
+    $this->artisan('icm:sync')->assertExitCode(1);
+
+    expect(rejectedErrors())->toContain("tests/plain-first-texts.md, turn 1: the reply was held for the owner, not sent on its own. {$live->label()} stays live.")
+        ->and(app(ActiveConfig::class)->version()->id)->toBe($live->id);
+});
+
+it('keeps every example walk fictional and plain (D-12)', function () {
+    $personas = [];
+
+    foreach (exampleWalkNames() as $name) {
+        $text = File::get(base_path("examples/example-hvac/tests/{$name}.md"));
+
+        expect($text)->not->toContain('!')
+            ->not->toContain('—')
+            ->not->toMatch('/\d{10,}/')
+            ->not->toMatch('/\d{3}[\s.-]\d{4}/');
+
+        $personas[] = trim(explode(',', exampleWalksFile($name)->persona)[0]);
+    }
+
+    expect($personas)->toHaveCount(9)
+        ->and(array_unique($personas))->toHaveCount(9);
 });
