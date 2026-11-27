@@ -1,0 +1,255 @@
+{
+    "walk_path": "tests/plain-first-texts.md",
+    "script_hash": "a40d1a5faa4411e66284aa028838db14b98df40a04b432d53fe8294d6975cb6c",
+    "variant": "as_built",
+    "fingerprint": null,
+    "recorded_at": "2026-11-27T01:41:36+00:00",
+    "source": "placeholder",
+    "note": "Placeholder recording made with the test suite's scripted model and classifier, not a live run. Ian's walks:record --export replaces it (10 D-17).",
+    "payload": {
+        "version": 1,
+        "turns": {
+            "1": {
+                "agent": [
+                    {
+                        "reply": "Sorry to hear that. What is the system doing?",
+                        "label": "intake_question",
+                        "wants_person": false,
+                        "service_slug": "ac-repair",
+                        "intake_answers": [],
+                        "customer_name": null,
+                        "price_services": [],
+                        "asks_discount": false,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "Hi, my AC isn't cooling. Can someone come take a look?",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.97,
+                            "intent_probabilities": {
+                                "intake": 0.97,
+                                "other": 0.0050000000000000044,
+                                "scheduling": 0.0050000000000000044,
+                                "faq": 0.0050000000000000044,
+                                "price_question": 0.0050000000000000044,
+                                "complaint": 0.0050000000000000044,
+                                "emergency": 0.0050000000000000044
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.05,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "Hi, my AC isn't cooling. Can someone come take a look?",
+                        "draft_reply": "Sorry to hear that. What is the system doing?",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.93,
+                            "intent_probabilities": {
+                                "intake": 0.93,
+                                "other": 0.011666666666666659,
+                                "scheduling": 0.011666666666666659,
+                                "faq": 0.011666666666666659,
+                                "price_question": 0.011666666666666659,
+                                "complaint": 0.011666666666666659,
+                                "emergency": 0.011666666666666659
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            },
+            "2": {
+                "agent": [
+                    {
+                        "reply": "Thanks. About how old is the system?",
+                        "label": "intake_question",
+                        "wants_person": false,
+                        "service_slug": "ac-repair",
+                        "intake_answers": [
+                            {
+                                "question_key": "symptom",
+                                "option": "Not cooling",
+                                "raw_text": "Not cooling"
+                            }
+                        ],
+                        "customer_name": null,
+                        "price_services": [],
+                        "asks_discount": false,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "It's blowing warm air",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.97,
+                            "intent_probabilities": {
+                                "intake": 0.97,
+                                "other": 0.0050000000000000044,
+                                "scheduling": 0.0050000000000000044,
+                                "faq": 0.0050000000000000044,
+                                "price_question": 0.0050000000000000044,
+                                "complaint": 0.0050000000000000044,
+                                "emergency": 0.0050000000000000044
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "It's blowing warm air",
+                        "draft_reply": "Thanks. About how old is the system?",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.93,
+                            "intent_probabilities": {
+                                "intake": 0.93,
+                                "other": 0.011666666666666659,
+                                "scheduling": 0.011666666666666659,
+                                "faq": 0.011666666666666659,
+                                "price_question": 0.011666666666666659,
+                                "complaint": 0.011666666666666659,
+                                "emergency": 0.011666666666666659
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            },
+            "3": {
+                "agent": [
+                    {
+                        "reply": "We can get a technician out this week.",
+                        "label": "scheduling",
+                        "wants_person": false,
+                        "service_slug": "ac-repair",
+                        "intake_answers": [
+                            {
+                                "question_key": "system_age",
+                                "option": "Over 10 years",
+                                "raw_text": "Over 10 years"
+                            }
+                        ],
+                        "customer_name": null,
+                        "price_services": [],
+                        "asks_discount": false,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "Over 10 years",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.97,
+                            "intent_probabilities": {
+                                "intake": 0.97,
+                                "other": 0.0050000000000000044,
+                                "scheduling": 0.0050000000000000044,
+                                "faq": 0.0050000000000000044,
+                                "price_question": 0.0050000000000000044,
+                                "complaint": 0.0050000000000000044,
+                                "emergency": 0.0050000000000000044
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "Over 10 years",
+                        "draft_reply": "We can get a technician out this week.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "intake",
+                            "intent_confidence": 0.93,
+                            "intent_probabilities": {
+                                "intake": 0.93,
+                                "other": 0.011666666666666659,
+                                "scheduling": 0.011666666666666659,
+                                "faq": 0.011666666666666659,
+                                "price_question": 0.011666666666666659,
+                                "complaint": 0.011666666666666659,
+                                "emergency": 0.011666666666666659
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "recorded_with": {
+            "agent": {
+                "provider": "anthropic",
+                "model": "claude-sonnet-5-5"
+            },
+            "jev": "fake-jev"
+        }
+    }
+}

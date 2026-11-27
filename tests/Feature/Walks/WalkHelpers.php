@@ -356,3 +356,119 @@ function exampleWalkNames(): array
         'promise-question',
     ];
 }
+
+/**
+ * The suite's own fakes, scripted for one of the example business's walks (D-12): the front desk model's replies in the
+ * order the walk's customer texts arrive, and Jev's raw scores for the readings and the words checks, each queued in the
+ * order the front desk asks for them. A walk that is handed to the owner before the model is asked uses only its reading.
+ * These scores are placeholders meeting today's bars, never measurements; Ian's live walks:record --export replaces them.
+ * A walk that fails under these fakes is fixed here, never by loosening the walk's own checks.
+ *
+ * Plain first texts gives turn 1's reading a complaint score of 0.05: above every default score the suite uses (the
+ * words checks reach 0.0117, the intent share at confidence 0.93) and under the shipped complaint_max_yes of 0.15, and
+ * distinct from Dana's 0.04, so a test that lowers the bar to a number between them trips on this walk's own recorded
+ * score and not on a default.
+ */
+function exampleWalkFakes(string $name): void
+{
+    $intake = [
+        'reply' => 'Sorry to hear that. What is the system doing?',
+        'label' => 'intake_question',
+        'service_slug' => 'ac-repair',
+    ];
+    $ageQuestion = [
+        'reply' => 'Thanks. About how old is the system?',
+        'label' => 'intake_question',
+        'service_slug' => 'ac-repair',
+        'intake_answers' => [['question_key' => 'symptom', 'option' => 'Not cooling', 'raw_text' => 'Not cooling']],
+    ];
+    $offer = [
+        'reply' => 'We can get a technician out this week.',
+        'label' => 'scheduling',
+        'service_slug' => 'ac-repair',
+        'intake_answers' => [['question_key' => 'system_age', 'option' => 'Over 10 years', 'raw_text' => 'Over 10 years']],
+    ];
+    $clean = ['intent' => 'intake', 'confidence' => 0.97];
+    $cleanWords = ['intent' => 'intake', 'confidence' => 0.93];
+    $scheduling = ['intent' => 'scheduling', 'confidence' => 0.97];
+    $schedulingWords = ['intent' => 'scheduling', 'confidence' => 0.93];
+
+    match ($name) {
+        'dana' => danaFakes(),
+        'plain-first-texts' => (function () use ($intake, $ageQuestion, $offer, $clean, $cleanWords): void {
+            scriptFrontDeskReplies($intake, $ageQuestion, $offer);
+
+            fakeClassifier()
+                ->queueReadings([...$clean, 'yes_no' => ['complaint' => 0.05]], $clean, $clean)
+                ->queueAnswers($cleanWords, $cleanWords, $cleanWords);
+        })(),
+        'booked-time-question' => (function () use ($intake, $ageQuestion, $offer, $clean, $cleanWords, $scheduling, $schedulingWords): void {
+            scriptFrontDeskReplies($intake, $ageQuestion, $offer, [
+                'reply' => 'Thanks for checking in. Your visit details are below.',
+                'label' => 'scheduling',
+                'service_slug' => 'ac-repair',
+            ]);
+
+            fakeClassifier()
+                ->queueReadings($clean, $clean, $clean, $scheduling)
+                ->queueAnswers($cleanWords, $cleanWords, $cleanWords, $schedulingWords);
+        })(),
+        'link-again' => (function () use ($intake, $ageQuestion, $offer, $clean, $cleanWords, $scheduling, $schedulingWords): void {
+            $again = ['reply' => 'Sure, I can help with that.', 'label' => 'scheduling', 'service_slug' => 'ac-repair'];
+
+            scriptFrontDeskReplies($intake, $ageQuestion, $offer, $again, $again);
+
+            fakeClassifier()
+                ->queueReadings($clean, $clean, $clean, $scheduling, $scheduling)
+                ->queueAnswers($cleanWords, $cleanWords, $cleanWords, $schedulingWords, $schedulingWords);
+        })(),
+        'price-question' => (function (): void {
+            scriptFrontDeskReplies([
+                'reply' => "It's $89 for the diagnostic visit.",
+                'label' => 'price',
+                'service_slug' => 'ac-repair',
+                'price_services' => ['ac-repair'],
+            ]);
+
+            fakeClassifier()
+                ->queueReadings(['intent' => 'price_question', 'confidence' => 0.96])
+                ->queueAnswers(['intent' => 'price_question', 'confidence' => 0.96, 'yes_no' => ['price' => 0.9]]);
+        })(),
+        'discount-question' => (function (): void {
+            scriptFrontDeskReplies([
+                'reply' => 'Let me check with the owner about that.',
+                'label' => 'discount',
+                'asks_discount' => true,
+            ]);
+
+            fakeClassifier()
+                ->queueReadings(['intent' => 'faq', 'confidence' => 0.96])
+                ->queueAnswers(['intent' => 'faq', 'confidence' => 0.93]);
+        })(),
+        'promise-question' => (function (): void {
+            scriptFrontDeskReplies([
+                'reply' => 'I will pass your question to the owner so they can answer it.',
+                'label' => 'promise',
+            ]);
+
+            fakeClassifier()
+                ->queueReadings(['intent' => 'scheduling', 'confidence' => 0.96])
+                ->queueAnswers(['intent' => 'scheduling', 'confidence' => 0.93]);
+        })(),
+        'complaint' => (function (): void {
+            scriptFrontDeskReplies([
+                'reply' => "I'm sorry about that. I will make sure the owner sees this.",
+                'label' => 'complaint',
+            ]);
+
+            fakeClassifier()
+                ->queueReadings(['intent' => 'complaint', 'confidence' => 0.9, 'yes_no' => ['complaint' => 0.9]])
+                ->queueAnswers(['intent' => 'complaint', 'confidence' => 0.9, 'yes_no' => ['complaint' => 0.9]]);
+        })(),
+        'asks-for-person' => (function (): void {
+            scriptFrontDeskReplies(['reply' => 'Thanks for texting. What can we help with?', 'label' => 'faq_answer']);
+
+            fakeClassifier()->queueReadings(['intent' => 'other', 'confidence' => 0.9, 'yes_no' => ['asks_for_person' => 0.95]]);
+        })(),
+    };
+}

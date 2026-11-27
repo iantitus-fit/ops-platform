@@ -1,0 +1,95 @@
+{
+    "walk_path": "tests/discount-question.md",
+    "script_hash": "30aa7f03ee2fe9d2c899fd73f2adb3761387d935acb0d4c4d6e2238a97a03668",
+    "variant": "as_built",
+    "fingerprint": null,
+    "recorded_at": "2026-11-27T01:41:37+00:00",
+    "source": "placeholder",
+    "note": "Placeholder recording made with the test suite's scripted model and classifier, not a live run. Ian's walks:record --export replaces it (10 D-17).",
+    "payload": {
+        "version": 1,
+        "turns": {
+            "1": {
+                "agent": [
+                    {
+                        "reply": "Let me check with the owner about that.",
+                        "label": "discount",
+                        "wants_person": false,
+                        "service_slug": null,
+                        "intake_answers": [],
+                        "customer_name": null,
+                        "price_services": [],
+                        "asks_discount": true,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "Do you have any deals for first-time customers?",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "faq",
+                            "intent_confidence": 0.96,
+                            "intent_probabilities": {
+                                "faq": 0.96,
+                                "other": 0.006666666666666672,
+                                "scheduling": 0.006666666666666672,
+                                "intake": 0.006666666666666672,
+                                "price_question": 0.006666666666666672,
+                                "complaint": 0.006666666666666672,
+                                "emergency": 0.006666666666666672
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "Do you have any deals for first-time customers?",
+                        "draft_reply": "Let me check with the owner about that.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "faq",
+                            "intent_confidence": 0.93,
+                            "intent_probabilities": {
+                                "faq": 0.93,
+                                "other": 0.011666666666666659,
+                                "scheduling": 0.011666666666666659,
+                                "intake": 0.011666666666666659,
+                                "price_question": 0.011666666666666659,
+                                "complaint": 0.011666666666666659,
+                                "emergency": 0.011666666666666659
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "recorded_with": {
+            "agent": {
+                "provider": "anthropic",
+                "model": "claude-sonnet-5-5"
+            },
+            "jev": "fake-jev"
+        }
+    }
+}

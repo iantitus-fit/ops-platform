@@ -1,0 +1,49 @@
+{
+    "walk_path": "tests/asks-for-person.md",
+    "script_hash": "df52838d02625163922e9e35d7232f4ef465badb5776c82f2a5d436cdb7f881a",
+    "variant": "as_built",
+    "fingerprint": null,
+    "recorded_at": "2026-11-27T01:41:38+00:00",
+    "source": "placeholder",
+    "note": "Placeholder recording made with the test suite's scripted model and classifier, not a live run. Ian's walks:record --export replaces it (10 D-17).",
+    "payload": {
+        "version": 1,
+        "turns": {
+            "1": {
+                "agent": [],
+                "readings": [
+                    {
+                        "customer_message": "I would rather deal with a human being than a bot.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "other",
+                            "intent_confidence": 0.9,
+                            "intent_probabilities": {
+                                "other": 0.9,
+                                "scheduling": 0.016666666666666663,
+                                "intake": 0.016666666666666663,
+                                "faq": 0.016666666666666663,
+                                "price_question": 0.016666666666666663,
+                                "complaint": 0.016666666666666663,
+                                "emergency": 0.016666666666666663
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.95
+                            }
+                        }
+                    }
+                ],
+                "words": []
+            }
+        },
+        "recorded_with": {
+            "agent": null,
+            "jev": "fake-jev"
+        }
+    }
+}

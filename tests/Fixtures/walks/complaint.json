@@ -1,0 +1,95 @@
+{
+    "walk_path": "tests/complaint.md",
+    "script_hash": "7b45d2b8dbd4239ad47552a90d0e467e83c7f378c3c290b9bf2a97ff5fe6eb15",
+    "variant": "as_built",
+    "fingerprint": null,
+    "recorded_at": "2026-11-27T01:41:37+00:00",
+    "source": "placeholder",
+    "note": "Placeholder recording made with the test suite's scripted model and classifier, not a live run. Ian's walks:record --export replaces it (10 D-17).",
+    "payload": {
+        "version": 1,
+        "turns": {
+            "1": {
+                "agent": [
+                    {
+                        "reply": "I'm sorry about that. I will make sure the owner sees this.",
+                        "label": "complaint",
+                        "wants_person": false,
+                        "service_slug": null,
+                        "intake_answers": [],
+                        "customer_name": null,
+                        "price_services": [],
+                        "asks_discount": false,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "Your technician never showed up yesterday and I took the day off for it.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "complaint",
+                            "intent_confidence": 0.9,
+                            "intent_probabilities": {
+                                "complaint": 0.9,
+                                "other": 0.016666666666666663,
+                                "scheduling": 0.016666666666666663,
+                                "intake": 0.016666666666666663,
+                                "faq": 0.016666666666666663,
+                                "price_question": 0.016666666666666663,
+                                "emergency": 0.016666666666666663
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.9,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "Your technician never showed up yesterday and I took the day off for it.",
+                        "draft_reply": "I'm sorry about that. I will make sure the owner sees this.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "complaint",
+                            "intent_confidence": 0.9,
+                            "intent_probabilities": {
+                                "complaint": 0.9,
+                                "other": 0.016666666666666663,
+                                "scheduling": 0.016666666666666663,
+                                "intake": 0.016666666666666663,
+                                "faq": 0.016666666666666663,
+                                "price_question": 0.016666666666666663,
+                                "emergency": 0.016666666666666663
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.9,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "recorded_with": {
+            "agent": {
+                "provider": "anthropic",
+                "model": "claude-sonnet-5-5"
+            },
+            "jev": "fake-jev"
+        }
+    }
+}

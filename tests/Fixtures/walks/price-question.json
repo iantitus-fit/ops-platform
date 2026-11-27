@@ -1,0 +1,97 @@
+{
+    "walk_path": "tests/price-question.md",
+    "script_hash": "c30f907a37e1db68060e6805c4f00db536b84274c901ecd0d2ca033db0b86cc6",
+    "variant": "as_built",
+    "fingerprint": null,
+    "recorded_at": "2026-11-27T01:41:37+00:00",
+    "source": "placeholder",
+    "note": "Placeholder recording made with the test suite's scripted model and classifier, not a live run. Ian's walks:record --export replaces it (10 D-17).",
+    "payload": {
+        "version": 1,
+        "turns": {
+            "1": {
+                "agent": [
+                    {
+                        "reply": "It's $89 for the diagnostic visit.",
+                        "label": "price",
+                        "wants_person": false,
+                        "service_slug": "ac-repair",
+                        "intake_answers": [],
+                        "customer_name": null,
+                        "price_services": [
+                            "ac-repair"
+                        ],
+                        "asks_discount": false,
+                        "touches_waiting": null,
+                        "waiting_note": null,
+                        "easy_reply": null,
+                        "easy_label": null,
+                        "possible_danger": false
+                    }
+                ],
+                "readings": [
+                    {
+                        "customer_message": "How much does it cost to fix an AC?",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "price_question",
+                            "intent_confidence": 0.96,
+                            "intent_probabilities": {
+                                "price_question": 0.96,
+                                "other": 0.006666666666666672,
+                                "scheduling": 0.006666666666666672,
+                                "intake": 0.006666666666666672,
+                                "faq": 0.006666666666666672,
+                                "complaint": 0.006666666666666672,
+                                "emergency": 0.006666666666666672
+                            },
+                            "yes_no": {
+                                "price": 0.01,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ],
+                "words": [
+                    {
+                        "customer_message": "How much does it cost to fix an AC?",
+                        "draft_reply": "It's $89 for the diagnostic visit.",
+                        "result": {
+                            "model": "fake-jev",
+                            "intent": "price_question",
+                            "intent_confidence": 0.96,
+                            "intent_probabilities": {
+                                "price_question": 0.96,
+                                "other": 0.006666666666666672,
+                                "scheduling": 0.006666666666666672,
+                                "intake": 0.006666666666666672,
+                                "faq": 0.006666666666666672,
+                                "complaint": 0.006666666666666672,
+                                "emergency": 0.006666666666666672
+                            },
+                            "yes_no": {
+                                "price": 0.9,
+                                "promise": 0.01,
+                                "discount": 0.01,
+                                "complaint": 0.01,
+                                "life_safety": 0.01,
+                                "asks_for_person": 0.01
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "recorded_with": {
+            "agent": {
+                "provider": "anthropic",
+                "model": "claude-sonnet-5-5"
+            },
+            "jev": "fake-jev"
+        }
+    }
+}
