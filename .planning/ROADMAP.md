@@ -384,7 +384,7 @@ Plans:
   3. When validation and every walk test pass, the candidate goes live as before.
   4. "Dana end to end" passes: a scripted customer texts in, answers the intake questions, picks a time and is booked, with the owner alerted, the card and records updated, and a reminder queued. It passes as a walk test and as a feature test.
 
-**Plans**: 9/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
+**Plans**: 10/11 plans executed (build), then Ian's live recording and decision, then a follow-up approved-values plan planned after that decision (D-17); the phase closes only after the follow-up plan
 
 Plans:
 **Wave 1**
@@ -411,7 +411,7 @@ Plans:
 - [x] 10-08-PLAN.md — The rest of the example walk set with placeholder fixtures, weekday-proof and judged by today's bars in CI (D-12, D-19)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 10-09-PLAN.md — The calibration set and walks:report: both sides per movable bar, D-13's stop, the Booking wording block; walks:record --calibration (D-13 to D-19)
+- [x] 10-09-PLAN.md — The calibration set and walks:report: both sides per movable bar, D-13's stop, the Booking wording block; walks:record --calibration (D-13 to D-19)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 10-10-PLAN.md — Browser test for the walk lines (desktop and 375 px, contrast exempt for Phase 11), Ian's step in docs/SETUP.md, the STATE.md closing condition checked (recorded at plan time), map sentences, D-22 to D-26 verified (WALK-01, WALK-02, D-17)
@@ -490,7 +490,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 �
 | 7. The Spine and Leads | 9/9 | Complete    | 2026-11-01 |
 | 8. Schedule and Booking | 26/26 | Complete    | 2026-11-12 |
 | 9. Owner Intelligence | 6/6 | Complete    | 2026-11-18 |
-| 10. Walk Tests and the Gate | 9/11 | In Progress | - |
+| 10. Walk Tests and the Gate | 10/11 | In Progress | - |
 | 11. Phone Design Pass | 0/TBD | Not started | - |
 | 12. Tour Deploy | 0/TBD | Not started | - |
 
