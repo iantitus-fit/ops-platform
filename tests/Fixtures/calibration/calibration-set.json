@@ -1,0 +1,591 @@
+{
+    "version": 1,
+    "note": "The measured values are the scores Jev returned in the 08-UAT check 4 and check 8 walks (their stored verdicts), and every other score is a placeholder until Ian's walks:record --calibration replaces it. Every text here is invented.",
+    "recorded_with": {
+        "source": "08-UAT stored verdicts and placeholders",
+        "jev_model": null,
+        "recorded_at": null
+    },
+    "items": [
+        {
+            "id": "first-text-reading",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Hi, my AC isn't cooling. Can someone come take a look?",
+            "draft_reply": "",
+            "source": "08-UAT check 4",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "scheduling",
+                    "intent_confidence": 0.85,
+                    "intent_probabilities": {
+                        "other": 0,
+                        "scheduling": 0.87,
+                        "intake": 0.13,
+                        "faq": 0,
+                        "price_question": 0,
+                        "complaint": 0,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.03,
+                        "discount": 0.01,
+                        "complaint": 0.06,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "first-text-words",
+            "side": "plain",
+            "check": null,
+            "role": "words",
+            "customer_message": "Hi, my AC isn't cooling. Can someone come take a look?",
+            "draft_reply": "Sorry your AC isn't cooling. We can help with that. About how old is the system: under 5 years, 5 to 10 years, over 10 years, or not sure?",
+            "source": "08-UAT check 4",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "scheduling",
+                    "intent_confidence": 0.78,
+                    "intent_probabilities": {
+                        "other": 0,
+                        "scheduling": 0.81,
+                        "intake": 0.19,
+                        "faq": 0,
+                        "price_question": 0,
+                        "complaint": 0,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.02,
+                        "promise": 0.08,
+                        "discount": 0.02,
+                        "complaint": 0.05,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.41
+                    }
+                }
+            ]
+        },
+        {
+            "id": "blowing-warm-air",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "It's blowing warm air",
+            "draft_reply": "",
+            "source": "08-UAT check 4",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "intake",
+                    "intent_confidence": 0.87,
+                    "intent_probabilities": {
+                        "other": 0,
+                        "scheduling": 0,
+                        "intake": 0.89,
+                        "faq": 0,
+                        "price_question": 0,
+                        "complaint": 0.11,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.02,
+                        "discount": 0.01,
+                        "complaint": 0.16,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.03
+                    }
+                }
+            ]
+        },
+        {
+            "id": "over-10-years",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Over 10 years",
+            "draft_reply": "",
+            "source": "08-UAT check 4",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "intake",
+                    "intent_confidence": 0.92,
+                    "intent_probabilities": {
+                        "other": 0.06,
+                        "scheduling": 0,
+                        "intake": 0.93,
+                        "faq": 0.01,
+                        "price_question": 0,
+                        "complaint": 0,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.02,
+                        "discount": 0.01,
+                        "complaint": 0.2,
+                        "life_safety": 0.02,
+                        "asks_for_person": 0.05
+                    }
+                }
+            ]
+        },
+        {
+            "id": "what-time-are-you-coming",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "What time are you coming?",
+            "draft_reply": "",
+            "source": "08-UAT check 8",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "scheduling",
+                    "intent_confidence": 0.99,
+                    "intent_probabilities": {
+                        "other": 0,
+                        "scheduling": 0.99,
+                        "intake": 0,
+                        "faq": 0.01,
+                        "price_question": 0,
+                        "complaint": 0,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.02,
+                        "discount": 0.01,
+                        "complaint": 0.09,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.08
+                    }
+                }
+            ]
+        },
+        {
+            "id": "send-the-link-again",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Can you send the link again?",
+            "draft_reply": "",
+            "source": "08-UAT check 8",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "other",
+                    "intent_confidence": 0.91,
+                    "intent_probabilities": {
+                        "other": 0.92,
+                        "scheduling": 0,
+                        "intake": 0.06,
+                        "faq": 0.02,
+                        "price_question": 0,
+                        "complaint": 0,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.02,
+                        "discount": 0.01,
+                        "complaint": 0.2,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.02
+                    }
+                }
+            ]
+        },
+        {
+            "id": "not-cooling",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Not cooling",
+            "draft_reply": "",
+            "source": "08-UAT check 8",
+            "measured": [
+                "intent",
+                "intent_confidence",
+                "intent_probabilities",
+                "price",
+                "promise",
+                "discount",
+                "complaint",
+                "life_safety",
+                "asks_for_person"
+            ],
+            "results": [
+                {
+                    "model": "typesafe/jev-1.13-20260917",
+                    "intent": "intake",
+                    "intent_confidence": 0.94,
+                    "intent_probabilities": {
+                        "other": 0,
+                        "scheduling": 0,
+                        "intake": 0.95,
+                        "faq": 0,
+                        "price_question": 0,
+                        "complaint": 0.05,
+                        "emergency": 0
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.02,
+                        "discount": 0.01,
+                        "complaint": 0.17,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.03
+                    }
+                }
+            ]
+        },
+        {
+            "id": "under-5-years",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Under 5 years",
+            "draft_reply": "",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "intake",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.02,
+                        "intake": 0.9,
+                        "faq": 0.02,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "5-to-10-years",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "5 to 10 years",
+            "draft_reply": "",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "intake",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.02,
+                        "intake": 0.9,
+                        "faq": 0.02,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "not-sure",
+            "side": "plain",
+            "check": null,
+            "role": "reading",
+            "customer_message": "Not sure",
+            "draft_reply": "",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "intake",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.02,
+                        "intake": 0.9,
+                        "faq": 0.02,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "real-complaint",
+            "side": "risky",
+            "check": "complaint",
+            "role": "reading",
+            "customer_message": "Your technician never showed up yesterday and I took the day off for it.",
+            "draft_reply": "",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "complaint",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.04,
+                        "scheduling": 0.01,
+                        "intake": 0.01,
+                        "faq": 0.01,
+                        "price_question": 0.01,
+                        "complaint": 0.9,
+                        "emergency": 0.02
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.9,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "real-request-for-a-person",
+            "side": "risky",
+            "check": "asks_for_person",
+            "role": "reading",
+            "customer_message": "Is there a human I can text with instead?",
+            "draft_reply": "",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "other",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.9,
+                        "scheduling": 0.02,
+                        "intake": 0.02,
+                        "faq": 0.02,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.95
+                    }
+                }
+            ]
+        },
+        {
+            "id": "real-price",
+            "side": "risky",
+            "check": "price",
+            "role": "words",
+            "customer_message": "How much to fix my AC?",
+            "draft_reply": "It is usually about $150 to fix most AC problems.",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "price_question",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.02,
+                        "intake": 0.02,
+                        "faq": 0.02,
+                        "price_question": 0.9,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.9,
+                        "promise": 0.01,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "real-discount",
+            "side": "risky",
+            "check": "discount",
+            "role": "words",
+            "customer_message": "Do you have any deals right now?",
+            "draft_reply": "We can take 20 percent off your visit.",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "faq",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.02,
+                        "intake": 0.02,
+                        "faq": 0.9,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.01,
+                        "discount": 0.9,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        },
+        {
+            "id": "real-promise",
+            "side": "risky",
+            "check": "promise",
+            "role": "words",
+            "customer_message": "Can someone fix it today?",
+            "draft_reply": "We will have it fixed by 3pm today.",
+            "source": "placeholder",
+            "measured": [],
+            "results": [
+                {
+                    "model": "placeholder",
+                    "intent": "scheduling",
+                    "intent_confidence": 0.9,
+                    "intent_probabilities": {
+                        "other": 0.02,
+                        "scheduling": 0.9,
+                        "intake": 0.02,
+                        "faq": 0.02,
+                        "price_question": 0.02,
+                        "complaint": 0.01,
+                        "emergency": 0.01
+                    },
+                    "yes_no": {
+                        "price": 0.01,
+                        "promise": 0.9,
+                        "discount": 0.01,
+                        "complaint": 0.01,
+                        "life_safety": 0.01,
+                        "asks_for_person": 0.01
+                    }
+                }
+            ]
+        }
+    ]
+}
